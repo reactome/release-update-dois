@@ -9,6 +9,12 @@ import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
 import org.reactome.orthoinference.cache.OrthoinferenceCache;
 
+/**
+ * Interface for an object that infers. Implementers must implement the <code>infer()</code> method.
+ * This interface also contains some default implementations for counting proteins. TODO: Maybe the protein counter methods should move to a separate helper class...?
+ * @author sshorser
+ *
+ */
 public interface Inferrer
 {
 	/**
@@ -237,6 +243,7 @@ public interface Inferrer
 	public default SetOfInferredCounts checkCandidates(GKInstance entity, List<GKInstance> entities, MySQLAdaptor adaptor) throws InvalidAttributeException, Exception
 	{
 		SetOfInferredCounts counts = new SetOfInferredCounts();
+		int flag = 0; //TODO: figure out a better name for this than "flag", which was copied from the Perl implementation.
 		if (entity.getSchemClass().isValidAttribute("hasCandidate"))
 		{
 			List<GKInstance> referenceGeneProducts = new ArrayList<GKInstance>();
@@ -262,14 +269,53 @@ public interface Inferrer
 					{
 						// call back to regular countProteins method.
 						SetOfInferredCounts localCounts = this.countProteins(entity, adaptor);
-						
+						if (localCounts.getTotal() > 0 && localCounts.getInferred() == 0)
+						{
+							flag++;
+						}
+						// Perl implementation of checkCandidates uses "a", "b", "c" instead of named counts.
+						// a => total, b => inferred, c => max 
+						if (localCounts.getTotal() > counts.getTotal())
+						{
+							counts.setTotal(localCounts.getTotal());
+						}
+						if (localCounts.getInferred() > counts.getInferred())
+						{
+							counts.setInferred(localCounts.getInferred());
+						}
+						if (localCounts.getMax() > counts.getMax())
+						{
+							counts.setMax(localCounts.getMax());
+						}
 					}
 					else if (referenceGeneProduct.getSchemClass().isa("ReferenceGeneProduct"))
 					{
-						
+						int existingRefGeneProdCount = 0;
+						if (OrthoinferenceCache.getHomologues().keySet().contains(referenceGeneProduct.getDBID().toString()))
+						{
+							existingRefGeneProdCount = OrthoinferenceCache.getHomologues().get(referenceGeneProduct.getDBID().toString()).size();
+							if (existingRefGeneProdCount > counts.getMax())
+							{
+								counts.setMax(existingRefGeneProdCount);
+							}
+							if (existingRefGeneProdCount > 0)
+							{
+								counts.setInferred(1);
+							}
+							if (counts.getInferred()<=0)
+							{
+								flag++;
+							}
+						}
 					}
 				}
 			}
+		}
+		// In Perl, this section looks like: `$flag && return $a, 0;`
+		if (flag > 0)
+		{
+			counts.setInferred(0);
+			counts.setMax(0);
 		}
 		return counts;
 	}

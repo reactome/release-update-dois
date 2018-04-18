@@ -13,7 +13,7 @@ import org.reactome.orthoinference.inferrers.GenomeEncodedEntityInferrer;
 
 
 
-public class Main
+public class Main //TODO: Needs a better name
 {
 	private static MySQLAdaptor adaptor;
 	
