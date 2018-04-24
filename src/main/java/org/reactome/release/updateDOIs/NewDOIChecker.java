@@ -26,7 +26,7 @@ public class NewDOIChecker {
     this.dbaGkCentral = adaptor;
   }
 
-  public void findNewDOIs(GKInstance instanceEdit) {
+  public void findNewDOIs(GKInstance testReactomeIE, GKInstance gkCentralIE) {
     Collection<GKInstance> dois;
     Collection<GKInstance> gkdois;
     try {
@@ -36,15 +36,14 @@ public class NewDOIChecker {
 
       if (!dois.isEmpty()) {
         for (GKInstance doi : dois) {
-
           String stableIdFromDb = doi.getAttributeValue("stableIdentifier").toString();
           // This way of acquiring stableId is probably not ideal.
           String stableId[] = stableIdFromDb.split("] ");
           String updatedDoi = "10.3180/" + stableId[1];
       // Line below is again used for reverting DB changes.
           // String updatedDoi = "needs DOI";
-          String dbId = doi.getAttributeValue("DB_ID").toString();
 
+          String dbId = doi.getAttributeValue("DB_ID").toString();
           doi.setAttributeValue("doi", updatedDoi);
           this.dbaTestReactome.updateInstanceAttribute(doi, "doi");
 

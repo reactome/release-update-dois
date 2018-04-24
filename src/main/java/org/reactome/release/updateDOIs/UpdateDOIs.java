@@ -30,9 +30,11 @@ public class UpdateDOIs {
       newDOIChecker.setTestReactomeAdaptor(testReactomeDBA);
       newDOIChecker.setGkCentralAdaptor(gkCentralDBA);
   //// Insert your own author id!
-      // long authorId = <YourOwnId>;
-      GKInstance instanceEdit = newDOIChecker.createInstanceEdit(authorId, "org.reactome.release.updateDOIs.UpdateDOIs");
-      newDOIChecker.findNewDOIs(instanceEdit);
+      // long authorId = <Your id>;
+      String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
+      GKInstance instanceEditTestReactome = newDOIChecker.createInstanceEdit(authorId, creatorFile);
+      GKInstance instanceEditGkCentral = newDOIChecker.createInstanceEdit(authorId, creatorFile);
+      newDOIChecker.findNewDOIs(instanceEditTestReactome, instanceEditGkCentral);
     // Useful to report information back, such as number of changes?
       System.out.println( "UpdateDOIs Complete" );
     }
