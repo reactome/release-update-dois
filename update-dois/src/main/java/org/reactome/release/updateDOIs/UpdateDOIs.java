@@ -1,5 +1,6 @@
 package org.reactome.release.updateDOIs;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -24,25 +25,31 @@ public class UpdateDOIs {
 
     MySQLAdaptor testReactomeDBA = null;
     MySQLAdaptor gkCentralDBA = null;
+    long authorId = 0;
 
     try {
-      String user = "root";
-      String password = "root";
-      String host = "localhost";
-      String databaseTest = "test_reactome_64";
-      String databaseGk = "gk_central";
-      int port = 3306;
+      Properties props = new Properties();
+      props.load(new FileInputStream(pathToResources));
+
+      String user = props.getProperty("user");
+      String password = props.getProperty("password");
+      String host = props.getProperty("host");
+      String databaseTR = props.getProperty("databaseTR");
+      String databaseGk = props.getProperty("databaseGK");
+      int port = Integer.valueOf(props.getProperty("port"));
+      authorId = Integer.valueOf(props.getProperty("authorId"));
+
       // Set up db connections.
-      testReactomeDBA = new MySQLAdaptor(host, databaseTest, user, password, port);
+      testReactomeDBA = new MySQLAdaptor(host, databaseTR, user, password, port);
       gkCentralDBA = new MySQLAdaptor(host, databaseGk, user, password, port);
     } catch (Exception e) {
       e.printStackTrace();
     }
+
       NewDOIChecker newDOIChecker = new NewDOIChecker();
       newDOIChecker.setTestReactomeAdaptor(testReactomeDBA);
       newDOIChecker.setGkCentralAdaptor(gkCentralDBA);
-  //// Insert your own author id!
-      // long authorId = <Your id>;
+
       String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
       GKInstance instanceEditTestReactome = newDOIChecker.createInstanceEdit(authorId, creatorFile);
       GKInstance instanceEditGkCentral = newDOIChecker.createInstanceEdit(authorId, creatorFile);
