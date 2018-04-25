@@ -27,4 +27,4 @@ hs_err_pid*
 RemoteSystemsTempFiles
 
 update-dois/target/maven-status/maven-compiler-plugin/compile/default-compile/*.lst
-*.properties
+config.properties

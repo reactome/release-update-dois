@@ -1,5 +1,6 @@
 package org.reactome.release.updateDOIs;
 
+import org.apache.log4j.Logger;
 import java.util.Collection;
 
 import org.gk.model.GKInstance;
@@ -14,6 +15,8 @@ import org.gk.util.GKApplicationUtilities;
 
 public class NewDOIChecker {
 
+  final static Logger logger = Logger.getLogger(NewDOIChecker.class);
+  
   private MySQLAdaptor dbaTestReactome;
   private MySQLAdaptor dbaGkCentral;
 
@@ -26,22 +29,21 @@ public class NewDOIChecker {
     this.dbaGkCentral = adaptor;
   }
 
-  public void findNewDOIs(GKInstance testReactomeIE, GKInstance gkCentralIE) {
+  @SuppressWarnings("unchecked")
+public void findNewDOIs(GKInstance testReactomeIE, GKInstance gkCentralIE) {
     Collection<GKInstance> dois;
     Collection<GKInstance> gkdois;
     try {
-      dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
-  // Line below is code used when testing this module; Allowed me to revert the doi attribute after modifying it. Make sure to uncomment other line below too.
-      // dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "8939211|9006115|9018678|9033241");
+//      dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+       dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "8939211|9006115|9018678|9033241");
 
       if (!dois.isEmpty()) {
         for (GKInstance doi : dois) {
           String stableIdFromDb = doi.getAttributeValue("stableIdentifier").toString();
+          String nameFromDb = doi.getAttributeValue("name").toString();
           // This way of acquiring stableId is probably not ideal.
           String stableId[] = stableIdFromDb.split("] ");
           String updatedDoi = "10.3180/" + stableId[1];
-      // Line below is again used for reverting DB changes.
-          // String updatedDoi = "needs DOI";
 
           String dbId = doi.getAttributeValue("DB_ID").toString();
           doi.setAttributeValue("doi", updatedDoi);
@@ -53,6 +55,7 @@ public class NewDOIChecker {
             for (GKInstance gkdoi : gkdois) {
               gkdoi.setAttributeValue("doi", updatedDoi);
               this.dbaGkCentral.updateInstanceAttribute(gkdoi, "doi");
+              logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
             }
           }
         }

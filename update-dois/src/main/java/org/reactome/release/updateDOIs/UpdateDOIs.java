@@ -1,14 +1,16 @@
 package org.reactome.release.updateDOIs;
 
+import org.apache.log4j.Logger;
+
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Properties;
 
 import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
-import org.gk.model.PersistenceAdaptor;
 
 public class UpdateDOIs {
+
+  final static Logger logger = Logger.getLogger(UpdateDOIs.class);
 
   public static void main( String[] args ) {
 
@@ -54,8 +56,8 @@ public class UpdateDOIs {
       GKInstance instanceEditTestReactome = newDOIChecker.createInstanceEdit(authorId, creatorFile);
       GKInstance instanceEditGkCentral = newDOIChecker.createInstanceEdit(authorId, creatorFile);
       newDOIChecker.findNewDOIs(instanceEditTestReactome, instanceEditGkCentral);
-    // Useful to report information back, such as number of changes?
-      System.out.println( "UpdateDOIs Complete" );
+      
+      logger.info( "UpdateDOIs Complete" );
     }
 
 }
