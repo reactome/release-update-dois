@@ -11,8 +11,20 @@ public class UpdateDOIs {
 
   public static void main( String[] args ) {
 
+    String pathToResources = "src/main/resources/config.properties";
+
+    if (args.length > 0 && !args[0].equals("")) {
+      pathToResources = args[0];
+    }
+
+    UpdateDOIs.executeUpdateDOIs(pathToResources);
+  }
+
+  public static void executeUpdateDOIs(String pathToResources) {
+
     MySQLAdaptor testReactomeDBA = null;
     MySQLAdaptor gkCentralDBA = null;
+
     try {
       String user = "root";
       String password = "root";
