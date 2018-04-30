@@ -5,7 +5,6 @@ import org.apache.log4j.Logger;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
 
 public class UpdateDOIs {
@@ -52,10 +51,7 @@ public class UpdateDOIs {
       newDOIChecker.setTestReactomeAdaptor(testReactomeDBA);
       newDOIChecker.setGkCentralAdaptor(gkCentralDBA);
 
-      String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
-      GKInstance instanceEditTestReactome = newDOIChecker.createInstanceEdit(authorId, creatorFile);
-      GKInstance instanceEditGkCentral = newDOIChecker.createInstanceEdit(authorId, creatorFile);
-      newDOIChecker.findNewDOIs(instanceEditTestReactome, instanceEditGkCentral);
+      newDOIChecker.findNewDOIs(authorId);
       
       logger.info( "UpdateDOIs Complete" );
     }

@@ -16,7 +16,7 @@ import org.gk.util.GKApplicationUtilities;
 public class NewDOIChecker {
 
   final static Logger logger = Logger.getLogger(NewDOIChecker.class);
-  
+
   private MySQLAdaptor dbaTestReactome;
   private MySQLAdaptor dbaGkCentral;
 
@@ -30,12 +30,18 @@ public class NewDOIChecker {
   }
 
   @SuppressWarnings("unchecked")
-public void findNewDOIs(GKInstance testReactomeIE, GKInstance gkCentralIE) {
+public void findNewDOIs(long authorId) {
+	  
     Collection<GKInstance> dois;
     Collection<GKInstance> gkdois;
+    
+//	String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
+//	GKInstance instanceEditTestReactome = this.createInstanceEdit(authorId, creatorFile);
+//	GKInstance instanceEditGkCentral = this.createInstanceEdit(authorId, creatorFile);
+	
     try {
-//      dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
-       dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "8939211|9006115|9018678|9033241");
+     dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+       // dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "8939211|9006115|9018678|9033241");
 
       if (!dois.isEmpty()) {
         for (GKInstance doi : dois) {
