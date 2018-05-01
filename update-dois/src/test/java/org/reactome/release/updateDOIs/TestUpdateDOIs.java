@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 //import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.reactome.release.updateDOIs.NewDOIChecker;
+import org.reactome.release.updateDOIs.findNewDOIsAndUpdate;
 
 //@PrepareForTest({UpdateDOIs.class})
 public class TestUpdateDOIs {
@@ -32,9 +32,9 @@ public class TestUpdateDOIs {
 //	}
 	
 	@Test
-	public void testNewDOIChecker() throws Exception 
+	public void testfindNewDOIsAndUpdate() throws Exception 
 	{
-		NewDOIChecker check = new NewDOIChecker();
+		findNewDOIsAndUpdate check = new findNewDOIsAndUpdate();
 		check.setTestReactomeAdaptor(mockAdaptor);
 		check.setGkCentralAdaptor(mockAdaptor);
 		
@@ -53,9 +53,9 @@ public class TestUpdateDOIs {
     }
 	
 	@Test
-	public void testNewDOICheckerEmptyList() throws Exception 
+	public void testfindNewDOIsAndUpdateEmptyList() throws Exception 
 	{
-		NewDOIChecker check = new NewDOIChecker();
+		findNewDOIsAndUpdate check = new findNewDOIsAndUpdate();
 		check.setTestReactomeAdaptor(mockAdaptor);
 		check.setGkCentralAdaptor(mockAdaptor);
 		
@@ -66,9 +66,9 @@ public class TestUpdateDOIs {
 	}
 	
 	@Test
-	public void testNewDOICheckerDeepEmptyList() throws Exception 
+	public void testfindNewDOIsAndUpdateDeepEmptyList() throws Exception 
 	{
-		NewDOIChecker check = new NewDOIChecker();
+		findNewDOIsAndUpdate check = new findNewDOIsAndUpdate();
 		check.setTestReactomeAdaptor(mockAdaptor);
 		check.setGkCentralAdaptor(mockAdaptor);
 		

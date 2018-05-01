@@ -13,9 +13,9 @@ import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
 import org.gk.util.GKApplicationUtilities;
 
-public class NewDOIChecker {
+public class findNewDOIsAndUpdate {
 
-  final static Logger logger = Logger.getLogger(NewDOIChecker.class);
+  final static Logger logger = Logger.getLogger(findNewDOIsAndUpdate.class);
 
   private MySQLAdaptor dbaTestReactome;
   private MySQLAdaptor dbaGkCentral;
@@ -110,7 +110,7 @@ public void findNewDOIs(long authorId) {
     public static GKInstance createDefaultIE(MySQLAdaptor dba, Long defaultPersonId, boolean needStore, String note) throws Exception {
         GKInstance defaultPerson = dba.fetchInstance(defaultPersonId);
         if (defaultPerson != null) {
-            GKInstance newIE = NewDOIChecker.createDefaultInstanceEdit(defaultPerson);
+            GKInstance newIE = findNewDOIsAndUpdate.createDefaultInstanceEdit(defaultPerson);
             newIE.addAttributeValue(ReactomeJavaConstants.dateTime, GKApplicationUtilities.getDateTime());
             newIE.addAttributeValue(ReactomeJavaConstants.note, note);
             InstanceDisplayNameGenerator.setDisplayName(newIE);
