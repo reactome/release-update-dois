@@ -47,11 +47,11 @@ public class UpdateDOIs {
       e.printStackTrace();
     }
 
-      NewDOIChecker newDOIChecker = new NewDOIChecker();
-      newDOIChecker.setTestReactomeAdaptor(testReactomeDBA);
-      newDOIChecker.setGkCentralAdaptor(gkCentralDBA);
+      findNewDOIsAndUpdate findNewDOIsAndUpdate = new findNewDOIsAndUpdate();
+      findNewDOIsAndUpdate.setTestReactomeAdaptor(testReactomeDBA);
+      findNewDOIsAndUpdate.setGkCentralAdaptor(gkCentralDBA);
 
-      newDOIChecker.findNewDOIs(authorId);
+      findNewDOIsAndUpdate.findNewDOIs(authorId);
       
       logger.info( "UpdateDOIs Complete" );
     }
