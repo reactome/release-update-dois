@@ -35,9 +35,9 @@ public void findNewDOIs(long authorId) {
     Collection<GKInstance> dois;
     Collection<GKInstance> gkdois;
     
-//	String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
-//	GKInstance instanceEditTestReactome = this.createInstanceEdit(authorId, creatorFile);
-//	GKInstance instanceEditGkCentral = this.createInstanceEdit(authorId, creatorFile);
+	String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
+	GKInstance instanceEditTestReactome = this.createInstanceEdit(authorId, creatorFile);
+	GKInstance instanceEditGkCentral = this.createInstanceEdit(authorId, creatorFile);
 	
     try {
      dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
@@ -63,8 +63,12 @@ public void findNewDOIs(long authorId) {
               this.dbaGkCentral.updateInstanceAttribute(gkdoi, "doi");
               logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
             }
+          } else {
+        	  logger.error("Could not find attribute in gk_central");
           }
         }
+      } else {
+    	  logger.info("No DOIs to update");
       }
     } catch (Exception e) {
       e.printStackTrace();
