@@ -30,26 +30,24 @@ public class findNewDOIsAndUpdate {
   }
 
   @SuppressWarnings("unchecked")
-public void findNewDOIs(long authorId) {
+public void findNewDOIsAndUpdate(long authorId) {
 	  
     Collection<GKInstance> dois;
     Collection<GKInstance> gkdois;
     
-	String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
-	GKInstance instanceEditTestReactome = this.createInstanceEdit(authorId, creatorFile);
-	GKInstance instanceEditGkCentral = this.createInstanceEdit(authorId, creatorFile);
+//	String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
+//	GKInstance instanceEditTestReactome = this.createInstanceEdit(authorId, creatorFile);
+//	GKInstance instanceEditGkCentral = this.createInstanceEdit(authorId, creatorFile);
 	
     try {
      dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
-       // dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "8939211|9006115|9018678|9033241");
+//     dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "8939211|9006115|9018678|9033241");
 
       if (!dois.isEmpty()) {
         for (GKInstance doi : dois) {
-          String stableIdFromDb = doi.getAttributeValue("stableIdentifier").toString();
+          String stableIdFromDb = ((GKInstance) doi.getAttributeValue("stableIdentifier")).getDisplayName();
           String nameFromDb = doi.getAttributeValue("name").toString();
-          // This way of acquiring stableId is probably not ideal.
-          String stableId[] = stableIdFromDb.split("] ");
-          String updatedDoi = "10.3180/" + stableId[1];
+          String updatedDoi = "10.3180/" + stableIdFromDb;
 
           String dbId = doi.getAttributeValue("DB_ID").toString();
           doi.setAttributeValue("doi", updatedDoi);

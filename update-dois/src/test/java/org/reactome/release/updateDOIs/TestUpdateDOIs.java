@@ -39,17 +39,18 @@ public class TestUpdateDOIs {
 		check.setGkCentralAdaptor(mockAdaptor);
 		
 		GKInstance inst1 = PowerMockito.mock(GKInstance.class);
-//		GKInstance inst2 = PowerMockito.mock(GKInstance.class);
 		
 		Collection<GKInstance> testResults = Arrays.asList(inst1);
-		PowerMockito.when(inst1.getAttributeValue("stableIdentifier")).thenReturn("123] 456");
+		PowerMockito.when((GKInstance) inst1.getAttributeValue("stableIdentifier")).thenReturn(inst1);
+		PowerMockito.when(inst1.getDisplayName()).thenReturn("HSA-12345");
+		
 		PowerMockito.when(inst1.getAttributeValue("name")).thenReturn("Name Value");
 		PowerMockito.when(inst1.getAttributeValue("DB_ID")).thenReturn("67890");
 		
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180")).thenReturn(testResults);
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "DB_ID", "=", "67890")).thenReturn(testResults);
 		
-		check.findNewDOIs(12345L);
+		check.findNewDOIsAndUpdate(12345L);
     }
 	
 	@Test
@@ -62,7 +63,7 @@ public class TestUpdateDOIs {
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180")).thenReturn(new ArrayList<GKInstance>());
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "DB_ID", "=", "67890")).thenReturn(new ArrayList<GKInstance>());
 		
-		check.findNewDOIs(12345L);
+		check.findNewDOIsAndUpdate(12345L);
 	}
 	
 	@Test
@@ -75,13 +76,13 @@ public class TestUpdateDOIs {
 		GKInstance inst1 = PowerMockito.mock(GKInstance.class);
 		Collection<GKInstance> testResults = Arrays.asList(inst1);
 		
-		PowerMockito.when(inst1.getAttributeValue("stableIdentifier")).thenReturn("123] 456");
+		PowerMockito.when((GKInstance) inst1.getAttributeValue("stableIdentifier")).thenReturn(inst1);
 		PowerMockito.when(inst1.getAttributeValue("name")).thenReturn("Name Value");
 		PowerMockito.when(inst1.getAttributeValue("DB_ID")).thenReturn("67890");
 		
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180")).thenReturn(testResults);
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "DB_ID", "=", "67890")).thenReturn(new ArrayList<GKInstance>());
 		
-		check.findNewDOIs(12345L);
+		check.findNewDOIsAndUpdate(12345L);
 	}
 }
