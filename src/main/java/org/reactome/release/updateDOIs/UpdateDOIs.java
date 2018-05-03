@@ -14,15 +14,17 @@ public class UpdateDOIs {
   public static void main( String[] args ) {
 
     String pathToConfig = "src/main/resources/config.properties";
+    String pathToReport = "src/main/resources/UpdateDOIs.report";
     
     if (args.length > 0 && !args[0].equals("")) {
       pathToConfig = args[0];
+      pathToReport = args[1];
     }
 
-    UpdateDOIs.executeUpdateDOIs(pathToConfig);
+    UpdateDOIs.executeUpdateDOIs(pathToConfig, pathToReport);
   }
 
-  public static void executeUpdateDOIs(String pathToResources) {
+  public static void executeUpdateDOIs(String pathToResources, String pathToReport) {
 
     MySQLAdaptor testReactomeDBA = null;
     MySQLAdaptor gkCentralDBA = null;
@@ -51,7 +53,7 @@ public class UpdateDOIs {
       findNewDOIsAndUpdate.setTestReactomeAdaptor(testReactomeDBA);
       findNewDOIsAndUpdate.setGkCentralAdaptor(gkCentralDBA);
 
-      findNewDOIsAndUpdate.findNewDOIsAndUpdate(authorId);
+      findNewDOIsAndUpdate.findAndUpdateDOIs(authorId, pathToReport);
       
       logger.info( "UpdateDOIs Complete" );
     }
