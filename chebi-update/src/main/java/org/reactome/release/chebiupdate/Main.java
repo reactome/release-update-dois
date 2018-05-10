@@ -24,54 +24,49 @@ public class Main {
 	{
 
 		ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
-		MySQLAdaptor adaptor = new MySQLAdaptor("localhost", "", "", "");
-		Collection<GKInstance> refMolecules = adaptor.fetchInstancesByClass("ReferenceMolecule");
+		MySQLAdaptor adaptor = new MySQLAdaptor("localhost", "test_reactome_65", "root", "root");
 		
+		@SuppressWarnings("unchecked")
+		String chebiRefDBID = (new ArrayList<GKInstance>( adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI") )).get(0).getDBID().toString();
+		
+		@SuppressWarnings("unchecked")
+		Collection<GKInstance> refMolecules = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "referenceDatabase", "=", chebiRefDBID);
+		
+		// A map: key is GKInstance (it will be a ReferenceMolecule), value is the uk.ac.ebi.chebi.webapps.chebiWS.model.Entity from ChEBI.
 		Map<GKInstance,Entity> entityMap = Collections.synchronizedMap(new HashMap<GKInstance,Entity>());
+		// A list of the ReferenceMolecules where we could nto get info from ChEBI.
 		List<GKInstance> failedEntiesList = Collections.synchronizedList(new ArrayList<GKInstance>());
+		
+		System.out.println(refMolecules.size() + " ChEBI ReferenceMolecules to check...");
+		
 		refMolecules.parallelStream().forEach(molecule ->
 		{
 			try
 			{
-				//TODO: Include the "referenceDatabase=ChEBI" requirement in the initial query
-				if ( ((GKInstance)molecule.getAttributeValue("referenceDatabase")).getDisplayName().contains("ChEBI"))
+				String identifier = (String) molecule.getAttributeValue("identifier");
+				Entity entity = chebiClient.getCompleteEntity(identifier);
+				if (entity!=null)
 				{
-					try
-					{
-						String identifier = (String) molecule.getAttributeValue("identifier");
-						Entity entity = chebiClient.getCompleteEntity(identifier);
-						if (entity!=null)
-						{
-							entityMap.put(molecule,entity);
-						}
-						else
-						{
-							failedEntiesList.add(molecule);
-						}
-						//System.out.println(entity.getChebiAsciiName());
-					}
-					catch (ChebiWebServiceFault_Exception e)
-					{
-						e.printStackTrace();
-					}
-					catch (InvalidAttributeException e)
-					{
-						e.printStackTrace();
-					}
-					catch (Exception e)
-					{
-						e.printStackTrace();
-					}
-					
+					entityMap.put(molecule,entity);
 				}
 				else
 				{
-					System.out.println("Molecule "+molecule.toString()+" is not from ChEBI, it is from " + ((GKInstance)molecule.getAttributeValue("referenceDatabase")).getDisplayName());
+					failedEntiesList.add(molecule);
 				}
+			}
+			catch (ChebiWebServiceFault_Exception e)
+			{
+				System.err.println("WebService error! ");
+				e.printStackTrace();
+				throw new RuntimeException(e);
+			}
+			catch (InvalidAttributeException e)
+			{
+				System.err.println("InvalidAttribteException caught while trying to get the \"identifier\" attribute on "+molecule.toString());
+				e.printStackTrace();
 			}
 			catch (Exception e)
 			{
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} );
@@ -87,10 +82,12 @@ public class Main {
 			String chebiName = entity.getChebiAsciiName();
 			List<DataItem> chebiFormulae = entity.getFormulae();
 			
-			Collection<GKInstance> refEntities = molecule.getReferers("referenceEntity");
+			@SuppressWarnings("unchecked")
+			Collection<GKInstance> refEntities = (Collection<GKInstance>) molecule.getReferers("referenceEntity");
 			
 			for (GKInstance refEntity : refEntities)
 			{
+				@SuppressWarnings("unchecked")
 				LinkedList<String> names = new LinkedList<String>( refEntity.getAttributeValuesList("name") );
 //				System.out.println("reference entity names:" + names);
 				// Now we must ensure that the name from the ChEBI molecule is the FIRST name in the referenceEntity's list of names.
@@ -108,7 +105,9 @@ public class Main {
 							if (name.toLowerCase().equals(chebiName.toLowerCase()))
 							{
 								nameFound = true;
-								String nameToMove = names.remove(i);
+								// Remove the ChEBI name at position i
+								names.remove(i);
+								// Add the ChEBI name back at position 0.
 								names.add(0, chebiName);
 							}
 							i++;
@@ -144,10 +143,14 @@ public class Main {
 				molecule.setAttributeValue("name", chebiName);
 				sb.append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName);
 			}
-			if (!chebiFormulae.isEmpty() && !chebiFormulae.get(0).getData().equals(moleculeFormulae))
+			if (!chebiFormulae.isEmpty())
 			{
-				molecule.setAttributeValue("formula", chebiFormulae.get(0).getData());
-				sb.append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(chebiFormulae.get(0).getData());
+				String firstFormula = chebiFormulae.get(0).getData();
+				if (!firstFormula.equals(moleculeFormulae))
+				{
+					molecule.setAttributeValue("formula", firstFormula);
+					sb.append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula);
+				}
 			}
 			if (sb.length() > 0)
 			{
@@ -156,6 +159,12 @@ public class Main {
 			}
 			//TODO: actually commit the database changes.
 		}
+		
+		for (GKInstance molecule : failedEntiesList)
+		{
+			System.out.println("Could not get info from ChEBI for: "+molecule.toString());
+		}
+		
 	}
 
 }
