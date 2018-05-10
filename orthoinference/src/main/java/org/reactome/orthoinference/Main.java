@@ -160,7 +160,7 @@ public class Main //TODO: Needs a better name
 	private static GKInstance inferComplexPolymer(GKInstance attribute) {
 		// TODO Auto-generated method stub
 		// TODO: Logic to determine if input is complex or polymer.
-		ComplexInferrer complexInferrer = new ComplexInferrer();
+		ComplexInferrer complexInferrer = new ComplexInferrer(adaptor);
 		return complexInferrer.infer(attribute);
 	}
 
