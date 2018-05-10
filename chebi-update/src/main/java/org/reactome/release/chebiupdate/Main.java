@@ -1,5 +1,6 @@
 package org.reactome.release.chebiupdate;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,6 +74,11 @@ public class Main {
 		
 		System.out.println("Number of entities we were able to retrieve information about: "+entityMap.size());
 		System.out.println("Number of entities we were NOT able to retrieve information about: "+failedEntiesList.size());
+		
+		for (GKInstance molecule : failedEntiesList)
+		{
+			System.out.println("Could not get info from ChEBI for: "+molecule.toString());
+		}
 		
 		for (GKInstance molecule: entityMap.keySet())
 		{
@@ -160,11 +166,26 @@ public class Main {
 			//TODO: actually commit the database changes.
 		}
 		
-		for (GKInstance molecule : failedEntiesList)
-		{
-			System.out.println("Could not get info from ChEBI for: "+molecule.toString());
-		}
+		// now search for duplicates
+		String findDuplicateReferenceMolecules = "select ReferenceEntity.identifier, count(ReferenceMolecule.DB_ID)\n" + 
+				"from ReferenceMolecule\n" + 
+				"inner join ReferenceEntity on ReferenceEntity.DB_ID = ReferenceMolecule.DB_ID\n" + 
+				"inner join ReferenceDatabase on ReferenceDatabase.DB_ID = ReferenceEntity.referenceDatabase\n" + 
+				"inner join ReferenceDatabase_2_name on ReferenceDatabase_2_name.DB_ID = ReferenceDatabase.DB_ID\n" + 
+				"where ReferenceDatabase_2_name.name = 'ChEBI'\n" + 
+				"group by ReferenceEntity.identifier\n" + 
+				"having count(ReferenceMolecule.DB_ID) > 1;\n";
 		
+		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
+		while (duplicates.next())
+		{
+			System.out.println("ReferenceMolecule with identifier "+duplicates.getInt(1) + " occurs " + duplicates.getInt(2) + " times:");
+			@SuppressWarnings("unchecked")
+			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", duplicates.getInt(1));
+			for (GKInstance duplicate : dupesOfIdentifier)
+			{
+				System.out.println(duplicate.toStanza());
+			}
+		}
 	}
-
 }
