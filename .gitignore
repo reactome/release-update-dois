@@ -31,3 +31,4 @@ update-dois/.settings/org.eclipse.jdt.core.prefs
 config.properties
 *.classpath
 *.project
+.settings
