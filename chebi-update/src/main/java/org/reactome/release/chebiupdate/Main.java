@@ -25,7 +25,7 @@ public class Main {
 	{
 
 		ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
-		MySQLAdaptor adaptor = new MySQLAdaptor("localhost", "", "", "");
+		MySQLAdaptor adaptor = new MySQLAdaptor("localhost", "test_reactome_65", "root", "root");
 		
 		@SuppressWarnings("unchecked")
 		String chebiRefDBID = (new ArrayList<GKInstance>( adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI") )).get(0).getDBID().toString();
@@ -192,16 +192,25 @@ public class Main {
 		
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
 		System.out.println("\n*** Duplicate ReferenceMolecules ***\n");
+		StringBuilder duplicatesSB = new StringBuilder();
 		while (duplicates.next())
 		{
-			System.out.println("ReferenceMolecule with identifier "+duplicates.getInt(1) + " occurs " + duplicates.getInt(2) + " times:");
+			duplicatesSB.append("** ReferenceMolecule with identifier "+duplicates.getInt(1) + " occurs " + duplicates.getInt(2) + " times:\n\n");
 			@SuppressWarnings("unchecked")
 			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", duplicates.getInt(1));
 			for (GKInstance duplicate : dupesOfIdentifier)
 			{
-				System.out.println(duplicate.toStanza());
+				duplicatesSB.append(duplicate.toStanza()).append("\n");
 			}
 		}
 		duplicates.close();
+		if (duplicatesSB.length() > 0)
+		{
+			System.out.println(duplicatesSB.toString());
+		}
+		else
+		{
+			System.out.println("No duplicate ChEBI ReferenceMolecules detected.");
+		}
 	}
 }
