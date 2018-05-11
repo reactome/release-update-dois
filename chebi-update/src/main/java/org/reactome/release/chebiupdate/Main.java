@@ -25,7 +25,7 @@ public class Main {
 	{
 
 		ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
-		MySQLAdaptor adaptor = new MySQLAdaptor("localhost", "test_reactome_65", "root", "root");
+		MySQLAdaptor adaptor = new MySQLAdaptor("localhost", "", "", "");
 		
 		@SuppressWarnings("unchecked")
 		String chebiRefDBID = (new ArrayList<GKInstance>( adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI") )).get(0).getDBID().toString();
@@ -79,6 +79,11 @@ public class Main {
 		{
 			System.out.println("Could not get info from ChEBI for: "+molecule.toString());
 		}
+		
+		StringBuilder identifierSB = new StringBuilder();
+		StringBuilder formulaUpdateSB = new StringBuilder();
+		StringBuilder formulaFillSB = new StringBuilder();
+		StringBuilder nameSB = new StringBuilder();
 		
 		for (GKInstance molecule: entityMap.keySet())
 		{
@@ -136,35 +141,44 @@ public class Main {
 			String moleculeIdentifier = (String) molecule.getAttributeValue("identifier");
 			String moleculeName = (String) molecule.getAttributeValuesList("name").get(0);
 			String moleculeFormulae = (String) molecule.getAttributeValue("formula");
-			StringBuilder sb = new StringBuilder();
+			
+			String prefix = "ReferenceMolecule (DB ID: " + molecule.getDBID() + " / ChEBI ID: " + moleculeIdentifier + ") has changes: ";
 			
 			// We have an Identifier OR Name OR Formulae mismatch with ChEBI:
 			if (!chebiID.equals(moleculeIdentifier))
 			{
 				molecule.setAttributeValue("identifier", chebiID);
-				sb.append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID);
+				identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
 			}
 			if (!chebiName.equals(moleculeName))
 			{
 				molecule.setAttributeValue("name", chebiName);
-				sb.append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName);
+				nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
 			}
 			if (!chebiFormulae.isEmpty())
 			{
 				String firstFormula = chebiFormulae.get(0).getData();
-				if (!firstFormula.equals(moleculeFormulae))
+				if (moleculeFormulae == null)
+				{
+					formulaFillSB.append(prefix).append("New Formula: ").append(firstFormula).append("\n");
+				}
+				else if (!firstFormula.equals(moleculeFormulae))
 				{
 					molecule.setAttributeValue("formula", firstFormula);
-					sb.append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula);
+					formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
 				}
 			}
-			if (sb.length() > 0)
-			{
-				// TODO: Output this to a WikiMedia-friendly format.
-				System.out.println( "ReferenceMolecule (DB ID: " + molecule.getDBID() + " / ChEBI ID: " + moleculeIdentifier + ") has changes: "+ sb.toString());
-			}
+
 			//TODO: actually commit the database changes.
 		}
+		System.out.println("\n*** Formula-fill changes ***\n");
+		System.out.println(formulaFillSB.toString());
+		System.out.println("\n*** Formula update changes ***\n");
+		System.out.println(formulaUpdateSB.toString());
+		System.out.println("\n*** Name update changes ***");
+		System.out.println(nameSB.toString());
+		System.out.println("\n*** Identifier update changes ***\n");
+		System.out.println(identifierSB.toString());
 		
 		// now search for duplicates
 		String findDuplicateReferenceMolecules = "select ReferenceEntity.identifier, count(ReferenceMolecule.DB_ID)\n" + 
@@ -177,6 +191,7 @@ public class Main {
 				"having count(ReferenceMolecule.DB_ID) > 1;\n";
 		
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
+		System.out.println("\n*** Duplicate ReferenceMolecules ***\n");
 		while (duplicates.next())
 		{
 			System.out.println("ReferenceMolecule with identifier "+duplicates.getInt(1) + " occurs " + duplicates.getInt(2) + " times:");
@@ -187,5 +202,6 @@ public class Main {
 				System.out.println(duplicate.toStanza());
 			}
 		}
+		duplicates.close();
 	}
 }
