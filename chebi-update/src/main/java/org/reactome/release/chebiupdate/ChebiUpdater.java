@@ -277,9 +277,11 @@ public class ChebiUpdater
 		
 		while (duplicates.next())
 		{
-			this.duplicatesSB.append("** ReferenceMolecule with identifier "+duplicates.getInt(1) + " occurs " + duplicates.getInt(2) + " times:\n\n");
+			int identifier = duplicates.getInt(1);
+			int numberOfDuplicates = duplicates.getInt(2);
+			this.duplicatesSB.append("** ReferenceMolecule with identifier "+ identifier + " occurs " + numberOfDuplicates + " times:\n\n");
 			@SuppressWarnings("unchecked")
-			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", duplicates.getInt(1));
+			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", identifier);
 			for (GKInstance duplicate : dupesOfIdentifier)
 			{
 				this.duplicatesSB.append(duplicate.toStanza()).append("\n");
