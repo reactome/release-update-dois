@@ -30,6 +30,7 @@ public class Main
 		ChebiUpdater chebiUpdater = new ChebiUpdater(adaptor, testMode);
 		
 		chebiUpdater.updateChebiReferenceMolecules();
+		chebiUpdater.checkForDuplicates();
 	}
 
 	private static MySQLAdaptor getMySQLAdaptorFromProperties(Properties props) throws IOException, FileNotFoundException, SQLException

@@ -24,7 +24,7 @@ public class ChebiUpdater
 {
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
-	
+	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
 	private StringBuilder identifierSB = new StringBuilder();
 	private StringBuilder formulaUpdateSB = new StringBuilder();
 	private StringBuilder formulaFillSB = new StringBuilder();
@@ -45,14 +45,13 @@ public class ChebiUpdater
 	 * <li>Update the names of ReferenceMolecules</li>
 	 * <li>Update the identifiers of ReferenceMolecules</li>
 	 * <li>Update the formulae of ReferenceMolecules</li>
-	 * <li>Query and report on duplicate ChEBI ReferenceMolecules</li>
 	 * </ul>
 	 * @throws SQLException
 	 * @throws Exception
 	 */
 	public void updateChebiReferenceMolecules() throws SQLException, Exception
 	{
-		ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
+		
 		
 		@SuppressWarnings("unchecked")
 		String chebiRefDBID = (new ArrayList<GKInstance>( adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI") )).get(0).getDBID().toString();
@@ -67,7 +66,7 @@ public class ChebiUpdater
 		
 		System.out.println(refMolecules.size() + " ChEBI ReferenceMolecules to check...");
 		
-		retrieveUpdatesFromChebi(chebiClient, refMolecules, entityMap, failedEntiesList);
+		retrieveUpdatesFromChebi(refMolecules, entityMap, failedEntiesList);
 		
 		System.out.println("Number of entities we were able to retrieve information about: "+entityMap.size());
 		System.out.println("Number of entities we were NOT able to retrieve information about: "+failedEntiesList.size());
@@ -109,10 +108,6 @@ public class ChebiUpdater
 		System.out.println(this.nameSB.toString());
 		System.out.println("\n*** Identifier update changes ***\n");
 		System.out.println(this.identifierSB.toString());
-		
-		
-		// now search for duplicates
-		checkForDuplicates();
 	}
 
 	/**
@@ -266,7 +261,7 @@ public class ChebiUpdater
 	 * @throws SQLException
 	 * @throws Exception
 	 */
-	private void checkForDuplicates() throws SQLException, Exception
+	public void checkForDuplicates() throws SQLException, Exception
 	{
 		String findDuplicateReferenceMolecules = "select ReferenceEntity.identifier, count(ReferenceMolecule.DB_ID)\n" + 
 				"from ReferenceMolecule\n" + 
@@ -303,12 +298,12 @@ public class ChebiUpdater
 
 	/**
 	 * Makes calls to the ChEBI web service to get info for speciefied ChEBI identifiers.
-	 * @param chebiClient
+	 * @param updator
 	 * @param refMolecules - a list of ReferenceMolecules. The Identifier of each of these molecules will be sent to ChEBI to get up-to-date information for that Identifier.
 	 * @param entityMap - a ReferenceMolecule DB_ID-to-ChEBI Entity map. Will be updated by this method.
 	 * @param failedEntiesList - A lust of ReferenceMolecules for which no information was returned by ChEBI. Will be updated by this method.
 	 */
-	private void retrieveUpdatesFromChebi(ChebiWebServiceClient chebiClient, Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntiesList)
+	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntiesList)
 	{
 		// The web service calls are a bit slow to respond, so do them in parallel.
 		refMolecules.parallelStream().forEach(molecule ->
@@ -316,7 +311,7 @@ public class ChebiUpdater
 			try
 			{
 				String identifier = (String) molecule.getAttributeValue("identifier");
-				Entity entity = chebiClient.getCompleteEntity(identifier);
+				Entity entity = this.chebiClient.getCompleteEntity(identifier);
 				if (entity!=null)
 				{
 					entityMap.put(molecule.getDBID(),entity);
