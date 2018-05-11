@@ -25,12 +25,31 @@ public class ChebiUpdater
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
 	
+	private StringBuilder identifierSB = new StringBuilder();
+	private StringBuilder formulaUpdateSB = new StringBuilder();
+	private StringBuilder formulaFillSB = new StringBuilder();
+	private StringBuilder nameSB = new StringBuilder();
+	private StringBuilder duplicatesSB = new StringBuilder();
+	
 	public ChebiUpdater (MySQLAdaptor adaptor, boolean testMode)
 	{
 		this.adaptor = adaptor;
 		this.testMode = testMode;
 	}
 	
+	/**
+	 * Update ChEBI ReferenceMolecules.
+	 * This method will query ChEBI for up-to-date information, and using that information it will: <br/>
+	 * <ul>
+	 * <li>Update the names of ReferenceEntitites that are refer to the ReferenceMolecule</li>
+	 * <li>Update the names of ReferenceMolecules</li>
+	 * <li>Update the identifiers of ReferenceMolecules</li>
+	 * <li>Update the formulae of ReferenceMolecules</li>
+	 * <li>Query and report on duplicate ChEBI ReferenceMolecules</li>
+	 * </ul>
+	 * @throws SQLException
+	 * @throws Exception
+	 */
 	public void updateChebiReferenceMolecules() throws SQLException, Exception
 	{
 		ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
@@ -58,10 +77,7 @@ public class ChebiUpdater
 			System.out.println("Could not get info from ChEBI for: "+molecule.toString());
 		}
 		
-		StringBuilder identifierSB = new StringBuilder();
-		StringBuilder formulaUpdateSB = new StringBuilder();
-		StringBuilder formulaFillSB = new StringBuilder();
-		StringBuilder nameSB = new StringBuilder();
+
 		
 		for (Long moleculeDBID: entityMap.keySet())
 		{
@@ -81,25 +97,35 @@ public class ChebiUpdater
 			
 			String prefix = "ReferenceMolecule (DB ID: " + molecule.getDBID() + " / ChEBI ID: " + moleculeIdentifier + ") has changes: ";
 			
-			updateMoleculeIdentifier(identifierSB, molecule, chebiID, moleculeIdentifier, prefix);
-			updateMoleculeName(nameSB, molecule, chebiName, moleculeName, prefix);
-			updateMoleculeFormula(formulaUpdateSB, formulaFillSB, molecule, chebiFormulae, moleculeFormulae, prefix);
+			updateMoleculeIdentifier( molecule, chebiID, moleculeIdentifier, prefix);
+			updateMoleculeName(molecule, chebiName, moleculeName, prefix);
+			updateMoleculeFormula(molecule, chebiFormulae, moleculeFormulae, prefix);
 		}
 		System.out.println("\n*** Formula-fill changes ***\n");
-		System.out.println(formulaFillSB.toString());
+		System.out.println(this.formulaFillSB.toString());
 		System.out.println("\n*** Formula update changes ***\n");
-		System.out.println(formulaUpdateSB.toString());
+		System.out.println(this.formulaUpdateSB.toString());
 		System.out.println("\n*** Name update changes ***");
-		System.out.println(nameSB.toString());
+		System.out.println(this.nameSB.toString());
 		System.out.println("\n*** Identifier update changes ***\n");
-		System.out.println(identifierSB.toString());
+		System.out.println(this.identifierSB.toString());
 		
 		
 		// now search for duplicates
 		checkForDuplicates();
 	}
 
-	private void updateMoleculeFormula(StringBuilder formulaUpdateSB, StringBuilder formulaFillSB, GKInstance molecule, List<DataItem> chebiFormulae, String moleculeFormulae, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	/**
+	 * Update a molecule's formula.
+	 * @param molecule
+	 * @param chebiFormulae
+	 * @param moleculeFormulae
+	 * @param prefix
+	 * @throws InvalidAttributeException
+	 * @throws InvalidAttributeValueException
+	 * @throws Exception
+	 */
+	private void updateMoleculeFormula(GKInstance molecule, List<DataItem> chebiFormulae, String moleculeFormulae, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		if (!chebiFormulae.isEmpty())
 		{
@@ -109,7 +135,7 @@ public class ChebiUpdater
 				if (moleculeFormulae == null)
 				{
 					molecule.setAttributeValue("formula", firstFormula);
-					formulaFillSB.append(prefix).append("New Formula: ").append(firstFormula).append("\n");
+					this.formulaFillSB.append(prefix).append("New Formula: ").append(firstFormula).append("\n");
 					if (!testMode)
 					{
 						adaptor.updateInstanceAttribute(molecule,"formula");
@@ -118,7 +144,7 @@ public class ChebiUpdater
 				else if (!firstFormula.equals(moleculeFormulae))
 				{
 					molecule.setAttributeValue("formula", firstFormula);
-					formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
+					this.formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
 					if (!testMode)
 					{
 						adaptor.updateInstanceAttribute(molecule,"formula");
@@ -128,12 +154,22 @@ public class ChebiUpdater
 		}
 	}
 
-	private void updateMoleculeName(StringBuilder nameSB, GKInstance molecule, String chebiName, String moleculeName, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	/**
+	 * Updates a molecule's name.
+	 * @param molecule
+	 * @param chebiName
+	 * @param moleculeName
+	 * @param prefix
+	 * @throws InvalidAttributeException
+	 * @throws InvalidAttributeValueException
+	 * @throws Exception
+	 */
+	private void updateMoleculeName(GKInstance molecule, String chebiName, String moleculeName, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		if (!chebiName.equals(moleculeName))
 		{
 			molecule.setAttributeValue("name", chebiName);
-			nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
+			this.nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
 			if (!testMode)
 			{
 				adaptor.updateInstanceAttribute(molecule,"name");
@@ -141,12 +177,22 @@ public class ChebiUpdater
 		}
 	}
 
-	private void updateMoleculeIdentifier(StringBuilder identifierSB, GKInstance molecule, String chebiID, String moleculeIdentifier, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	/**
+	 * Update a molecule's identifier.
+	 * @param molecule
+	 * @param chebiID
+	 * @param moleculeIdentifier
+	 * @param prefix
+	 * @throws InvalidAttributeException
+	 * @throws InvalidAttributeValueException
+	 * @throws Exception
+	 */
+	private void updateMoleculeIdentifier(GKInstance molecule, String chebiID, String moleculeIdentifier, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		if (!chebiID.equals(moleculeIdentifier))
 		{
 			molecule.setAttributeValue("identifier", chebiID);
-			identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
+			this.identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
 			if (!testMode)
 			{
 				adaptor.updateInstanceAttribute(molecule,"identifier");
@@ -154,6 +200,16 @@ public class ChebiUpdater
 		}
 	}
 
+	/**
+	 * Updates ReferenceEntities that refer to ReferenceMolecules. 
+	 * This method will ensure that the "name" array of a ReferenceEntity associated with <code>molecule</code> has <code>chebiName</code> as the <em>first</em> name in
+	 * its list of names.
+	 * @param molecule - a ReferenceMolecule. ReferenceEntities that reference this ReferenceMolecule will be updated.
+	 * @param chebiName - the name from ChEBI. Should be the first name in the "name" array for any updated ReferenceEntity.
+	 * @throws Exception
+	 * @throws InvalidAttributeException
+	 * @throws InvalidAttributeValueException
+	 */
 	private void updateReferenceEntities(GKInstance molecule, String chebiName) throws Exception, InvalidAttributeException, InvalidAttributeValueException
 	{
 		@SuppressWarnings("unchecked")
@@ -202,6 +258,14 @@ public class ChebiUpdater
 		}
 	}
 
+	/**
+	 * Queries the database for duplicate ChEBI ReferenceMolecules, and prints the results.
+	 * A duplicate ChEBI ReferenceMolecule is defined as a ReferenceMolecule with the same
+	 * ChEBI Identifier as a different ReferenceMolecule. No two ReferenceMolecules
+	 * should share a ChEBI Identifier. 
+	 * @throws SQLException
+	 * @throws Exception
+	 */
 	private void checkForDuplicates() throws SQLException, Exception
 	{
 		String findDuplicateReferenceMolecules = "select ReferenceEntity.identifier, count(ReferenceMolecule.DB_ID)\n" + 
@@ -215,21 +279,21 @@ public class ChebiUpdater
 		
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
 		System.out.println("\n*** Duplicate ReferenceMolecules ***\n");
-		StringBuilder duplicatesSB = new StringBuilder();
+		
 		while (duplicates.next())
 		{
-			duplicatesSB.append("** ReferenceMolecule with identifier "+duplicates.getInt(1) + " occurs " + duplicates.getInt(2) + " times:\n\n");
+			this.duplicatesSB.append("** ReferenceMolecule with identifier "+duplicates.getInt(1) + " occurs " + duplicates.getInt(2) + " times:\n\n");
 			@SuppressWarnings("unchecked")
 			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", duplicates.getInt(1));
 			for (GKInstance duplicate : dupesOfIdentifier)
 			{
-				duplicatesSB.append(duplicate.toStanza()).append("\n");
+				this.duplicatesSB.append(duplicate.toStanza()).append("\n");
 			}
 		}
 		duplicates.close();
-		if (duplicatesSB.length() > 0)
+		if (this.duplicatesSB.length() > 0)
 		{
-			System.out.println(duplicatesSB.toString());
+			System.out.println(this.duplicatesSB.toString());
 		}
 		else
 		{
@@ -237,6 +301,13 @@ public class ChebiUpdater
 		}
 	}
 
+	/**
+	 * Makes calls to the ChEBI web service to get info for speciefied ChEBI identifiers.
+	 * @param chebiClient
+	 * @param refMolecules - a list of ReferenceMolecules. The Identifier of each of these molecules will be sent to ChEBI to get up-to-date information for that Identifier.
+	 * @param entityMap - a ReferenceMolecule DB_ID-to-ChEBI Entity map. Will be updated by this method.
+	 * @param failedEntiesList - A lust of ReferenceMolecules for which no information was returned by ChEBI. Will be updated by this method.
+	 */
 	private void retrieveUpdatesFromChebi(ChebiWebServiceClient chebiClient, Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntiesList)
 	{
 		// The web service calls are a bit slow to respond, so do them in parallel.
