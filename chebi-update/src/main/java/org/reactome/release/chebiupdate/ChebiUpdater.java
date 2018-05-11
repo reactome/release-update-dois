@@ -19,9 +19,11 @@ import uk.ac.ebi.chebi.webapps.chebiWS.client.ChebiWebServiceClient;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.ChebiWebServiceFault_Exception;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.DataItem;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 public class ChebiUpdater
 {
+	private static final Logger logger = LogManager.getLogger("ChEBIUpdateLogger");
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
 	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
@@ -64,16 +66,16 @@ public class ChebiUpdater
 		// A list of the ReferenceMolecules where we could nto get info from ChEBI.
 		List<GKInstance> failedEntiesList = Collections.synchronizedList(new ArrayList<GKInstance>());
 		
-		System.out.println(refMolecules.size() + " ChEBI ReferenceMolecules to check...");
+		logger.info("{} ChEBI ReferenceMolecules to check...", refMolecules.size());
 		
 		retrieveUpdatesFromChebi(refMolecules, entityMap, failedEntiesList);
 		
-		System.out.println("Number of entities we were able to retrieve information about: "+entityMap.size());
-		System.out.println("Number of entities we were NOT able to retrieve information about: "+failedEntiesList.size());
+		logger.info("Number of entities we were able to retrieve information about: {}", entityMap.size());
+		logger.info("Number of entities we were NOT able to retrieve information about: {}", failedEntiesList.size());
 
 		for (GKInstance molecule : failedEntiesList)
 		{
-			System.out.println("Could not get info from ChEBI for: "+molecule.toString());
+			logger.info("Could not get info from ChEBI for: {}", molecule.toString());
 		}
 		
 
@@ -100,14 +102,14 @@ public class ChebiUpdater
 			updateMoleculeName(molecule, chebiName, moleculeName, prefix);
 			updateMoleculeFormula(molecule, chebiFormulae, moleculeFormulae, prefix);
 		}
-		System.out.println("\n*** Formula-fill changes ***\n");
-		System.out.println(this.formulaFillSB.toString());
-		System.out.println("\n*** Formula update changes ***\n");
-		System.out.println(this.formulaUpdateSB.toString());
-		System.out.println("\n*** Name update changes ***");
-		System.out.println(this.nameSB.toString());
-		System.out.println("\n*** Identifier update changes ***\n");
-		System.out.println(this.identifierSB.toString());
+		logger.info("*** Formula-fill changes ***");
+		logger.info(this.formulaFillSB.toString());
+		logger.info("*** Formula update changes ***");
+		logger.info(this.formulaUpdateSB.toString());
+		logger.info("*** Name update changes ***");
+		logger.info(this.nameSB.toString());
+		logger.info("*** Identifier update changes ***");
+		logger.info(this.identifierSB.toString());
 	}
 
 	/**
@@ -273,7 +275,7 @@ public class ChebiUpdater
 				"having count(ReferenceMolecule.DB_ID) > 1;\n";
 		
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
-		System.out.println("\n*** Duplicate ReferenceMolecules ***\n");
+		logger.info("*** Duplicate ReferenceMolecules ***\n");
 		
 		while (duplicates.next())
 		{
@@ -290,11 +292,11 @@ public class ChebiUpdater
 		duplicates.close();
 		if (this.duplicatesSB.length() > 0)
 		{
-			System.out.println(this.duplicatesSB.toString());
+			logger.info(this.duplicatesSB.toString());
 		}
 		else
 		{
-			System.out.println("No duplicate ChEBI ReferenceMolecules detected.");
+			logger.info("No duplicate ChEBI ReferenceMolecules detected.");
 		}
 	}
 
@@ -325,7 +327,7 @@ public class ChebiUpdater
 			}
 			catch (ChebiWebServiceFault_Exception e)
 			{
-				System.err.println("WebService error! ");
+				logger.error("WebService error! {}", e.getMessage());
 				e.printStackTrace();
 				// Webservice error should probably break execution - if one fails, they will all probably fail.
 				// This is *not* a general principle, but is based on my experience with the ChEBI webservice specifically - 
@@ -334,7 +336,7 @@ public class ChebiUpdater
 			}
 			catch (InvalidAttributeException e)
 			{
-				System.err.println("InvalidAttribteException caught while trying to get the \"identifier\" attribute on "+molecule.toString());
+				logger.error("InvalidAttribteException caught while trying to get the \"identifier\" attribute on "+molecule.toString());
 				// stack trace should be printed, but I don't think this should break execution, though the only way I can think
 				// of this happening is if the data model changes - otherwise, this exception should probably never be caught.
 				e.printStackTrace();
