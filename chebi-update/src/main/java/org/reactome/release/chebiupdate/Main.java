@@ -1,5 +1,8 @@
 package org.reactome.release.chebiupdate;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -9,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
@@ -19,13 +23,25 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.ChebiWebServiceFault_Exception;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.DataItem;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 
-public class Main {
+public class Main
+{
 
 	public static void main(String[] args) throws SQLException, Exception
 	{
-
+		// Assume the path the the properties file is ./chebi-update.properties
+		// but if args[] is not empty, then the first argument must be the path to
+		// the resources file.
+		String pathToResources = "./chebi-update.properties";
+		if (args.length > 0)
+		{
+			pathToResources = args[0];
+		}
+		
+		Properties props = new Properties();
+		props.load(new FileInputStream(pathToResources));
+		MySQLAdaptor adaptor = getMySQLAdaptorFromProperties(props);
+		boolean testMode = new Boolean(props.getProperty("testMode", "true"));
 		ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
-		MySQLAdaptor adaptor = new MySQLAdaptor("localhost", "test_reactome_65", "root", "root");
 		
 		@SuppressWarnings("unchecked")
 		String chebiRefDBID = (new ArrayList<GKInstance>( adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI") )).get(0).getDBID().toString();
@@ -33,13 +49,14 @@ public class Main {
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> refMolecules = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "referenceDatabase", "=", chebiRefDBID);
 		
-		// A map: key is GKInstance (it will be a ReferenceMolecule), value is the uk.ac.ebi.chebi.webapps.chebiWS.model.Entity from ChEBI.
-		Map<GKInstance,Entity> entityMap = Collections.synchronizedMap(new HashMap<GKInstance,Entity>());
+		// A map: key is the DB_ID of a ReferneceMolecule, value is the uk.ac.ebi.chebi.webapps.chebiWS.model.Entity from ChEBI.
+		Map<Long, Entity> entityMap = Collections.synchronizedMap(new HashMap<Long, Entity>());
 		// A list of the ReferenceMolecules where we could nto get info from ChEBI.
 		List<GKInstance> failedEntiesList = Collections.synchronizedList(new ArrayList<GKInstance>());
 		
 		System.out.println(refMolecules.size() + " ChEBI ReferenceMolecules to check...");
 		
+		// The web service calls are a bit slow to respond, so do them in parallel.
 		refMolecules.parallelStream().forEach(molecule ->
 		{
 			try
@@ -48,7 +65,7 @@ public class Main {
 				Entity entity = chebiClient.getCompleteEntity(identifier);
 				if (entity!=null)
 				{
-					entityMap.put(molecule,entity);
+					entityMap.put(molecule.getDBID(),entity);
 				}
 				else
 				{
@@ -59,15 +76,21 @@ public class Main {
 			{
 				System.err.println("WebService error! ");
 				e.printStackTrace();
+				// Webservice error should probably break execution - if one fails, they will all probably fail.
+				// This is *not* a general principle, but is based on my experience with the ChEBI webservice specifically - 
+				// it's a pretty stable service so it's unlikely that if one service call fails, the others will succeed.
 				throw new RuntimeException(e);
 			}
 			catch (InvalidAttributeException e)
 			{
 				System.err.println("InvalidAttribteException caught while trying to get the \"identifier\" attribute on "+molecule.toString());
+				// stack trace should be printed, but I don't think this should break execution, though the only way I can think
+				// of this happening is if the data model changes - otherwise, this exception should probably never be caught.
 				e.printStackTrace();
 			}
 			catch (Exception e)
 			{
+				// general exceptions - print stack trace but keep going.
 				e.printStackTrace();
 			}
 		} );
@@ -85,9 +108,10 @@ public class Main {
 		StringBuilder formulaFillSB = new StringBuilder();
 		StringBuilder nameSB = new StringBuilder();
 		
-		for (GKInstance molecule: entityMap.keySet())
+		for (Long moleculeDBID: entityMap.keySet())
 		{
-			Entity entity = entityMap.get(molecule);
+			GKInstance molecule = adaptor.fetchInstance(moleculeDBID);
+			Entity entity = entityMap.get(moleculeDBID);
 			
 			String chebiID = entity.getChebiId().replaceAll("CHEBI:", ""); //Not sure why the old Perl code stripped out "CHEBI:", but I'll do it here for consistency.
 			String chebiName = entity.getChebiAsciiName();
@@ -100,7 +124,6 @@ public class Main {
 			{
 				@SuppressWarnings("unchecked")
 				LinkedList<String> names = new LinkedList<String>( refEntity.getAttributeValuesList("name") );
-//				System.out.println("reference entity names:" + names);
 				// Now we must ensure that the name from the ChEBI molecule is the FIRST name in the referenceEntity's list of names.
 				if (!names.isEmpty())
 				{
@@ -123,7 +146,8 @@ public class Main {
 							}
 							i++;
 						}
-						// If we went through the whole array and didn't find the ChEBI name, we must add it.
+						// If we went through the whole array and didn't find the ChEBI name,
+						// we must add it, at the begining of the list of names.
 						if (!nameFound)
 						{
 							names.add(0,chebiName);
@@ -131,10 +155,11 @@ public class Main {
 					}
 				}
 				// Update the names of the ReferenceEntity.
-//				refEntity.setAttributeValue("name", names);
-//				adaptor.updateInstanceAttribute(refEntity, "name");;
-				
-				//System.out.println("ChEBI Name: " + chebiName + " ; names list: " + names.toString());
+				refEntity.setAttributeValue("name", names);
+				if (!testMode)
+				{
+					adaptor.updateInstanceAttribute(refEntity, "name");
+				}
 			}
 			
 			// Now, check to see if we need to update the ReferenceMolecule itself.
@@ -149,27 +174,45 @@ public class Main {
 			{
 				molecule.setAttributeValue("identifier", chebiID);
 				identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
+				if (!testMode)
+				{
+					adaptor.updateInstanceAttribute(molecule,"identifier");
+				}
 			}
 			if (!chebiName.equals(moleculeName))
 			{
 				molecule.setAttributeValue("name", chebiName);
 				nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
+				if (!testMode)
+				{
+					adaptor.updateInstanceAttribute(molecule,"name");
+				}
 			}
 			if (!chebiFormulae.isEmpty())
 			{
 				String firstFormula = chebiFormulae.get(0).getData();
-				if (moleculeFormulae == null)
+				if (firstFormula != null)
 				{
-					formulaFillSB.append(prefix).append("New Formula: ").append(firstFormula).append("\n");
-				}
-				else if (!firstFormula.equals(moleculeFormulae))
-				{
-					molecule.setAttributeValue("formula", firstFormula);
-					formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
+					if (moleculeFormulae == null)
+					{
+						molecule.setAttributeValue("formula", firstFormula);
+						formulaFillSB.append(prefix).append("New Formula: ").append(firstFormula).append("\n");
+						if (!testMode)
+						{
+							adaptor.updateInstanceAttribute(molecule,"formula");
+						}
+					}
+					else if (!firstFormula.equals(moleculeFormulae))
+					{
+						molecule.setAttributeValue("formula", firstFormula);
+						formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
+						if (!testMode)
+						{
+							adaptor.updateInstanceAttribute(molecule,"formula");
+						}
+					}
 				}
 			}
-
-			//TODO: actually commit the database changes.
 		}
 		System.out.println("\n*** Formula-fill changes ***\n");
 		System.out.println(formulaFillSB.toString());
@@ -212,5 +255,17 @@ public class Main {
 		{
 			System.out.println("No duplicate ChEBI ReferenceMolecules detected.");
 		}
+	}
+
+	private static MySQLAdaptor getMySQLAdaptorFromProperties(Properties props) throws IOException, FileNotFoundException, SQLException
+	{
+		
+		String dbHost = props.getProperty("db.host", "localhost");
+		String dbUser = props.getProperty("db.user");
+		String dbPassword = props.getProperty("db.password");
+		String dbName = props.getProperty("db.name");
+		int dbPort = new Integer(props.getProperty("db.port", "3306"));
+		MySQLAdaptor adaptor = new MySQLAdaptor(dbHost, dbName, dbUser, dbPassword, dbPort);
+		return adaptor;
 	}
 }
