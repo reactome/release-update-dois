@@ -28,7 +28,8 @@ public class UpdateDOIs {
 
     MySQLAdaptor testReactomeDBA = null;
     MySQLAdaptor gkCentralDBA = null;
-    long authorId = 0;
+    long authorIdTR = 0;
+    long authorIdGK = 0;
 
     try {
       Properties props = new Properties();
@@ -40,7 +41,9 @@ public class UpdateDOIs {
       String databaseTR = props.getProperty("databaseTR");
       String databaseGk = props.getProperty("databaseGK");
       int port = Integer.valueOf(props.getProperty("port"));
-      authorId = Integer.valueOf(props.getProperty("authorId"));
+      authorIdTR = Integer.valueOf(props.getProperty("authorIdTR"));
+      authorIdGK = Integer.valueOf(props.getProperty("authorIdGK"));
+      
 
       // Set up db connections.
       testReactomeDBA = new MySQLAdaptor(host, databaseTR, user, password, port);
@@ -53,7 +56,7 @@ public class UpdateDOIs {
       findNewDOIsAndUpdate.setTestReactomeAdaptor(testReactomeDBA);
       findNewDOIsAndUpdate.setGkCentralAdaptor(gkCentralDBA);
 
-      findNewDOIsAndUpdate.findAndUpdateDOIs(authorId, pathToReport);
+      findNewDOIsAndUpdate.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport);
       
       logger.info( "UpdateDOIs Complete" );
     }
