@@ -1,7 +1,11 @@
 package org.reactome.release.updateDOIs;
 
 import org.apache.log4j.Logger;
+
+import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceDisplayNameGenerator;
@@ -29,41 +33,86 @@ public class findNewDOIsAndUpdate {
     this.dbaGkCentral = adaptor;
   }
 
-  @SuppressWarnings("unchecked")
-public void findNewDOIsAndUpdate(long authorId) {
-	  
+  public void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport) {
+
     Collection<GKInstance> dois;
     Collection<GKInstance> gkdois;
-    
-//	String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
-//	GKInstance instanceEditTestReactome = this.createInstanceEdit(authorId, creatorFile);
-//	GKInstance instanceEditGkCentral = this.createInstanceEdit(authorId, creatorFile);
-	
+
+	String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
+	GKInstance instanceEditTestReactome = this.createInstanceEdit(this.dbaTestReactome, authorIdTR, creatorFile);
+	GKInstance instanceEditGkCentral = this.createInstanceEdit(this.dbaGkCentral, authorIdGK, creatorFile);
+
+    HashMap<String,String> reportContents = this.getReportContents(pathToReport);
+    int reportHits = 0;
+    int fetchHits = 0;
+    ArrayList<String> updatedDOIs = new ArrayList<String>();
     try {
-     dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
-//     dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "8939211|9006115|9018678|9033241");
+
+      dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
 
       if (!dois.isEmpty()) {
         for (GKInstance doi : dois) {
+
           String stableIdFromDb = ((GKInstance) doi.getAttributeValue("stableIdentifier")).getDisplayName();
           String nameFromDb = doi.getAttributeValue("name").toString();
           String updatedDoi = "10.3180/" + stableIdFromDb;
-
           String dbId = doi.getAttributeValue("DB_ID").toString();
+
+          // Used to verify that report contents are as expected, based on provided list form curators
+          fetchHits++;
+          updatedDOIs.add(updatedDoi);
+          if (reportContents.get(updatedDoi) != null && reportContents.get(updatedDoi).toString().equals(nameFromDb))
+          {
+        	  reportHits++;
+          }
+
+          // This updates the 'modified' field for Pathways, keeping track of when changes happened.
+          doi.getAttributeValuesList("modified");
+          doi.addAttributeValue("modified", instanceEditTestReactome);
           doi.setAttributeValue("doi", updatedDoi);
+          this.dbaTestReactome.updateInstanceAttribute(doi, "modified");
           this.dbaTestReactome.updateInstanceAttribute(doi, "doi");
 
-          // Grabs instance from gk central based on DB_ID taken from test_reactome, and updated doi field
+          // Grabs instance from gk central based on DB_ID taken from test_reactome and updates it's DOI
           gkdois = this.dbaGkCentral.fetchInstanceByAttribute("Pathway", "DB_ID", "=", dbId);
           if (!gkdois.isEmpty()) {
             for (GKInstance gkdoi : gkdois) {
+
+              gkdoi.getAttributeValuesList("modified");
+              gkdoi.addAttributeValue("modified", instanceEditGkCentral);
               gkdoi.setAttributeValue("doi", updatedDoi);
+              this.dbaGkCentral.updateInstanceAttribute(doi, "modified");
               this.dbaGkCentral.updateInstanceAttribute(gkdoi, "doi");
+
               logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
             }
           } else {
         	  logger.error("Could not find attribute in gk_central");
           }
+        }
+
+        // Checking if provided list matched updated instances
+        if (reportContents.size() != 0 && reportHits < reportContents.size())
+        {
+        	for (Object updatedDOI : updatedDOIs)
+        	{
+        		reportContents.remove(updatedDOI);
+        	}
+        	logger.warn("The following DOIs from the provided list were not updated: ");
+        	logger.warn("  " + reportContents.keySet());
+        } else if (reportContents.size() != 0 && fetchHits > reportContents.size()) {
+
+        	logger.warn("The following DOIs were unexpectedly updated: ");
+        	for (Object updatedDOI : updatedDOIs)
+        	{
+        		if (reportContents.get(updatedDOI) == null)
+        		{
+        			logger.warn("  " + updatedDOI);
+        		}
+        	}
+        } else if (reportContents.size() != 0) {
+
+        	logger.info("All expected DOIs updated");
         }
       } else {
     	  logger.info("No DOIs to update");
@@ -73,6 +122,29 @@ public void findNewDOIsAndUpdate(long authorId) {
     }
   }
 
+  // Parses input report and places each line's contents in HashMap
+  public HashMap<String,String> getReportContents(String pathToReport) {
+
+	HashMap<String,String> reportContents = new HashMap<String,String>();
+	try {
+	  	FileReader fr = new FileReader(pathToReport);
+	  	BufferedReader br = new BufferedReader(fr);
+
+	  	String sCurrentLine;
+	  	while ((sCurrentLine = br.readLine()) != null)
+	  	{
+	  		String[] splitLine = sCurrentLine.split(",");
+	  		reportContents.put(splitLine[0], splitLine[1]);
+	  	}
+	  	br.close();
+	  	fr.close();
+
+	} catch (Exception e) {
+		logger.warn("No input file found -- Continuing without checking DOIs");
+	}
+	return reportContents;
+  }
+
   /**
      * Create an InstanceEdit.
      * @param personID - ID of the associated Person entity.
@@ -80,13 +152,13 @@ public void findNewDOIsAndUpdate(long authorId) {
      * uses <i>this</i> object, so it can be traced to the appropriate part of the program.
      * @return
      */
-    public GKInstance createInstanceEdit(long personID, String creatorName) {
+    public GKInstance createInstanceEdit(MySQLAdaptor dbAdaptor, long personID, String creatorName) {
         GKInstance instanceEdit = null;
         try
         {
-            instanceEdit = createDefaultIE(this.dbaTestReactome, personID, true, "Inserted by " + creatorName);
+            instanceEdit = createDefaultIE(dbAdaptor, personID, true, "Inserted by " + creatorName);
             instanceEdit.getDBID();
-            this.dbaTestReactome.updateInstance(instanceEdit);
+            dbAdaptor.updateInstance(instanceEdit);
         }
         catch (Exception e)
         {
