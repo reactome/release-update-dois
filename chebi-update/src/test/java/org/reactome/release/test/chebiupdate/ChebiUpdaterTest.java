@@ -71,7 +71,7 @@ public class ChebiUpdaterTest
 	Entity chebiEntity2;
 	
 	@InjectMocks
-	ChebiUpdater updator = new ChebiUpdater(adaptor, true);
+	ChebiUpdater updator = new ChebiUpdater(adaptor, true, 12345L);
 	
 	@Mock
 	ResultSet duplicateResults;

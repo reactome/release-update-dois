@@ -30,6 +30,7 @@ This application needs to be able to connect to a Reactome relational database T
  - db.password - this is the password of the user that the application should connect as. _No default!_
  - db.name - this is the name of the database that the application should connect to. _No default!_
  - db.port - this is the port number that the application should connect to. _Default:_ 3306
+ - person.id - when the Molecules are updated, an instance edit will be created and they will be associated with the Person instance which this DB_ID refers to.
 
 Additionally, there is one non-connection related configuration option:
 
