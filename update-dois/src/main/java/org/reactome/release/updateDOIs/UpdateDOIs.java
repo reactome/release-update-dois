@@ -14,19 +14,22 @@ public class UpdateDOIs {
   public static void main( String[] args ) {
 
     String pathToConfig = "src/main/resources/config.properties";
+    String pathToReport = "src/main/resources/UpdateDOIs.report";
     
     if (args.length > 0 && !args[0].equals("")) {
       pathToConfig = args[0];
+      pathToReport = args[1];
     }
 
-    UpdateDOIs.executeUpdateDOIs(pathToConfig);
+    UpdateDOIs.executeUpdateDOIs(pathToConfig, pathToReport);
   }
 
-  public static void executeUpdateDOIs(String pathToResources) {
+  public static void executeUpdateDOIs(String pathToResources, String pathToReport) {
 
     MySQLAdaptor testReactomeDBA = null;
     MySQLAdaptor gkCentralDBA = null;
-    long authorId = 0;
+    long authorIdTR = 0;
+    long authorIdGK = 0;
 
     try {
       Properties props = new Properties();
@@ -38,7 +41,9 @@ public class UpdateDOIs {
       String databaseTR = props.getProperty("databaseTR");
       String databaseGk = props.getProperty("databaseGK");
       int port = Integer.valueOf(props.getProperty("port"));
-      authorId = Integer.valueOf(props.getProperty("authorId"));
+      authorIdTR = Integer.valueOf(props.getProperty("authorIdTR"));
+      authorIdGK = Integer.valueOf(props.getProperty("authorIdGK"));
+      
 
       // Set up db connections.
       testReactomeDBA = new MySQLAdaptor(host, databaseTR, user, password, port);
@@ -51,7 +56,7 @@ public class UpdateDOIs {
       findNewDOIsAndUpdate.setTestReactomeAdaptor(testReactomeDBA);
       findNewDOIsAndUpdate.setGkCentralAdaptor(gkCentralDBA);
 
-      findNewDOIsAndUpdate.findNewDOIsAndUpdate(authorId);
+      findNewDOIsAndUpdate.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport);
       
       logger.info( "UpdateDOIs Complete" );
     }
