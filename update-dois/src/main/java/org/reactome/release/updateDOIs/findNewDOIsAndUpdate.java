@@ -33,7 +33,6 @@ public class findNewDOIsAndUpdate {
     this.dbaGkCentral = adaptor;
   }
 
-  @SuppressWarnings({"unchecked","rawtypes"})
   public void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport) {
 
     Collection<GKInstance> dois;
@@ -43,23 +42,22 @@ public class findNewDOIsAndUpdate {
 	GKInstance instanceEditTestReactome = this.createInstanceEdit(this.dbaTestReactome, authorIdTR, creatorFile);
 	GKInstance instanceEditGkCentral = this.createInstanceEdit(this.dbaGkCentral, authorIdGK, creatorFile);
 
-    HashMap reportContents = this.getReportContents(pathToReport);
+    HashMap<String,String> reportContents = this.getReportContents(pathToReport);
     int reportHits = 0;
     int fetchHits = 0;
-    ArrayList updatedDOIs = new ArrayList();
+    ArrayList<String> updatedDOIs = new ArrayList<String>();
     try {
 
       dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
-      dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "8939211|9006115|9018678|9033241");
 
       if (!dois.isEmpty()) {
         for (GKInstance doi : dois) {
-        	
+
           String stableIdFromDb = ((GKInstance) doi.getAttributeValue("stableIdentifier")).getDisplayName();
           String nameFromDb = doi.getAttributeValue("name").toString();
           String updatedDoi = "10.3180/" + stableIdFromDb;
           String dbId = doi.getAttributeValue("DB_ID").toString();
-          
+
           // Used to verify that report contents are as expected, based on provided list form curators
           fetchHits++;
           updatedDOIs.add(updatedDoi);
@@ -67,7 +65,7 @@ public class findNewDOIsAndUpdate {
           {
         	  reportHits++;
           }
-          
+
           // This updates the 'modified' field for Pathways, keeping track of when changes happened.
           doi.getAttributeValuesList("modified");
           doi.addAttributeValue("modified", instanceEditTestReactome);
@@ -79,13 +77,13 @@ public class findNewDOIsAndUpdate {
           gkdois = this.dbaGkCentral.fetchInstanceByAttribute("Pathway", "DB_ID", "=", dbId);
           if (!gkdois.isEmpty()) {
             for (GKInstance gkdoi : gkdois) {
-            	
+
               gkdoi.getAttributeValuesList("modified");
-              gkdoi.addAttributeValue("modified", instanceEditGkCentral);      
-              gkdoi.setAttributeValue("doi", updatedDoi);	
+              gkdoi.addAttributeValue("modified", instanceEditGkCentral);
+              gkdoi.setAttributeValue("doi", updatedDoi);
               this.dbaGkCentral.updateInstanceAttribute(doi, "modified");
               this.dbaGkCentral.updateInstanceAttribute(gkdoi, "doi");
-              
+
               logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
             }
           } else {
@@ -125,10 +123,9 @@ public class findNewDOIsAndUpdate {
   }
 
   // Parses input report and places each line's contents in HashMap
-  @SuppressWarnings("rawtypes")
-  public HashMap getReportContents(String pathToReport) {
+  public HashMap<String,String> getReportContents(String pathToReport) {
 
-	HashMap reportContents = new HashMap();
+	HashMap<String,String> reportContents = new HashMap<String,String>();
 	try {
 	  	FileReader fr = new FileReader(pathToReport);
 	  	BufferedReader br = new BufferedReader(fr);
