@@ -74,16 +74,16 @@ public class ChebiUpdater {
 		// uk.ac.ebi.chebi.webapps.chebiWS.model.Entity from ChEBI.
 		Map<Long, Entity> entityMap = Collections.synchronizedMap(new HashMap<Long, Entity>());
 		// A list of the ReferenceMolecules where we could nto get info from ChEBI.
-		List<GKInstance> failedEntiesList = Collections.synchronizedList(new ArrayList<GKInstance>());
+		List<GKInstance> failedEntitiesList = Collections.synchronizedList(new ArrayList<GKInstance>());
 
 		logger.info("{} ChEBI ReferenceMolecules to check...", refMolecules.size());
 
-		retrieveUpdatesFromChebi(refMolecules, entityMap, failedEntiesList);
+		retrieveUpdatesFromChebi(refMolecules, entityMap, failedEntitiesList);
 
 		logger.info("Number of entities we were able to retrieve information about: {}", entityMap.size());
-		logger.info("Number of entities we were NOT able to retrieve information about: {}", failedEntiesList.size());
+		logger.info("Number of entities we were NOT able to retrieve information about: {}", failedEntitiesList.size());
 
-		for (GKInstance molecule : failedEntiesList)
+		for (GKInstance molecule : failedEntitiesList)
 		{
 			logger.info("Could not get info from ChEBI for: {}", molecule.toString());
 		}
@@ -349,9 +349,9 @@ public class ChebiUpdater {
 	 * @param updator
 	 * @param refMolecules - a list of ReferenceMolecules. The Identifier of each of these molecules will be sent to ChEBI to get up-to-date information for that Identifier.
 	 * @param entityMap - a ReferenceMolecule DB_ID-to-ChEBI Entity map. Will be updated by this method.
-	 * @param failedEntiesList - A list of ReferenceMolecules for which no information was returned by ChEBI. Will be updated by this method.
+	 * @param failedEntitiesList - A list of ReferenceMolecules for which no information was returned by ChEBI. Will be updated by this method.
 	 */
-	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntiesList)
+	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntitiesList)
 	{
 		// The web service calls are a bit slow to respond, so do them in parallel.
 		refMolecules.parallelStream().forEach(molecule ->
@@ -366,7 +366,7 @@ public class ChebiUpdater {
 				}
 				else
 				{
-					failedEntiesList.add(molecule);
+					failedEntitiesList.add(molecule);
 				}
 			}
 			catch (ChebiWebServiceFault_Exception e)
