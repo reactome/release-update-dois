@@ -463,9 +463,7 @@ public class ChebiUpdater {
 			}
 			else
 			{
-				// This 'else' block wasn't here when first copied from ReferenceCreator. Added
-				// to reduce future potential headaches. (JC)
-				System.out.println("needStore set to false");
+				logger.info("needStore set to false");
 			}
 			return newIE;
 		}
