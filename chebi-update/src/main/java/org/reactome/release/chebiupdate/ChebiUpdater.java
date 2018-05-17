@@ -113,12 +113,12 @@ public class ChebiUpdater {
 			String chebiName = entity.getChebiAsciiName();
 			List<DataItem> chebiFormulae = entity.getFormulae();
 
-			updateReferenceEntities(molecule, chebiName);
+			updateReferenceEntities(molecule, chebiName, instanceEdit);
 
 			// Now, check to see if we need to update the ReferenceMolecule itself.
-			String moleculeIdentifier = (String) molecule.getAttributeValue("identifier");
-			String moleculeName = (String) molecule.getAttributeValuesList("name").get(0);
-			String moleculeFormulae = (String) molecule.getAttributeValue("formula");
+			String moleculeIdentifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
+			String moleculeName = (String) molecule.getAttributeValuesList(ReactomeJavaConstants.name).get(0);
+			String moleculeFormulae = (String) molecule.getAttributeValue(ReactomeJavaConstants.formula);
 
 			String prefix = "ReferenceMolecule (DB ID: " + molecule.getDBID() + " / ChEBI ID: " + moleculeIdentifier + ") has changes: ";
 
@@ -128,8 +128,8 @@ public class ChebiUpdater {
 			
 			if (!testMode)
 			{
-				molecule.setAttributeValue("modified", instanceEdit);
-				adaptor.updateInstanceAttribute(molecule, "modified");
+				addInstanceEditToExistingModifieds(instanceEdit, molecule);
+				
 				if (adaptor.supportsTransactions())
 				{
 					adaptor.commit();
@@ -166,20 +166,20 @@ public class ChebiUpdater {
 			{
 				if (moleculeFormulae == null)
 				{
-					molecule.setAttributeValue("formula", firstFormula);
+					molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
 					this.formulaFillSB.append(prefix).append("New Formula: ").append(firstFormula).append("\n");
 					if (!testMode)
 					{
-						adaptor.updateInstanceAttribute(molecule, "formula");
+						adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.formula);
 					}
 				}
 				else if (!firstFormula.equals(moleculeFormulae))
 				{
-					molecule.setAttributeValue("formula", firstFormula);
+					molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
 					this.formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
 					if (!testMode)
 					{
-						adaptor.updateInstanceAttribute(molecule, "formula");
+						adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.formula);
 					}
 				
 				}
@@ -202,11 +202,11 @@ public class ChebiUpdater {
 	{
 		if (!chebiName.equals(moleculeName))
 		{
-			molecule.setAttributeValue("name", chebiName);
+			molecule.setAttributeValue(ReactomeJavaConstants.name, chebiName);
 			this.nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
 			if (!testMode)
 			{
-				adaptor.updateInstanceAttribute(molecule, "name");
+				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.name);
 			}
 		}
 	}
@@ -226,11 +226,11 @@ public class ChebiUpdater {
 	{
 		if (!chebiID.equals(moleculeIdentifier))
 		{
-			molecule.setAttributeValue("identifier", chebiID);
+			molecule.setAttributeValue(ReactomeJavaConstants.identifier, chebiID);
 			this.identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
 			if (!testMode)
 			{
-				adaptor.updateInstanceAttribute(molecule, "identifier");
+				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.identifier);
 			}
 		}
 	}
@@ -243,11 +243,12 @@ public class ChebiUpdater {
 	 * 
 	 * @param molecule - a ReferenceMolecule. ReferenceEntities that reference this ReferenceMolecule will be updated.
 	 * @param chebiName - the name from ChEBI. Should be the first name in the "name" array for any updated ReferenceEntity.
+	 * @param instanceEdit - and InstanceEdit that the changes will be associated with.
 	 * @throws Exception
 	 * @throws InvalidAttributeException
 	 * @throws InvalidAttributeValueException
 	 */
-	private void updateReferenceEntities(GKInstance molecule, String chebiName) throws Exception, InvalidAttributeException, InvalidAttributeValueException
+	private void updateReferenceEntities(GKInstance molecule, String chebiName, GKInstance instanceEdit) throws Exception, InvalidAttributeException, InvalidAttributeValueException
 	{
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> refEntities = (Collection<GKInstance>) molecule.getReferers("referenceEntity");
@@ -289,12 +290,23 @@ public class ChebiUpdater {
 				}
 			}
 			// Update the names of the ReferenceEntity.
-			refEntity.setAttributeValue("name", names);
+			refEntity.setAttributeValue(ReactomeJavaConstants.name, names);
 			if (!testMode)
 			{
-				adaptor.updateInstanceAttribute(refEntity, "name");
+				addInstanceEditToExistingModifieds(instanceEdit, refEntity);
+				
+				adaptor.updateInstanceAttribute(refEntity, ReactomeJavaConstants.name);
 			}
 		}
+	}
+
+	private void addInstanceEditToExistingModifieds(GKInstance instanceEdit, GKInstance instance) throws InvalidAttributeException, Exception, InvalidAttributeValueException
+	{
+		// make sure the "modified" list is loaded.
+		instance.getAttributeValuesList(ReactomeJavaConstants.modified);
+		// add this instanceEdit to the "modified" list, and update.
+		instance.addAttributeValue(ReactomeJavaConstants.modified, instanceEdit);
+		adaptor.updateInstanceAttribute(instance, ReactomeJavaConstants.modified);
 	}
 
 	/**
