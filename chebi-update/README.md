@@ -20,6 +20,7 @@ db.user=someuser
 db.password=someuserspassword
 db.name=reactome_database
 db.port=3306
+person.id=somepersonIDNumber
 testMode=true
 ```
 

@@ -37,8 +37,8 @@ public class Main
 		{
 			logger.info("Test mode is ON - no database changes will be made.");
 		}
-		long peronID = new Long(props.getProperty("person.id"));
-		ChebiUpdater chebiUpdater = new ChebiUpdater(adaptor, testMode, peronID);
+		long personID = new Long(props.getProperty("person.id"));
+		ChebiUpdater chebiUpdater = new ChebiUpdater(adaptor, testMode, personID);
 		
 		logger.info("Pre-update duplicate check:");
 		chebiUpdater.checkForDuplicates();
