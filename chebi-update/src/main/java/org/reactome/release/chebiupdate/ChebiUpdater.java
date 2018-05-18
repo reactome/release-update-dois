@@ -278,6 +278,7 @@ public class ChebiUpdater {
 							names.remove(i);
 							// Add the ChEBI name back at position 0.
 							names.add(0, chebiName);
+							logger.debug("Re-ordering names for ReferenceEntity {}, names (re-ordered): {}", refEntity.toString(), names);
 						}
 						i++;
 					}
@@ -286,6 +287,7 @@ public class ChebiUpdater {
 					if (!nameFound)
 					{
 						names.add(0, chebiName);
+						logger.debug("Adding new name to ReferenceEntity {}, names: {}", refEntity.toString(), names);
 					}
 				}
 			}
