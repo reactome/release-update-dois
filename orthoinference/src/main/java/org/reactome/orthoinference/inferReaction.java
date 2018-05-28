@@ -14,6 +14,8 @@ public class inferReaction {
 	{
 		dba = dbAdaptor;
 	}
+	
+	// This function mimics the Perl version of InferEvent, inferring attribute instances of input, output, and catalyst activity
 	public static void inferEvent(GKInstance rxn)
 	{
 		Instance infRxn = null;
@@ -53,6 +55,7 @@ public class inferReaction {
 		}
 	}
 	
+	// Function used to created inferred catalysts
 	public static void inferCatalyst(GKInstance rxn, Instance infRxn)
 	{
 		try {
