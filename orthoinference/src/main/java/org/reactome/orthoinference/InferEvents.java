@@ -1,16 +1,15 @@
 package org.reactome.orthoinference;
 
+import java.io.FileInputStream;
 //import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-//import java.util.Collection;
-//import java.util.List;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import org.gk.model.GKInstance;
-//import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.persistence.MySQLAdaptor.*;
 
@@ -18,39 +17,55 @@ import org.gk.persistence.MySQLAdaptor.*;
 //import org.reactome.orthoinference.inferrers.ComplexInferrer;
 //import org.reactome.orthoinference.inferrers.GenomeEncodedEntityInferrer;
 
+/**
+ * 
+ * @author jcook
+ *
+ */
 
-
-public class Main //TODO: Needs a better name
+public class InferEvents 
 {
 //	private static final String SchemaClass = null;
-	static MySQLAdaptor dbAdaptor = null;
 	
+	static MySQLAdaptor dbAdaptor = null;
 	
 	static Collection<GKInstance> dois;
 	
 	public static void main(String args[]) throws Exception
 	{
+		String pathToConfig = "src/main/resources/config.properties";
+		
+		if (args.length > 0 && !args[0].equals(""))
+		{
+			pathToConfig = args[0];
+		}
 		// TODO: Parameterize all of these input values
 		//originally, this list was found in https://github.com/reactome/Release/blob/master/modules/GKB/Config_Species.pm
-		ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
-		String speciesToInferFromShort = "hsap";
-		Object speciesToInferFromLong = "Homo sapiens";
-//		String sourceOfOrthoPairs = "/Users/jcook/Reactome/Release/container/nfs_backup/reactome/reactome/archive/release/orthopairs/";
-//		String release = "64";
-		String host = "localhost";
-		String database = "test_reactome_64";
-		String username = "root";
-		String password = "root";
-		int port = 3306;
 		try
 		{
+			Properties props = new Properties();
+			props.load(new FileInputStream(pathToConfig));
+			
+			ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
+			String speciesToInferFromShort = "hsap";
+			Object speciesToInferFromLong = "Homo sapiens";
+			String username = props.getProperty("username");
+			String password = props.getProperty("password");
+			String database = props.getProperty("database");
+			String host = props.getProperty("host");
+			int port = Integer.valueOf(props.getProperty("port"));
+			
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
+			
+			inferReaction.setAdaptor(dbAdaptor);
 			
 			// Get DB instances of source species
 			List<AttributeQueryRequest> aqrList = new ArrayList<AttributeQueryRequest>();
 			AttributeQueryRequest sourceSpeciesQuery = dbAdaptor.createAttributeQueryRequest("Species", "name", "=", speciesToInferFromLong);
 			aqrList.add(sourceSpeciesQuery);
 			Set<GKInstance> sourceSpeciesInst = (Set<GKInstance>) dbAdaptor._fetchInstance(aqrList);
+			
+			inferReaction inferReactions = new inferReaction();
 			
 			if (!sourceSpeciesInst.isEmpty())
 			{
@@ -70,9 +85,14 @@ public class Main //TODO: Needs a better name
 					int count = 0;
 					for (GKInstance rxn : rxnInstances)
 					{
+						inferReaction.inferEvent(rxn);
 						count++;
+						if (count == 5)
+						{
+						    System.exit(0);
+						}
+
 					}
-					System.out.println(count);
 				}
 			}
 			
