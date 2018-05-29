@@ -11,10 +11,11 @@ import org.gk.model.Instance;
 public class inferEWAS {
 
 	public static HashMap<String, String[]> homologues = new HashMap<String,String[]>();
+	public static HashMap<String, String> ensgMappings = new HashMap<String,String>();
 	
 	//TODO: Add parent function that organizes the EWAS setup
 	//TODO: Create uniprot and ensemble reference database variables for EWAS setup
-	// Read the species-specific orthopairs file, and creates a HashMap with the contents
+	// Read the species-specific orthopairs file, and create a HashMap with the contents
 	public void readMappingFile(String toSpecies, String fromSpecies)
 	{
 		String mappingFileName = fromSpecies + "_" + toSpecies + "_mapping.txt";
@@ -30,6 +31,31 @@ public class inferEWAS {
 				String mapKey = tabSplit[0];
 				String[] spaceSplit = tabSplit[1].split(" ");
 				homologues.put(mapKey, spaceSplit);
+			}
+			br.close();
+			fr.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	// Read the species-specific ENSG gene-protein mappings, and create a Hashmap with the contents
+	public void readENSGMappingFile(String toSpecies)
+	{
+		String mappingFileName = toSpecies + "_gene_protein_mapping.txt";
+		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
+		try {
+			FileReader fr = new FileReader(mappingFilePath);
+			BufferedReader br = new BufferedReader(fr);
+			
+			String currentLine;
+			while ((currentLine = br.readLine()) != null)
+			{
+				String[] tabSplit = currentLine.split("\t");
+				String ensgKey = tabSplit[0];
+				String[] spaceSplit = tabSplit[1].split(" ");
+				for (String proteinId : spaceSplit) {
+					ensgMappings.put(proteinId, ensgKey);
+				}
 			}
 			br.close();
 			fr.close();
@@ -66,8 +92,9 @@ public class inferEWAS {
 		}
 	}
 	
+	//
 	public static void createReferenceGeneProduct(String homologueId)
 	{
-		System.out.println(homologueId);
+		System.out.println(ensgMappings);
 	}
 }

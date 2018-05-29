@@ -26,9 +26,10 @@ hs_err_pid*
 .recommenders
 RemoteSystemsTempFiles
 update-dois/target/maven-status/maven-compiler-plugin/compile/default-compile/*.lst
-update-dois/.settings/org.eclipse.jdt.core.prefs 
+update-dois/.settings/org.eclipse.jdt.core.prefs
 .classpath
 .project
 .settings
 config.properties
 */target
+*.report

@@ -60,6 +60,7 @@ public class InferEvents
 			
 			inferEWAS inferEWAS = new inferEWAS();
 			inferEWAS.readMappingFile("ddis","hsap");
+			inferEWAS.readENSGMappingFile("ddis");
 			
 			// Get DB instances of source species
 			List<AttributeQueryRequest> aqrList = new ArrayList<AttributeQueryRequest>();
