@@ -55,9 +55,11 @@ public class InferEvents
 			String host = props.getProperty("host");
 			int port = Integer.valueOf(props.getProperty("port"));
 			
-			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
-			
+			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);		
 			inferReaction.setAdaptor(dbAdaptor);
+			
+			inferEWAS inferEWAS = new inferEWAS();
+			inferEWAS.readMappingFile("ddis","hsap");
 			
 			// Get DB instances of source species
 			List<AttributeQueryRequest> aqrList = new ArrayList<AttributeQueryRequest>();
@@ -82,15 +84,9 @@ public class InferEvents
 				Set<GKInstance> rxnInstances = (Set<GKInstance>) dbAdaptor._fetchInstance(aqrList);
 				if (!rxnInstances.isEmpty())
 				{
-					int count = 0;
 					for (GKInstance rxn : rxnInstances)
 					{
 						inferReaction.inferEvent(rxn);
-						count++;
-						if (count == 5)
-						{
-						    System.exit(0);
-						}
 
 					}
 				}

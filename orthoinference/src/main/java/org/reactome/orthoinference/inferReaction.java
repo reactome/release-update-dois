@@ -25,7 +25,7 @@ public class inferReaction {
 			
 			String dbId = rxn.getAttributeValue("DB_ID").toString();
 			String stableId = rxn.getAttributeValue("name").toString();
-			System.out.println("Reaction: [" + dbId + "] " + stableId);	
+//			System.out.println("Reaction: [" + dbId + "] " + stableId);	
 			
 			// Creates an instance of the reaction that is about to be inferred
 			createInferredInstance.setAdaptor(dba);
@@ -46,9 +46,11 @@ public class inferReaction {
 	{
 		try {
 
-		for (GKInstance attrInt : (Collection<GKInstance>) rxn.getAttributeValuesList(attribute))
+		for (GKInstance attrInst : (Collection<GKInstance>) rxn.getAttributeValuesList(attribute))
 		{
-			System.out.println("  " + attribute);
+//			System.out.println("  " + attribute);
+			orthologousEntity orthologousEntity = new orthologousEntity();
+			orthologousEntity.createOrthoEntity(attrInst);
 		}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -60,9 +62,9 @@ public class inferReaction {
 	{
 		try {
 			
-		for (GKInstance attrInt : (Collection<GKInstance>) rxn.getAttributeValuesList("catalystActivity"))
+		for (GKInstance attrInst : (Collection<GKInstance>) rxn.getAttributeValuesList("catalystActivity"))
 		{
-			System.out.println("  CatalystActivity");
+//			System.out.println("  CatalystActivity");
 		}
 		} catch (Exception e) {
 			e.printStackTrace();
