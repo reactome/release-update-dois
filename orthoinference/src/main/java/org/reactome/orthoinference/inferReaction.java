@@ -28,6 +28,7 @@ public class inferReaction {
 //			System.out.println("Reaction: [" + dbId + "] " + stableId);	
 			
 			// Creates an instance of the reaction that is about to be inferred
+			// SetAdaptor could probably be added to an initial setup 
 			createInferredInstance.setAdaptor(dba);
 			infRxn = createInferredInstance.newInferredInstance(rxn);
 			
