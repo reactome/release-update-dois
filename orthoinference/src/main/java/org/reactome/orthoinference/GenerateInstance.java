@@ -5,7 +5,7 @@ import org.gk.model.Instance;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.SchemaClass;
 
-public class createInferredInstance {
+public class GenerateInstance {
 	
 		private static MySQLAdaptor dba; 
 	
@@ -31,4 +31,5 @@ public class createInferredInstance {
 			return infInstance;
 
 		}
+		
 }

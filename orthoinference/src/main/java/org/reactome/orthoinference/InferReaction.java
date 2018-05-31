@@ -6,7 +6,7 @@ import org.gk.model.GKInstance;
 import org.gk.model.Instance;
 import org.gk.persistence.MySQLAdaptor;
 
-public class inferReaction {
+public class InferReaction {
 
 	private static MySQLAdaptor dba;
 	
@@ -21,7 +21,7 @@ public class inferReaction {
 		Instance infRxn = null;
 		try {
 			
-			createInferredInstance createInferredInstance = new createInferredInstance();
+			GenerateInstance createInferredInstance = new GenerateInstance();
 			
 			String dbId = rxn.getAttributeValue("DB_ID").toString();
 			String stableId = rxn.getAttributeValue("name").toString();
@@ -32,9 +32,9 @@ public class inferReaction {
 			createInferredInstance.setAdaptor(dba);
 			infRxn = createInferredInstance.newInferredInstance(rxn);
 			
-			inferReaction.inferAttributes(rxn, infRxn, "input");
-			inferReaction.inferAttributes(rxn, infRxn, "output");
-			inferReaction.inferCatalyst(rxn, infRxn);
+			InferReaction.inferAttributes(rxn, infRxn, "input");
+			InferReaction.inferAttributes(rxn, infRxn, "output");
+			InferReaction.inferCatalyst(rxn, infRxn);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -50,7 +50,7 @@ public class inferReaction {
 		for (GKInstance attrInst : (Collection<GKInstance>) rxn.getAttributeValuesList(attribute))
 		{
 //			System.out.println("  " + attribute);
-			orthologousEntity orthologousEntity = new orthologousEntity();
+			OrthologousEntity orthologousEntity = new OrthologousEntity();
 			orthologousEntity.createOrthoEntity(attrInst);
 		}
 		} catch (Exception e) {

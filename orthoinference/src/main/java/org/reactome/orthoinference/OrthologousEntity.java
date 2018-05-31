@@ -2,7 +2,7 @@ package org.reactome.orthoinference;
 
 import org.gk.model.GKInstance;
 
-public class orthologousEntity {
+public class OrthologousEntity {
 
 	public void createOrthoEntity(GKInstance attrInst)
 	{
@@ -14,7 +14,7 @@ public class orthologousEntity {
 			if (attrInst.getSchemClass().isa("GenomeEncodedEntity"))
 			{
 //				System.out.println("GEE");
-				orthologousEntity.createInfGEE(attrInst);
+				OrthologousEntity.createInfGEE(attrInst);
 			} else if (attrInst.getSchemClass().isa("Complex"))
 			{
 //				System.out.println("Complex");
@@ -36,7 +36,7 @@ public class orthologousEntity {
 		{
 			return;
 		}
-		inferEWAS inferEWAS = new inferEWAS();
+		InferEWAS inferEWAS = new InferEWAS();
 		inferEWAS.inferEWAS(attrInst);
 	}
 }

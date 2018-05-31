@@ -46,6 +46,7 @@ public class InferEvents
 			Properties props = new Properties();
 			props.load(new FileInputStream(pathToConfig));
 			
+			//TODO: Create config equivalent for species as seen in Config_Species.pm
 			ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
 			String speciesToInferFromShort = "hsap";
 			Object speciesToInferFromLong = "Homo sapiens";
@@ -56,11 +57,13 @@ public class InferEvents
 			int port = Integer.valueOf(props.getProperty("port"));
 			
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);		
-			inferReaction.setAdaptor(dbAdaptor);
+			InferReaction.setAdaptor(dbAdaptor);
+			InferEWAS.setAdaptor(dbAdaptor);
 			
-			inferEWAS inferEWAS = new inferEWAS();
+			InferEWAS inferEWAS = new InferEWAS();
 			inferEWAS.readMappingFile("ddis","hsap");
 			inferEWAS.readENSGMappingFile("ddis");
+			inferEWAS.createEnsemblGeneDB("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
 			
 			// Get DB instances of source species
 			List<AttributeQueryRequest> aqrList = new ArrayList<AttributeQueryRequest>();
@@ -68,7 +71,7 @@ public class InferEvents
 			aqrList.add(sourceSpeciesQuery);
 			Set<GKInstance> sourceSpeciesInst = (Set<GKInstance>) dbAdaptor._fetchInstance(aqrList);
 			
-			inferReaction inferReactions = new inferReaction();
+			InferReaction inferReactions = new InferReaction();
 			
 			if (!sourceSpeciesInst.isEmpty())
 			{
@@ -87,7 +90,7 @@ public class InferEvents
 				{
 					for (GKInstance rxn : rxnInstances)
 					{
-						inferReaction.inferEvent(rxn);
+						InferReaction.inferEvent(rxn);
 
 					}
 				}
