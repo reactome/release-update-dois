@@ -9,8 +9,10 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.gk.model.GKInstance;
+import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.persistence.MySQLAdaptor.*;
+import org.gk.schema.SchemaClass;
 
 //import com.mysql.jdbc.exceptions.jdbc4.MySQLDataException;
 //import org.reactome.orthoinference.inferrers.ComplexInferrer;
@@ -27,6 +29,8 @@ public class InferEvents
 //	private static final String SchemaClass = null;
 	
 	static MySQLAdaptor dbAdaptor = null;
+	private static GKInstance speciesInst = null;
+	static boolean refDb = true;
 	
 	Collection<GKInstance> dois;
 	
@@ -59,6 +63,7 @@ public class InferEvents
 			String host = props.getProperty("host");
 			int port = Integer.valueOf(props.getProperty("port"));
 			
+			// Set-Up
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);		
 			InferReaction.setAdaptor(dbAdaptor);
 			
@@ -67,6 +72,12 @@ public class InferEvents
 			ewasInferrer.readMappingFile("ddis","hsap");
 			ewasInferrer.readENSGMappingFile("ddis");
 			ewasInferrer.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
+			if (refDb)
+			{
+				ewasInferrer.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
+			}
+			InferEvents.createSpeciesInst("Dictyostelium discoideum");
+			ewasInferrer.setSpeciesInst(speciesInst);
 			
 			// Get DB instances of source species
 			List<AttributeQueryRequest> aqrList = new ArrayList<AttributeQueryRequest>();
@@ -98,33 +109,7 @@ public class InferEvents
 
 					}
 				}
-			}
-			
-
-			// outer loop is target species
-			// TODO: Maybe parallelize on this outer loop?
-			
-//			source_species = adaptor.fetchInstance()
-//			for (String targetSpeciesName : speciesToInferTo)
-//			{
-//				System.out.println(targetSpeciesName);
-				
-				
-				
-				
-				
-				
-				
-//				// TODO: Load input files. Orthopairs, etc... for targetSpeciesName
-//				// Store the data from these file in some sort of in-memory cache so that they can be accessed later on, during inference.
-//				loadDataFiles(targetSpeciesName);
-//				Collection<GKInstance> reactions = getReactions(speciesToInferFrom);
-//				// inner loop is reactions
-//				for (GKInstance reaction : reactions)
-//				{
-//					inferEvents(reaction);
-//				}
-//			}
+			}	
 		}
 		catch (Exception e)
 		{
@@ -132,6 +117,24 @@ public class InferEvents
 			e.printStackTrace();
 		}
 	}
+	//TODO: Perl creates 'Name' using an array -- Is that a Perlism or a Database-ism?
+	//TODO: Check for identical instances
+	public static void createSpeciesInst(String toSpeciesLong)
+	{
+		try 
+		{
+		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
+		speciesInst = new GKInstance(referenceDb);
+		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	
+	
+	
 	
 //	private static void loadDataFiles(String targetSpeciesName) {
 //		// TODO Auto-generated method stub

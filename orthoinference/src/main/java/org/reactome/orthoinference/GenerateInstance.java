@@ -16,6 +16,7 @@ public class GenerateInstance {
 		// Creates new instance that will be inferred based on the incoming instances class
 		public Instance newInferredInstance(GKInstance reactionInst)
 //		TODO: Instance Edits 
+//		TODO: Species -> Taxon addition
 		{
 			Instance inferredInst = null;
 			try

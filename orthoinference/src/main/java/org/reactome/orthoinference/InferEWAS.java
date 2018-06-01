@@ -23,6 +23,9 @@ public class InferEWAS {
 	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
 	private static HashMap<String, ArrayList<String>> ensgMappings = new HashMap<String,ArrayList<String>>();
 	private static GKInstance ensgDbInst = null;
+	private static GKInstance alternateDbInst = null;
+	static boolean refDb = false;
+	private static GKInstance speciesInst = null;
 	
 	//TODO: Add parent function that organizes the EWAS setup
 	//TODO: Create uniprot and ensemble reference database variables for EWAS setup
@@ -103,6 +106,29 @@ public class InferEWAS {
 		}
 	}
 	
+	// Create instance pertaining to any alternative reference DB for the species
+	public void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl)
+	{
+		try
+		{
+		SchemaClass alternateDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
+		alternateDbInst = new GKInstance(alternateDb);
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.name, alternateDbName);
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesAlternateDbUrl);
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);
+		refDb = true;
+		//TODO: Check for identical instances
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
+	}
+	
+	// Sets the species instance for inferEWAS to use
+	public void setSpeciesInst(GKInstance speciesInstCopy)
+	{
+		speciesInst = speciesInstCopy;
+	}
+	
 	// Creates an inferred EWAS instance
 	public void inferEWAS(GKInstance infAttributeInst)
 	{
@@ -113,16 +139,15 @@ public class InferEWAS {
 		
 		if (homologueMappings.get(referenceEntityId) != null)
 			{
-			System.out.println("Hello");
 				// Iterate through the array of values, creating EWAS inferred instances
 				for (Object homologue : homologueMappings.get(referenceEntityId))
 				{
 					String[] splitHomologue = homologue.toString().split(":");
 					String homologueSource = splitHomologue[0];
 					String homologueId = splitHomologue[1];
-					
+					// Equivalent of create_ReferenceDNASequence function in infer_events.pl
 					Instance infReferenceGeneProduct = createInferredInstance.newInferredInstance((GKInstance) infAttributeInst.getAttributeValue("referenceEntity"));
-					InferEWAS.createReferenceDNASequence(homologueId);
+					ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId);
 				}
 			}
 		} catch (Exception e) {
@@ -131,20 +156,36 @@ public class InferEWAS {
 	}
 	
 	// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein
-	public static void createReferenceDNASequence(String homologueId)
+	//TODO: Check for identical instances
+	public static ArrayList<GKInstance> createReferenceDNASequence(String homologueId)
 	{
+		ArrayList<GKInstance> referenceDNAInstances = new ArrayList<GKInstance>();
 		ArrayList<String> ensgs = ensgMappings.get(homologueId);
+		
 		for (Object ensg : ensgs)
 		{
 			try {
 			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDNASequence);
 			GKInstance referenceDNAInst = new GKInstance(referenceDNAClass);
-			
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, ensgDbInst);
+			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+			referenceDNAInstances.add(referenceDNAInst);
+			//TODO: Check for identical instances
+			if (refDb)
+			{
+				GKInstance alternateRefDNAInst = new GKInstance(referenceDNAClass);
+				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
+				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, alternateDbInst);
+				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+				referenceDNAInstances.add(alternateRefDNAInst);	
+			}
+			//TODO: Logic for alt_refdb --> alt_id (arabidopsis)
+			//TODO: Check for identical instances
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+		return referenceDNAInstances;
 	}
 }
