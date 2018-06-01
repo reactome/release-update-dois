@@ -3,7 +3,6 @@ package org.reactome.orthoinference;
 import java.io.FileInputStream;
 //import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
@@ -29,8 +28,9 @@ public class InferEvents
 	
 	static MySQLAdaptor dbAdaptor = null;
 	
-	static Collection<GKInstance> dois;
+	Collection<GKInstance> dois;
 	
+	@SuppressWarnings("unchecked")
 	public static void main(String args[]) throws Exception
 	{
 		String pathToConfig = "src/main/resources/config.properties";
@@ -41,14 +41,17 @@ public class InferEvents
 		}
 		// TODO: Parameterize all of these input values
 		//originally, this list was found in https://github.com/reactome/Release/blob/master/modules/GKB/Config_Species.pm
+		
+		Collection<GKInstance> sourceSpeciesInst;
+		
 		try
 		{
 			Properties props = new Properties();
 			props.load(new FileInputStream(pathToConfig));
 			
 			//TODO: Create config equivalent for species as seen in Config_Species.pm
-			ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
-			String speciesToInferFromShort = "hsap";
+//			ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
+//			String speciesToInferFromShort = "hsap";
 			Object speciesToInferFromLong = "Homo sapiens";
 			String username = props.getProperty("username");
 			String password = props.getProperty("password");
@@ -58,20 +61,19 @@ public class InferEvents
 			
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);		
 			InferReaction.setAdaptor(dbAdaptor);
-			InferEWAS.setAdaptor(dbAdaptor);
 			
-			InferEWAS inferEWAS = new InferEWAS();
-			inferEWAS.readMappingFile("ddis","hsap");
-			inferEWAS.readENSGMappingFile("ddis");
-			inferEWAS.createEnsemblGeneDB("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
+			InferEWAS ewasInferrer = new InferEWAS();
+			ewasInferrer.setAdaptor(dbAdaptor);
+			ewasInferrer.readMappingFile("ddis","hsap");
+			ewasInferrer.readENSGMappingFile("ddis");
+			ewasInferrer.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
 			
 			// Get DB instances of source species
 			List<AttributeQueryRequest> aqrList = new ArrayList<AttributeQueryRequest>();
-			AttributeQueryRequest sourceSpeciesQuery = dbAdaptor.createAttributeQueryRequest("Species", "name", "=", speciesToInferFromLong);
-			aqrList.add(sourceSpeciesQuery);
-			Set<GKInstance> sourceSpeciesInst = (Set<GKInstance>) dbAdaptor._fetchInstance(aqrList);
+			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
 			
-			InferReaction inferReactions = new InferReaction();
+			@SuppressWarnings("unused")
+			InferReaction reactionInferrer = new InferReaction();
 			
 			if (!sourceSpeciesInst.isEmpty())
 			{
@@ -79,18 +81,20 @@ public class InferEvents
 				for (GKInstance speciesInst : sourceSpeciesInst) 
 				{
 					dbId = speciesInst.getAttributeValue("DB_ID").toString();
+					
 				}
 				
 				// Gets Reaction instances of source species
 				aqrList = new ArrayList<AttributeQueryRequest>();
-				AttributeQueryRequest sourceSpeciesRxns = dbAdaptor.createAttributeQueryRequest("ReactionlikeEvent", "species", "=", dbId);
-				aqrList.add(sourceSpeciesRxns);
-				Set<GKInstance> rxnInstances = (Set<GKInstance>) dbAdaptor._fetchInstance(aqrList);
-				if (!rxnInstances.isEmpty())
+				AttributeQueryRequest sourceSpeciesReactions = dbAdaptor.createAttributeQueryRequest("ReactionlikeEvent", "species", "=", dbId);
+				aqrList.add(sourceSpeciesReactions);
+				Set<GKInstance> reactionInstances = (Set<GKInstance>) dbAdaptor._fetchInstance(aqrList);
+				if (!reactionInstances.isEmpty())
 				{
-					for (GKInstance rxn : rxnInstances)
+					for (GKInstance reactionInst : reactionInstances)
 					{
-						InferReaction.inferEvent(rxn);
+						
+						InferReaction.inferEvent(reactionInst);
 
 					}
 				}

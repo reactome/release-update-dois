@@ -13,16 +13,16 @@ import org.gk.schema.SchemaClass;
 
 public class InferEWAS {
 	
-	public static MySQLAdaptor dba;
+	private static MySQLAdaptor dba;
 	
-	public static void setAdaptor(MySQLAdaptor dbAdaptor)
+	public void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
-		dba = dbAdaptor;
+		InferEWAS.dba = dbAdaptor;
 	}
 
-	public static HashMap<String, String[]> homologues = new HashMap<String,String[]>();
-	public static HashMap<String, ArrayList> ensgMappings = new HashMap<String,ArrayList>();
-	public static GKInstance ensgDb = null;
+	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
+	private static HashMap<String, ArrayList<String>> ensgMappings = new HashMap<String,ArrayList<String>>();
+	private static GKInstance ensgDbInst = null;
 	
 	//TODO: Add parent function that organizes the EWAS setup
 	//TODO: Create uniprot and ensemble reference database variables for EWAS setup
@@ -41,28 +41,10 @@ public class InferEWAS {
 				String[] tabSplit = currentLine.split("\t");
 				String mapKey = tabSplit[0];
 				String[] spaceSplit = tabSplit[1].split(" ");
-				homologues.put(mapKey, spaceSplit);
+				InferEWAS.homologueMappings.put(mapKey, spaceSplit);
 			}
 			br.close();
 			fr.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	// Creates instance pertaining to the species ENSG DB
-	public void createEnsemblGeneDB(String toSpeciesLong, String toSpeciesRefDbUrl, String toSpeciesEnsgAccessUrl)
-	{
-		try 
-		{
-		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_GENE";
-		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
-		ensgDb = new GKInstance(referenceDb);
-		ensgDb.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL");
-		ensgDb.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
-		ensgDb.addAttributeValue(ReactomeJavaConstants.url, toSpeciesRefDbUrl);
-		ensgDb.addAttributeValue(ReactomeJavaConstants.url, toSpeciesEnsgAccessUrl);
-		//TODO: Check for identical instances function
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -87,7 +69,7 @@ public class InferEWAS {
 					String[] colonSplit = proteinId.split(":");
 					if (ensgMappings.get(colonSplit[1]) == null)
 					{
-						ArrayList singleArray = new ArrayList();
+						ArrayList<String> singleArray = new ArrayList<String>();
 						singleArray.add(ensgKey);
 						ensgMappings.put(colonSplit[1], singleArray);
 					} else {
@@ -103,24 +85,43 @@ public class InferEWAS {
 		}
 	}
 	
+	// Creates instance pertaining to the species ENSG DB
+	public void createEnsemblGeneDBInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl)
+	{
+		try 
+		{
+		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_GENE";
+		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
+		ensgDbInst = new GKInstance(referenceDb);
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL");
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesEnsgAccessUrl);
+		//TODO: Check for identical instances function
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	// Creates an inferred EWAS instance
-	public void inferEWAS(GKInstance attrInf)
+	public void inferEWAS(GKInstance infAttributeInst)
 	{
 		try {
 		GenerateInstance createInferredInstance = new GenerateInstance();
 		
-		String refEntityId = ((GKInstance) attrInf.getAttributeValue("referenceEntity")).getAttributeValue("identifier").toString();
+		String referenceEntityId = ((GKInstance) infAttributeInst.getAttributeValue("referenceEntity")).getAttributeValue("identifier").toString();
 		
-		if (homologues.get(refEntityId) != null)
+		if (homologueMappings.get(referenceEntityId) != null)
 			{
+			System.out.println("Hello");
 				// Iterate through the array of values, creating EWAS inferred instances
-				for (Object homologue : homologues.get(refEntityId))
+				for (Object homologue : homologueMappings.get(referenceEntityId))
 				{
 					String[] splitHomologue = homologue.toString().split(":");
 					String homologueSource = splitHomologue[0];
 					String homologueId = splitHomologue[1];
 					
-					Instance infRefGeneProd = createInferredInstance.newInferredInstance((GKInstance) attrInf.getAttributeValue("referenceEntity"));
+					Instance infReferenceGeneProduct = createInferredInstance.newInferredInstance((GKInstance) infAttributeInst.getAttributeValue("referenceEntity"));
 					InferEWAS.createReferenceDNASequence(homologueId);
 				}
 			}
@@ -132,16 +133,15 @@ public class InferEWAS {
 	// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein
 	public static void createReferenceDNASequence(String homologueId)
 	{
-		ArrayList ensgs = ensgMappings.get(homologueId);
+		ArrayList<String> ensgs = ensgMappings.get(homologueId);
 		for (Object ensg : ensgs)
 		{
 			try {
-			SchemaClass refDNAClass = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDNASequence);
-			GKInstance refDNAInst = new GKInstance(refDNAClass);
+			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDNASequence);
+			GKInstance referenceDNAInst = new GKInstance(referenceDNAClass);
 			
-			refDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
-			refDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, ensgDb);
-			System.out.println(refDNAInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase));
+			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
+			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, ensgDbInst);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

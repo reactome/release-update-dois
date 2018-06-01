@@ -3,7 +3,6 @@ package org.reactome.orthoinference;
 import org.gk.model.GKInstance;
 import org.gk.model.Instance;
 import org.gk.persistence.MySQLAdaptor;
-import org.gk.schema.SchemaClass;
 
 public class GenerateInstance {
 	
@@ -15,20 +14,20 @@ public class GenerateInstance {
 		}
 		
 		// Creates new instance that will be inferred based on the incoming instances class
-		public Instance newInferredInstance(GKInstance rxn)
+		public Instance newInferredInstance(GKInstance reactionInst)
 //		TODO: Instance Edits 
 		{
-			Instance infInstance = null;
+			Instance inferredInst = null;
 			try
 			{
-			String rxnClass = rxn.getSchemClass().toString();
-			Long dbId = Long.parseLong(rxn.getAttributeValue("DB_ID").toString());
-			infInstance = dba.getInstance(rxnClass, dbId);
+			String reactionClass = reactionInst.getSchemClass().toString();
+			Long dbId = Long.parseLong(reactionInst.getAttributeValue("DB_ID").toString());
+			inferredInst = dba.getInstance(reactionClass, dbId);
 			
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			return infInstance;
+			return inferredInst;
 
 		}
 		

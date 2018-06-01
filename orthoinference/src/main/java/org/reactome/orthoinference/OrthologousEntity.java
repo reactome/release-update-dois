@@ -4,24 +4,24 @@ import org.gk.model.GKInstance;
 
 public class OrthologousEntity {
 
-	public void createOrthoEntity(GKInstance attrInst)
+	public void createOrthoEntity(GKInstance attributeInst)
 	{
 
-		if (attrInst.getSchemClass().isValidAttribute("species"))
+		if (attributeInst.getSchemClass().isValidAttribute("species"))
 		{
 		// TODO: has_species function 
 			
-			if (attrInst.getSchemClass().isa("GenomeEncodedEntity"))
+			if (attributeInst.getSchemClass().isa("GenomeEncodedEntity"))
 			{
 //				System.out.println("GEE");
-				OrthologousEntity.createInfGEE(attrInst);
-			} else if (attrInst.getSchemClass().isa("Complex"))
+				OrthologousEntity.createInfGEE(attributeInst);
+			} else if (attributeInst.getSchemClass().isa("Complex"))
 			{
 //				System.out.println("Complex");
-			} else if (attrInst.getSchemClass().isa("EntitySet"))
+			} else if (attributeInst.getSchemClass().isa("EntitySet"))
 			{
 //				System.out.println("EntitySet");
-			} else if (attrInst.getSchemClass().isa("SimpleEntity"))
+			} else if (attributeInst.getSchemClass().isa("SimpleEntity"))
 			{
 //				System.out.println("SimpleEntity");
 			} else {
@@ -30,13 +30,13 @@ public class OrthologousEntity {
 		}
 	}
 	
-	public static void createInfGEE(GKInstance attrInst)
+	public static void createInfGEE(GKInstance attributeInst)
 	{
-		if (attrInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
+		if (attributeInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
 		{
 			return;
 		}
-		InferEWAS inferEWAS = new InferEWAS();
-		inferEWAS.inferEWAS(attrInst);
+		InferEWAS ewasInferrer = new InferEWAS();
+		ewasInferrer.inferEWAS(attributeInst);
 	}
 }

@@ -16,25 +16,26 @@ public class InferReaction {
 	}
 	
 	// This function mimics the Perl version of InferEvent, inferring attribute instances of input, output, and catalyst activity
-	public static void inferEvent(GKInstance rxn)
+	public static void inferEvent(GKInstance reactionInst)
 	{
-		Instance infRxn = null;
+		// TODO: Expand Reaction (??)
+		Instance inferredReaction = null;
 		try {
 			
 			GenerateInstance createInferredInstance = new GenerateInstance();
 			
-			String dbId = rxn.getAttributeValue("DB_ID").toString();
-			String stableId = rxn.getAttributeValue("name").toString();
+//			String dbId = rxn.getAttributeValue("DB_ID").toString();
+//			String stableId = rxn.getAttributeValue("name").toString();
 //			System.out.println("Reaction: [" + dbId + "] " + stableId);	
 			
 			// Creates an instance of the reaction that is about to be inferred
 			// SetAdaptor could probably be added to an initial setup 
-			createInferredInstance.setAdaptor(dba);
-			infRxn = createInferredInstance.newInferredInstance(rxn);
+			GenerateInstance.setAdaptor(dba);
+			inferredReaction = createInferredInstance.newInferredInstance(reactionInst);
 			
-			InferReaction.inferAttributes(rxn, infRxn, "input");
-			InferReaction.inferAttributes(rxn, infRxn, "output");
-			InferReaction.inferCatalyst(rxn, infRxn);
+			InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
+			InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
+			InferReaction.inferCatalyst(reactionInst, inferredReaction);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -43,15 +44,16 @@ public class InferReaction {
 	}
 	
 	// Function used to create inferred instances related to either 'input' or 'output'
-	public static void inferAttributes(GKInstance rxn, Instance infRxn, String attribute)
+	@SuppressWarnings("unchecked")
+	public static void inferAttributes(GKInstance reactionInst, Instance inferredReaction, String attribute)
 	{
 		try {
 
-		for (GKInstance attrInst : (Collection<GKInstance>) rxn.getAttributeValuesList(attribute))
+		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
 //			System.out.println("  " + attribute);
 			OrthologousEntity orthologousEntity = new OrthologousEntity();
-			orthologousEntity.createOrthoEntity(attrInst);
+			orthologousEntity.createOrthoEntity(attributeInst);
 		}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -59,11 +61,12 @@ public class InferReaction {
 	}
 	
 	// Function used to created inferred catalysts
-	public static void inferCatalyst(GKInstance rxn, Instance infRxn)
+	@SuppressWarnings("unchecked")
+	public static void inferCatalyst(GKInstance reactionInst, Instance inferredReaction)
 	{
 		try {
 			
-		for (GKInstance attrInst : (Collection<GKInstance>) rxn.getAttributeValuesList("catalystActivity"))
+		for (@SuppressWarnings("unused") GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList("catalystActivity"))
 		{
 //			System.out.println("  CatalystActivity");
 		}
