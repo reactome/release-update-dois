@@ -15,7 +15,8 @@ public class UpdateDOIs {
 
     String pathToConfig = "src/main/resources/config.properties";
     String pathToReport = "src/main/resources/UpdateDOIs.report";
-    if (args.length > 0 && !args[0].equals("")) {
+    if (args.length > 0 && !args[0].equals(""))
+    {
       pathToConfig = args[0];
       pathToReport = args[1];
     }
@@ -30,12 +31,15 @@ public class UpdateDOIs {
     long authorIdTR = 0;
     long authorIdGK = 0;
 
-    try {
+    try 
+    {
       Properties props = new Properties();
       props.load(new FileInputStream(pathToResources));
 
-      String user = props.getProperty("user");
-      String password = props.getProperty("password");
+      String userTR = props.getProperty("userTR");
+      String userGK = props.getProperty("userGK");
+      String passwordTR = props.getProperty("passwordTR");
+      String passwordGK = props.getProperty("passwordGK");
       String hostTR = props.getProperty("hostTR");
       String hostGK = props.getProperty("hostGK");
       String databaseTR = props.getProperty("databaseTR");
@@ -44,14 +48,12 @@ public class UpdateDOIs {
       authorIdTR = Integer.valueOf(props.getProperty("authorIdTR"));
       authorIdGK = Integer.valueOf(props.getProperty("authorIdGK"));
 
-
       // Set up db connections.
-      testReactomeDBA = new MySQLAdaptor(hostTR, databaseTR, user, password, port);
-      gkCentralDBA = new MySQLAdaptor(hostGK, databaseGK, user, password, port);
+      testReactomeDBA = new MySQLAdaptor(hostTR, databaseTR, userTR, passwordTR, port);
+      gkCentralDBA = new MySQLAdaptor(hostTR, databaseGK, userTR, passwordTR, port);
     } catch (Exception e) {
       e.printStackTrace();
     }
-
       findNewDOIsAndUpdate findNewDOIsAndUpdate = new findNewDOIsAndUpdate();
       findNewDOIsAndUpdate.setTestReactomeAdaptor(testReactomeDBA);
       findNewDOIsAndUpdate.setGkCentralAdaptor(gkCentralDBA);
@@ -59,5 +61,4 @@ public class UpdateDOIs {
 
       logger.info( "UpdateDOIs Complete" );
     }
-
 }
