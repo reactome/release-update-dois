@@ -51,6 +51,7 @@ public class findNewDOIsAndUpdate {
       dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
 
       if (!dois.isEmpty()) {
+        // TODO start a transaction for gk_central
         for (GKInstance doi : dois) {
 
           String stableIdFromDb = ((GKInstance) doi.getAttributeValue("stableIdentifier")).getDisplayName();
@@ -117,7 +118,9 @@ public class findNewDOIsAndUpdate {
       } else {
     	  logger.info("No DOIs to update");
       }
+      // TODO: Commit transaction for gk_central
     } catch (Exception e) {
+      // TODO: Roll-back transction for gk_central
       e.printStackTrace();
     }
   }
