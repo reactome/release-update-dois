@@ -47,7 +47,7 @@ public class UpdateDOIs {
 
       // Set up db connections.
       testReactomeDBA = new MySQLAdaptor(hostTR, databaseTR, user, password, port);
-      gkCentralDBA = new MySQLAdaptor(hostGK, databaseGk, user, password, port);
+      gkCentralDBA = new MySQLAdaptor(hostGK, databaseGK, user, password, port);
     } catch (Exception e) {
       e.printStackTrace();
     }
