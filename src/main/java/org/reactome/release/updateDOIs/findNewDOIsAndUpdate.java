@@ -81,7 +81,7 @@ public class findNewDOIsAndUpdate {
               gkdoi.getAttributeValuesList("modified");
               gkdoi.addAttributeValue("modified", instanceEditGkCentral);
               gkdoi.setAttributeValue("doi", updatedDoi);
-              this.dbaGkCentral.updateInstanceAttribute(doi, "modified");
+              this.dbaGkCentral.updateInstanceAttribute(gkdoi, "modified");
               this.dbaGkCentral.updateInstanceAttribute(gkdoi, "doi");
 
               logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
