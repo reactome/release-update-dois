@@ -1,5 +1,7 @@
 package org.reactome.orthoinference;
 
+import java.util.ArrayList;
+
 import org.gk.model.GKInstance;
 
 public class OrthologousEntity {
@@ -37,6 +39,6 @@ public class OrthologousEntity {
 			return;
 		}
 		InferEWAS ewasInferrer = new InferEWAS();
-		ewasInferrer.inferEWAS(attributeInst);
+		ArrayList<GKInstance> infEWASInstances = ewasInferrer.inferEWAS(attributeInst);
 	}
 }

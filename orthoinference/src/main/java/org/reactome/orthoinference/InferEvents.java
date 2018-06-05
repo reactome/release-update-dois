@@ -1,22 +1,13 @@
 package org.reactome.orthoinference;
 
 import java.io.FileInputStream;
-//import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
-import org.gk.persistence.MySQLAdaptor.*;
 import org.gk.schema.SchemaClass;
-
-//import com.mysql.jdbc.exceptions.jdbc4.MySQLDataException;
-//import org.reactome.orthoinference.inferrers.ComplexInferrer;
-//import org.reactome.orthoinference.inferrers.GenomeEncodedEntityInferrer;
 
 /**
  * 
@@ -66,11 +57,12 @@ public class InferEvents
 			// Set-Up
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);		
 			InferReaction.setAdaptor(dbAdaptor);
-			
 			InferEWAS ewasInferrer = new InferEWAS();
 			ewasInferrer.setAdaptor(dbAdaptor);
 			ewasInferrer.readMappingFile("ddis","hsap");
 			ewasInferrer.readENSGMappingFile("ddis");
+			ewasInferrer.createUniprotDbInst();
+			ewasInferrer.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
 			ewasInferrer.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
 			if (refDb)
 			{
@@ -80,7 +72,6 @@ public class InferEvents
 			ewasInferrer.setSpeciesInst(speciesInst);
 			
 			// Get DB instances of source species
-			List<AttributeQueryRequest> aqrList = new ArrayList<AttributeQueryRequest>();
 			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
 			
 			@SuppressWarnings("unused")
@@ -96,10 +87,7 @@ public class InferEvents
 				}
 				
 				// Gets Reaction instances of source species
-				aqrList = new ArrayList<AttributeQueryRequest>();
-				AttributeQueryRequest sourceSpeciesReactions = dbAdaptor.createAttributeQueryRequest("ReactionlikeEvent", "species", "=", dbId);
-				aqrList.add(sourceSpeciesReactions);
-				Set<GKInstance> reactionInstances = (Set<GKInstance>) dbAdaptor._fetchInstance(aqrList);
+				Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
 				if (!reactionInstances.isEmpty())
 				{
 					for (GKInstance reactionInst : reactionInstances)
