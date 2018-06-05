@@ -55,9 +55,11 @@ public class InferEvents
 			int port = Integer.valueOf(props.getProperty("port"));
 			
 			// Set-Up
-			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);		
+			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
 			InferReaction.setAdaptor(dbAdaptor);
+			OrthologousEntity orthoInferrer = new OrthologousEntity();
 			InferEWAS ewasInferrer = new InferEWAS();
+			orthoInferrer.setAdaptor(dbAdaptor);
 			ewasInferrer.setAdaptor(dbAdaptor);
 			ewasInferrer.readMappingFile("ddis","hsap");
 			ewasInferrer.readENSGMappingFile("ddis");
@@ -69,6 +71,7 @@ public class InferEvents
 				ewasInferrer.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
 			}
 			InferEvents.createSpeciesInst("Dictyostelium discoideum");
+			orthoInferrer.setSpeciesInst(speciesInst);
 			ewasInferrer.setSpeciesInst(speciesInst);
 			
 			// Get DB instances of source species

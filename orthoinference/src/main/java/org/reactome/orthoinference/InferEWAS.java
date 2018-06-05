@@ -104,6 +104,7 @@ public class InferEWAS {
 		}
 	}
 	
+	// Creates instance pertaining to the species Ensembl Protein DB
 	public void createEnsemblProteinDbInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl)
 	{
 		try
@@ -120,7 +121,7 @@ public class InferEWAS {
 		}
 	}
 	
-	// Creates instance pertaining to the species ENSG DB
+	// Creates instance pertaining to the species Ensembl Gene DB
 	public void createEnsemblGeneDBInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl)
 	{
 		try 
@@ -249,7 +250,7 @@ public class InferEWAS {
 						}
 					}
 					infEWAS.addAttributeValue(ReactomeJavaConstants.hasModifiedResidue, infModifiedResidues);
-					//TODO: Check for identicl instances
+					//TODO: Check for identical instances
 					//TODO: addAttributesValueIfNecessary, inferredTo & inferredFrom, updateAttribute (delay if possible)
 					infEWASInstances.add((GKInstance) infEWAS);
 				}

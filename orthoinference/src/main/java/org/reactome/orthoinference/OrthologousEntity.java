@@ -3,8 +3,26 @@ package org.reactome.orthoinference;
 import java.util.ArrayList;
 
 import org.gk.model.GKInstance;
+import org.gk.model.ReactomeJavaConstants;
+import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.SchemaClass;
 
 public class OrthologousEntity {
+	
+	private static MySQLAdaptor dba;
+	
+	public void setAdaptor(MySQLAdaptor dbAdaptor)
+	{
+		OrthologousEntity.dba = dbAdaptor;
+	}
+	
+	private static GKInstance speciesInst = null;
+	
+	// Sets the species instance for inferEWAS to use
+	public void setSpeciesInst(GKInstance speciesInstCopy)
+	{
+		speciesInst = speciesInstCopy;
+	}
 
 	public void createOrthoEntity(GKInstance attributeInst)
 	{
@@ -40,5 +58,25 @@ public class OrthologousEntity {
 		}
 		InferEWAS ewasInferrer = new InferEWAS();
 		ArrayList<GKInstance> infEWASInstances = ewasInferrer.inferEWAS(attributeInst);
+		
+		if (infEWASInstances.size() > 1)
+		{
+			try {
+			SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
+			GKInstance definedSetInst = new GKInstance(definedSetClass);
+			// TODO: Inflated (??), Instance Edit/Created, Check Intracellular, $opt_filt (??), check for identical instances, add attribute values if necessary - inferredFrom/To, Array fix
+			String definedSetName = "Homologues of " + attributeInst.getAttributeValue("name");
+			definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
+			definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+			definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}	
+		} else if (infEWASInstances.size() == 1)
+		{
+			//TODO: %homol_gee equivalent
+		} else {
+			//TODO: ghosty
+		}
 	}
 }
