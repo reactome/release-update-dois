@@ -27,6 +27,7 @@ public class InferEWAS {
 	private static GKInstance enspDbInst = null;
 	private static GKInstance alternateDbInst = null;
 	private static GKInstance uniprotDbInst = null;
+	//TODO: Remove static value when scaling up species total
 	static boolean refDb = false;
 	private static GKInstance speciesInst = null;
 	
@@ -169,9 +170,8 @@ public class InferEWAS {
 		ArrayList<GKInstance> infEWASInstances = new ArrayList<GKInstance>();
 		try {
 		GenerateInstance createInferredInstance = new GenerateInstance();
-		
 		String referenceEntityId = ((GKInstance) infAttributeInst.getAttributeValue("referenceEntity")).getAttributeValue("identifier").toString();
-		
+		//TODO: Is this null check required?; $opt_filt?; %seen_rps check
 		if (homologueMappings.get(referenceEntityId) != null)
 			{
 				// Iterate through the array of values, creating EWAS inferred instances
@@ -180,9 +180,10 @@ public class InferEWAS {
 					String[] splitHomologue = homologue.toString().split(":");
 					String homologueSource = splitHomologue[0];
 					String homologueId = splitHomologue[1];
-					//TODO: Make sure returned array sizes and structure is as expected
 					// Creating inferred reference gene product
-					Instance infReferenceGeneProduct = createInferredInstance.newInferredInstance((GKInstance) infAttributeInst.getAttributeValue("referenceEntity"));
+					// Equivalent of create_ReferenceDNASequence function in infer_events.pl
+					ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId);
+					
 					GKInstance referenceDb = null;
 					if (homologueSource.equals("ENSP"))
 					{
@@ -190,68 +191,71 @@ public class InferEWAS {
 					} else {
 						referenceDb = uniprotDbInst;
 					}
+					
+					GKInstance infReferenceGeneProduct = createInferredInstance.newInferredGKInstance((GKInstance) infAttributeInst.getAttributeValue("referenceEntity"));
 					infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceDatabase,  referenceDb);
 					infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.identifier, homologueId);
-					// Equivalent of create_ReferenceDNASequence function in infer_events.pl
-					ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId);
 					infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceGene, inferredReferenceDNAInstances);
 					infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
-					//TODO: check for identical instances, add to hash so that repeats don't happen
+					//TODO: check for identical instances; %seen_rps
 					
 					// Creating inferred EWAS 
-					Instance infEWAS = createInferredInstance.newInferredInstance(infAttributeInst); 
+					GKInstance infEWAS = createInferredInstance.newInferredGKInstance(infAttributeInst); 
 					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);
-					infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
 					infEWAS.addAttributeValue(ReactomeJavaConstants.startCoordinate, infAttributeInst.getAttributeValue("startCoordinate"));
 					infEWAS.addAttributeValue(ReactomeJavaConstants.endCoordinate, infAttributeInst.getAttributeValue("endCoordinate"));
-//					try {
-//						Integer startCoord = Integer.valueOf(infEWAS.getAttributeValue("startCoordinate").toString());
-//						Integer endCoord = Integer.valueOf(infEWAS.getAttributeValue("endCoordinate").toString());
-//						if (startCoord > 1 || endCoord > 1) {
-//							
-//						}
-//					} catch (NullPointerException e) {
-//					}
-					//TODO: Required resolving array values for attributes
-//					if ((startCoord != null && Integer.valueOf(startCoord) > 1) || (endCoord != null && Integer.valueOf(endCoord) > 1))
-//					{
-//						System.out.println("Yay");
-//					} else {
-//						System.out.println("Boo");
-//					}
-
+					try {
+						Integer startCoord = Integer.valueOf(infEWAS.getAttributeValue("startCoordinate").toString());
+						Integer endCoord = Integer.valueOf(infEWAS.getAttributeValue("endCoordinate").toString());
+						if (startCoord > 1 || endCoord > 1) {
+							@SuppressWarnings("unchecked")
+							ArrayList<String> infAttributeInstNames = (ArrayList<String>) ((GKInstance) infAttributeInst).getAttributeValuesList("name");
+							infEWAS.addAttributeValue(ReactomeJavaConstants.name, infAttributeInstNames.get(0));
+							infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
+						} else {
+							infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
+						}
+					} catch (NullPointerException e) {
+						e.printStackTrace();
+					}
+					// Infer residue modifications
 					@SuppressWarnings("unchecked")
 					ArrayList<GKInstance> modifiedResidues = ((ArrayList<GKInstance>) infAttributeInst.getAttributeValuesList("hasModifiedResidue"));
 					ArrayList<GKInstance> infModifiedResidues = new ArrayList<GKInstance>();
 					boolean phosFlag = true;
 					for (GKInstance modifiedResidue : modifiedResidues)
 					{
-						Instance infModifiedResidue = createInferredInstance.newInferredInstance((GKInstance) modifiedResidue);
-						//TODO: Array fix
+						GKInstance infModifiedResidue = createInferredInstance.newInferredGKInstance((GKInstance) modifiedResidue);
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.coordinate, modifiedResidue.getAttributeValue("coordinate"));
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.referenceSequence, infReferenceGeneProduct);
-						//TODO: is valid attribute and array fix
+						//TODO: is valid attribute & add "modification" 
 						GKInstance psiMod = (GKInstance) modifiedResidue.getAttributeValue("psiMod");
 						if (phosFlag && psiMod.getAttributeValue("name").toString().contains("phospho"))
 						{
 							//TODO: This function gets the above start/end coordinate name, and then replaces name with only it
-							String phosphoName = "phospho-" + infEWAS.getAttributeValue("name").toString();
-							infEWAS.addAttributeValue(ReactomeJavaConstants.name, phosphoName);
+							String phosphoName = "phospho-" + infEWAS.getAttributeValue("name");
+							@SuppressWarnings("unchecked")
+							ArrayList<GKInstance> nameValues = (ArrayList<GKInstance>) infEWAS.getAttributeValuesList("name");
+							nameValues.remove(0);
+							infEWAS.setAttributeValue("name", phosphoName);
+							infEWAS.addAttributeValue("name", nameValues);
 							phosFlag = false;
-							if (modifiedResidue.getAttributeValue("coordinate") != null)
-							{
-								// Abstract this out so that its 'fromSpecies'
-								String newDisplayName = modifiedResidue.getAttributeValue("_displayName").toString() + " (in Homo sapiens)";
-								infModifiedResidue.addAttributeValue(ReactomeJavaConstants._displayName, newDisplayName);
-							}
-							// TODO: Array fix and check for identical instances
-							infModifiedResidue.addAttributeValue(ReactomeJavaConstants.psiMod, modifiedResidue.getAttributeValue("psiMod"));
-							infModifiedResidues.add((GKInstance) infModifiedResidue);	
 						}
+						if (modifiedResidue.getAttributeValue("coordinate") != null)
+						{
+							// TODO: Abstract this out so that its 'fromSpecies'; Perl version sees _displayName updated the displayName attribute as well
+							String newDisplayName = modifiedResidue.getAttributeValue("_displayName").toString() + " (in Homo sapiens)";
+							infModifiedResidue.addAttributeValue(ReactomeJavaConstants._displayName, newDisplayName);
+							
+						}
+						// TODO: is valid attribute & add "residue"; check for identical instances
+						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.psiMod, modifiedResidue.getAttributeValue("psiMod"));
+						infModifiedResidues.add((GKInstance) infModifiedResidue);	
+						
 					}
 					infEWAS.addAttributeValue(ReactomeJavaConstants.hasModifiedResidue, infModifiedResidues);
 					//TODO: Check for identical instances
-					//TODO: addAttributesValueIfNecessary, inferredTo & inferredFrom, updateAttribute (delay if possible)
+					//TODO: addAttributesValueIfNecessary -- inferredTo/inferredFrom; updateAttribute (delay if possible)
 					infEWASInstances.add((GKInstance) infEWAS);
 				}
 			}
@@ -262,7 +266,6 @@ public class InferEWAS {
 	}
 	
 	// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein
-	//TODO: Check for identical instances
 	public static ArrayList<GKInstance> createReferenceDNASequence(String homologueId)
 	{
 		ArrayList<GKInstance> referenceDNAInstances = new ArrayList<GKInstance>();
@@ -279,15 +282,14 @@ public class InferEWAS {
 			referenceDNAInstances.add(referenceDNAInst);
 			//TODO: Check for identical instances
 			if (refDb)
-			{
-				GKInstance alternateRefDNAInst = new GKInstance(referenceDNAClass);
-				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
-				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, alternateDbInst);
-				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
-				referenceDNAInstances.add(alternateRefDNAInst);	
-			}
-			//TODO: Logic for alt_refdb --> alt_id (arabidopsis)
-			//TODO: Check for identical instances
+				{
+					//TODO: Logic for alt_refdb --> alt_id (arabidopsis); check for identical instances
+					GKInstance alternateRefDNAInst = new GKInstance(referenceDNAClass);
+					alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
+					alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, alternateDbInst);
+					alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+					referenceDNAInstances.add(alternateRefDNAInst);	
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
