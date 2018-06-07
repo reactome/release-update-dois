@@ -32,9 +32,9 @@ public class InferReaction {
 			// SetAdaptor could probably be added to an initial setup 
 			GenerateInstance.setAdaptor(dba);
 			inferredReaction = createInferredInstance.newInferredGKInstance(reactionInst);
-			
+			//TODO: Capture the returns
 			InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
-			InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
+//				InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
 			InferReaction.inferCatalyst(reactionInst, inferredReaction);
 		} catch (Exception e) {
 			e.printStackTrace();
