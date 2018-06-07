@@ -19,24 +19,26 @@ public class InferReaction {
 	public static void inferEvent(GKInstance reactionInst)
 	{
 		// TODO: Expand Reaction (??)
-		Instance inferredReaction = null;
+		GKInstance inferredReaction = null;
 		try {
 			
 			GenerateInstance createInferredInstance = new GenerateInstance();
 			
-//			String dbId = rxn.getAttributeValue("DB_ID").toString();
-//			String stableId = rxn.getAttributeValue("name").toString();
-//			System.out.println("Reaction: [" + dbId + "] " + stableId);	
-			
-			// Creates an instance of the reaction that is about to be inferred
-			// SetAdaptor could probably be added to an initial setup 
-			GenerateInstance.setAdaptor(dba);
-			inferredReaction = createInferredInstance.newInferredInstance(reactionInst);
-			
-			InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
-			InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
+			String dbId = reactionInst.getAttributeValue("DB_ID").toString();
+			if (dbId.equals("68595") || dbId.equals("68610") || dbId.equals("68611") )
+			{
+				String stableId = reactionInst.getAttributeValue("name").toString();
+				System.out.println("Reaction: [" + dbId + "] " + stableId);	
+				
+				// Creates an instance of the reaction that is about to be inferred
+				// SetAdaptor could probably be added to an initial setup 
+				GenerateInstance.setAdaptor(dba);
+				inferredReaction = createInferredInstance.newInferredGKInstance(reactionInst);
+				
+				InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
+				InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
 			InferReaction.inferCatalyst(reactionInst, inferredReaction);
-			
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

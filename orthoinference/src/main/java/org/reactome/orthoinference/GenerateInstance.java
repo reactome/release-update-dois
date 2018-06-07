@@ -2,7 +2,9 @@ package org.reactome.orthoinference;
 
 import org.gk.model.GKInstance;
 import org.gk.model.Instance;
+import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.SchemaClass;
 
 public class GenerateInstance {
 	
@@ -13,17 +15,17 @@ public class GenerateInstance {
 			dba = dbAdaptor;
 		}
 		
-		// Creates new instance that will be inferred based on the incoming instances class
-		public Instance newInferredInstance(GKInstance reactionInst)
+		// Creates new instance that will be inferred based on the incoming instances class		
+		public GKInstance newInferredGKInstance(GKInstance instanceToBeInferred)
 //		TODO: Instance Edits 
 //		TODO: Species -> Taxon addition
 		{
-			Instance inferredInst = null;
+			GKInstance inferredInst = null;
 			try
 			{
-			String reactionClass = reactionInst.getSchemClass().toString();
-			Long dbId = Long.parseLong(reactionInst.getAttributeValue("DB_ID").toString());
-			inferredInst = dba.getInstance(reactionClass, dbId);
+			String reactionClass = instanceToBeInferred.getSchemClass().getName();
+			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(reactionClass);
+			inferredInst = new GKInstance(referenceDNAClass);
 			
 			} catch (Exception e) {
 				e.printStackTrace();
