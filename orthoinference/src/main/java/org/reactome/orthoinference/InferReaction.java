@@ -50,9 +50,8 @@ public class InferReaction {
 
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
-//			System.out.println("  " + attribute);
 			OrthologousEntity orthologousEntity = new OrthologousEntity();
-			orthologousEntity.createOrthoEntity(attributeInst);
+			orthologousEntity.createOrthoEntity(attributeInst, false);
 		}
 		} catch (Exception e) {
 			e.printStackTrace();

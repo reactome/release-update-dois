@@ -25,7 +25,7 @@ public class OrthologousEntity {
 		speciesInst = speciesInstCopy;
 	}
 
-	public GKInstance createOrthoEntity(GKInstance attributeInst)
+	public GKInstance createOrthoEntity(GKInstance attributeInst, boolean override)
 	{
 		GKInstance infEntity = null;
 		if (attributeInst.getSchemClass().isValidAttribute("species"))
@@ -34,10 +34,11 @@ public class OrthologousEntity {
 			
 			if (attributeInst.getSchemClass().isa("GenomeEncodedEntity"))
 			{
-				System.out.println("GEE");
-				if (!attributeInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
+				if (attributeInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
 				{
-					infEntity = OrthologousEntity.createInfGEE(attributeInst);
+				//TODO: create_ghost if override
+				} else {
+					infEntity = OrthologousEntity.createInfGEE(attributeInst, override);
 				}
 			} else if (attributeInst.getSchemClass().isa("Complex") || attributeInst.getSchemClass().isa("Polymer"))
 			{
@@ -59,7 +60,7 @@ public class OrthologousEntity {
 		return infEntity;
 	}
 	
-	public static GKInstance createInfGEE(GKInstance geeInst)
+	public static GKInstance createInfGEE(GKInstance geeInst, boolean override)
 	{
 		//TODO: %homol_gee; create_ghost;
 		InferEWAS ewasInferrer = new InferEWAS();
@@ -82,7 +83,7 @@ public class OrthologousEntity {
 			//TODO: %homol_gee
 			definedSetInst = infEWASInstances.get(0);
 		} else {
-			//TODO: create_ghost
+			//TODO: create_ghost if override
 		}
 		return definedSetInst;
 	}
@@ -102,7 +103,7 @@ public class OrthologousEntity {
 			{
 				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
 				{
-// Current progress spot
+				//TODO:Overload Functionality or Solomon's PR? 
 				}
 			}
 		} catch (Exception e) {
