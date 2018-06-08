@@ -166,14 +166,13 @@ public class ChebiUpdater {
 			{
 				if (moleculeFormulae == null)
 				{
-					molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
 					this.formulaFillSB.append(prefix).append("New Formula: ").append(firstFormula).append("\n");
 				}
 				else if (!firstFormula.equals(moleculeFormulae))
 				{
-					molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
 					this.formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
 				}
+				molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
 				if (!testMode)
 				{
 					adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.formula);
