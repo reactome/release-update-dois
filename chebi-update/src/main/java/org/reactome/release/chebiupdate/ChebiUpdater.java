@@ -125,6 +125,9 @@ public class ChebiUpdater {
 			updateMoleculeIdentifier(molecule, chebiID, moleculeIdentifier, prefix);
 			updateMoleculeName(molecule, chebiName, moleculeName, prefix);
 			updateMoleculeFormula(molecule, chebiFormulae, moleculeFormulae, prefix);
+			// Update the display name.
+			InstanceDisplayNameGenerator.setDisplayName(molecule);
+			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants._displayName);
 			
 			if (!testMode)
 			{
