@@ -1,6 +1,7 @@
 package org.reactome.orthoinference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
@@ -9,6 +10,7 @@ import org.gk.schema.SchemaClass;
 
 public class OrthologousEntity {
 	
+	private static HashMap<GKInstance, GKInstance> orthologousEntity = new HashMap<GKInstance,GKInstance>();
 	private static MySQLAdaptor dba;
 	static GenerateInstance createInferredInstance = new GenerateInstance();
 	
@@ -25,30 +27,31 @@ public class OrthologousEntity {
 		speciesInst = speciesInstCopy;
 	}
 
-	public GKInstance createOrthoEntity(GKInstance attributeInst, boolean override)
+	public static GKInstance createOrthoEntity(GKInstance attributeInst, boolean override)
 	{
 		GKInstance infEntity = null;
 		if (attributeInst.getSchemClass().isValidAttribute("species"))
 		{
+			if (orthologousEntity.get(attributeInst) == null)
+			{
 		// TODO: has_species function 
-			
 			if (attributeInst.getSchemClass().isa("GenomeEncodedEntity"))
 			{
 				if (attributeInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
 				{
-				//TODO: create_ghost if override
+					
 				} else {
 					infEntity = OrthologousEntity.createInfGEE(attributeInst, override);
 				}
 			} else if (attributeInst.getSchemClass().isa("Complex") || attributeInst.getSchemClass().isa("Polymer"))
 			{
-//				System.out.println("Complex");
-				OrthologousEntity.createInfComplexPolymer(attributeInst);
-				
+				if (!override) 
+				{
+					infEntity = OrthologousEntity.createInfComplexPolymer(attributeInst, override);
+				}
 			} else if (attributeInst.getSchemClass().isa("EntitySet"))
 			{
 				//TODO: Check species attribute
-//				System.out.println("EntitySet");
 //				OrthologousEntity.createInfEntitySet(attributeInst);
 			} else if (attributeInst.getSchemClass().isa("SimpleEntity"))
 			{
@@ -56,8 +59,14 @@ public class OrthologousEntity {
 			} else {
 //				System.out.println("Unknown");
 			}
+			//TODO: %orthologous_entity
+			orthologousEntity.put(attributeInst, infEntity);
+		} 
+			return infEntity;
+		} else {
+			//TODO: check intracellular; if flag create clone;
+			return attributeInst;
 		}
-		return infEntity;
 	}
 	
 	public static GKInstance createInfGEE(GKInstance geeInst, boolean override)
@@ -88,9 +97,9 @@ public class OrthologousEntity {
 		return definedSetInst;
 	}
 	
-	public static void createInfComplexPolymer(GKInstance complexInst)
+	public static GKInstance createInfComplexPolymer(GKInstance complexInst, boolean override)
 	{
-		//TODO: count distinct proteins; filter based on returned protein count and threshold
+		//TODO: %inferred_cp; count distinct proteins; filter based on returned protein count and threshold
 		GKInstance infComplexInst = createInferredInstance.newInferredGKInstance(complexInst);
 		GKInstance complexSummation = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
 		try {
@@ -99,16 +108,31 @@ public class OrthologousEntity {
 			complexSummation.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummation);
 			//TODO: check for identical instances (complexSummation)
+			
+			ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
 			if (complexInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
 			{
 				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
-				{
-				//TODO:Overload Functionality or Solomon's PR? 
+				{		
+					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
 				}
+//				System.out.println(infComponents);
+//			infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
+			//TODO: Polymer side
+			} else
+			{
+				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
+				{		
+					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
+				}
+			infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 			}
+			
+			//TODO: Add total,inferred,max proteins count; inferredTo & inferredFrom; update
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return infComplexInst;
 	}
 	
 	
