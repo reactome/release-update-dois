@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.SchemaClass;
 
 public class OrthologousEntity {
@@ -27,7 +28,7 @@ public class OrthologousEntity {
 		speciesInst = speciesInstCopy;
 	}
 
-	public static GKInstance createOrthoEntity(GKInstance attributeInst, boolean override)
+	public static GKInstance createOrthoEntity(GKInstance attributeInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		GKInstance infEntity = null;
 		if (attributeInst.getSchemClass().isValidAttribute("species"))
@@ -39,16 +40,15 @@ public class OrthologousEntity {
 			{
 				if (attributeInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
 				{
-					
+					//TODO: create ghost
 				} else {
+					System.out.println("GEE");
 					infEntity = OrthologousEntity.createInfGEE(attributeInst, override);
 				}
 			} else if (attributeInst.getSchemClass().isa("Complex") || attributeInst.getSchemClass().isa("Polymer"))
 			{
-				if (!override) 
-				{
-					infEntity = OrthologousEntity.createInfComplexPolymer(attributeInst, override);
-				}
+				System.out.println("Complex/Polymer");
+				infEntity = OrthologousEntity.createInfComplexPolymer(attributeInst, override);
 			} else if (attributeInst.getSchemClass().isa("EntitySet"))
 			{
 				//TODO: Check species attribute
@@ -62,14 +62,17 @@ public class OrthologousEntity {
 			//TODO: %orthologous_entity
 			orthologousEntity.put(attributeInst, infEntity);
 		} 
-			return infEntity;
+			//TODO: Properly 'unless' evaluation
+			GKInstance existingInst = orthologousEntity.get(attributeInst);
+			return existingInst;
 		} else {
 			//TODO: check intracellular; if flag create clone;
+			System.out.println("Invalid");
 			return attributeInst;
 		}
 	}
 	
-	public static GKInstance createInfGEE(GKInstance geeInst, boolean override)
+	public static GKInstance createInfGEE(GKInstance geeInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		//TODO: %homol_gee; create_ghost;
 		InferEWAS ewasInferrer = new InferEWAS();
@@ -92,7 +95,14 @@ public class OrthologousEntity {
 			//TODO: %homol_gee
 			definedSetInst = infEWASInstances.get(0);
 		} else {
-			//TODO: create_ghost if override
+			//TODO: create_ghost if override; Handle empty return
+			if (override) {
+			GKInstance mockedInst = GenerateInstance.newMockGKInstance(geeInst);
+			return mockedInst;
+			} else {
+				GKInstance nullInst = null;
+				return nullInst;
+			}
 		}
 		return definedSetInst;
 	}
@@ -116,11 +126,8 @@ public class OrthologousEntity {
 				{		
 					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
 				}
-//				System.out.println(infComponents);
-//			infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
-			//TODO: Polymer side
-			} else
-			{
+			infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
+			} else {
 				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
 				{		
 					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
@@ -128,7 +135,7 @@ public class OrthologousEntity {
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 			}
 			
-			//TODO: Add total,inferred,max proteins count; inferredTo & inferredFrom; update
+			//TODO: Add total,inferred,max proteins count; inferredTo & inferredFrom; update; add to hash
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -1,6 +1,7 @@
 package org.reactome.orthoinference;
 
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Properties;
 
@@ -59,6 +60,7 @@ public class InferEvents
 			InferReaction.setAdaptor(dbAdaptor);
 			OrthologousEntity orthoInferrer = new OrthologousEntity();
 			InferEWAS ewasInferrer = new InferEWAS();
+			GenerateInstance instanceGenerator = new GenerateInstance();
 			orthoInferrer.setAdaptor(dbAdaptor);
 			ewasInferrer.setAdaptor(dbAdaptor);
 			ewasInferrer.readMappingFile("ddis","hsap");
@@ -73,10 +75,10 @@ public class InferEvents
 			InferEvents.createSpeciesInst("Dictyostelium discoideum");
 			orthoInferrer.setSpeciesInst(speciesInst);
 			ewasInferrer.setSpeciesInst(speciesInst);
+			instanceGenerator.setSpeciesInst(speciesInst);
 			
 			// Get DB instances of source species
 			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
-			
 			@SuppressWarnings("unused")
 			InferReaction reactionInferrer = new InferReaction();
 			
@@ -95,9 +97,7 @@ public class InferEvents
 				{
 					for (GKInstance reactionInst : reactionInstances)
 					{
-						
 						InferReaction.inferEvent(reactionInst);
-
 					}
 				}
 			}	

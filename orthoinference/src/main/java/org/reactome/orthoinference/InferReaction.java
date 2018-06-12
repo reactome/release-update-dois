@@ -26,7 +26,6 @@ public class InferReaction {
 			
 			String dbId = reactionInst.getAttributeValue("DB_ID").toString();
 			String stableId = reactionInst.getAttributeValue("name").toString();
-			System.out.println("Reaction: [" + dbId + "] " + stableId);	
 			
 			// Creates an instance of the reaction that is about to be inferred
 			// SetAdaptor could probably be added to an initial setup 
@@ -50,6 +49,7 @@ public class InferReaction {
 
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
+			System.out.println("   " + attributeInst.getAttributeValue("DB_ID"));
 			OrthologousEntity orthologousEntity = new OrthologousEntity();
 			orthologousEntity.createOrthoEntity(attributeInst, false);
 		}
