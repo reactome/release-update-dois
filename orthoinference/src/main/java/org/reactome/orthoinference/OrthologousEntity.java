@@ -29,35 +29,40 @@ public class OrthologousEntity {
 		speciesInst = speciesInstCopy;
 	}
 
-	public static GKInstance createOrthoEntity(GKInstance attributeInst, boolean override) throws InvalidAttributeException, Exception
+	public static GKInstance createOrthoEntity(GKInstance entityInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		GKInstance infEntity = null;
-		if (attributeInst.getSchemClass().isValidAttribute("species"))
+		if (entityInst.getSchemClass().isValidAttribute("species"))
 		{
-			if (orthologousEntity.get(attributeInst) == null)
+			// TODO: Make sure this null check actually works
+			if (orthologousEntity.get(entityInst) == null)
 			{
 		// TODO: has_species function 
-			if (attributeInst.getSchemClass().isa("GenomeEncodedEntity"))
+			if (!OrthologousEntity.hasSpecies(entityInst))
 			{
-				if (attributeInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
+				infEntity = entityInst;
+			}
+			if (entityInst.getSchemClass().isa("GenomeEncodedEntity"))
+			{
+				if (entityInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
 				{
 					//TODO: create ghost
 				} else {
-					infEntity = OrthologousEntity.createInfGEE(attributeInst, override);
+					infEntity = OrthologousEntity.createInfGEE(entityInst, override);
 				}
-			} else if (attributeInst.getSchemClass().isa("Complex") || attributeInst.getSchemClass().isa("Polymer"))
+			} else if (entityInst.getSchemClass().isa("Complex") || entityInst.getSchemClass().isa("Polymer"))
 			{
-				infEntity = OrthologousEntity.createInfComplexPolymer(attributeInst, override);
-			} else if (attributeInst.getSchemClass().isa("EntitySet"))
+				infEntity = OrthologousEntity.createInfComplexPolymer(entityInst, override);
+			} else if (entityInst.getSchemClass().isa("EntitySet"))
 			{
 				//TODO: Check species attribute
-				if (attributeInst.getAttributeValue("species") != null)
+				if (entityInst.getAttributeValue("species") != null)
 				{
-					infEntity = OrthologousEntity.createInfEntitySet(attributeInst, override);
+					infEntity = OrthologousEntity.createInfEntitySet(entityInst, override);
 				} else {
-					infEntity = attributeInst;
+					infEntity = entityInst;
 				}
-			} else if (attributeInst.getSchemClass().isa("SimpleEntity"))
+			} else if (entityInst.getSchemClass().isa("SimpleEntity"))
 			{
 			} else {
 			}
@@ -66,18 +71,72 @@ public class OrthologousEntity {
 			{
 				return infEntity;
 			}
-			orthologousEntity.put(attributeInst, infEntity);
+			orthologousEntity.put(entityInst, infEntity);
 		} 
 			//TODO: Properly 'unless' evaluation
-			GKInstance existingInst = orthologousEntity.get(attributeInst);
+			GKInstance existingInst = orthologousEntity.get(entityInst);
 			return existingInst;
 		} else {
 			//TODO: check intracellular; if flag create clone;
 			System.out.println("Invalid");
-			return attributeInst;
+			return entityInst;
 		}
 	}
 	
+	// Determines if there is a species attribute in any constituent instances of entityInst
+	public static boolean hasSpecies(GKInstance entityInst) throws InvalidAttributeException, Exception
+	{
+		if (entityInst.getSchemClass().isa(ReactomeJavaConstants.OtherEntity))
+		{
+			return false;
+		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet)) // || entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer) || entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet))
+		{
+			for (Object member : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
+			{
+				if (OrthologousEntity.hasSpecies((GKInstance) member))
+				{
+					return true;
+				}
+			}
+			if (entityInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet)) {
+				for (Object candidate : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasCandidate))
+				{
+					if (OrthologousEntity.hasSpecies((GKInstance) candidate))
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
+		{
+			for (Object component : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
+			{
+				if (OrthologousEntity.hasSpecies((GKInstance) component))
+				{
+					return true;
+				}
+			}
+			return false;
+		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer))
+		{
+			for (Object monomer : entityInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
+			{
+				if (OrthologousEntity.hasSpecies((GKInstance) monomer))
+				{
+					return true;
+				}
+			}
+			return false;
+		} else {
+			if (entityInst.getAttributeValue(ReactomeJavaConstants.species) != null)
+			{
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
 	public static GKInstance createInfGEE(GKInstance geeInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		//TODO: %homol_gee; create_ghost;
