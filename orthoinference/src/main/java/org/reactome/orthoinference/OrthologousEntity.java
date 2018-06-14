@@ -2,6 +2,7 @@ package org.reactome.orthoinference;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
@@ -42,24 +43,29 @@ public class OrthologousEntity {
 				{
 					//TODO: create ghost
 				} else {
-					System.out.println("GEE");
 					infEntity = OrthologousEntity.createInfGEE(attributeInst, override);
 				}
 			} else if (attributeInst.getSchemClass().isa("Complex") || attributeInst.getSchemClass().isa("Polymer"))
 			{
-				System.out.println("Complex/Polymer");
 				infEntity = OrthologousEntity.createInfComplexPolymer(attributeInst, override);
 			} else if (attributeInst.getSchemClass().isa("EntitySet"))
 			{
 				//TODO: Check species attribute
-//				OrthologousEntity.createInfEntitySet(attributeInst);
+				if (attributeInst.getAttributeValue("species") != null)
+				{
+					infEntity = OrthologousEntity.createInfEntitySet(attributeInst, override);
+				} else {
+					infEntity = attributeInst;
+				}
 			} else if (attributeInst.getSchemClass().isa("SimpleEntity"))
 			{
-//				System.out.println("SimpleEntity");
 			} else {
-//				System.out.println("Unknown");
 			}
 			//TODO: %orthologous_entity
+			if (override)
+			{
+				return infEntity;
+			}
 			orthologousEntity.put(attributeInst, infEntity);
 		} 
 			//TODO: Properly 'unless' evaluation
@@ -118,7 +124,6 @@ public class OrthologousEntity {
 			complexSummation.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummation);
 			//TODO: check for identical instances (complexSummation)
-			
 			ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
 			if (complexInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
 			{
@@ -141,12 +146,86 @@ public class OrthologousEntity {
 		}
 		return infComplexInst;
 	}
-	
-	
-	
-	
-	public static void createInfEntitySet(GKInstance attributeInst)
+	//TODO: The organization of this function could probably be re-organized
+	public static GKInstance createInfEntitySet(GKInstance attributeInst, boolean override) throws InvalidAttributeException, Exception
 	{
-		System.out.println("Hello");
+		//TODO: %inferred_gse; [infer members] proper filtering; Could infer_members happen after protein count?
+		HashSet<String> existingMembers = new HashSet<String>();
+		ArrayList<GKInstance> membersList = new ArrayList<GKInstance>();
+		// Equivalent to infer_members
+		for (Object memberInst : attributeInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
+		{
+			GKInstance infMember = OrthologousEntity.createOrthoEntity((GKInstance) memberInst, false);
+			if (infMember != null)
+			{
+				existingMembers.add(infMember.getAttributeValue("name").toString());
+				membersList.add(infMember);
+			}
+		}
+		GKInstance infEntitySetInst = createInferredInstance.newInferredGKInstance(attributeInst);
+		infEntitySetInst.addAttributeValue(ReactomeJavaConstants.name, attributeInst.getAttributeValue("name"));
+		infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasMember, membersList);
+		if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.OpenSet))
+		{
+			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.referenceEntity, attributeInst.getAttributeValue("referenceEntity"));
+		} else {
+			//TODO: Count distinct proteins;
+			if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet))
+			{
+				//TODO: CandidateSet
+				HashSet<String> existingCandidates = new HashSet<String>();
+				ArrayList<GKInstance> candidatesListUnfiltered = new ArrayList<GKInstance>();
+				// Equivalent to infer_members
+				for (Object candidateInst : attributeInst.getAttributeValuesList(ReactomeJavaConstants.hasCandidate))
+				{
+					GKInstance infCandidate = OrthologousEntity.createOrthoEntity((GKInstance) candidateInst, false);
+					if (infCandidate != null)
+					{
+						existingCandidates.add(infCandidate.getAttributeValue("name").toString());
+						candidatesListUnfiltered.add(infCandidate);
+					}
+				}
+				// Check for duplicate instances between membersList and candidatesList, keeping only unique ones	
+				ArrayList<GKInstance> candidatesList = new ArrayList<GKInstance>();
+				for (GKInstance candidate : candidatesListUnfiltered)
+				{
+					int memberCount = 0;
+					for (GKInstance member : membersList)
+					{
+						if (candidate == member)
+						{
+							memberCount++;
+						}
+					}
+					if (memberCount == 0)
+					{
+						candidatesList.add(candidate);
+					}
+				}
+				if (candidatesList.size() > 0)
+				{
+					infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasCandidate, candidatesList);
+				} else {
+					//TODO: Candidate-less hasCandidates
+				}
+				
+			} else if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.DefinedSet))
+			{
+				if (membersList.size() == 0)
+				{
+					//TODO: create_ghost
+				} else if (membersList.size() == 1) {
+					//TODO: Make inferred instance that member
+				}
+				// If it has more than 1 member, nothing happens here, as all members are in this inferred instances 'HasMember' attribute
+			}
+		}
+		//TODO: Check for identical instances
+		if (infEntitySetInst.getSchemClass().isValidAttribute("species") && attributeInst.getAttributeValue("species") != null)
+		{
+			// add attribute value if necessary InferredFrom/To; update; %inferred_gse
+		}
+		return infEntitySetInst;
+		
 	}
 }
