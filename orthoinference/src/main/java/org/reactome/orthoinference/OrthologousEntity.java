@@ -37,45 +37,45 @@ public class OrthologousEntity {
 			// TODO: Make sure this null check actually works
 			if (orthologousEntity.get(entityInst) == null)
 			{
-		// TODO: has_species function 
-			if (!OrthologousEntity.hasSpecies(entityInst))
-			{
-				infEntity = entityInst;
-			}
-			if (entityInst.getSchemClass().isa("GenomeEncodedEntity"))
-			{
-				if (entityInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
+				// TODO: Verify this works for all instance types
+				if (!OrthologousEntity.hasSpecies(entityInst))
 				{
-					//TODO: create ghost
-				} else {
-					infEntity = OrthologousEntity.createInfGEE(entityInst, override);
-				}
-			} else if (entityInst.getSchemClass().isa("Complex") || entityInst.getSchemClass().isa("Polymer"))
-			{
-				infEntity = OrthologousEntity.createInfComplexPolymer(entityInst, override);
-			} else if (entityInst.getSchemClass().isa("EntitySet"))
-			{
-				//TODO: Check species attribute
-				if (entityInst.getAttributeValue("species") != null)
-				{
-					infEntity = OrthologousEntity.createInfEntitySet(entityInst, override);
-				} else {
 					infEntity = entityInst;
+				} else if (entityInst.getSchemClass().isa("GenomeEncodedEntity"))
+				{
+					// Change to 'EWAS' and make the else create ghost (??)
+					if (entityInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
+					{
+						//TODO: create ghost if override
+					} else {
+						infEntity = OrthologousEntity.createInfGEE(entityInst, override);
+					}
+				} else if (entityInst.getSchemClass().isa("Complex") || entityInst.getSchemClass().isa("Polymer"))
+				{
+					infEntity = OrthologousEntity.createInfComplexPolymer(entityInst, override);
+				} else if (entityInst.getSchemClass().isa("EntitySet"))
+				{
+					//TODO: Is this species check redundant? Depends if EntitySet can have it while it's constituent parts might not, and vice versa
+					if (entityInst.getAttributeValue("species") != null)
+					{
+						infEntity = OrthologousEntity.createInfEntitySet(entityInst, override);
+					} else {
+						infEntity = entityInst;
+					}
+				} else if (entityInst.getSchemClass().isa("SimpleEntity"))
+				{
+					infEntity = entityInst;
+				} else {
+					//TODO: Unknown Class
 				}
-			} else if (entityInst.getSchemClass().isa("SimpleEntity"))
-			{
-			} else {
-			}
-			//TODO: %orthologous_entity
-			if (override)
-			{
-				return infEntity;
-			}
-			orthologousEntity.put(entityInst, infEntity);
-		} 
-			//TODO: Properly 'unless' evaluation
-			GKInstance existingInst = orthologousEntity.get(entityInst);
-			return existingInst;
+				//TODO: %orthologous_entity
+				if (override)
+				{
+					return infEntity;
+				}
+				orthologousEntity.put(entityInst, infEntity);
+			} 
+			return orthologousEntity.get(entityInst);
 		} else {
 			//TODO: check intracellular; if flag create clone;
 			System.out.println("Invalid");
