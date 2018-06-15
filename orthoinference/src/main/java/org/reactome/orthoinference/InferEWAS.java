@@ -105,7 +105,6 @@ public class InferEWAS {
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
 		enspDbInst = GenerateInstance.checkForIdenticalInstances(enspDbInst);
-		System.out.println(enspDbInst.getAttributeValue("DB_ID"));
 	}
 	
 	// Creates instance pertaining to the species Ensembl Gene DB
@@ -119,17 +118,17 @@ public class InferEWAS {
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
 		ensgDbInst = GenerateInstance.checkForIdenticalInstances(ensgDbInst);
-		System.out.println(ensgDbInst.getAttributeValue("DB_ID"));
 	}
 	
 	// Create instance pertaining to any alternative reference DB for the species
-	public void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException
+	public void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		SchemaClass alternateDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		alternateDbInst = new GKInstance(alternateDb);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.name, alternateDbName);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesAlternateDbUrl);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);
+		alternateDbInst = GenerateInstance.checkForIdenticalInstances(alternateDbInst);
 		refDb = true;
 		//TODO: Check for identical instances
 	}
