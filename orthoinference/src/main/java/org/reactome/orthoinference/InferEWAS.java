@@ -2,6 +2,7 @@ package org.reactome.orthoinference;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,74 +37,61 @@ public class InferEWAS {
 	//TODO: Add parent function that organizes the EWAS setup
 	//TODO: Create uniprot and ensemble reference database variables for EWAS setup
 	// Read the species-specific orthopairs file, and create a HashMap with the contents
-	public void readMappingFile(String toSpecies, String fromSpecies)
+	public void readMappingFile(String toSpecies, String fromSpecies) throws IOException
 	{
 		String mappingFileName = fromSpecies + "_" + toSpecies + "_mapping.txt";
 		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
-		try {
-			FileReader fr = new FileReader(mappingFilePath);
-			BufferedReader br = new BufferedReader(fr);
-			
-			String currentLine;
-			while ((currentLine = br.readLine()) != null)
-			{
-				String[] tabSplit = currentLine.split("\t");
-				String mapKey = tabSplit[0];
-				String[] spaceSplit = tabSplit[1].split(" ");
-				InferEWAS.homologueMappings.put(mapKey, spaceSplit);
-			}
-			br.close();
-			fr.close();
-		} catch (Exception e) {
-			e.printStackTrace();
+		FileReader fr = new FileReader(mappingFilePath);
+		BufferedReader br = new BufferedReader(fr);
+		
+		String currentLine;
+		while ((currentLine = br.readLine()) != null)
+		{
+			String[] tabSplit = currentLine.split("\t");
+			String mapKey = tabSplit[0];
+			String[] spaceSplit = tabSplit[1].split(" ");
+			InferEWAS.homologueMappings.put(mapKey, spaceSplit);
 		}
+		br.close();
+		fr.close();
 	}
 	
 	// Fetches Uniprot DB instance
 	@SuppressWarnings("unchecked")
-	public void createUniprotDbInst()
+	public void createUniprotDbInst() throws Exception
 	{
-		try
-		{
 		 Collection<GKInstance> uniprotDbInstances = (Collection<GKInstance>) dba.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "UniProt");
 		 uniprotDbInst = uniprotDbInstances.iterator().next();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 	
 	// Read the species-specific ENSG gene-protein mappings, and create a Hashmap with the contents
-	public void readENSGMappingFile(String toSpecies)
+	public void readENSGMappingFile(String toSpecies) throws IOException
 	{
 		String mappingFileName = toSpecies + "_gene_protein_mapping.txt";
 		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
-		try {
-			FileReader fr = new FileReader(mappingFilePath);
-			BufferedReader br = new BufferedReader(fr);
-			
-			String currentLine;
-			while ((currentLine = br.readLine()) != null)
-			{
-				String[] tabSplit = currentLine.split("\t");
-				String ensgKey = tabSplit[0];
-				String[] spaceSplit = tabSplit[1].split(" ");
-				for (String proteinId : spaceSplit) {
-					String[] colonSplit = proteinId.split(":");
-					if (ensgMappings.get(colonSplit[1]) == null)
-					{
-						ArrayList<String> singleArray = new ArrayList<String>();
-						singleArray.add(ensgKey);
-						ensgMappings.put(colonSplit[1], singleArray);
-					} else {
-						ensgMappings.get(colonSplit[1]).add(ensgKey);
-					}					
-				}
+		FileReader fr = new FileReader(mappingFilePath);
+		BufferedReader br = new BufferedReader(fr);
+		
+		String currentLine;
+		while ((currentLine = br.readLine()) != null)
+		{
+			String[] tabSplit = currentLine.split("\t");
+			String ensgKey = tabSplit[0];
+			String[] spaceSplit = tabSplit[1].split(" ");
+			for (String proteinId : spaceSplit) {
+				String[] colonSplit = proteinId.split(":");
+				if (ensgMappings.get(colonSplit[1]) == null)
+				{
+					ArrayList<String> singleArray = new ArrayList<String>();
+					singleArray.add(ensgKey);
+					ensgMappings.put(colonSplit[1], singleArray);
+				} else {
+					ensgMappings.get(colonSplit[1]).add(ensgKey);
+				}					
 			}
-			br.close();
-			fr.close();
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
+		br.close();
+		fr.close();
 	}
 	
 	// Creates instance pertaining to the species Ensembl Protein DB
@@ -112,11 +100,12 @@ public class InferEWAS {
 		String enspSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_PROTEIN";
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		enspDbInst = new GKInstance(referenceDb);
-//		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL");
+//		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, enspSpeciesDb);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
 		enspDbInst = GenerateInstance.checkForIdenticalInstances(enspDbInst);
+		System.out.println(enspDbInst.getAttributeValue("DB_ID"));
 	}
 	
 	// Creates instance pertaining to the species Ensembl Gene DB
@@ -125,18 +114,17 @@ public class InferEWAS {
 		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_GENE";
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		ensgDbInst = new GKInstance(referenceDb);
-//		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL");
+//		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
 		ensgDbInst = GenerateInstance.checkForIdenticalInstances(ensgDbInst);
+		System.out.println(ensgDbInst.getAttributeValue("DB_ID"));
 	}
 	
 	// Create instance pertaining to any alternative reference DB for the species
-	public void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl)
+	public void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException
 	{
-		try
-		{
 		SchemaClass alternateDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		alternateDbInst = new GKInstance(alternateDb);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.name, alternateDbName);
@@ -144,9 +132,6 @@ public class InferEWAS {
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);
 		refDb = true;
 		//TODO: Check for identical instances
-		} catch (Exception e) {
-			e.printStackTrace();
-		}	
 	}
 	
 	// Sets the species instance for inferEWAS to use
@@ -198,20 +183,18 @@ public class InferEWAS {
 					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);
 					infEWAS.addAttributeValue(ReactomeJavaConstants.startCoordinate, infAttributeInst.getAttributeValue("startCoordinate"));
 					infEWAS.addAttributeValue(ReactomeJavaConstants.endCoordinate, infAttributeInst.getAttributeValue("endCoordinate"));
-					try {
-						Integer startCoord = Integer.valueOf(infEWAS.getAttributeValue("startCoordinate").toString());
-						Integer endCoord = Integer.valueOf(infEWAS.getAttributeValue("endCoordinate").toString());
-						if (startCoord > 1 || endCoord > 1) {
-							@SuppressWarnings("unchecked")
-							ArrayList<String> infAttributeInstNames = (ArrayList<String>) ((GKInstance) infAttributeInst).getAttributeValuesList("name");
-							infEWAS.addAttributeValue(ReactomeJavaConstants.name, infAttributeInstNames.get(0));
-							infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
-						} else {
-							infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
-						}
-					} catch (NullPointerException e) {
-						e.printStackTrace();
+
+					Integer startCoord = Integer.valueOf(infEWAS.getAttributeValue("startCoordinate").toString());
+					Integer endCoord = Integer.valueOf(infEWAS.getAttributeValue("endCoordinate").toString());
+					if (startCoord > 1 || endCoord > 1) {
+						@SuppressWarnings("unchecked")
+						ArrayList<String> infAttributeInstNames = (ArrayList<String>) ((GKInstance) infAttributeInst).getAttributeValuesList("name");
+						infEWAS.addAttributeValue(ReactomeJavaConstants.name, infAttributeInstNames.get(0));
+						infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
+					} else {
+						infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
 					}
+						
 					// Infer residue modifications
 					@SuppressWarnings("unchecked")
 					ArrayList<GKInstance> modifiedResidues = ((ArrayList<GKInstance>) infAttributeInst.getAttributeValuesList("hasModifiedResidue"));

@@ -61,16 +61,11 @@ public class InferReaction {
 	
 	// Function used to created inferred catalysts
 	@SuppressWarnings("unchecked")
-	public static void inferCatalyst(GKInstance reactionInst, Instance inferredReaction)
+	public static void inferCatalyst(GKInstance reactionInst, Instance inferredReaction) throws InvalidAttributeException, Exception
 	{
-		try {
-			
 		for (@SuppressWarnings("unused") GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList("catalystActivity"))
 		{
 //			System.out.println("  CatalystActivity");
-		}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 }

@@ -5,6 +5,8 @@ import java.util.Collection;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.InvalidAttributeException;
+import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
 
 public class GenerateInstance {
@@ -27,31 +29,21 @@ public class GenerateInstance {
 //		TODO: Instance Edits; Valid Attribute comparment/species; check_intracellular 
 		{
 			GKInstance inferredInst = null;
-			try
-			{
 			String reactionClass = instanceToBeInferred.getSchemClass().getName();
 			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(reactionClass);
 			inferredInst = new GKInstance(referenceDNAClass);
-			
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 			return inferredInst;
 		}
 		
 		// create_ghost equivalent; Returns a mock homologue that is needed in cases of unsuccessful inference
-		public static GKInstance newMockGKInstance(GKInstance instanceToBeMocked)
+		public static GKInstance newMockGKInstance(GKInstance instanceToBeMocked) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 		{
 			SchemaClass geeClass = dba.getSchema().getClassByName(ReactomeJavaConstants.GenomeEncodedEntity);
 			GKInstance mockedInst = new GKInstance(geeClass);
-			try {
 			String mockedName = (String) instanceToBeMocked.getAttributeValue("name");
 			mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);
 			mockedInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 			//TODO: Instance edit; check intracellular; inferred to/from; update;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 			return mockedInst;
 		}
 		

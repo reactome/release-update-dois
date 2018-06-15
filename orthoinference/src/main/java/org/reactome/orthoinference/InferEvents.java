@@ -40,85 +40,76 @@ public class InferEvents
 		
 		Collection<GKInstance> sourceSpeciesInst;
 		
-		try
-		{
-			Properties props = new Properties();
-			props.load(new FileInputStream(pathToConfig));
-			
-			//TODO: Create config equivalent for species as seen in Config_Species.pm
+		Properties props = new Properties();
+		props.load(new FileInputStream(pathToConfig));
+		
+		//TODO: Create config equivalent for species as seen in Config_Species.pm
 //			ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
 //			String speciesToInferFromShort = "hsap";
-			Object speciesToInferFromLong = "Homo sapiens";
-			String username = props.getProperty("username");
-			String password = props.getProperty("password");
-			String database = props.getProperty("database");
-			String host = props.getProperty("host");
-			int port = Integer.valueOf(props.getProperty("port"));
-			
-			// Set-Up
-			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
-			InferReaction.setAdaptor(dbAdaptor);
-			OrthologousEntity orthoInferrer = new OrthologousEntity();
-			InferEWAS ewasInferrer = new InferEWAS();
-			GenerateInstance instanceGenerator = new GenerateInstance();
-			orthoInferrer.setAdaptor(dbAdaptor);
-			ewasInferrer.setAdaptor(dbAdaptor);
-			ewasInferrer.readMappingFile("ddis","hsap");
-			ewasInferrer.readENSGMappingFile("ddis");
-			ewasInferrer.createUniprotDbInst();
-			ewasInferrer.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
-			ewasInferrer.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
-			if (refDb)
+		Object speciesToInferFromLong = "Homo sapiens";
+		String username = props.getProperty("username");
+		String password = props.getProperty("password");
+		String database = props.getProperty("database");
+		String host = props.getProperty("host");
+		int port = Integer.valueOf(props.getProperty("port"));
+		
+		// Set-Up
+		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
+		InferReaction.setAdaptor(dbAdaptor);
+		OrthologousEntity orthoInferrer = new OrthologousEntity();
+		InferEWAS ewasInferrer = new InferEWAS();
+		GenerateInstance instanceGenerator = new GenerateInstance();
+		GenerateInstance.setAdaptor(dbAdaptor);
+		orthoInferrer.setAdaptor(dbAdaptor);
+		ewasInferrer.setAdaptor(dbAdaptor);
+		ewasInferrer.readMappingFile("ddis","hsap");
+		ewasInferrer.readENSGMappingFile("ddis");
+		ewasInferrer.createUniprotDbInst();
+		ewasInferrer.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
+		ewasInferrer.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
+		System.exit(0);
+		if (refDb)
+		{
+			ewasInferrer.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
+		}
+		InferEvents.createSpeciesInst("Dictyostelium discoideum");
+		orthoInferrer.setSpeciesInst(speciesInst);
+		ewasInferrer.setSpeciesInst(speciesInst);
+		instanceGenerator.setSpeciesInst(speciesInst);
+		
+		// Get DB instances of source species
+		sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
+		@SuppressWarnings("unused")
+		InferReaction reactionInferrer = new InferReaction();
+		
+		if (!sourceSpeciesInst.isEmpty())
+		{
+			String dbId = null;
+			for (GKInstance speciesInst : sourceSpeciesInst) 
 			{
-				ewasInferrer.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
+				dbId = speciesInst.getAttributeValue("DB_ID").toString();
+				
 			}
-			InferEvents.createSpeciesInst("Dictyostelium discoideum");
-			orthoInferrer.setSpeciesInst(speciesInst);
-			ewasInferrer.setSpeciesInst(speciesInst);
-			instanceGenerator.setSpeciesInst(speciesInst);
 			
-			// Get DB instances of source species
-			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
-			@SuppressWarnings("unused")
-			InferReaction reactionInferrer = new InferReaction();
-			
-			if (!sourceSpeciesInst.isEmpty())
+			// Gets Reaction instances of source species
+			Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
+			if (!reactionInstances.isEmpty())
 			{
-				String dbId = null;
-				for (GKInstance speciesInst : sourceSpeciesInst) 
+				for (GKInstance reactionInst : reactionInstances)
 				{
-					dbId = speciesInst.getAttributeValue("DB_ID").toString();
-					
+					InferReaction.inferEvent(reactionInst);
 				}
 				
-				// Gets Reaction instances of source species
-				Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
-				if (!reactionInstances.isEmpty())
-				{
-					for (GKInstance reactionInst : reactionInstances)
-					{
-						InferReaction.inferEvent(reactionInst);
-					}
-				}
-			}	
-		}
-		catch (Exception e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+			}
+		}	
 	}
 	//TODO: Perl creates 'Name' using an array -- Is that a Perlism or a Database-ism?
 	//TODO: Check for identical instances
-	public static void createSpeciesInst(String toSpeciesLong)
+	public static void createSpeciesInst(String toSpeciesLong) throws Exception
 	{
-		try 
-		{
 		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
 		speciesInst = new GKInstance(referenceDb);
 		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		speciesInst = GenerateInstance.checkForIdenticalInstances(speciesInst);
 	}
 }
