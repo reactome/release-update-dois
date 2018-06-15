@@ -1,8 +1,7 @@
 package org.reactome.orthoinference;
 
-import java.util.Collection;
-
 import org.gk.model.GKInstance;
+import org.gk.model.Instance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.SchemaClass;
@@ -23,8 +22,9 @@ public class GenerateInstance {
 		}
 		
 		// Creates new instance that will be inferred based on the incoming instances class		
-		public static GKInstance newInferredGKInstance(GKInstance instanceToBeInferred)
-//		TODO: Instance Edits; Valid Attribute comparment/species; check_intracellular 
+		public GKInstance newInferredGKInstance(GKInstance instanceToBeInferred)
+//		TODO: Instance Edits 
+//		TODO: Species -> Taxon addition
 		{
 			GKInstance inferredInst = null;
 			try
@@ -37,6 +37,7 @@ public class GenerateInstance {
 				e.printStackTrace();
 			}
 			return inferredInst;
+
 		}
 		
 		// create_ghost equivalent; Returns a mock homologue that is needed in cases of unsuccessful inference
@@ -53,20 +54,5 @@ public class GenerateInstance {
 				e.printStackTrace();
 			}
 			return mockedInst;
-		}
-		
-		// Checks that equivalent instances don't already exist in the DB, substituting if they do
-		//TODO: Go over the Perl version and make sure they match perfectly
-		public static GKInstance checkForIdenticalInstances(GKInstance inferredInst) throws Exception
-		{
-			@SuppressWarnings("unchecked")
-			Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
-			if (identicalInstances.size() == 1) {
-				return identicalInstances.iterator().next();
-			} else if (identicalInstances.size() > 1) {
-				return identicalInstances.iterator().next();
-			} else {
-				return inferredInst;
-			}
 		}
 }

@@ -61,7 +61,6 @@ public class InferEvents
 			OrthologousEntity orthoInferrer = new OrthologousEntity();
 			InferEWAS ewasInferrer = new InferEWAS();
 			GenerateInstance instanceGenerator = new GenerateInstance();
-			GenerateInstance.setAdaptor(dbAdaptor);
 			orthoInferrer.setAdaptor(dbAdaptor);
 			ewasInferrer.setAdaptor(dbAdaptor);
 			ewasInferrer.readMappingFile("ddis","hsap");
@@ -69,7 +68,6 @@ public class InferEvents
 			ewasInferrer.createUniprotDbInst();
 			ewasInferrer.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
 			ewasInferrer.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
-			System.exit(0);
 			if (refDb)
 			{
 				ewasInferrer.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
@@ -97,49 +95,9 @@ public class InferEvents
 				Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
 				if (!reactionInstances.isEmpty())
 				{
-					// Remove
-					ArrayList<GKInstance> filteredReactions = new ArrayList<GKInstance>();
-					filteredReactions.add(null);
-					filteredReactions.add(null);
-					filteredReactions.add(null);
-					filteredReactions.add(null);
-//					filteredReactions.add(null);
-//					filteredReactions.add(null);
-					int count = 0;
 					for (GKInstance reactionInst : reactionInstances)
 					{
-//						if (count == 5) { System.exit(0); }
-						// Remove all except line 111 inferEvent
-						String dBId = reactionInst.getAttributeValue("DB_ID").toString();
-						if (dBId.equals("68712")) //|| dBId.equals("68611") || dBId.equals("68615") || dBId.equals("68603"))
-						{
-							((ArrayList<GKInstance>) filteredReactions).set(0, reactionInst);
-//						InferReaction.inferEvent(reactionInst);
-						count++;
-//						} else if (dBId.equals("77585"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(1, reactionInst);
-//						} else if (dBId.equals("5661122"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(2, reactionInst);
-//						} else if (dBId.equals("5672950"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(3, reactionInst);
-//						} else if (dBId.equals("5672950"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(4, reactionInst);
-//						} else if (dBId.equals("71593"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(5, reactionInst);
-						}
-					}
-					
-					for (GKInstance filtReactionInst : filteredReactions)
-					{
-						if (filtReactionInst != null)
-						{
-						InferReaction.inferEvent(filtReactionInst);
-						}
+						InferReaction.inferEvent(reactionInst);
 					}
 				}
 			}	
@@ -159,7 +117,6 @@ public class InferEvents
 		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
 		speciesInst = new GKInstance(referenceDb);
 		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
-		speciesInst = GenerateInstance.checkForIdenticalInstances(speciesInst);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -10,7 +10,6 @@ import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
-import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
 
 public class InferEWAS {
@@ -97,6 +96,7 @@ public class InferEWAS {
 					} else {
 						ensgMappings.get(colonSplit[1]).add(ensgKey);
 					}					
+//					ensgMappings.get(colonSplit[1]).add(ensgKey);
 				}
 			}
 			br.close();
@@ -107,29 +107,39 @@ public class InferEWAS {
 	}
 	
 	// Creates instance pertaining to the species Ensembl Protein DB
-	public void createEnsemblProteinDbInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public void createEnsemblProteinDbInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl)
 	{
-		String enspSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_PROTEIN";
+		try
+		{
+		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_PROTEIN";
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		enspDbInst = new GKInstance(referenceDb);
-//		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL");
-		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, enspSpeciesDb);
+		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "Ensembl");
+		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
-		enspDbInst = GenerateInstance.checkForIdenticalInstances(enspDbInst);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	// Creates instance pertaining to the species Ensembl Gene DB
-	public void createEnsemblGeneDBInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public void createEnsemblGeneDBInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl)
 	{
+		try 
+		{
+		// TODO: How to store multiple values in same attribute eg: name below, start/end coord name during ewas inference
 		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_GENE";
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		ensgDbInst = new GKInstance(referenceDb);
-//		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL");
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL");
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
-		ensgDbInst = GenerateInstance.checkForIdenticalInstances(ensgDbInst);
+		//TODO: Check for identical instances function
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	// Create instance pertaining to any alternative reference DB for the species
@@ -172,7 +182,6 @@ public class InferEWAS {
 					// Creating inferred reference gene product
 					// Equivalent of create_ReferenceDNASequence function in infer_events.pl
 					GKInstance infReferenceGeneProduct = GenerateInstance.newInferredGKInstance((GKInstance) infAttributeInst.getAttributeValue("referenceEntity"));
-					infReferenceGeneProduct.setDbAdaptor(dba);
 					if (seenRPS.get(homologueId) == null)
 					{
 						ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId);
@@ -257,13 +266,14 @@ public class InferEWAS {
 	}
 	
 	// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein
-	public static ArrayList<GKInstance> createReferenceDNASequence(String homologueId) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static ArrayList<GKInstance> createReferenceDNASequence(String homologueId)
 	{
 		ArrayList<GKInstance> referenceDNAInstances = new ArrayList<GKInstance>();
 		ArrayList<String> ensgs = ensgMappings.get(homologueId);
 		
 		for (Object ensg : ensgs)
 		{
+			try {
 			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDNASequence);
 			GKInstance referenceDNAInst = new GKInstance(referenceDNAClass);
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
@@ -280,6 +290,9 @@ public class InferEWAS {
 					alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 					referenceDNAInstances.add(alternateRefDNAInst);	
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		return referenceDNAInstances;
 	}
