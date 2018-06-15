@@ -7,9 +7,9 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import org.gk.model.GKInstance;
-import org.gk.model.Instance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.SchemaClass;
 
 public class InferEWAS {
@@ -22,6 +22,7 @@ public class InferEWAS {
 	}
 
 	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
+	private static HashMap<String, GKInstance> seenRPS = new HashMap<String,GKInstance>();
 	private static HashMap<String, ArrayList<String>> ensgMappings = new HashMap<String,ArrayList<String>>();
 	private static GKInstance ensgDbInst = null;
 	private static GKInstance enspDbInst = null;
@@ -165,16 +166,14 @@ public class InferEWAS {
 	}
 	
 	// Creates an inferred EWAS instance
-	public ArrayList<GKInstance> inferEWAS(GKInstance infAttributeInst)
+	public static ArrayList<GKInstance> inferEWAS(GKInstance infAttributeInst) throws InvalidAttributeException, Exception
 	{
 		ArrayList<GKInstance> infEWASInstances = new ArrayList<GKInstance>();
-		try {
-		GenerateInstance createInferredInstance = new GenerateInstance();
 		String referenceEntityId = ((GKInstance) infAttributeInst.getAttributeValue("referenceEntity")).getAttributeValue("identifier").toString();
-		//TODO: Is this null check required?; $opt_filt?; %seen_rps check
+		//TODO: $opt_filt?; %seen_rps check
 		if (homologueMappings.get(referenceEntityId) != null)
 			{
-				// Iterate through the array of values, creating EWAS inferred instances
+				// Iterate through the array of homologue mappings, creating inferred EWAS instances
 				for (Object homologue : homologueMappings.get(referenceEntityId))
 				{
 					String[] splitHomologue = homologue.toString().split(":");
@@ -182,25 +181,29 @@ public class InferEWAS {
 					String homologueId = splitHomologue[1];
 					// Creating inferred reference gene product
 					// Equivalent of create_ReferenceDNASequence function in infer_events.pl
-					ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId);
-					
-					GKInstance referenceDb = null;
-					if (homologueSource.equals("ENSP"))
+					GKInstance infReferenceGeneProduct = GenerateInstance.newInferredGKInstance((GKInstance) infAttributeInst.getAttributeValue("referenceEntity"));
+					if (seenRPS.get(homologueId) == null)
 					{
-						referenceDb = enspDbInst;
+						ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId);
+						GKInstance referenceDb = null;
+						if (homologueSource.equals("ENSP"))
+						{
+							referenceDb = enspDbInst;
+						} else {
+							referenceDb = uniprotDbInst;
+						}
+						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceDatabase,  referenceDb);
+						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.identifier, homologueId);
+						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceGene, inferredReferenceDNAInstances);
+						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+						seenRPS.put(homologueId, infReferenceGeneProduct);
 					} else {
-						referenceDb = uniprotDbInst;
+						infReferenceGeneProduct = seenRPS.get(homologueId);
 					}
-					
-					GKInstance infReferenceGeneProduct = createInferredInstance.newInferredGKInstance((GKInstance) infAttributeInst.getAttributeValue("referenceEntity"));
-					infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceDatabase,  referenceDb);
-					infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.identifier, homologueId);
-					infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceGene, inferredReferenceDNAInstances);
-					infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 					//TODO: check for identical instances; %seen_rps
 					
 					// Creating inferred EWAS 
-					GKInstance infEWAS = createInferredInstance.newInferredGKInstance(infAttributeInst); 
+					GKInstance infEWAS = GenerateInstance.newInferredGKInstance(infAttributeInst); 
 					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);
 					infEWAS.addAttributeValue(ReactomeJavaConstants.startCoordinate, infAttributeInst.getAttributeValue("startCoordinate"));
 					infEWAS.addAttributeValue(ReactomeJavaConstants.endCoordinate, infAttributeInst.getAttributeValue("endCoordinate"));
@@ -225,7 +228,7 @@ public class InferEWAS {
 					boolean phosFlag = true;
 					for (GKInstance modifiedResidue : modifiedResidues)
 					{
-						GKInstance infModifiedResidue = createInferredInstance.newInferredGKInstance((GKInstance) modifiedResidue);
+						GKInstance infModifiedResidue = GenerateInstance.newInferredGKInstance((GKInstance) modifiedResidue);
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.coordinate, modifiedResidue.getAttributeValue("coordinate"));
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.referenceSequence, infReferenceGeneProduct);
 						//TODO: is valid attribute & add "modification" 
@@ -259,9 +262,6 @@ public class InferEWAS {
 					infEWASInstances.add((GKInstance) infEWAS);
 				}
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		return infEWASInstances;
 	}
 	
