@@ -145,9 +145,8 @@ public class OrthologousEntity {
 	{
 		if (homolGEE.get(geeInst) == null)
 		{
-			//TODO: %homol_gee; create_ghost;
-			InferEWAS ewasInferrer = new InferEWAS();
-			ArrayList<GKInstance> infEWASInstances = ewasInferrer.inferEWAS(geeInst);
+			//TODO: create_ghost;
+			ArrayList<GKInstance> infEWASInstances = InferEWAS.inferEWAS(geeInst);
 			if (infEWASInstances.size() > 1)
 			{
 				// TODO: Instance Edit; Check Intracellular; $opt_filt (??); check for identical instances; add attribute values if necessary - inferredFrom/To; %homol_gee
