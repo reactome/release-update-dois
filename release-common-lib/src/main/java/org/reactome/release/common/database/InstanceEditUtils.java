@@ -1,4 +1,4 @@
-package org.reactome.goupdate;
+package org.reactome.release.common.database;
 
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceDisplayNameGenerator;
