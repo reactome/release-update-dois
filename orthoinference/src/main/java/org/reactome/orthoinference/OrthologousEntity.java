@@ -13,6 +13,7 @@ import org.gk.schema.SchemaClass;
 public class OrthologousEntity {
 	
 	private static HashMap<GKInstance, GKInstance> orthologousEntity = new HashMap<GKInstance,GKInstance>();
+	private static HashMap<GKInstance, GKInstance> homolGEE = new HashMap<GKInstance,GKInstance>();
 	private static MySQLAdaptor dba;
 	static GenerateInstance createInferredInstance = new GenerateInstance();
 	
@@ -43,7 +44,7 @@ public class OrthologousEntity {
 					infEntity = entityInst;
 				} else if (entityInst.getSchemClass().isa("GenomeEncodedEntity"))
 				{
-					// Change to 'EWAS' and make the else create ghost (??)
+					// Change to 'EWAS' and make the else create ghost
 					if (entityInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
 					{
 						//TODO: create ghost if override
@@ -84,6 +85,8 @@ public class OrthologousEntity {
 	}
 	
 	// Determines if there is a species attribute in any constituent instances of entityInst
+	// Unless its an 'OtherEntity', the function will check the instance or iterate on  it's
+	// sub-instances until it finds an existing 'species' attribute, or else it will return false.
 	public static boolean hasSpecies(GKInstance entityInst) throws InvalidAttributeException, Exception
 	{
 		if (entityInst.getSchemClass().isa(ReactomeJavaConstants.OtherEntity))
@@ -137,45 +140,46 @@ public class OrthologousEntity {
 			}
 		}
 	}
+	// TODO: Naming change (??); Function description
 	public static GKInstance createInfGEE(GKInstance geeInst, boolean override) throws InvalidAttributeException, Exception
 	{
-		//TODO: %homol_gee; create_ghost;
-		InferEWAS ewasInferrer = new InferEWAS();
-		ArrayList<GKInstance> infEWASInstances = ewasInferrer.inferEWAS(geeInst);
-		SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
-		GKInstance definedSetInst = new GKInstance(definedSetClass);
-		if (infEWASInstances.size() > 1)
+		if (homolGEE.get(geeInst) == null)
 		{
-			try {
-			// TODO: Instance Edit; Check Intracellular; $opt_filt (??); check for identical instances; add attribute values if necessary - inferredFrom/To; %homol_gee
-			String definedSetName = "Homologues of " + geeInst.getAttributeValue("name");
-			definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
-			definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
-			definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}	
-		} else if (infEWASInstances.size() == 1)
-		{
-			//TODO: %homol_gee
-			definedSetInst = infEWASInstances.get(0);
-		} else {
-			//TODO: create_ghost if override; Handle empty return
-			if (override) {
-			GKInstance mockedInst = GenerateInstance.newMockGKInstance(geeInst);
-			return mockedInst;
+			//TODO: %homol_gee; create_ghost;
+			InferEWAS ewasInferrer = new InferEWAS();
+			ArrayList<GKInstance> infEWASInstances = ewasInferrer.inferEWAS(geeInst);
+			if (infEWASInstances.size() > 1)
+			{
+				// TODO: Instance Edit; Check Intracellular; $opt_filt (??); check for identical instances; add attribute values if necessary - inferredFrom/To; %homol_gee
+				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
+				GKInstance definedSetInst = new GKInstance(definedSetClass);
+				String definedSetName = "Homologues of " + geeInst.getAttributeValue("name");
+				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
+				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
+				homolGEE.put(geeInst, definedSetInst);
+			} else if (infEWASInstances.size() == 1)
+			{
+				//TODO: %homol_gee
+				homolGEE.put(geeInst, infEWASInstances.get(0));
 			} else {
-				GKInstance nullInst = null;
-				return nullInst;
+				//TODO: create_ghost if override; Handle empty return
+				if (override) {
+				GKInstance mockedInst = GenerateInstance.newMockGKInstance(geeInst);
+				return mockedInst;
+				} else {
+					GKInstance nullInst = null;
+					return nullInst;
+				}
 			}
 		}
-		return definedSetInst;
+		return homolGEE.get(geeInst);
 	}
 	
 	public static GKInstance createInfComplexPolymer(GKInstance complexInst, boolean override)
 	{
 		//TODO: %inferred_cp; count distinct proteins; filter based on returned protein count and threshold
-		GKInstance infComplexInst = createInferredInstance.newInferredGKInstance(complexInst);
+		GKInstance infComplexInst = GenerateInstance.newInferredGKInstance(complexInst);
 		GKInstance complexSummation = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
 		try {
 			//TODO: Remove brackets from name
@@ -221,7 +225,7 @@ public class OrthologousEntity {
 				membersList.add(infMember);
 			}
 		}
-		GKInstance infEntitySetInst = createInferredInstance.newInferredGKInstance(attributeInst);
+		GKInstance infEntitySetInst = GenerateInstance.newInferredGKInstance(attributeInst);
 		infEntitySetInst.addAttributeValue(ReactomeJavaConstants.name, attributeInst.getAttributeValue("name"));
 		infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasMember, membersList);
 		if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.OpenSet))
