@@ -25,13 +25,18 @@ public class GenerateInstance {
 		}
 		
 		// Creates new instance that will be inferred based on the incoming instances class		
-		public static GKInstance newInferredGKInstance(GKInstance instanceToBeInferred)
+		public static GKInstance newInferredGKInstance(GKInstance instanceToBeInferred) throws Exception
 //		TODO: Instance Edits; Valid Attribute comparment/species; check_intracellular 
 		{
 			GKInstance inferredInst = null;
 			String reactionClass = instanceToBeInferred.getSchemClass().getName();
 			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(reactionClass);
 			inferredInst = new GKInstance(referenceDNAClass);
+			inferredInst.setDbAdaptor(dba);
+			if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.species) != null)
+			{
+				inferredInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+			}
 			return inferredInst;
 		}
 		
@@ -40,7 +45,7 @@ public class GenerateInstance {
 		{
 			SchemaClass geeClass = dba.getSchema().getClassByName(ReactomeJavaConstants.GenomeEncodedEntity);
 			GKInstance mockedInst = new GKInstance(geeClass);
-			String mockedName = (String) instanceToBeMocked.getAttributeValue("name");
+			String mockedName = (String) instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.name);
 			mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);
 			mockedInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 			//TODO: Instance edit; check intracellular; inferred to/from; update;
@@ -51,13 +56,18 @@ public class GenerateInstance {
 		//TODO: Go over the Perl version and make sure they match perfectly
 		public static GKInstance checkForIdenticalInstances(GKInstance inferredInst) throws Exception
 		{
-			@SuppressWarnings("unchecked")
+//			@SuppressWarnings("unchecked")
 			Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
-			if (identicalInstances.size() == 1) {
-				return identicalInstances.iterator().next();
-			} else if (identicalInstances.size() > 1) {
-				return identicalInstances.iterator().next();
+			if (identicalInstances != null) {
+				if (identicalInstances.size() == 1) {
+					return identicalInstances.iterator().next();
+				} else if (identicalInstances.size() > 1) {
+					return identicalInstances.iterator().next();
+				} else {
+				return inferredInst;
+				}
 			} else {
+				dba.storeInstance(inferredInst);
 				return inferredInst;
 			}
 		}
