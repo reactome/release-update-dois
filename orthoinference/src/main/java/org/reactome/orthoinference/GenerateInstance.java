@@ -56,7 +56,7 @@ public class GenerateInstance {
 		//TODO: Go over the Perl version and make sure they match perfectly
 		public static GKInstance checkForIdenticalInstances(GKInstance inferredInst) throws Exception
 		{
-//			@SuppressWarnings("unchecked")
+			@SuppressWarnings("unchecked")
 			Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
 			if (identicalInstances != null) {
 				if (identicalInstances.size() == 1) {

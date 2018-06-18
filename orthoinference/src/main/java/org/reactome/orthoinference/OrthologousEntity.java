@@ -146,24 +146,23 @@ public class OrthologousEntity {
 	{
 		if (homolGEE.get(geeInst) == null)
 		{
-			//TODO: create_ghost;
 			ArrayList<GKInstance> infEWASInstances = InferEWAS.inferEWAS(geeInst);
 			if (infEWASInstances.size() > 1)
 			{
-				// TODO: Instance Edit; Check Intracellular; $opt_filt (??); check for identical instances; add attribute values if necessary - inferredFrom/To; %homol_gee
+				// TODO: Instance Edit; Check Intracellular; $opt_filt (??); add attribute values if necessary - inferredFrom/To
 				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 				GKInstance definedSetInst = new GKInstance(definedSetClass);
+				definedSetInst.setDbAdaptor(dba);
 				String definedSetName = "Homologues of " + geeInst.getAttributeValue("name");
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
+				definedSetInst = GenerateInstance.checkForIdenticalInstances(definedSetInst);
 				homolGEE.put(geeInst, definedSetInst);
 			} else if (infEWASInstances.size() == 1)
 			{
-				//TODO: %homol_gee
 				homolGEE.put(geeInst, infEWASInstances.get(0));
 			} else {
-				//TODO: create_ghost if override; Handle empty return
 				if (override) {
 				GKInstance mockedInst = GenerateInstance.newMockGKInstance(geeInst);
 				return mockedInst;
