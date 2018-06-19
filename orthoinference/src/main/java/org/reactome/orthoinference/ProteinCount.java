@@ -1,20 +1,27 @@
 package org.reactome.orthoinference;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 import org.gk.model.ClassAttributeFollowingInstruction;
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
 import org.gk.model.ReactomeJavaConstants;
+import org.gk.schema.InvalidAttributeException;
 
 public class ProteinCount {
+	
+	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
+	
+	public static void setHomologueMappingFile(HashMap<String, String[]> homologueMappingsCopy) throws IOException
+	{
+		homologueMappings = homologueMappingsCopy;
+	}
 
-	public static void countDistinctProteins (GKInstance instanceToBeInferred) throws Exception
+	public static void countDistinctProteins (GKInstance instanceToBeInferred) throws InvalidAttributeException, Exception
 	{
 		List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
 		classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.ReactionlikeEvent, new String[]{ReactomeJavaConstants.input, ReactomeJavaConstants.output, ReactomeJavaConstants.catalystActivity}, new String[]{}));
@@ -27,5 +34,17 @@ public class ProteinCount {
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> followedInstances = InstanceUtilities.followInstanceAttributes(instanceToBeInferred, classesToFollow, outClasses);		
 
+		int total = 0;
+		int inferred = 0;
+		int max = 0;
+		
+		for (GKInstance entity : followedInstances)
+		{
+			if (entity.getSchemClass().isa(ReactomeJavaConstants.ReferenceGeneProduct))
+			{
+				int count = 0;
+				String identifier = entity.getAttributeValue(ReactomeJavaConstants.identifier).toString();
+			}
+		}
 	}
 }

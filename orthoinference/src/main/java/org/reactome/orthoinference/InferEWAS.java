@@ -36,24 +36,9 @@ public class InferEWAS {
 	
 	//TODO: Add parent function that organizes the EWAS setup
 	//TODO: Create uniprot and ensemble reference database variables for EWAS setup
-	// Read the species-specific orthopairs file, and create a HashMap with the contents
-	public void readMappingFile(String toSpecies, String fromSpecies) throws IOException
+	public void setHomologueMappingFile(HashMap<String, String[]> homologueMappingsCopy) throws IOException
 	{
-		String mappingFileName = fromSpecies + "_" + toSpecies + "_mapping.txt";
-		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
-		FileReader fr = new FileReader(mappingFilePath);
-		BufferedReader br = new BufferedReader(fr);
-		
-		String currentLine;
-		while ((currentLine = br.readLine()) != null)
-		{
-			String[] tabSplit = currentLine.split("\t");
-			String mapKey = tabSplit[0];
-			String[] spaceSplit = tabSplit[1].split(" ");
-			InferEWAS.homologueMappings.put(mapKey, spaceSplit);
-		}
-		br.close();
-		fr.close();
+		homologueMappings = homologueMappingsCopy;
 	}
 	
 	// Fetches Uniprot DB instance

@@ -1,8 +1,12 @@
 package org.reactome.orthoinference;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Properties;
 
 import org.gk.model.GKInstance;
@@ -21,6 +25,7 @@ public class InferEvents
 //	private static final String SchemaClass = null;
 	
 	static MySQLAdaptor dbAdaptor = null;
+	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
 	private static GKInstance speciesInst = null;
 	static boolean refDb = true;
 	
@@ -52,7 +57,7 @@ public class InferEvents
 			String database = props.getProperty("database");
 			String host = props.getProperty("host");
 			int port = Integer.valueOf(props.getProperty("port"));
-			
+
 			// Set-Up
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
 			InferReaction.setAdaptor(dbAdaptor);
@@ -62,7 +67,9 @@ public class InferEvents
 			GenerateInstance.setAdaptor(dbAdaptor);
 			orthoInferrer.setAdaptor(dbAdaptor);
 			ewasInferrer.setAdaptor(dbAdaptor);
-			ewasInferrer.readMappingFile("ddis","hsap");
+			InferEvents.readHomologueMappingFile("ddis", "hsap");
+			ewasInferrer.setHomologueMappingFile(homologueMappings);
+			ProteinCount.setHomologueMappingFile(homologueMappings);
 			ewasInferrer.readENSGMappingFile("ddis");
 			ewasInferrer.createUniprotDbInst();
 			ewasInferrer.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
@@ -89,64 +96,45 @@ public class InferEvents
 					dbId = speciesInst.getAttributeValue("DB_ID").toString();
 					
 				}
-				
 				// Gets Reaction instances of source species
 				Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
 				if (!reactionInstances.isEmpty())
 				{
-					// Remove
-					ArrayList<GKInstance> filteredReactions = new ArrayList<GKInstance>();
-					filteredReactions.add(null);
-					filteredReactions.add(null);
-					filteredReactions.add(null);
-					filteredReactions.add(null);
-//					filteredReactions.add(null);
-//					filteredReactions.add(null);
-					int count = 0;
 					for (GKInstance reactionInst : reactionInstances)
 					{
-//						if (count == 5) { System.exit(0); }
-						// Remove all except line 111 inferEvent
-//						String dBId = reactionInst.getAttributeValue("DB_ID").toString();
-//						if (dBId.equals("68712")) //|| dBId.equals("68611") || dBId.equals("68615") || dBId.equals("68603"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(0, reactionInst);
 						InferReaction.inferEvent(reactionInst);
-						count++;
-//						} else if (dBId.equals("77585"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(1, reactionInst);
-//						} else if (dBId.equals("5661122"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(2, reactionInst);
-//						} else if (dBId.equals("5672950"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(3, reactionInst);
-//						} else if (dBId.equals("5672950"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(4, reactionInst);
-//						} else if (dBId.equals("71593"))
-//						{
-//							((ArrayList<GKInstance>) filteredReactions).set(5, reactionInst);
-//						}
 					}
-					
-//					for (GKInstance filtReactionInst : filteredReactions)
-//					{
-//						if (filtReactionInst != null)
-//						{
-//						InferReaction.inferEvent(filtReactionInst);
-//						}
-//					}
 				}
 			}	
 	}
+
+	// Read the species-specific orthopairs file, and create a HashMap with the contents
+	public static void readHomologueMappingFile(String toSpecies, String fromSpecies) throws IOException
+	{
+		String mappingFileName = fromSpecies + "_" + toSpecies + "_mapping.txt";
+		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
+		FileReader fr = new FileReader(mappingFilePath);
+		BufferedReader br = new BufferedReader(fr);
+		
+		String currentLine;
+		while ((currentLine = br.readLine()) != null)
+		{
+			String[] tabSplit = currentLine.split("\t");
+			String mapKey = tabSplit[0];
+			String[] spaceSplit = tabSplit[1].split(" ");
+			homologueMappings.put(mapKey, spaceSplit);
+		}
+		br.close();
+		fr.close();
+	}
+	
 	//TODO: Perl creates 'Name' using an array -- Is that a Perlism or a Database-ism?
 	//TODO: Check for identical instances
 	public static void createSpeciesInst(String toSpeciesLong) throws Exception
 	{
 		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
 		speciesInst = new GKInstance(referenceDb);
+		speciesInst.setDbAdaptor(dbAdaptor);
 		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
 		speciesInst = GenerateInstance.checkForIdenticalInstances(speciesInst);
 	}
