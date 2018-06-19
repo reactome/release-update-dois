@@ -43,6 +43,8 @@ public class InferReaction {
 		evidenceTypeInst = GenerateInstance.checkForIdenticalInstances(evidenceTypeInst);
 		inferredReaction.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 		
+		ProteinCount.countDistinctProteins(reactionInst);
+		
 		//TODO: count_distinct_proteins; write eligible reactions to external file and keep count;
 		
 		//TODO: Success measure; 

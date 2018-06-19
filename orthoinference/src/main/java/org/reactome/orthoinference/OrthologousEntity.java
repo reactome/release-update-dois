@@ -15,6 +15,7 @@ public class OrthologousEntity {
 	
 	private static HashMap<GKInstance, GKInstance> orthologousEntity = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> homolGEE = new HashMap<GKInstance,GKInstance>();
+	private static HashMap<GKInstance, GKInstance> complexPolymer = new HashMap<GKInstance, GKInstance>();
 	private static MySQLAdaptor dba;
 	static GenerateInstance createInferredInstance = new GenerateInstance();
 	
@@ -177,32 +178,42 @@ public class OrthologousEntity {
 	
 	public static GKInstance createInfComplexPolymer(GKInstance complexInst, boolean override) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
-		//TODO: %inferred_cp; count distinct proteins; filter based on returned protein count and threshold
-		GKInstance infComplexInst = GenerateInstance.newInferredGKInstance(complexInst);
-		GKInstance complexSummation = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
-		//TODO: Remove brackets from name
-		infComplexInst.addAttributeValue(ReactomeJavaConstants.name, complexInst.getAttributeValue("name"));
-		complexSummation.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
-		complexSummation = GenerateInstance.checkForIdenticalInstances(complexSummation);
-		infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummation);
-		//TODO: check for identical instances (complexSummation)
-		ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
-		if (complexInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
+		if (complexPolymer.get(complexInst) == null)
 		{
-			for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
-			{		
-				infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
+			ProteinCount.countDistinctProteins(complexInst);
+			//TODO: %inferred_cp; count distinct proteins; filter based on returned protein count and threshold
+			GKInstance infComplexInst = GenerateInstance.newInferredGKInstance(complexInst);
+			GKInstance complexSummation = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
+			//TODO: Remove brackets from name
+			infComplexInst.addAttributeValue(ReactomeJavaConstants.name, complexInst.getAttributeValue("name"));
+			complexSummation.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
+			complexSummation = GenerateInstance.checkForIdenticalInstances(complexSummation);
+			infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummation);
+			//TODO: check for identical instances (complexSummation)
+			ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
+			if (complexInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
+			{
+				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
+				{		
+					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
+				}
+			infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
+			} else {
+				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
+				{		
+					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
+				}
+			infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 			}
-		infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
-		} else {
-			for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
-			{		
-				infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
+			//TODO: Add total,inferred,max proteins count; inferredTo & inferredFrom; update; add to hash
+			if (override)
+			{
+				return infComplexInst;
+			} else {
+				complexPolymer.put(complexInst, infComplexInst);
 			}
-		infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 		}
-		//TODO: Add total,inferred,max proteins count; inferredTo & inferredFrom; update; add to hash
-		return infComplexInst;
+		return complexPolymer.get(complexInst);
 	}
 	//TODO: The organization of this function could probably be re-organized
 	public static GKInstance createInfEntitySet(GKInstance attributeInst, boolean override) throws InvalidAttributeException, Exception
@@ -228,6 +239,7 @@ public class OrthologousEntity {
 			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.referenceEntity, attributeInst.getAttributeValue("referenceEntity"));
 		} else {
 			//TODO: Count distinct proteins;
+			ProteinCount.countDistinctProteins(attributeInst);
 			if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet))
 			{
 				//TODO: CandidateSet
