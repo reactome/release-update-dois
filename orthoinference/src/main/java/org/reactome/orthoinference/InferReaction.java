@@ -1,6 +1,7 @@
 package org.reactome.orthoinference;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.gk.model.GKInstance;
 import org.gk.model.Instance;
@@ -43,14 +44,15 @@ public class InferReaction {
 		evidenceTypeInst = GenerateInstance.checkForIdenticalInstances(evidenceTypeInst);
 		inferredReaction.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 		
-		ProteinCount.countDistinctProteins(reactionInst);
-		
+		List<Integer> countedReactionProteins = ProteinCount.countDistinctProteins(reactionInst);
 		//TODO: count_distinct_proteins; write eligible reactions to external file and keep count;
 		
 		//TODO: Success measure; 
-		InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
-//		InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
-//		InferReaction.inferCatalyst(reactionInst, inferredReaction);
+		if (countedReactionProteins.get(0) > 0) {
+			InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
+	//		InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
+	//		InferReaction.inferCatalyst(reactionInst, inferredReaction);
+		}
 	}
 	
 	// Function used to create inferred instances related to either 'input' or 'output'
