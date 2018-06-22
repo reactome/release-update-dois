@@ -20,7 +20,7 @@ public class ProteinCount {
 	{
 		homologueMappings = homologueMappingsCopy;
 	}
-	// TODO: Function descriptions
+	// TODO: Function descriptions; max > total check;
 	public static List<Integer> countDistinctProteins (GKInstance instanceToBeInferred) throws InvalidAttributeException, Exception
 	{
 		List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
@@ -60,7 +60,7 @@ public class ProteinCount {
 				}
 			}
 		}
-		
+	
 		for (GKInstance entity : followedInstances)
 		{
 			if (entity.getSchemClass().isa(ReactomeJavaConstants.EntitySet))

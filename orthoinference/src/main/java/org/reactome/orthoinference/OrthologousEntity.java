@@ -55,7 +55,11 @@ public class OrthologousEntity {
 					// Change to 'EWAS' and make the else create ghost
 					if (entityInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
 					{
-						//TODO: create ghost if override
+						if (override)
+						{
+							GKInstance mockedInst = GenerateInstance.newMockGKInstance(entityInst);
+							return mockedInst;
+						}
 					} else {
 						System.out.println("   GEE");
 						infEntity = OrthologousEntity.createInfGEE(entityInst, override);
@@ -69,6 +73,7 @@ public class OrthologousEntity {
 					//TODO: Is this species check redundant? Depends if EntitySet can have it while it's constituent parts might not, and vice versa
 					if (entityInst.getAttributeValue("species") != null)
 					{
+						System.out.println("   EntitySet");
 						infEntity = OrthologousEntity.createInfEntitySet(entityInst, override);
 					} else {
 						infEntity = entityInst;
@@ -253,6 +258,7 @@ public class OrthologousEntity {
 		HashSet<String> existingMembers = new HashSet<String>();
 		ArrayList<GKInstance> membersList = new ArrayList<GKInstance>();
 		// Equivalent to infer_members
+		System.out.println("Member?");
 		for (Object memberInst : attributeInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
 		{
 			GKInstance infMember = OrthologousEntity.createOrthoEntity((GKInstance) memberInst, false);
@@ -279,7 +285,6 @@ public class OrthologousEntity {
 			{
 				return infEntitySetInst;
 			}
-			
 			if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet))
 			{
 				HashSet<String> existingCandidates = new HashSet<String>();
@@ -334,7 +339,7 @@ public class OrthologousEntity {
 							GKInstance mockedEntitySetInst = GenerateInstance.newMockGKInstance(attributeInst);
 							return mockedEntitySetInst;
 						} else {
-							return new GKInstance();
+							return nullInst;
 						}
 					}
 				}
@@ -348,7 +353,7 @@ public class OrthologousEntity {
 						GKInstance mockedEntitySetInst = GenerateInstance.newMockGKInstance(attributeInst);
 						return mockedEntitySetInst;
 					} else {
-						return new GKInstance();
+						return nullInst;
 					}
 				} else if (membersList.size() == 1) {
 					//TODO: Make inferred instance that member

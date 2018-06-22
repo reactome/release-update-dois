@@ -170,8 +170,19 @@ public class InferEWAS {
 					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);									
 					infEWAS.addAttributeValue(ReactomeJavaConstants.startCoordinate, infAttributeInst.getAttributeValue(ReactomeJavaConstants.startCoordinate));
 					infEWAS.addAttributeValue(ReactomeJavaConstants.endCoordinate, infAttributeInst.getAttributeValue(ReactomeJavaConstants.endCoordinate));
-					Integer startCoord = Integer.valueOf(infEWAS.getAttributeValue(ReactomeJavaConstants.startCoordinate).toString());
-					Integer endCoord = Integer.valueOf(infEWAS.getAttributeValue(ReactomeJavaConstants.endCoordinate).toString());
+					// TODO: Check that the current coordinate attribute actually matches the Perl version
+					Object startCoordObj = infEWAS.getAttributeValue(ReactomeJavaConstants.startCoordinate);
+					Integer startCoord = 0;
+					Integer endCoord = 0;
+					if (startCoordObj != null)
+					{
+						startCoord = Integer.valueOf(infEWAS.getAttributeValue(ReactomeJavaConstants.startCoordinate).toString());
+					}
+					Object endCoordObj = infEWAS.getAttributeValue(ReactomeJavaConstants.endCoordinate);
+					if (endCoordObj != null)
+					{
+						endCoord = Integer.valueOf(infEWAS.getAttributeValue(ReactomeJavaConstants.endCoordinate).toString());
+					}
 					if (startCoord > 1 || endCoord > 1) {
 						@SuppressWarnings("unchecked")
 						ArrayList<String> infAttributeInstNames = (ArrayList<String>) ((GKInstance) infAttributeInst).getAttributeValuesList(ReactomeJavaConstants.name);

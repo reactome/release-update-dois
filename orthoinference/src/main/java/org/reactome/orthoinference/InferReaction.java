@@ -25,7 +25,7 @@ public class InferReaction {
 		String stableId = reactionInst.getAttributeValue("name").toString();
 		System.out.println("Reaction: [" + dbId + "] " + stableId);	
 		
-		// TODO: Release date/instance edit; skip_event; %inferred_event; check for identical instances (summation/evidence type); Global variables for summation/evidence type
+		// TODO: Release date/instance edit; skip_event; %inferred_event; Global variables for summation/evidence type; %being_inferred
 		// Creates inferred instance of reactionInst
 		GKInstance inferredReaction = GenerateInstance.newInferredGKInstance(reactionInst);
 		inferredReaction.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValue(ReactomeJavaConstants.name));
@@ -44,11 +44,12 @@ public class InferReaction {
 		evidenceTypeInst = GenerateInstance.checkForIdenticalInstances(evidenceTypeInst);
 		inferredReaction.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 		
-		List<Integer> countedReactionProteins = ProteinCount.countDistinctProteins(reactionInst);
+		List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
+		System.out.println("Overall Counts: " + reactionProteinCounts);
 		//TODO: count_distinct_proteins; write eligible reactions to external file and keep count;
 		
 		//TODO: Success measure; 
-		if (countedReactionProteins.get(0) > 0) {
+		if (reactionProteinCounts.get(0) > 0) {
 			InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
 	//		InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
 	//		InferReaction.inferCatalyst(reactionInst, inferredReaction);
