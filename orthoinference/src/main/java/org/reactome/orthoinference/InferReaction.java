@@ -1,5 +1,8 @@
 package org.reactome.orthoinference;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.List;
 
@@ -12,10 +15,16 @@ import org.gk.schema.InvalidAttributeException;
 public class InferReaction {
 
 	private static MySQLAdaptor dba;
+	private static String eligibleFilehandle;
 	
 	public static void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
 		dba = dbAdaptor;
+	}
+	
+	public static void setEligibleFilename(String eligibleFilename)
+	{
+		eligibleFilehandle = eligibleFilename;
 	}
 	
 	// This function mimics the Perl version of InferEvent, inferring attribute instances of input, output, catalyst activity, and regulations
@@ -25,7 +34,7 @@ public class InferReaction {
 		String stableId = reactionInst.getAttributeValue("name").toString();
 		System.out.println("Reaction: [" + dbId + "] " + stableId);	
 		
-		// TODO: Release date/instance edit; skip_event; %inferred_event; Global variables for summation/evidence type; %being_inferred
+		// TODO: Release date/instance edit; skip_event; %inferred_event (not till the end); Global variables for summation/evidence type; %being_inferred
 		// Creates inferred instance of reactionInst
 		GKInstance inferredReaction = GenerateInstance.newInferredGKInstance(reactionInst);
 		inferredReaction.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValue(ReactomeJavaConstants.name));
@@ -46,21 +55,22 @@ public class InferReaction {
 		
 		List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
 		System.out.println("Overall Counts: " + reactionProteinCounts);
-		//TODO: count_distinct_proteins; write eligible reactions to external file and keep count;
 		
-		//TODO: Success measure; 
+		//TODO: Success measure; Verify no return needed; count_leaves (not till the end)
 		if (reactionProteinCounts.get(0) > 0) {
+			String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
+			Files.write(Paths.get(eligibleFilehandle), eligibleEvent.getBytes(), StandardOpenOption.APPEND);
 			InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
 	//		InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
 	//		InferReaction.inferCatalyst(reactionInst, inferredReaction);
-		}
+		} 
 	}
 	
 	// Function used to create inferred instances related to either 'input' or 'output'
 	@SuppressWarnings("unchecked")
 	public static void inferAttributes(GKInstance reactionInst, Instance inferredReaction, String attribute) throws InvalidAttributeException, Exception
 	{
-		//TODO: Put ortho'd entity in array and add to inferredReaction
+		//TODO: Put ortho'd entity in array and add to inferredReaction;
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
 			System.out.println("   " + attributeInst.getAttributeValue("DB_ID"));

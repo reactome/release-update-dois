@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,6 +43,11 @@ public class InferEvents
 		}
 		// TODO: Parameterize all of these input values
 		//originally, this list was found in https://github.com/reactome/Release/blob/master/modules/GKB/Config_Species.pm
+		
+		PrintWriter eligibleFile = new PrintWriter("eligible_ddis_75.txt");
+		eligibleFile.close();
+		
+		InferReaction.setEligibleFilename("eligible_ddis_75.txt");
 		
 		Collection<GKInstance> sourceSpeciesInst;
 		
@@ -105,7 +111,7 @@ public class InferEvents
 						InferReaction.inferEvent(reactionInst);
 					}
 				}
-			}	
+			}
 	}
 
 	// Read the species-specific orthopairs file, and create a HashMap with the contents
