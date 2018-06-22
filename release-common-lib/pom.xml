@@ -10,10 +10,15 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 	<dependencies>
-		<dependency>
+<!-- 		<dependency>
 			<groupId>org.reactome.server</groupId>
 			<artifactId>reactome-core</artifactId>
 			<version>1.1.2</version>
+		</dependency> -->
+		<dependency>
+			<groupId>org.reactome.base</groupId>
+			<artifactId>reactome-base</artifactId>
+			<version>RELEASE</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
