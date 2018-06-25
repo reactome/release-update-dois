@@ -28,6 +28,7 @@ RemoteSystemsTempFiles
 update-dois/target/maven-status/maven-compiler-plugin/compile/default-compile/*.lst
 update-dois/.settings/org.eclipse.jdt.core.prefs
 orthoinference/eligible*
+normal_event_skip_list.txt
 .classpath
 .project
 .settings

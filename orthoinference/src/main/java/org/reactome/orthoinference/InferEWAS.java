@@ -15,9 +15,9 @@ import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
 
 public class InferEWAS {
-	
+
 	private static MySQLAdaptor dba;
-	
+
 	public static void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
 		InferEWAS.dba = dbAdaptor;
@@ -33,14 +33,14 @@ public class InferEWAS {
 	//TODO: Remove static value when scaling up species total
 	static boolean refDb = false;
 	private static GKInstance speciesInst = null;
-	
+
 	//TODO: Add parent function that organizes the EWAS setup
 	//TODO: Create uniprot and ensemble reference database variables for EWAS setup
 	public static void setHomologueMappingFile(HashMap<String, String[]> homologueMappingsCopy) throws IOException
 	{
 		homologueMappings = homologueMappingsCopy;
 	}
-	
+
 	// Fetches Uniprot DB instance
 	@SuppressWarnings("unchecked")
 	public static void createUniprotDbInst() throws Exception
@@ -48,7 +48,7 @@ public class InferEWAS {
 		 Collection<GKInstance> uniprotDbInstances = (Collection<GKInstance>) dba.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "UniProt");
 		 uniprotDbInst = uniprotDbInstances.iterator().next();
 	}
-	
+
 	// Read the species-specific ENSG gene-protein mappings, and create a Hashmap with the contents
 	public static void readENSGMappingFile(String toSpecies) throws IOException
 	{
@@ -56,7 +56,7 @@ public class InferEWAS {
 		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
 		FileReader fr = new FileReader(mappingFilePath);
 		BufferedReader br = new BufferedReader(fr);
-		
+
 		String currentLine;
 		while ((currentLine = br.readLine()) != null)
 		{
@@ -72,13 +72,13 @@ public class InferEWAS {
 					ensgMappings.put(colonSplit[1], singleArray);
 				} else {
 					ensgMappings.get(colonSplit[1]).add(ensgKey);
-				}					
+				}
 			}
 		}
 		br.close();
 		fr.close();
 	}
-	
+
 	// Creates instance pertaining to the species Ensembl Protein DB
 	public static void createEnsemblProteinDbInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
@@ -92,7 +92,7 @@ public class InferEWAS {
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
 		enspDbInst = GenerateInstance.checkForIdenticalInstances(enspDbInst);
 	}
-	
+
 	// Creates instance pertaining to the species Ensembl Gene DB
 	public static void createEnsemblGeneDBInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
@@ -106,7 +106,7 @@ public class InferEWAS {
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
 		ensgDbInst = GenerateInstance.checkForIdenticalInstances(ensgDbInst);
 	}
-	
+
 	// Create instance pertaining to any alternative reference DB for the species
 	public static void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
@@ -120,13 +120,13 @@ public class InferEWAS {
 		refDb = true;
 		//TODO: Check for identical instances
 	}
-	
+
 	// Sets the species instance for inferEWAS to use
 	public static void setSpeciesInst(GKInstance speciesInstCopy)
 	{
 		speciesInst = speciesInstCopy;
 	}
-	
+
 	// Creates an array inferred EWAS instances from the homologue mappings file (hsap_species_mapping.txt)
 	public static ArrayList<GKInstance> inferEWAS(GKInstance infAttributeInst) throws InvalidAttributeException, Exception
 	{
@@ -143,7 +143,7 @@ public class InferEWAS {
 					String homologueId = splitHomologue[1];
 					GKInstance infReferenceGeneProduct = null;
 					if (seenRPS.get(homologueId) == null)
-					{	
+					{
 						infReferenceGeneProduct = GenerateInstance.newInferredGKInstance((GKInstance) infAttributeInst.getAttributeValue(ReactomeJavaConstants.referenceEntity));
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.identifier, homologueId);
 						GKInstance referenceDb = null;
@@ -164,10 +164,10 @@ public class InferEWAS {
 					} else {
 						infReferenceGeneProduct = seenRPS.get(homologueId);
 					}
-					
-					// Creating inferred EWAS 
-					GKInstance infEWAS = GenerateInstance.newInferredGKInstance(infAttributeInst); 
-					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);									
+
+					// Creating inferred EWAS
+					GKInstance infEWAS = GenerateInstance.newInferredGKInstance(infAttributeInst);
+					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);
 					infEWAS.addAttributeValue(ReactomeJavaConstants.startCoordinate, infAttributeInst.getAttributeValue(ReactomeJavaConstants.startCoordinate));
 					infEWAS.addAttributeValue(ReactomeJavaConstants.endCoordinate, infAttributeInst.getAttributeValue(ReactomeJavaConstants.endCoordinate));
 					// TODO: Check that the current coordinate attribute actually matches the Perl version
@@ -191,7 +191,7 @@ public class InferEWAS {
 					} else {
 						infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
 					}
-						
+
 					// Infer residue modifications
 					@SuppressWarnings("unchecked")
 					ArrayList<GKInstance> modifiedResidues = ((ArrayList<GKInstance>) infAttributeInst.getAttributeValuesList(ReactomeJavaConstants.hasModifiedResidue));
@@ -226,7 +226,7 @@ public class InferEWAS {
 						}
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.psiMod, modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.psiMod));
 						infModifiedResidue = GenerateInstance.checkForIdenticalInstances(infModifiedResidue);
-						infModifiedResidues.add((GKInstance) infModifiedResidue);		
+						infModifiedResidues.add((GKInstance) infModifiedResidue);
 					}
 					infEWAS.addAttributeValue(ReactomeJavaConstants.hasModifiedResidue, infModifiedResidues);
 					infEWAS = GenerateInstance.checkForIdenticalInstances(infEWAS);
@@ -236,13 +236,13 @@ public class InferEWAS {
 			} //TODO: Empty homologue check (the else to this brackets if)
 		return infEWASInstances;
 	}
-	
+
 	// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein
 	public static ArrayList<GKInstance> createReferenceDNASequence(String homologueId) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		ArrayList<GKInstance> referenceDNAInstances = new ArrayList<GKInstance>();
 		ArrayList<String> ensgs = ensgMappings.get(homologueId);
-		
+
 		for (Object ensg : ensgs)
 		{
 			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDNASequence);
@@ -262,7 +262,7 @@ public class InferEWAS {
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, alternateDbInst);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				alternateRefDNAInst = GenerateInstance.checkForIdenticalInstances(alternateRefDNAInst);
-				referenceDNAInstances.add(alternateRefDNAInst);	
+				referenceDNAInstances.add(alternateRefDNAInst);
 			}
 		}
 		return referenceDNAInstances;

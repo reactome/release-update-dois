@@ -35,6 +35,8 @@ public class InferReaction {
 		String stableId = reactionInst.getAttributeValue("name").toString();
 		System.out.println("Reaction: [" + dbId + "] " + stableId);	
 		
+		SkipTests.checkIfSkip(reactionInst);
+		
 		// TODO: Release date/instance edit; skip_event; %inferred_event (not till the end); Global variables for summation/evidence type; %being_inferred
 		// Creates inferred instance of reactionInst
 		GKInstance inferredReaction = GenerateInstance.newInferredGKInstance(reactionInst);

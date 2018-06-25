@@ -67,6 +67,8 @@ public class InferEvents
 			// Set-Up
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
 			InferReaction.setAdaptor(dbAdaptor);
+			SkipTests.setAdaptor(dbAdaptor);
+			SkipTests.getSkipList("normal_event_skip_list.txt");
 			GenerateInstance.setAdaptor(dbAdaptor);
 			OrthologousEntity.setAdaptor(dbAdaptor);
 			InferEWAS.setAdaptor(dbAdaptor);
