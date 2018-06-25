@@ -44,7 +44,7 @@ public class OrthologousEntity {
 			if (orthologousEntity.get(entityInst) == null)
 			{
 				// TODO: Verify this works for all instance types; Move to its own file
-				if (!OrthologousEntity.hasSpecies(entityInst))
+				if (!SpeciesCheck.hasSpecies(entityInst))
 				{
 					infEntity = entityInst;
 				} else if (entityInst.getSchemClass().isa("GenomeEncodedEntity"))
@@ -93,62 +93,7 @@ public class OrthologousEntity {
 		}
 	}
 	
-	// Determines if there is a species attribute in any constituent instances of entityInst
-	// Unless its an 'OtherEntity', the function will check the instance or iterate on  it's
-	// sub-instances until it finds an existing 'species' attribute, or else it will return false.
-	public static boolean hasSpecies(GKInstance entityInst) throws InvalidAttributeException, Exception
-	{
-		if (entityInst.getSchemClass().isa(ReactomeJavaConstants.OtherEntity))
-		{
-			return false;
-		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet)) // || entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer) || entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet))
-		{
-			for (Object member : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
-			{
-				if (OrthologousEntity.hasSpecies((GKInstance) member))
-				{
-					return true;
-				}
-			}
-			if (entityInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet)) {
-				for (Object candidate : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasCandidate))
-				{
-					if (OrthologousEntity.hasSpecies((GKInstance) candidate))
-					{
-						return true;
-					}
-				}
-			}
-			return false;
-		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
-		{
-			for (Object component : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
-			{
-				if (OrthologousEntity.hasSpecies((GKInstance) component))
-				{
-					return true;
-				}
-			}
-			return false;
-		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer))
-		{
-			for (Object monomer : entityInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
-			{
-				if (OrthologousEntity.hasSpecies((GKInstance) monomer))
-				{
-					return true;
-				}
-			}
-			return false;
-		} else {
-			if (entityInst.getAttributeValue(ReactomeJavaConstants.species) != null)
-			{
-				return true;
-			} else {
-				return false;
-			}
-		}
-	}
+
 	// TODO: Naming change; Function description
 	public static GKInstance createInfGEE(GKInstance geeInst, boolean override) throws InvalidAttributeException, Exception
 	{
@@ -186,7 +131,7 @@ public class OrthologousEntity {
 	{
 		if (complexPolymer.get(complexInst) == null)
 		{
-			//TODO: %inferred_cp; count distinct proteins; filter based on returned protein count and threshold
+			//TODO: filter based on returned protein count and threshold
 			GKInstance infComplexInst = GenerateInstance.newInferredGKInstance(complexInst);
 			
 			List<Integer> complexProteinCounts = ProteinCount.countDistinctProteins(complexInst);
@@ -247,7 +192,7 @@ public class OrthologousEntity {
 	//TODO: The organization of this function could probably be re-organized
 	public static GKInstance createInfEntitySet(GKInstance entitySetInst, boolean override) throws InvalidAttributeException, Exception
 	{
-		//TODO:[infer members] proper filtering; Could infer_members happen after protein count?
+		//TODO: [infer members] proper filtering; Could infer_members happen after protein count?
 		HashSet<String> existingMembers = new HashSet<String>();
 		ArrayList<GKInstance> membersList = new ArrayList<GKInstance>();
 		
