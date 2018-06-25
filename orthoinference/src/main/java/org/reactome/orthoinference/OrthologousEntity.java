@@ -17,6 +17,7 @@ public class OrthologousEntity {
 	private static HashMap<GKInstance, GKInstance> orthologousEntity = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> homolGEE = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> complexPolymer = new HashMap<GKInstance, GKInstance>();
+	private static HashMap<GKInstance, GKInstance> inferredGSE = new HashMap<GKInstance, GKInstance>();
 	private static MySQLAdaptor dba;
 	static GenerateInstance createInferredInstance = new GenerateInstance();
 	static GKInstance nullInst = null;
@@ -36,23 +37,19 @@ public class OrthologousEntity {
 
 	public static GKInstance createOrthoEntity(GKInstance entityInst, boolean override) throws InvalidAttributeException, Exception
 	{
-		if (override)
-		{
-			System.out.println("      " + entityInst.getAttributeValue("DB_ID"));
-		}
 		GKInstance infEntity = null;
 		if (entityInst.getSchemClass().isValidAttribute("species"))
 		{
 			// TODO: Make sure this null check actually works
 			if (orthologousEntity.get(entityInst) == null)
 			{
-				// TODO: Verify this works for all instance types
+				// TODO: Verify this works for all instance types; Move to its own file
 				if (!OrthologousEntity.hasSpecies(entityInst))
 				{
 					infEntity = entityInst;
 				} else if (entityInst.getSchemClass().isa("GenomeEncodedEntity"))
 				{
-					// Change to 'EWAS' and make the else create ghost
+					// Change to 'EWAS'? So that reading this makes more sense
 					if (entityInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
 					{
 						if (override)
@@ -61,19 +58,15 @@ public class OrthologousEntity {
 							return mockedInst;
 						}
 					} else {
-						System.out.println("   GEE");
 						infEntity = OrthologousEntity.createInfGEE(entityInst, override);
 					}
 				} else if (entityInst.getSchemClass().isa("Complex") || entityInst.getSchemClass().isa("Polymer"))
 				{
-					System.out.println("   Complex/Polymer");
 					infEntity = OrthologousEntity.createInfComplexPolymer(entityInst, override);
 				} else if (entityInst.getSchemClass().isa("EntitySet"))
 				{
-					//TODO: Is this species check redundant? Depends if EntitySet can have it while it's constituent parts might not, and vice versa
 					if (entityInst.getAttributeValue("species") != null)
 					{
-						System.out.println("   EntitySet");
 						infEntity = OrthologousEntity.createInfEntitySet(entityInst, override);
 					} else {
 						infEntity = entityInst;
@@ -156,7 +149,7 @@ public class OrthologousEntity {
 			}
 		}
 	}
-	// TODO: Naming change (??); Function description
+	// TODO: Naming change; Function description
 	public static GKInstance createInfGEE(GKInstance geeInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		if (homolGEE.get(geeInst) == null)
@@ -164,7 +157,7 @@ public class OrthologousEntity {
 			ArrayList<GKInstance> infEWASInstances = InferEWAS.inferEWAS(geeInst);
 			if (infEWASInstances.size() > 1)
 			{
-				// TODO: Instance Edit; Check Intracellular; $opt_filt (??); add attribute values if necessary - inferredFrom/To
+				// TODO: Instance Edit; Check Intracellular; add attribute values if necessary - inferredFrom/To
 				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 				GKInstance definedSetInst = new GKInstance(definedSetClass);
 				definedSetInst.setDbAdaptor(dba);
@@ -197,10 +190,9 @@ public class OrthologousEntity {
 			GKInstance infComplexInst = GenerateInstance.newInferredGKInstance(complexInst);
 			
 			List<Integer> complexProteinCounts = ProteinCount.countDistinctProteins(complexInst);
-			System.out.println("Complex Counts: " + complexProteinCounts);
 			int complexTotal = complexProteinCounts.get(0);
 			int complexInferred = complexProteinCounts.get(1);
-			int complexMax = complexProteinCounts.get(2);
+//			int complexMax = complexProteinCounts.get(2); // Doesn't get used, since MaxHomologue isn't a valid attribute
 			
 			int percent = 0;
 			if (complexTotal > 0)
@@ -220,12 +212,11 @@ public class OrthologousEntity {
 			}
 
 			GKInstance complexSummation = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
-			//TODO: Remove brackets from name
-			infComplexInst.addAttributeValue(ReactomeJavaConstants.name, complexInst.getAttributeValue("name"));
 			complexSummation.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
 			complexSummation = GenerateInstance.checkForIdenticalInstances(complexSummation);
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummation);
-			//TODO: check for identical instances (complexSummation)
+			//TODO: Remove brackets from name
+			infComplexInst.addAttributeValue(ReactomeJavaConstants.name, complexInst.getAttributeValue(ReactomeJavaConstants.name));
 			ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
 			if (complexInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
 			{
@@ -235,13 +226,15 @@ public class OrthologousEntity {
 				}
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
 			} else {
-				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
+				// TODO: Verify Polymer things are working
+				for (Object repeatedUnitInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
 				{		
-					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
+					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) repeatedUnitInst, true));
 				}
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 			}
-			//TODO: Add total,inferred,max proteins count; inferredTo & inferredFrom; update; add to hash
+			infComplexInst = GenerateInstance.checkForIdenticalInstances(infComplexInst);
+			//TODO: inferredTo & inferredFrom; update;
 			if (override)
 			{
 				return infComplexInst;
@@ -252,121 +245,128 @@ public class OrthologousEntity {
 		return complexPolymer.get(complexInst);
 	}
 	//TODO: The organization of this function could probably be re-organized
-	public static GKInstance createInfEntitySet(GKInstance attributeInst, boolean override) throws InvalidAttributeException, Exception
+	public static GKInstance createInfEntitySet(GKInstance entitySetInst, boolean override) throws InvalidAttributeException, Exception
 	{
-		//TODO: %inferred_gse; [infer members] proper filtering; Could infer_members happen after protein count?
+		//TODO:[infer members] proper filtering; Could infer_members happen after protein count?
 		HashSet<String> existingMembers = new HashSet<String>();
 		ArrayList<GKInstance> membersList = new ArrayList<GKInstance>();
-		// Equivalent to infer_members
-		System.out.println("Member?");
-		for (Object memberInst : attributeInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
+		
+		if (inferredGSE.get(entitySetInst) != null)
 		{
-			GKInstance infMember = OrthologousEntity.createOrthoEntity((GKInstance) memberInst, false);
-			if (infMember != null)
+			// Equivalent to infer_members
+			for (Object memberInst : entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
 			{
-				existingMembers.add(infMember.getAttributeValue("name").toString());
-				membersList.add(infMember);
-			}
-		}
-		GKInstance infEntitySetInst = GenerateInstance.newInferredGKInstance(attributeInst);
-		infEntitySetInst.addAttributeValue(ReactomeJavaConstants.name, attributeInst.getAttributeValue("name"));
-		infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasMember, membersList);
-		if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.OpenSet))
-		{
-			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.referenceEntity, attributeInst.getAttributeValue("referenceEntity"));
-		} else {
-			//TODO: Count distinct proteins;
-			List<Integer> entitySetProteinCounts = ProteinCount.countDistinctProteins(attributeInst);
-			System.out.println("EntitySet Counts:" + entitySetProteinCounts);
-			int entitySetTotal = entitySetProteinCounts.get(0);
-			int entitySetInferred = entitySetProteinCounts.get(1);
-			int entitySetMax = entitySetProteinCounts.get(2);
-			if (!override && entitySetTotal > 0 && entitySetInferred == 0)
-			{
-				return infEntitySetInst;
-			}
-			if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet))
-			{
-				HashSet<String> existingCandidates = new HashSet<String>();
-				ArrayList<GKInstance> candidatesListUnfiltered = new ArrayList<GKInstance>();
-				// Equivalent to infer_members
-				for (Object candidateInst : attributeInst.getAttributeValuesList(ReactomeJavaConstants.hasCandidate))
+				GKInstance infMember = OrthologousEntity.createOrthoEntity((GKInstance) memberInst, false);
+				if (infMember != null)
 				{
-					GKInstance infCandidate = OrthologousEntity.createOrthoEntity((GKInstance) candidateInst, false);
-					if (infCandidate != null)
-					{
-						existingCandidates.add(infCandidate.getAttributeValue("name").toString());
-						candidatesListUnfiltered.add(infCandidate);
-					}
+					existingMembers.add(infMember.getAttributeValue("name").toString());
+					membersList.add(infMember);
 				}
-				// Check for duplicate instances between membersList and candidatesList, keeping only unique ones	
-				ArrayList<GKInstance> candidatesList = new ArrayList<GKInstance>();
-				for (GKInstance candidate : candidatesListUnfiltered)
+			}
+			GKInstance infEntitySetInst = GenerateInstance.newInferredGKInstance(entitySetInst);
+			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.name, entitySetInst.getAttributeValue("name"));
+			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasMember, membersList);
+			if (entitySetInst.getSchemClass().isa(ReactomeJavaConstants.OpenSet))
+			{
+				infEntitySetInst.addAttributeValue(ReactomeJavaConstants.referenceEntity, entitySetInst.getAttributeValue("referenceEntity"));
+			} else {
+				//TODO: Count distinct proteins;
+				List<Integer> entitySetProteinCounts = ProteinCount.countDistinctProteins(entitySetInst);
+				int entitySetTotal = entitySetProteinCounts.get(0);
+				int entitySetInferred = entitySetProteinCounts.get(1);
+//				int entitySetMax = entitySetProteinCounts.get(2);  // Doesn't get used, since MaxHomologue isn't a valid attribute
+				if (!override && entitySetTotal > 0 && entitySetInferred == 0)
 				{
-					int memberCount = 0;
-					for (GKInstance member : membersList)
+					return infEntitySetInst;
+				}
+				if (entitySetInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet))
+				{
+					HashSet<String> existingCandidates = new HashSet<String>();
+					ArrayList<GKInstance> candidatesListUnfiltered = new ArrayList<GKInstance>();
+					// Equivalent to infer_members
+					for (Object candidateInst : entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasCandidate))
 					{
-						if (candidate == member)
+						GKInstance infCandidate = OrthologousEntity.createOrthoEntity((GKInstance) candidateInst, false);
+						if (infCandidate != null)
 						{
-							memberCount++;
+							existingCandidates.add(infCandidate.getAttributeValue("name").toString());
+							candidatesListUnfiltered.add(infCandidate);
 						}
 					}
-					if (memberCount == 0)
+					// Check for duplicate instances between membersList and candidatesList, keeping only unique ones	
+					ArrayList<GKInstance> candidatesList = new ArrayList<GKInstance>();
+					for (GKInstance candidate : candidatesListUnfiltered)
 					{
-						candidatesList.add(candidate);
-					}
-				}
-				if (candidatesList.size() == 1)
-				{
-					infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasCandidate, candidatesList);
-				} else {
-					if (membersList.size() != 0)
-					{
-						if (membersList.size() == 1)
+						int memberCount = 0;
+						for (GKInstance member : membersList)
 						{
-							infEntitySetInst = membersList.get(0);
-						} else {
-							SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
-							GKInstance definedSetInst = new GKInstance(definedSetClass);
-							definedSetInst.setDbAdaptor(dba);
-							definedSetInst.setAttributeValue(ReactomeJavaConstants.name, infEntitySetInst.getAttributeValuesList(ReactomeJavaConstants.name));
-							definedSetInst.setAttributeValue(ReactomeJavaConstants.hasMember, membersList);
-							infEntitySetInst = definedSetInst;
+							if (candidate == member)
+							{
+								memberCount++;
+							}
 						}
+						if (memberCount == 0)
+						{
+							candidatesList.add(candidate);
+						}
+					}
+					if (candidatesList.size() == 1)
+					{
+						infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasCandidate, candidatesList);
 					} else {
+						if (membersList.size() != 0)
+						{
+							if (membersList.size() == 1)
+							{
+								infEntitySetInst = membersList.get(0);
+							} else {
+								SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
+								GKInstance definedSetInst = new GKInstance(definedSetClass);
+								definedSetInst.setDbAdaptor(dba);
+								definedSetInst.setAttributeValue(ReactomeJavaConstants.name, infEntitySetInst.getAttributeValuesList(ReactomeJavaConstants.name));
+								definedSetInst.setAttributeValue(ReactomeJavaConstants.hasMember, membersList);
+								infEntitySetInst = definedSetInst;
+							}
+						} else {
+							if (override)
+							{
+								GKInstance mockedEntitySetInst = GenerateInstance.newMockGKInstance(entitySetInst);
+								return mockedEntitySetInst;
+							} else {
+								return nullInst;
+							}
+						}
+					}
+					
+				} else if (entitySetInst.getSchemClass().isa(ReactomeJavaConstants.DefinedSet))
+				{
+					if (membersList.size() == 0)
+					{
 						if (override)
 						{
-							GKInstance mockedEntitySetInst = GenerateInstance.newMockGKInstance(attributeInst);
+							GKInstance mockedEntitySetInst = GenerateInstance.newMockGKInstance(entitySetInst);
 							return mockedEntitySetInst;
 						} else {
 							return nullInst;
 						}
+					} else if (membersList.size() == 1) {
+						//TODO: Make inferred instance that member
 					}
+					// If it has more than 1 member, nothing happens here, as all members are in this inferred instances 'HasMember' attribute
 				}
-				
-			} else if (attributeInst.getSchemClass().isa(ReactomeJavaConstants.DefinedSet))
-			{
-				if (membersList.size() == 0)
-				{
-					if (override)
-					{
-						GKInstance mockedEntitySetInst = GenerateInstance.newMockGKInstance(attributeInst);
-						return mockedEntitySetInst;
-					} else {
-						return nullInst;
-					}
-				} else if (membersList.size() == 1) {
-					//TODO: Make inferred instance that member
-				}
-				// If it has more than 1 member, nothing happens here, as all members are in this inferred instances 'HasMember' attribute
 			}
+			infEntitySetInst = GenerateInstance.checkForIdenticalInstances(infEntitySetInst);
+			//TODO: Check for identical instances
+			if (infEntitySetInst.getSchemClass().isValidAttribute("species") && entitySetInst.getAttributeValue("species") != null)
+			{
+				// add attribute value if necessary InferredFrom/To; update;
+			}
+			if (override)
+			{
+			return infEntitySetInst;
+			}
+			inferredGSE.put(entitySetInst, infEntitySetInst);
 		}
-		//TODO: Check for identical instances
-		if (infEntitySetInst.getSchemClass().isValidAttribute("species") && attributeInst.getAttributeValue("species") != null)
-		{
-			// add attribute value if necessary InferredFrom/To; update; %inferred_gse
-		}
-		return infEntitySetInst;
-		
+		return inferredGSE.get(entitySetInst);
 	}
 }

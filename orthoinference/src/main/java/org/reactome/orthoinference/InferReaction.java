@@ -3,6 +3,7 @@ package org.reactome.orthoinference;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -70,11 +71,18 @@ public class InferReaction {
 	@SuppressWarnings("unchecked")
 	public static void inferAttributes(GKInstance reactionInst, Instance inferredReaction, String attribute) throws InvalidAttributeException, Exception
 	{
+		ArrayList<GKInstance> inferredAttributeInstances = new ArrayList<GKInstance>();
 		//TODO: Put ortho'd entity in array and add to inferredReaction;
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
 			System.out.println("   " + attributeInst.getAttributeValue("DB_ID"));
-			OrthologousEntity.createOrthoEntity(attributeInst, false);
+			GKInstance inferredAttributeInstance = OrthologousEntity.createOrthoEntity(attributeInst, false);
+			if (inferredAttributeInstance != null)
+			{
+				inferredAttributeInstances.add(inferredAttributeInstance);
+			} else {
+				return;
+			}
 		}
 	}
 	

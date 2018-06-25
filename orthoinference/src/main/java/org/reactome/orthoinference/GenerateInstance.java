@@ -45,6 +45,7 @@ public class GenerateInstance {
 		{
 			SchemaClass geeClass = dba.getSchema().getClassByName(ReactomeJavaConstants.GenomeEncodedEntity);
 			GKInstance mockedInst = new GKInstance(geeClass);
+			mockedInst.setDbAdaptor(dba);
 			String mockedName = (String) instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.name);
 			mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);
 			mockedInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
