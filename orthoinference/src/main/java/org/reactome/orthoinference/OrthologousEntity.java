@@ -88,7 +88,6 @@ public class OrthologousEntity {
 			return orthologousEntity.get(entityInst);
 		} else {
 			//TODO: check intracellular; if flag create clone;
-			System.out.println("Invalid");
 			return entityInst;
 		}
 	}
@@ -192,13 +191,12 @@ public class OrthologousEntity {
 	//TODO: The organization of this function could probably be re-organized
 	public static GKInstance createInfEntitySet(GKInstance entitySetInst, boolean override) throws InvalidAttributeException, Exception
 	{
-		//TODO: [infer members] proper filtering; Could infer_members happen after protein count?
-		HashSet<String> existingMembers = new HashSet<String>();
-		ArrayList<GKInstance> membersList = new ArrayList<GKInstance>();
-		
-		if (inferredGSE.get(entitySetInst) != null)
+		//TODO: Filter based on the HashSet
+		if (inferredGSE.get(entitySetInst) == null)
 		{
 			// Equivalent to infer_members
+			HashSet<String> existingMembers = new HashSet<String>();
+			ArrayList<GKInstance> membersList = new ArrayList<GKInstance>();
 			for (Object memberInst : entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
 			{
 				GKInstance infMember = OrthologousEntity.createOrthoEntity((GKInstance) memberInst, false);
@@ -215,17 +213,18 @@ public class OrthologousEntity {
 			{
 				infEntitySetInst.addAttributeValue(ReactomeJavaConstants.referenceEntity, entitySetInst.getAttributeValue("referenceEntity"));
 			} else {
-				//TODO: Count distinct proteins;
 				List<Integer> entitySetProteinCounts = ProteinCount.countDistinctProteins(entitySetInst);
 				int entitySetTotal = entitySetProteinCounts.get(0);
 				int entitySetInferred = entitySetProteinCounts.get(1);
 //				int entitySetMax = entitySetProteinCounts.get(2);  // Doesn't get used, since MaxHomologue isn't a valid attribute
 				if (!override && entitySetTotal > 0 && entitySetInferred == 0)
 				{
-					return infEntitySetInst;
+					return nullInst;
 				}
+				
 				if (entitySetInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet))
 				{
+					// TODO: Filter based on the HashSet
 					HashSet<String> existingCandidates = new HashSet<String>();
 					ArrayList<GKInstance> candidatesListUnfiltered = new ArrayList<GKInstance>();
 					// Equivalent to infer_members
@@ -255,6 +254,7 @@ public class OrthologousEntity {
 							candidatesList.add(candidate);
 						}
 					}
+					// Handling of CandidateSets
 					if (candidatesList.size() == 1)
 					{
 						infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasCandidate, candidatesList);
@@ -275,33 +275,29 @@ public class OrthologousEntity {
 						} else {
 							if (override)
 							{
-								GKInstance mockedEntitySetInst = GenerateInstance.newMockGKInstance(entitySetInst);
-								return mockedEntitySetInst;
+								infEntitySetInst = GenerateInstance.newMockGKInstance(entitySetInst);
 							} else {
 								return nullInst;
 							}
 						}
-					}
-					
+					}	
 				} else if (entitySetInst.getSchemClass().isa(ReactomeJavaConstants.DefinedSet))
 				{
 					if (membersList.size() == 0)
 					{
 						if (override)
 						{
-							GKInstance mockedEntitySetInst = GenerateInstance.newMockGKInstance(entitySetInst);
-							return mockedEntitySetInst;
+							return GenerateInstance.newMockGKInstance(entitySetInst);
 						} else {
 							return nullInst;
 						}
 					} else if (membersList.size() == 1) {
-						//TODO: Make inferred instance that member
+						infEntitySetInst = membersList.get(0);
 					}
-					// If it has more than 1 member, nothing happens here, as all members are in this inferred instances 'HasMember' attribute
+					// If it has more than 1 member, nothing happens here; all members are stored in this inferred instances 'HasMember' attribute
 				}
 			}
 			infEntitySetInst = GenerateInstance.checkForIdenticalInstances(infEntitySetInst);
-			//TODO: Check for identical instances
 			if (infEntitySetInst.getSchemClass().isValidAttribute("species") && entitySetInst.getAttributeValue("species") != null)
 			{
 				// add attribute value if necessary InferredFrom/To; update;
