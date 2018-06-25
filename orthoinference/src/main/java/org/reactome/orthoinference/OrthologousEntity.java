@@ -22,7 +22,7 @@ public class OrthologousEntity {
 	static GenerateInstance createInferredInstance = new GenerateInstance();
 	static GKInstance nullInst = null;
 	
-	public void setAdaptor(MySQLAdaptor dbAdaptor)
+	public static void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
 		OrthologousEntity.dba = dbAdaptor;
 	}
@@ -30,7 +30,7 @@ public class OrthologousEntity {
 	private static GKInstance speciesInst = null;
 	
 	// Sets the species instance for inferEWAS to use
-	public void setSpeciesInst(GKInstance speciesInstCopy)
+	public static void setSpeciesInst(GKInstance speciesInstCopy)
 	{
 		speciesInst = speciesInstCopy;
 	}

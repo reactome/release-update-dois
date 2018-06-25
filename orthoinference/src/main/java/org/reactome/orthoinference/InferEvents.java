@@ -67,27 +67,24 @@ public class InferEvents
 			// Set-Up
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
 			InferReaction.setAdaptor(dbAdaptor);
-			OrthologousEntity orthoInferrer = new OrthologousEntity();
-			InferEWAS ewasInferrer = new InferEWAS();
-			GenerateInstance instanceGenerator = new GenerateInstance();
 			GenerateInstance.setAdaptor(dbAdaptor);
-			orthoInferrer.setAdaptor(dbAdaptor);
-			ewasInferrer.setAdaptor(dbAdaptor);
+			OrthologousEntity.setAdaptor(dbAdaptor);
+			InferEWAS.setAdaptor(dbAdaptor);
 			InferEvents.readHomologueMappingFile("ddis", "hsap");
-			ewasInferrer.setHomologueMappingFile(homologueMappings);
+			InferEWAS.setHomologueMappingFile(homologueMappings);
 			ProteinCount.setHomologueMappingFile(homologueMappings);
-			ewasInferrer.readENSGMappingFile("ddis");
-			ewasInferrer.createUniprotDbInst();
-			ewasInferrer.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
-			ewasInferrer.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
+			InferEWAS.readENSGMappingFile("ddis");
+			InferEWAS.createUniprotDbInst();
+			InferEWAS.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
+			InferEWAS.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
 			if (refDb)
 			{
-				ewasInferrer.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
+				InferEWAS.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
 			}
 			InferEvents.createSpeciesInst("Dictyostelium discoideum");
-			orthoInferrer.setSpeciesInst(speciesInst);
-			ewasInferrer.setSpeciesInst(speciesInst);
-			instanceGenerator.setSpeciesInst(speciesInst);
+			OrthologousEntity.setSpeciesInst(speciesInst);
+			InferEWAS.setSpeciesInst(speciesInst);
+			GenerateInstance.setSpeciesInst(speciesInst);
 			
 			// Get DB instances of source species
 			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
@@ -111,7 +108,7 @@ public class InferEvents
 						InferReaction.inferEvent(reactionInst);
 					}
 				}
-			}
+			}	
 	}
 
 	// Read the species-specific orthopairs file, and create a HashMap with the contents

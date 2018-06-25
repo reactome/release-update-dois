@@ -19,7 +19,7 @@ public class GenerateInstance {
 			dba = dbAdaptor;
 		}
 		
-		public void setSpeciesInst(GKInstance speciesInstCopy)
+		public static void setSpeciesInst(GKInstance speciesInstCopy)
 		{
 			speciesInst = speciesInstCopy;
 		}
