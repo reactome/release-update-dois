@@ -30,8 +30,6 @@ public class InferEvents
 	private static GKInstance speciesInst = null;
 	static boolean refDb = true;
 	
-	Collection<GKInstance> dois;
-	
 	@SuppressWarnings("unchecked")
 	public static void main(String args[]) throws Exception
 	{
@@ -41,8 +39,6 @@ public class InferEvents
 		{
 			pathToConfig = args[0];
 		}
-		// TODO: Parameterize all of these input values
-		//originally, this list was found in https://github.com/reactome/Release/blob/master/modules/GKB/Config_Species.pm
 		
 		PrintWriter eligibleFile = new PrintWriter("eligible_ddis_75.txt");
 		eligibleFile.close();
@@ -54,7 +50,7 @@ public class InferEvents
 			Properties props = new Properties();
 			props.load(new FileInputStream(pathToConfig));
 			
-			//TODO: Create config equivalent for species as seen in Config_Species.pm
+			//TODO: Create config equivalent for species as seen in Config_Species.pm; Parameterize all input values in properties file
 //			ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
 //			String speciesToInferFromShort = "hsap";
 			Object speciesToInferFromLong = "Homo sapiens";
@@ -65,16 +61,17 @@ public class InferEvents
 			int port = Integer.valueOf(props.getProperty("port"));
 
 			// Set-Up
+			//TODO: 'Setup' function -- Organize by class
 			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
 			InferReaction.setAdaptor(dbAdaptor);
 			SkipTests.setAdaptor(dbAdaptor);
-			SkipTests.getSkipList("normal_event_skip_list.txt");
 			GenerateInstance.setAdaptor(dbAdaptor);
 			OrthologousEntity.setAdaptor(dbAdaptor);
 			InferEWAS.setAdaptor(dbAdaptor);
+			
 			InferEvents.readHomologueMappingFile("ddis", "hsap");
-			InferEWAS.setHomologueMappingFile(homologueMappings);
 			ProteinCount.setHomologueMappingFile(homologueMappings);
+			InferEWAS.setHomologueMappingFile(homologueMappings);
 			InferEWAS.readENSGMappingFile("ddis");
 			InferEWAS.createUniprotDbInst();
 			InferEWAS.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
@@ -83,16 +80,16 @@ public class InferEvents
 			{
 				InferEWAS.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
 			}
+			
 			InferEvents.createSpeciesInst("Dictyostelium discoideum");
 			OrthologousEntity.setSpeciesInst(speciesInst);
 			InferEWAS.setSpeciesInst(speciesInst);
 			GenerateInstance.setSpeciesInst(speciesInst);
 			
+			SkipTests.getSkipList("normal_event_skip_list.txt");
+			
 			// Get DB instances of source species
 			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
-			@SuppressWarnings("unused")
-			InferReaction reactionInferrer = new InferReaction();
-			
 			if (!sourceSpeciesInst.isEmpty())
 			{
 				String dbId = null;

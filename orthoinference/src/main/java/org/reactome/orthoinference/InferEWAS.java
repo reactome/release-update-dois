@@ -34,99 +34,6 @@ public class InferEWAS {
 	static boolean refDb = false;
 	private static GKInstance speciesInst = null;
 
-	//TODO: Add parent function that organizes the EWAS setup
-	//TODO: Create uniprot and ensemble reference database variables for EWAS setup
-	public static void setHomologueMappingFile(HashMap<String, String[]> homologueMappingsCopy) throws IOException
-	{
-		homologueMappings = homologueMappingsCopy;
-	}
-
-	// Fetches Uniprot DB instance
-	@SuppressWarnings("unchecked")
-	public static void createUniprotDbInst() throws Exception
-	{
-		 Collection<GKInstance> uniprotDbInstances = (Collection<GKInstance>) dba.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "UniProt");
-		 uniprotDbInst = uniprotDbInstances.iterator().next();
-	}
-
-	// Read the species-specific ENSG gene-protein mappings, and create a Hashmap with the contents
-	public static void readENSGMappingFile(String toSpecies) throws IOException
-	{
-		String mappingFileName = toSpecies + "_gene_protein_mapping.txt";
-		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
-		FileReader fr = new FileReader(mappingFilePath);
-		BufferedReader br = new BufferedReader(fr);
-
-		String currentLine;
-		while ((currentLine = br.readLine()) != null)
-		{
-			String[] tabSplit = currentLine.split("\t");
-			String ensgKey = tabSplit[0];
-			String[] spaceSplit = tabSplit[1].split(" ");
-			for (String proteinId : spaceSplit) {
-				String[] colonSplit = proteinId.split(":");
-				if (ensgMappings.get(colonSplit[1]) == null)
-				{
-					ArrayList<String> singleArray = new ArrayList<String>();
-					singleArray.add(ensgKey);
-					ensgMappings.put(colonSplit[1], singleArray);
-				} else {
-					ensgMappings.get(colonSplit[1]).add(ensgKey);
-				}
-			}
-		}
-		br.close();
-		fr.close();
-	}
-
-	// Creates instance pertaining to the species Ensembl Protein DB
-	public static void createEnsemblProteinDbInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
-	{
-		String enspSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_PROTEIN";
-		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
-		enspDbInst = new GKInstance(referenceDb);
-		enspDbInst.setDbAdaptor(dba);
-//		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
-		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, enspSpeciesDb);
-		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
-		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
-		enspDbInst = GenerateInstance.checkForIdenticalInstances(enspDbInst);
-	}
-
-	// Creates instance pertaining to the species Ensembl Gene DB
-	public static void createEnsemblGeneDBInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
-	{
-		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_GENE";
-		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
-		ensgDbInst = new GKInstance(referenceDb);
-		ensgDbInst.setDbAdaptor(dba);
-//		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
-		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
-		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
-		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
-		ensgDbInst = GenerateInstance.checkForIdenticalInstances(ensgDbInst);
-	}
-
-	// Create instance pertaining to any alternative reference DB for the species
-	public static void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
-	{
-		SchemaClass alternateDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
-		alternateDbInst = new GKInstance(alternateDb);
-		alternateDbInst.setDbAdaptor(dba);
-		alternateDbInst.addAttributeValue(ReactomeJavaConstants.name, alternateDbName);
-		alternateDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesAlternateDbUrl);
-		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);
-		alternateDbInst = GenerateInstance.checkForIdenticalInstances(alternateDbInst);
-		refDb = true;
-		//TODO: Check for identical instances
-	}
-
-	// Sets the species instance for inferEWAS to use
-	public static void setSpeciesInst(GKInstance speciesInstCopy)
-	{
-		speciesInst = speciesInstCopy;
-	}
-
 	// Creates an array inferred EWAS instances from the homologue mappings file (hsap_species_mapping.txt)
 	public static ArrayList<GKInstance> inferEWAS(GKInstance infAttributeInst) throws InvalidAttributeException, Exception
 	{
@@ -266,5 +173,97 @@ public class InferEWAS {
 			}
 		}
 		return referenceDNAInstances;
+	}
+	
+	//These are setup functions called at the beginning of the script
+	// Sets the HashMap of species-specific homologue-identifier mappings
+	public static void setHomologueMappingFile(HashMap<String, String[]> homologueMappingsCopy) throws IOException
+	{
+		homologueMappings = homologueMappingsCopy;
+	}
+	
+	// Read the species-specific ENSG gene-protein mappings, and create a Hashmap with the contents
+	public static void readENSGMappingFile(String toSpecies) throws IOException
+	{
+		String mappingFileName = toSpecies + "_gene_protein_mapping.txt";
+		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
+		FileReader fr = new FileReader(mappingFilePath);
+		BufferedReader br = new BufferedReader(fr);
+
+		String currentLine;
+		while ((currentLine = br.readLine()) != null)
+		{
+			String[] tabSplit = currentLine.split("\t");
+			String ensgKey = tabSplit[0];
+			String[] spaceSplit = tabSplit[1].split(" ");
+			for (String proteinId : spaceSplit) {
+				String[] colonSplit = proteinId.split(":");
+				if (ensgMappings.get(colonSplit[1]) == null)
+				{
+					ArrayList<String> singleArray = new ArrayList<String>();
+					singleArray.add(ensgKey);
+					ensgMappings.put(colonSplit[1], singleArray);
+				} else {
+					ensgMappings.get(colonSplit[1]).add(ensgKey);
+				}
+			}
+		}
+		br.close();
+		fr.close();
+	}
+	
+	// Fetches Uniprot DB instance
+	@SuppressWarnings("unchecked")
+	public static void createUniprotDbInst() throws Exception
+	{
+		 Collection<GKInstance> uniprotDbInstances = (Collection<GKInstance>) dba.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "UniProt");
+		 uniprotDbInst = uniprotDbInstances.iterator().next();
+	}
+	
+	// Creates instance pertaining to the species Ensembl Protein DB
+	public static void createEnsemblProteinDbInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	{
+		String enspSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_PROTEIN";
+		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
+		enspDbInst = new GKInstance(referenceDb);
+		enspDbInst.setDbAdaptor(dba);
+//		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
+		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, enspSpeciesDb);
+		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
+		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
+		enspDbInst = GenerateInstance.checkForIdenticalInstances(enspDbInst);
+	}
+	
+	// Creates instance pertaining to the species Ensembl Gene DB
+	public static void createEnsemblGeneDBInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	{
+		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_GENE";
+		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
+		ensgDbInst = new GKInstance(referenceDb);
+		ensgDbInst.setDbAdaptor(dba);
+//		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
+		ensgDbInst = GenerateInstance.checkForIdenticalInstances(ensgDbInst);
+	}
+	
+	// Create instance pertaining to any alternative reference DB for the species
+	public static void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	{
+		SchemaClass alternateDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
+		alternateDbInst = new GKInstance(alternateDb);
+		alternateDbInst.setDbAdaptor(dba);
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.name, alternateDbName);
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesAlternateDbUrl);
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);
+		alternateDbInst = GenerateInstance.checkForIdenticalInstances(alternateDbInst);
+		refDb = true;
+	}
+	
+	// Sets the species instance for inferEWAS to use
+	public static void setSpeciesInst(GKInstance speciesInstCopy)
+	{
+		speciesInst = speciesInstCopy;
 	}
 }
