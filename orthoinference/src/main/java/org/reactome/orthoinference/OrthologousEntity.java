@@ -14,64 +14,50 @@ import org.gk.schema.SchemaClass;
 
 public class OrthologousEntity {
 	
+	private static MySQLAdaptor dba;
 	private static HashMap<GKInstance, GKInstance> orthologousEntity = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> homolGEE = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> complexPolymer = new HashMap<GKInstance, GKInstance>();
 	private static HashMap<GKInstance, GKInstance> inferredGSE = new HashMap<GKInstance, GKInstance>();
-	private static MySQLAdaptor dba;
-	static GenerateInstance createInferredInstance = new GenerateInstance();
+	private static GKInstance complexSummationInst;
+	private static GKInstance speciesInst;
 	static GKInstance nullInst = null;
-	
-	public static void setAdaptor(MySQLAdaptor dbAdaptor)
-	{
-		OrthologousEntity.dba = dbAdaptor;
-	}
-	
-	private static GKInstance speciesInst = null;
-	
-	// Sets the species instance for inferEWAS to use
-	public static void setSpeciesInst(GKInstance speciesInstCopy)
-	{
-		speciesInst = speciesInstCopy;
-	}
 
 	public static GKInstance createOrthoEntity(GKInstance entityInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		GKInstance infEntity = null;
-		if (entityInst.getSchemClass().isValidAttribute("species"))
+		if (entityInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species))
 		{
-			// TODO: Make sure this null check actually works
+			// TODO: Check efficacy of null check; hasSpecies function on all instance types
 			if (orthologousEntity.get(entityInst) == null)
 			{
-				// TODO: Verify this works for all instance types; Move to its own file
 				if (!SpeciesCheck.hasSpecies(entityInst))
 				{
 					infEntity = entityInst;
-				} else if (entityInst.getSchemClass().isa("GenomeEncodedEntity"))
+				} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.GenomeEncodedEntity))
 				{
-					// Change to 'EWAS'? So that reading this makes more sense
-					if (entityInst.getSchemClass().toString().contains("GenomeEncodedEntity"))
+					if (entityInst.getSchemClass().toString().contains(ReactomeJavaConstants.EntityWithAccessionedSequence))
 					{
+						infEntity = OrthologousEntity.createInfEWAS(entityInst, override);
+					} else {
 						if (override)
 						{
 							GKInstance mockedInst = GenerateInstance.newMockGKInstance(entityInst);
 							return mockedInst;
 						}
-					} else {
-						infEntity = OrthologousEntity.createInfGEE(entityInst, override);
 					}
-				} else if (entityInst.getSchemClass().isa("Complex") || entityInst.getSchemClass().isa("Polymer"))
+				} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.Complex) || entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer))
 				{
-					infEntity = OrthologousEntity.createInfComplexPolymer(entityInst, override);
-				} else if (entityInst.getSchemClass().isa("EntitySet"))
+//					infEntity = OrthologousEntity.createInfComplexPolymer(entityInst, override);
+				} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet))
 				{
-					if (entityInst.getAttributeValue("species") != null)
+					if (entityInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 					{
-						infEntity = OrthologousEntity.createInfEntitySet(entityInst, override);
+//						infEntity = OrthologousEntity.createInfEntitySet(entityInst, override);
 					} else {
 						infEntity = entityInst;
 					}
-				} else if (entityInst.getSchemClass().isa("SimpleEntity"))
+				} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.SimpleEntity))
 				{
 					infEntity = entityInst;
 				} else {
@@ -92,38 +78,36 @@ public class OrthologousEntity {
 		}
 	}
 	
-
-	// TODO: Naming change; Function description
-	public static GKInstance createInfGEE(GKInstance geeInst, boolean override) throws InvalidAttributeException, Exception
+	public static GKInstance createInfEWAS(GKInstance ewasInst, boolean override) throws InvalidAttributeException, Exception
 	{
-		if (homolGEE.get(geeInst) == null)
+		if (homolGEE.get(ewasInst) == null)
 		{
-			ArrayList<GKInstance> infEWASInstances = InferEWAS.inferEWAS(geeInst);
+			ArrayList<GKInstance> infEWASInstances = InferEWAS.inferEWAS(ewasInst);
 			if (infEWASInstances.size() > 1)
 			{
 				// TODO: Instance Edit; Check Intracellular; add attribute values if necessary - inferredFrom/To
 				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 				GKInstance definedSetInst = new GKInstance(definedSetClass);
 				definedSetInst.setDbAdaptor(dba);
-				String definedSetName = "Homologues of " + geeInst.getAttributeValue("name");
+				String definedSetName = "Homologues of " + ewasInst.getAttributeValue("name");
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
 				definedSetInst = GenerateInstance.checkForIdenticalInstances(definedSetInst);
-				homolGEE.put(geeInst, definedSetInst);
+				homolGEE.put(ewasInst, definedSetInst);
 			} else if (infEWASInstances.size() == 1)
 			{
-				homolGEE.put(geeInst, infEWASInstances.get(0));
+				homolGEE.put(ewasInst, infEWASInstances.get(0));
 			} else {
 				if (override) {
-				GKInstance mockedInst = GenerateInstance.newMockGKInstance(geeInst);
+				GKInstance mockedInst = GenerateInstance.newMockGKInstance(ewasInst);
 				return mockedInst;
 				} else {
 					return nullInst;
 				}
 			}
 		}
-		return homolGEE.get(geeInst);
+		return homolGEE.get(ewasInst);
 	}
 	
 	public static GKInstance createInfComplexPolymer(GKInstance complexInst, boolean override) throws InvalidAttributeException, InvalidAttributeValueException, Exception
@@ -155,10 +139,7 @@ public class OrthologousEntity {
 				}
 			}
 
-			GKInstance complexSummation = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
-			complexSummation.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
-			complexSummation = GenerateInstance.checkForIdenticalInstances(complexSummation);
-			infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummation);
+			infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummationInst);
 			//TODO: Remove brackets from name
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.name, complexInst.getAttributeValue(ReactomeJavaConstants.name));
 			ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
@@ -309,5 +290,22 @@ public class OrthologousEntity {
 			inferredGSE.put(entitySetInst, infEntitySetInst);
 		}
 		return inferredGSE.get(entitySetInst);
+	}
+	
+	public static void setAdaptor(MySQLAdaptor dbAdaptor)
+	{
+		OrthologousEntity.dba = dbAdaptor;
+	}
+	
+	// Sets the species instance for inferEWAS to use
+	public static void setSpeciesInst(GKInstance speciesInstCopy)
+	{
+		speciesInst = speciesInstCopy;
+	}
+	public static void setComplexSummationInst() throws Exception
+	{
+		complexSummationInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
+		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
+		complexSummationInst = GenerateInstance.checkForIdenticalInstances(complexSummationInst);
 	}
 }

@@ -17,16 +17,8 @@ public class InferReaction {
 
 	private static MySQLAdaptor dba;
 	private static String eligibleFilehandle;
-	
-	public static void setAdaptor(MySQLAdaptor dbAdaptor)
-	{
-		dba = dbAdaptor;
-	}
-	
-	public static void setEligibleFilename(String eligibleFilename)
-	{
-		eligibleFilehandle = eligibleFilename;
-	}
+	private static GKInstance summationInst;
+	private static GKInstance evidenceTypeInst;
 	
 	// This function mimics the Perl version of InferEvent, inferring attribute instances of input, output, catalyst activity, and regulations
 	public static void inferEvent(GKInstance reactionInst) throws InvalidAttributeException, Exception
@@ -35,29 +27,21 @@ public class InferReaction {
 		String stableId = reactionInst.getAttributeValue("name").toString();
 		System.out.println("Reaction: [" + dbId + "] " + stableId);	
 		
-		SkipTests.checkIfSkip(reactionInst);
-		
-		// TODO: Release date/instance edit; skip_event; %inferred_event (not till the end); Global variables for summation/evidence type; %being_inferred
-		// Creates inferred instance of reactionInst
-		GKInstance inferredReaction = GenerateInstance.newInferredGKInstance(reactionInst);
-		inferredReaction.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValue(ReactomeJavaConstants.name));
-		inferredReaction.addAttributeValue(ReactomeJavaConstants.goBiologicalProcess, reactionInst.getAttributeValue(ReactomeJavaConstants.goBiologicalProcess));
-		//TODO: $75% needs to be a variable (??)
-		GKInstance summationInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
-		summationInst.setDbAdaptor(dba);
-		summationInst.addAttributeValue(ReactomeJavaConstants.text, "This event has been computationally inferred from an event that has been demonstrated in another species.<p>The inference is based on the homology mapping in Ensembl Compara. Briefly, reactions for which all involved PhysicalEntities (in input, output and catalyst) have a mapped orthologue/paralogue (for complexes at least 75% of components must have a mapping) are inferred to the other species. High level events are also inferred for these events to allow for easier navigation.<p><a href='/electronic_inference_compara.html' target = 'NEW'>More details and caveats of the event inference in Reactome.</a> For details on the Ensembl Compara system see also: <a href='http://www.ensembl.org/info/docs/compara/homology_method.html' target='NEW'>Gene orthology/paralogy prediction method.</a>");
-		summationInst = GenerateInstance.checkForIdenticalInstances(summationInst);
-		inferredReaction.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
+		if (SkipTests.skipInstance(reactionInst))
+		{
+			return;
+		}
 
-		GKInstance evidenceTypeInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.EvidenceType));
-		evidenceTypeInst.setDbAdaptor(dba);
-		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "inferred by electronic annotation");
-		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "IEA");
-		evidenceTypeInst = GenerateInstance.checkForIdenticalInstances(evidenceTypeInst);
+		// TODO: Release date/instance edit; %inferred_event (not till the end); %being_inferred; Global variables for summation/evidence type (rather than recreating it each time); 75% threshold as variable or hard-coded?
+		// Creates inferred instance of reaction
+		GKInstance inferredReaction = GenerateInstance.newInferredGKInstance(reactionInst);
+		inferredReaction.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
+		inferredReaction.addAttributeValue(ReactomeJavaConstants.goBiologicalProcess, reactionInst.getAttributeValue(ReactomeJavaConstants.goBiologicalProcess));
+		inferredReaction.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
 		inferredReaction.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 		
 		List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
-		System.out.println("Overall Counts: " + reactionProteinCounts);
+//		System.out.println("Overall Counts: " + reactionProteinCounts);
 		
 		//TODO: Success measure; Verify no return needed; count_leaves (not till the end)
 		if (reactionProteinCounts.get(0) > 0) {
@@ -74,7 +58,7 @@ public class InferReaction {
 	public static void inferAttributes(GKInstance reactionInst, Instance inferredReaction, String attribute) throws InvalidAttributeException, Exception
 	{
 		ArrayList<GKInstance> inferredAttributeInstances = new ArrayList<GKInstance>();
-		//TODO: Put ortho'd entity in array and add to inferredReaction;
+		//TODO: Return true if there isn't any null inferred instances
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
 			System.out.println("   " + attributeInst.getAttributeValue("DB_ID"));
@@ -97,4 +81,32 @@ public class InferReaction {
 //			System.out.println("  CatalystActivity");
 		}
 	}
+	
+	public static void setAdaptor(MySQLAdaptor dbAdaptor)
+	{
+		dba = dbAdaptor;
+	}
+	
+	public static void setEligibleFilename(String eligibleFilename)
+	{
+		eligibleFilehandle = eligibleFilename;
+	}
+	
+	public static void setEvidenceTypeInst() throws Exception
+	{
+		evidenceTypeInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.EvidenceType));
+		evidenceTypeInst.setDbAdaptor(dba);
+		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "inferred by electronic annotation");
+		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "IEA");
+		evidenceTypeInst = GenerateInstance.checkForIdenticalInstances(evidenceTypeInst);
+	}
+	
+	public static void setSummationInst() throws Exception
+	{
+		summationInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
+		summationInst.setDbAdaptor(dba);
+		summationInst.addAttributeValue(ReactomeJavaConstants.text, "This event has been computationally inferred from an event that has been demonstrated in another species.<p>The inference is based on the homology mapping in Ensembl Compara. Briefly, reactions for which all involved PhysicalEntities (in input, output and catalyst) have a mapped orthologue/paralogue (for complexes at least 75% of components must have a mapping) are inferred to the other species. High level events are also inferred for these events to allow for easier navigation.<p><a href='/electronic_inference_compara.html' target = 'NEW'>More details and caveats of the event inference in Reactome.</a> For details on the Ensembl Compara system see also: <a href='http://www.ensembl.org/info/docs/compara/homology_method.html' target='NEW'>Gene orthology/paralogy prediction method.</a>");
+		summationInst = GenerateInstance.checkForIdenticalInstances(summationInst);
+	}
+	
 }

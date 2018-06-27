@@ -86,8 +86,13 @@ public class InferEvents
 			InferEWAS.setSpeciesInst(speciesInst);
 			GenerateInstance.setSpeciesInst(speciesInst);
 			
+			InferReaction.setEvidenceTypeInst();
+			InferReaction.setSummationInst();
+			OrthologousEntity.setComplexSummationInst();
+			
 			SkipTests.getSkipList("normal_event_skip_list.txt");
 			
+			// TODO: load_class_attribute_values_of_multiple_instances for reactions and ewas'
 			// Get DB instances of source species
 			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
 			if (!sourceSpeciesInst.isEmpty())
@@ -100,7 +105,7 @@ public class InferEvents
 				}
 				// Gets Reaction instances of source species
 				Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
-				if (!reactionInstances.isEmpty())
+				if (!reactionInstances.isEmpty()) // Output error message if it is empty
 				{
 					for (GKInstance reactionInst : reactionInstances)
 					{
@@ -130,8 +135,6 @@ public class InferEvents
 		fr.close();
 	}
 	
-	//TODO: Perl creates 'Name' using an array -- Is that a Perlism or a Database-ism?
-	//TODO: Check for identical instances
 	public static void createSpeciesInst(String toSpeciesLong) throws Exception
 	{
 		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
