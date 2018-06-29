@@ -72,4 +72,15 @@ public class GenerateInstance {
 				return inferredInst;
 			}
 		}
+		// Checks if the instanceToCheck already contains the instanceToUse in the multi-value attribute
+		public static boolean addAttributeValueIfNeccesary(GKInstance instanceToCheck, GKInstance instanceToUse, String attribute) throws InvalidAttributeException, Exception
+		{
+			for (Object attributeInst : instanceToCheck.getAttributeValuesList(attribute))
+			{
+				if (attributeInst == instanceToUse) {
+					return true;
+				}
+			}
+			return false;
+		}
 }

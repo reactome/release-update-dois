@@ -102,7 +102,6 @@ public class InferEWAS {
 					}
 
 					// Infer residue modifications
-					@SuppressWarnings("unchecked")
 					ArrayList<GKInstance> infModifiedResidues = new ArrayList<GKInstance>();
 					boolean phosFlag = true;
 					for (Object modifiedResidueObj : ewasInst.getAttributeValuesList(ReactomeJavaConstants.hasModifiedResidue))
@@ -116,7 +115,11 @@ public class InferEWAS {
 						}
 						if (infModifiedResidue.getSchemClass().isValidAttribute(ReactomeJavaConstants.modification))
 						{
-							infModifiedResidue.addAttributeValue(ReactomeJavaConstants.modification, modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.modification));
+							for (Object modified : modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.modification))
+							{
+								infModifiedResidue.addAttributeValue(ReactomeJavaConstants.modification, modified);
+							}
+							
 						}
 						GKInstance psiMod = (GKInstance) modifiedResidue.getAttributeValue(ReactomeJavaConstants.psiMod);
 						if (phosFlag && psiMod.getAttributeValue(ReactomeJavaConstants.name).toString().contains("phospho"))
