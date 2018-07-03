@@ -34,11 +34,11 @@ public class InferReaction {
 
 		// TODO: Release date/instance edit; %inferred_event (not till the end); %being_inferred; Global variables for summation/evidence type (rather than recreating it each time); 75% threshold as variable or hard-coded?
 		// Creates inferred instance of reaction
-		GKInstance inferredReaction = GenerateInstance.newInferredGKInstance(reactionInst);
-		inferredReaction.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
-		inferredReaction.addAttributeValue(ReactomeJavaConstants.goBiologicalProcess, reactionInst.getAttributeValue(ReactomeJavaConstants.goBiologicalProcess));
-		inferredReaction.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
-		inferredReaction.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
+		GKInstance infReactionInst = GenerateInstance.newInferredGKInstance(reactionInst);
+		infReactionInst.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
+		infReactionInst.addAttributeValue(ReactomeJavaConstants.goBiologicalProcess, reactionInst.getAttributeValue(ReactomeJavaConstants.goBiologicalProcess));
+		infReactionInst.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
+		infReactionInst.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 		
 		List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
 //		System.out.println("Overall Counts: " + reactionProteinCounts);
@@ -47,7 +47,13 @@ public class InferReaction {
 		if (reactionProteinCounts.get(0) > 0) {
 			String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
 			Files.write(Paths.get(eligibleFilehandle), eligibleEvent.getBytes(), StandardOpenOption.APPEND);
-			InferReaction.inferAttributes(reactionInst, inferredReaction, "input");
+			if (InferReaction.inferAttributes(reactionInst, infReactionInst, "input"))
+			{
+				if (InferReaction.inferAttributes(reactionInst, infReactionInst, "output"))
+				{
+					
+				}
+			}
 	//		InferReaction.inferAttributes(reactionInst, inferredReaction, "output");
 	//		InferReaction.inferCatalyst(reactionInst, inferredReaction);
 		} 
@@ -55,21 +61,21 @@ public class InferReaction {
 	
 	// Function used to create inferred instances related to either 'input' or 'output'
 	@SuppressWarnings("unchecked")
-	public static void inferAttributes(GKInstance reactionInst, Instance inferredReaction, String attribute) throws InvalidAttributeException, Exception
+	public static boolean inferAttributes(GKInstance reactionInst, Instance infReactionInst, String attribute) throws InvalidAttributeException, Exception
 	{
-		ArrayList<GKInstance> inferredAttributeInstances = new ArrayList<GKInstance>();
+		ArrayList<GKInstance> infAttributeInstances = new ArrayList<GKInstance>();
 		//TODO: Return true if there isn't any null inferred instances
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
-			System.out.println("   " + attributeInst.getAttributeValue("DB_ID"));
-			GKInstance inferredAttributeInstance = OrthologousEntity.createOrthoEntity(attributeInst, false);
-			if (inferredAttributeInstance != null)
+			GKInstance infAttributeInst = OrthologousEntity.createOrthoEntity(attributeInst, false);
+			if (infAttributeInst == null)
 			{
-				inferredAttributeInstances.add(inferredAttributeInstance);
-			} else {
-				return;
-			}
+				return false;
+			} 
+			infAttributeInstances.add(infAttributeInst);
 		}
+		infReactionInst.addAttributeValue(attribute, infAttributeInstances);
+		return true;
 	}
 	
 	// Function used to created inferred catalysts

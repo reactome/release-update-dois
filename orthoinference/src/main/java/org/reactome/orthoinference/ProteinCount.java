@@ -20,7 +20,7 @@ public class ProteinCount {
 	{
 		homologueMappings = homologueMappingsCopy;
 	}
-	// TODO: Function descriptions; max > total check;
+	// TODO: Function descriptions;
 	public static List<Integer> countDistinctProteins (GKInstance instanceToBeInferred) throws InvalidAttributeException, Exception
 	{
 		List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
@@ -36,7 +36,7 @@ public class ProteinCount {
 
 		List<Integer> distinctProteinCounts = new ArrayList<Integer>();
 		int total = 0;
-		int inferred = 0;
+		int inferrable = 0;
 		int max = 0;
 		
 		for (GKInstance entity : followedInstances)
@@ -56,7 +56,7 @@ public class ProteinCount {
 				}
 				if (count > 0)
 				{
-					inferred++;
+					inferrable++;
 				}
 			}
 		}
@@ -80,7 +80,7 @@ public class ProteinCount {
 						total += checkedCandidates.get(0);
 						if (checkedCandidates.size() > 1) 
 						{
-							inferred += checkedCandidates.get(1);
+							inferrable += checkedCandidates.get(1);
 						}
 						if (checkedCandidates.size() > 2) 
 						{
@@ -154,12 +154,12 @@ public class ProteinCount {
 						} 
 					}
 					total += flag;
-					inferred += flagInferred;
+					inferrable += flagInferred;
 				}
 			}
 		}
 		distinctProteinCounts.add(total);
-		distinctProteinCounts.add(inferred);
+		distinctProteinCounts.add(inferrable);
 		distinctProteinCounts.add(max);
 		return distinctProteinCounts;
 	}
@@ -170,7 +170,7 @@ public class ProteinCount {
 		if (candidateSet.getAttributeValue(ReactomeJavaConstants.hasCandidate) != null)
 		{
 			int candidateTotal = 0;
-			int candidateInferred = 0;
+			int candidateInferrable = 0;
 			int candidateMax = 0;
 			boolean flag = false;
 			List<ClassAttributeFollowingInstruction> candidateSetInstancesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
@@ -211,9 +211,9 @@ public class ProteinCount {
 						{
 							candidateTotal = candidateComplexCounts.get(0);
 						}
-						if (candidateInferred > 0 && candidateComplexCounts.get(1) > candidateInferred)
+						if (candidateInferrable > 0 && candidateComplexCounts.get(1) > candidateInferrable)
 						{
-							candidateInferred = candidateComplexCounts.get(1);
+							candidateInferrable = candidateComplexCounts.get(1);
 						}
 						if (candidateMax > 0 && candidateComplexCounts.get(2) > candidateMax)
 						{
@@ -229,12 +229,11 @@ public class ProteinCount {
 					{
 						count = homologueMappings.get(identifier).length;
 					}
-					// TODO: Is it possible to set c to a value?
 					if (count > 0)
 					{
-						candidateInferred = 1;
+						candidateInferrable = 1;
 					}
-					if (candidateInferred == 0)
+					if (candidateInferrable == 0)
 					{
 						flag = true;
 					}
@@ -247,7 +246,7 @@ public class ProteinCount {
 				return checkedCandidates;
 			}
 			checkedCandidates.add(candidateTotal);
-			checkedCandidates.add(candidateInferred);
+			checkedCandidates.add(candidateInferrable);
 			checkedCandidates.add(candidateMax);
 			return checkedCandidates;
 		}

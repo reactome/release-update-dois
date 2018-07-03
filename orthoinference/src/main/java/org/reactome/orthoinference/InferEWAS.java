@@ -57,9 +57,10 @@ public class InferEWAS {
 						}
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceDatabase,  referenceDb);
 						// Equivalent of create_ReferenceDNASequence function in infer_events.pl
-						ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId);
+						ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId, homologueSource);
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceGene, inferredReferenceDNAInstances);
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants._displayName, "UniProt:" + homologueId);
 						infReferenceGeneProduct = GenerateInstance.checkForIdenticalInstances(infReferenceGeneProduct);
 						seenRPS.put(homologueId, infReferenceGeneProduct);
 					} else {
@@ -142,11 +143,12 @@ public class InferEWAS {
 						{
 							infModifiedResidue.addAttributeValue(ReactomeJavaConstants.psiMod, (GKInstance) psiModInst);
 						}
+						infModifiedResidue.addAttributeValue(ReactomeJavaConstants._displayName, modifiedResidue.getAttributeValue(ReactomeJavaConstants._displayName));
 						infModifiedResidue = GenerateInstance.checkForIdenticalInstances(infModifiedResidue);
 						infModifiedResidues.add((GKInstance) infModifiedResidue);
 					}
 					infEWAS.addAttributeValue(ReactomeJavaConstants.hasModifiedResidue, infModifiedResidues);
-				
+					infEWAS.addAttributeValue(ReactomeJavaConstants._displayName, ewasInst.getAttributeValue(ReactomeJavaConstants._displayName));
 					infEWAS = GenerateInstance.checkForIdenticalInstances(infEWAS);
 					if (GenerateInstance.addAttributeValueIfNeccesary(infEWAS, ewasInst, ReactomeJavaConstants.inferredFrom))
 					{
@@ -165,7 +167,7 @@ public class InferEWAS {
 	}
 
 /// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein
-	public static ArrayList<GKInstance> createReferenceDNASequence(String homologueId) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static ArrayList<GKInstance> createReferenceDNASequence(String homologueId, String homologueSource) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		ArrayList<GKInstance> referenceDNAInstances = new ArrayList<GKInstance>();
 		ArrayList<String> ensgs = ensgMappings.get(homologueId);
@@ -178,6 +180,7 @@ public class InferEWAS {
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, ensgDbInst);
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+			referenceDNAInst.addAttributeValue(ReactomeJavaConstants._displayName, "ENSEMBL:" + ensg);
 			referenceDNAInst = GenerateInstance.checkForIdenticalInstances(referenceDNAInst);
 			referenceDNAInstances.add(referenceDNAInst);
 			if (refDb)
@@ -188,6 +191,7 @@ public class InferEWAS {
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, alternateDbInst);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants._displayName, alternateDbInst.getAttributeValue(ReactomeJavaConstants.name) + ":" + ensg);
 				alternateRefDNAInst = GenerateInstance.checkForIdenticalInstances(alternateRefDNAInst);
 				referenceDNAInstances.add(alternateRefDNAInst);
 			}

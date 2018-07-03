@@ -28,7 +28,7 @@ public class OrthologousEntity {
 		GKInstance infEntity = null;
 		if (entityInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species))
 		{
-			// TODO: Check efficacy of null check; hasSpecies function on all instance types
+			// TODO: hasSpecies function on all instance types
 			if (orthologousEntity.get(entityInst) == null)
 			{
 				if (!SpeciesCheck.hasSpecies(entityInst))
@@ -61,9 +61,7 @@ public class OrthologousEntity {
 				{
 					infEntity = entityInst;
 				} else {
-					//TODO: Unknown Class
 				}
-				//TODO: %orthologous_entity
 				if (override)
 				{
 					return infEntity;
@@ -89,10 +87,11 @@ public class OrthologousEntity {
 				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 				GKInstance definedSetInst = new GKInstance(definedSetClass);
 				definedSetInst.setDbAdaptor(dba);
-				String definedSetName = "Homologues of " + ewasInst.getAttributeValue("name");
+				String definedSetName = "Homologues of " + ewasInst.getAttributeValue(ReactomeJavaConstants.name);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
+				definedSetInst.addAttributeValue(ReactomeJavaConstants._displayName, ewasInst.getAttributeValue(ReactomeJavaConstants._displayName));
 				definedSetInst = GenerateInstance.checkForIdenticalInstances(definedSetInst);
 				if (GenerateInstance.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom))
 				{
@@ -164,8 +163,8 @@ public class OrthologousEntity {
 				}
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 			}
+			infComplexInst.addAttributeValue(ReactomeJavaConstants._displayName, complexInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			infComplexInst = GenerateInstance.checkForIdenticalInstances(infComplexInst);
-			
 			if (infComplexInst.getDBID() != complexInst.getDBID())
 			{
 				if (GenerateInstance.addAttributeValueIfNeccesary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom))
@@ -200,18 +199,22 @@ public class OrthologousEntity {
 			for (Object memberInst : entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
 			{
 				GKInstance infMember = OrthologousEntity.createOrthoEntity((GKInstance) memberInst, false);
-				if (infMember != null && !existingMembers.contains(infMember.getAttributeValue("name").toString()))
+				if (infMember != null && !existingMembers.contains(infMember.getAttributeValue(ReactomeJavaConstants.name).toString()))
 				{
-					existingMembers.add(infMember.getAttributeValue("name").toString());
+					existingMembers.add(infMember.getAttributeValue(ReactomeJavaConstants.name).toString());
 					membersList.add(infMember);
 				}
 			}
 			GKInstance infEntitySetInst = GenerateInstance.newInferredGKInstance(entitySetInst);
-			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.name, entitySetInst.getAttributeValuesList("name"));
+			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.name, entitySetInst.getAttributeValuesList(ReactomeJavaConstants.name));
 			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasMember, membersList);
 			if (entitySetInst.getSchemClass().isa(ReactomeJavaConstants.OpenSet))
 			{
-				infEntitySetInst.addAttributeValue(ReactomeJavaConstants.referenceEntity, entitySetInst.getAttributeValuesList("referenceEntity"));
+//				infEntitySetInst.addAttributeValue(ReactomeJavaConstants.referenceEntity, entitySetInst.getAttributeValuesList("referenceEntity"));
+				for (Object referenceEntity : entitySetInst.getAttributeValuesList(ReactomeJavaConstants.referenceEntity))
+				{
+					infEntitySetInst.addAttributeValue(ReactomeJavaConstants.referenceEntity, referenceEntity);
+				}
 			} else {
 				List<Integer> entitySetProteinCounts = ProteinCount.countDistinctProteins(entitySetInst);
 				int entitySetTotal = entitySetProteinCounts.get(0);
@@ -230,9 +233,9 @@ public class OrthologousEntity {
 					for (Object candidateInst : entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasCandidate))
 					{
 						GKInstance infCandidate = OrthologousEntity.createOrthoEntity((GKInstance) candidateInst, false);
-						if (infCandidate != null && !existingMembers.contains(infCandidate.getAttributeValue("name").toString()) && !existingCandidates.contains(infCandidate.getAttributeValue("name").toString()))
+						if (infCandidate != null && !existingMembers.contains(infCandidate.getAttributeValue(ReactomeJavaConstants.name).toString()) && !existingCandidates.contains(infCandidate.getAttributeValue(ReactomeJavaConstants.name).toString()))
 						{
-							existingCandidates.add(infCandidate.getAttributeValue("name").toString());
+							existingCandidates.add(infCandidate.getAttributeValue(ReactomeJavaConstants.name).toString());
 							candidatesList.add(infCandidate);
 						}
 					}
@@ -280,8 +283,9 @@ public class OrthologousEntity {
 					// If it has more than 1 member, nothing happens here; all members are stored in this inferred instances 'HasMember' attribute
 				}
 			}
+			infEntitySetInst.addAttributeValue(ReactomeJavaConstants._displayName, entitySetInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			infEntitySetInst = GenerateInstance.checkForIdenticalInstances(infEntitySetInst);
-			if (infEntitySetInst.getSchemClass().isValidAttribute("species") && entitySetInst.getAttributeValue("species") != null)
+			if (infEntitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entitySetInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 			{
 				if (GenerateInstance.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom))
 				{
@@ -316,6 +320,7 @@ public class OrthologousEntity {
 	public static void setComplexSummationInst() throws Exception
 	{
 		complexSummationInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
+		complexSummationInst.setDbAdaptor(dba);
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
 		complexSummationInst = GenerateInstance.checkForIdenticalInstances(complexSummationInst);
 	}
