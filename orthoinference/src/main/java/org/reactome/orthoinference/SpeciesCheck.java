@@ -54,7 +54,7 @@ public class SpeciesCheck {
 			}
 			return false;
 		} else {
-			if (entityInst.getAttributeValue(ReactomeJavaConstants.species) != null)
+			if (entityInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entityInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 			{
 				return true;
 			} else {

@@ -41,9 +41,12 @@ public class InferEvents
 		}
 		
 		PrintWriter eligibleFile = new PrintWriter("eligible_ddis_75.txt");
+		PrintWriter inferredFile = new PrintWriter("inferred_ddis_75.txt");
 		eligibleFile.close();
+		inferredFile.close();
 		
 		InferReaction.setEligibleFilename("eligible_ddis_75.txt");
+		InferReaction.setInferredFilename("inferred_ddis_75.txt");
 		
 		Collection<GKInstance> sourceSpeciesInst;
 		
@@ -89,9 +92,8 @@ public class InferEvents
 			InferReaction.setEvidenceTypeInst();
 			InferReaction.setSummationInst();
 			OrthologousEntity.setComplexSummationInst();
-			
+
 			SkipTests.getSkipList("normal_event_skip_list.txt");
-			
 			// TODO: load_class_attribute_values_of_multiple_instances for reactions and ewas'
 			// Get DB instances of source species
 			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
@@ -112,7 +114,7 @@ public class InferEvents
 						InferReaction.inferEvent(reactionInst);
 					}
 				}
-			}	
+			}
 	}
 
 	// Read the species-specific orthopairs file, and create a HashMap with the contents
