@@ -60,7 +60,6 @@ public class ProteinCount {
 				}
 			}
 		}
-	
 		for (GKInstance entity : followedInstances)
 		{
 			if (entity.getSchemClass().isa(ReactomeJavaConstants.EntitySet))
@@ -74,7 +73,7 @@ public class ProteinCount {
 				@SuppressWarnings("unchecked")
 				Collection<GKInstance> entitySetsFollowedInstances = InstanceUtilities.followInstanceAttributes(entity, entitySetsInstancesToFollow, entitySetsOutClasses);
 				if (entitySetsFollowedInstances.size() == 0 && entity.getSchemClass().isa(ReactomeJavaConstants.CandidateSet))
-				{
+				{	
 					List<Integer> checkedCandidates = ProteinCount.checkCandidates(entity, followedInstances);
 					if (checkedCandidates.size() > 0) {
 						total += checkedCandidates.get(0);
@@ -120,7 +119,6 @@ public class ProteinCount {
 								int subTotal = countedComplexProteins.get(0);
 								int subInferred = countedComplexProteins.get(1);
 								int subMax = countedComplexProteins.get(2);
-								
 								if (subTotal > flag)
 								{
 									flag = subTotal;
@@ -134,7 +132,11 @@ public class ProteinCount {
 									max = subMax;
 								}
 							}
-						} else if (physicalEntity.getSchemClass().isa(ReactomeJavaConstants.ReferenceGeneProduct))
+						} 
+					}
+					for (GKInstance physicalEntity : entitySetsFollowedInstances)
+					{
+						if (physicalEntity.getSchemClass().isa(ReactomeJavaConstants.ReferenceGeneProduct))
 						{
 							flag = 1;
 							String identifier = physicalEntity.getAttributeValue(ReactomeJavaConstants.identifier).toString();
@@ -172,7 +174,7 @@ public class ProteinCount {
 			int candidateTotal = 0;
 			int candidateInferrable = 0;
 			int candidateMax = 0;
-			boolean flag = false;
+			Integer flag = 0;
 			List<ClassAttributeFollowingInstruction> candidateSetInstancesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
 			candidateSetInstancesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.CandidateSet, new String[]{ReactomeJavaConstants.hasCandidate}, new String[]{}));
 			candidateSetInstancesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.EntityWithAccessionedSequence, new String[]{ReactomeJavaConstants.referenceEntity}, new String[]{}));
@@ -205,7 +207,7 @@ public class ProteinCount {
 					{
 						if (candidateComplexCounts.get(0) > 0 && candidateComplexCounts.get(1) == 0)
 						{
-							flag = true;
+							flag++;
 						}
 						if (candidateTotal > 0 && candidateComplexCounts.get(0) > candidateTotal)
 						{
@@ -232,14 +234,12 @@ public class ProteinCount {
 					if (count > 0)
 					{
 						candidateInferrable = 1;
-					}
-					if (candidateInferrable == 0)
-					{
-						flag = true;
+						flag++;
 					}
 				}
-			}
-			if (flag)
+			} 
+			
+			if (flag == 0)
 			{
 				checkedCandidates.add(candidateTotal);
 				checkedCandidates.add(0); // candidateInferred value is dropped, 0 is returned instead
