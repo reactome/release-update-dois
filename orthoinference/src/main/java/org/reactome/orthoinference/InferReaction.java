@@ -21,6 +21,9 @@ public class InferReaction {
 	private static  String inferredFilehandle;
 	private static GKInstance summationInst;
 	private static GKInstance evidenceTypeInst;
+	private static HashMap<GKInstance, GKInstance> inferredEvent = new HashMap<GKInstance,GKInstance>();
+	private static Integer eligibleCount = 0;
+	private static Integer inferredCount = 0;
 	
 	// This function mimics the Perl version of InferEvent, inferring attribute instances of input, output, catalyst activity, and regulations
 	public static void inferEvent(GKInstance reactionInst) throws InvalidAttributeException, Exception
@@ -34,67 +37,69 @@ public class InferReaction {
 			return;
 		}
 		
-		// TODO: Release date/instance edit; %inferred_event (not till the end); %being_inferred; Global variables for summation/evidence type (rather than recreating it each time); 75% threshold as variable or hard-coded?
-		// Creates inferred instance of reaction
-		GKInstance infReactionInst = GenerateInstance.newInferredGKInstance(reactionInst);
-		infReactionInst.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
-		infReactionInst.addAttributeValue(ReactomeJavaConstants.goBiologicalProcess, reactionInst.getAttributeValue(ReactomeJavaConstants.goBiologicalProcess));
-		infReactionInst.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
-		infReactionInst.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
-		infReactionInst.addAttributeValue(ReactomeJavaConstants._displayName, reactionInst.getAttributeValue(ReactomeJavaConstants._displayName));
-		
-		List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
-//		System.out.println("Overall Counts: " + reactionProteinCounts);
-		
-		//TODO: Success measure; Verify no return needed; count_leaves (not till the end)
-		if (reactionProteinCounts.get(0) > 0) {
-			String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
-			Files.write(Paths.get(eligibleFilehandle), eligibleEvent.getBytes(), StandardOpenOption.APPEND);
-			if (InferReaction.inferAttributes(reactionInst, infReactionInst, "input"))
-			{
-				if (InferReaction.inferAttributes(reactionInst, infReactionInst, "output"))
+		if (inferredEvent.get(reactionInst) == null)
+		{
+			// TODO: Release date/instance edit; %inferred_event (not till the end); %being_inferred; Global variables for summation/evidence type (rather than recreating it each time); 75% threshold as variable or hard-coded?
+			// Creates inferred instance of reaction
+			GKInstance infReactionInst = GenerateInstance.newInferredGKInstance(reactionInst);
+			infReactionInst.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
+			infReactionInst.addAttributeValue(ReactomeJavaConstants.goBiologicalProcess, reactionInst.getAttributeValue(ReactomeJavaConstants.goBiologicalProcess));
+			infReactionInst.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
+			infReactionInst.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
+			infReactionInst.addAttributeValue(ReactomeJavaConstants._displayName, reactionInst.getAttributeValue(ReactomeJavaConstants._displayName));
+			
+			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
+			if (reactionProteinCounts.get(0) > 0) {
+				String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
+				eligibleCount++;
+				Files.write(Paths.get(eligibleFilehandle), eligibleEvent.getBytes(), StandardOpenOption.APPEND);
+				if (InferReaction.inferAttributes(reactionInst, infReactionInst, ReactomeJavaConstants.input))
 				{
-					if (InferReaction.inferCatalyst(reactionInst, infReactionInst))
+					if (InferReaction.inferAttributes(reactionInst, infReactionInst, ReactomeJavaConstants.output))
 					{
-						ArrayList<GKInstance> inferredRegulations = InferReaction.inferRegulation(reactionInst);
-						if (inferredRegulations.size() == 1 && inferredRegulations.get(0) == null)
+						if (InferReaction.inferCatalyst(reactionInst, infReactionInst))
 						{
-							return;
-						}
-						infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
-						if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom) && GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom))
-						{
-							infReactionInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, reactionInst);
-							dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.inferredFrom);
-						}
-						if (GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent))
-						{
-							infReactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, reactionInst);
-							dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.orthologousEvent);
-						}
-						if (GenerateInstance.addAttributeValueIfNeccesary(reactionInst, infReactionInst, ReactomeJavaConstants.orthologousEvent))
-						{
-							reactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infReactionInst);
-							dba.updateInstanceAttribute(reactionInst, ReactomeJavaConstants.orthologousEvent);
-						}
-						// TODO %inferred_event
-						
-						if (inferredRegulations.size() > 0)
-						{
-							for (GKInstance infRegulation : inferredRegulations)
+							ArrayList<GKInstance> inferredRegulations = InferReaction.inferRegulation(reactionInst);
+							if (inferredRegulations.size() == 1 && inferredRegulations.get(0) == null)
 							{
-								infRegulation = GenerateInstance.checkForIdenticalInstances(infRegulation);
-								infReactionInst.addAttributeValue("regulatedBy", infRegulation);
-								dba.updateInstanceAttribute(infReactionInst, "regulatedBy");
+								return;
 							}
+							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
+							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom) && GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom))
+							{
+								infReactionInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, reactionInst);
+								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.inferredFrom);
+							}
+							if (GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent))
+							{
+								infReactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, reactionInst);
+								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.orthologousEvent);
+							}
+							if (GenerateInstance.addAttributeValueIfNeccesary(reactionInst, infReactionInst, ReactomeJavaConstants.orthologousEvent))
+							{
+								reactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infReactionInst);
+								dba.updateInstanceAttribute(reactionInst, ReactomeJavaConstants.orthologousEvent);
+							}
+							// TODO %inferred_event
+							inferredEvent.put(reactionInst, infReactionInst);
+							if (inferredRegulations.size() > 0)
+							{
+								for (GKInstance infRegulation : inferredRegulations)
+								{
+									infRegulation = GenerateInstance.checkForIdenticalInstances(infRegulation);
+									infReactionInst.addAttributeValue("regulatedBy", infRegulation);
+									dba.updateInstanceAttribute(infReactionInst, "regulatedBy");
+								}
+							}
+							inferredCount++;
+							String inferredEvent = infReactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + infReactionInst.getDisplayName() + "\n";	
+							Files.write(Paths.get(inferredFilehandle), inferredEvent.getBytes(), StandardOpenOption.APPEND);
 						}
-						String inferredEvent = infReactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + infReactionInst.getDisplayName() + "\n";	
-						Files.write(Paths.get(inferredFilehandle), inferredEvent.getBytes(), StandardOpenOption.APPEND);
 					}
+					return;
 				}
-				return;
-			}
-		} 
+			} 
+		}
 	}
 	
 	// Function used to create inferred instances related to either 'input' or 'output'
