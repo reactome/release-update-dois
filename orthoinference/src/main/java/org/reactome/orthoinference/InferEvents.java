@@ -74,6 +74,7 @@ public class InferEvents
 			GenerateInstance.setAdaptor(dbAdaptor);
 			OrthologousEntity.setAdaptor(dbAdaptor);
 			InferEWAS.setAdaptor(dbAdaptor);
+			UpdateHumanEvents.setAdaptor(dbAdaptor);
 			
 			InferEvents.readHomologueMappingFile("ddis", "hsap");
 			ProteinCount.setHomologueMappingFile(homologueMappings);
@@ -92,8 +93,8 @@ public class InferEvents
 			InferEWAS.setSpeciesInst(speciesInst);
 			GenerateInstance.setSpeciesInst(speciesInst);
 			
-			InferReaction.setEvidenceTypeInst();
-			InferReaction.setSummationInst();
+			InferEvents.setSummationInst();
+			InferEvents.setEvidenceTypeInst();
 			OrthologousEntity.setComplexSummationInst();
 
 			SkipTests.getSkipList("normal_event_skip_list.txt");
@@ -112,6 +113,7 @@ public class InferEvents
 				Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
 				if (!reactionInstances.isEmpty()) // Output error message if it is empty
 				{
+					ArrayList<GKInstance> filteredReactions = new ArrayList<GKInstance>();
 					for (GKInstance reactionInst : reactionInstances)
 					{
 						ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
@@ -143,10 +145,12 @@ public class InferEvents
 							}
 							continue;
 						}
-						InferReaction.inferEvent(reactionInst);
-					} 
+					InferReaction.inferEvent(reactionInst);	
+					}
 				}
-			}
+			UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
+			UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
+			
 	}
 
 	// Read the species-specific orthopairs file, and create a HashMap with the contents
@@ -176,5 +180,24 @@ public class InferEvents
 		speciesInst.setDbAdaptor(dbAdaptor);
 		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
 		speciesInst = GenerateInstance.checkForIdenticalInstances(speciesInst);
+	}
+	public static void setSummationInst() throws Exception
+	{
+		GKInstance summationInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Summation));
+		summationInst.setDbAdaptor(dbAdaptor);
+		summationInst.addAttributeValue(ReactomeJavaConstants.text, "This event has been computationally inferred from an event that has been demonstrated in another species.<p>The inference is based on the homology mapping in Ensembl Compara. Briefly, reactions for which all involved PhysicalEntities (in input, output and catalyst) have a mapped orthologue/paralogue (for complexes at least 75% of components must have a mapping) are inferred to the other species. High level events are also inferred for these events to allow for easier navigation.<p><a href='/electronic_inference_compara.html' target = 'NEW'>More details and caveats of the event inference in Reactome.</a> For details on the Ensembl Compara system see also: <a href='http://www.ensembl.org/info/docs/compara/homology_method.html' target='NEW'>Gene orthology/paralogy prediction method.</a>");
+		summationInst = GenerateInstance.checkForIdenticalInstances(summationInst);
+		InferReaction.setSummationInst(summationInst);
+		UpdateHumanEvents.setSummationInst(summationInst);
+	}
+	public static void setEvidenceTypeInst() throws Exception
+	{
+		GKInstance evidenceTypeInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.EvidenceType));
+		evidenceTypeInst.setDbAdaptor(dbAdaptor);
+		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "inferred by electronic annotation");
+		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "IEA");
+		evidenceTypeInst = GenerateInstance.checkForIdenticalInstances(evidenceTypeInst);
+		InferReaction.setEvidenceTypeInst(evidenceTypeInst);
+		UpdateHumanEvents.setEvidenceTypeInst(evidenceTypeInst);
 	}
 }
