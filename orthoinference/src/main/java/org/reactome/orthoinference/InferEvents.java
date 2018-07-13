@@ -150,7 +150,7 @@ public class InferEvents
 				}
 			UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
 			UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
-			
+			}
 	}
 
 	// Read the species-specific orthopairs file, and create a HashMap with the contents
