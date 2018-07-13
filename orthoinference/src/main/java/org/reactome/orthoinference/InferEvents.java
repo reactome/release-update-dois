@@ -30,6 +30,9 @@ public class InferEvents
 	private static GKInstance speciesInst = null;
 	static boolean refDb = true;
 	
+	private static HashMap<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
+	private static ArrayList<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
+	
 	@SuppressWarnings("unchecked")
 	public static void main(String args[]) throws Exception
 	{
@@ -111,8 +114,37 @@ public class InferEvents
 				{
 					for (GKInstance reactionInst : reactionInstances)
 					{
+						ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
+						for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
+						{
+							GKInstance reactionSpeciesInst = (GKInstance) orthoEventInst.getAttributeValue(ReactomeJavaConstants.species);
+							if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && orthoEventInst.getAttributeValue(ReactomeJavaConstants.isChimeric) == null)
+							{
+								previouslyInferredInstances.add(orthoEventInst);
+							}
+						}
+						for (GKInstance inferredFromInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.inferredFrom))
+						{
+							GKInstance reactionSpeciesInst = (GKInstance) inferredFromInst.getAttributeValue(ReactomeJavaConstants.species);
+							if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && inferredFromInst.getAttributeValue(ReactomeJavaConstants.isChimeric) == null)
+							{
+								previouslyInferredInstances.add(inferredFromInst);
+							}
+						}
+						if (previouslyInferredInstances.size() > 0)
+						{
+							GKInstance prevInfInst = previouslyInferredInstances.get(0);
+							if (prevInfInst.getAttributeValue(ReactomeJavaConstants.disease) == null) 
+							{
+								manualEventToNonHumanSource.put(reactionInst, prevInfInst);
+								manualHumanEvents.add(reactionInst);
+							} else {
+								System.out.println("Skipping building of hierarchy around pre-existing disease reaction " + prevInfInst);
+							}
+							continue;
+						}
 						InferReaction.inferEvent(reactionInst);
-					}
+					} 
 				}
 			}
 	}

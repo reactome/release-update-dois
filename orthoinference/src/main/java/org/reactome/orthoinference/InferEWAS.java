@@ -10,8 +10,11 @@ import java.util.HashMap;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.GKSchemaAttribute;
+import org.gk.schema.GKSchemaClass;
 import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
+import org.gk.schema.SchemaAttribute;
 import org.gk.schema.SchemaClass;
 
 public class InferEWAS {
@@ -28,6 +31,8 @@ public class InferEWAS {
 	//TODO: Remove static value when scaling up species total
 	static boolean refDb = false;
 	private static GKInstance speciesInst = null;
+	
+	private static HashMap<String,GKInstance> identicals = new HashMap<String,GKInstance>();
 
 /// Creates an array inferred EWAS instances from the homologue mappings file (hsap_species_mapping.txt)
 	public static ArrayList<GKInstance> inferEWAS(GKInstance ewasInst) throws InvalidAttributeException, Exception
@@ -149,7 +154,31 @@ public class InferEWAS {
 					}
 					infEWAS.addAttributeValue(ReactomeJavaConstants.hasModifiedResidue, infModifiedResidues);
 					infEWAS.addAttributeValue(ReactomeJavaConstants._displayName, ewasInst.getAttributeValue(ReactomeJavaConstants._displayName));
+					
+					// Rough draft for caching
+					GKSchemaClass instance = (GKSchemaClass) infEWAS.getSchemClass();
+					String key = null;
+					for (GKSchemaAttribute definingAttribute : (Collection<GKSchemaAttribute>) instance.getDefiningAttributes())
+					{
+						if (infEWAS.getAttributeValue(definingAttribute) != null)
+						{
+							if (definingAttribute.getName().contains("referenceEntity")) {
+								key +=  ((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).getDBID().toString();
+							} else {
+								key += infEWAS.getAttributeValue(definingAttribute);
+							}
+						} else {
+							key += "null";
+						}
+					}
+					key += homologue;
+					if (identicals.get(key) != null) {
+						infEWAS = identicals.get(key);
+					} else {
 					infEWAS = GenerateInstance.checkForIdenticalInstances(infEWAS);
+					identicals.put(key, infEWAS);
+					}
+
 					if (GenerateInstance.addAttributeValueIfNeccesary(infEWAS, ewasInst, ReactomeJavaConstants.inferredFrom))
 					{
 						infEWAS.addAttributeValue(ReactomeJavaConstants.inferredFrom, ewasInst);

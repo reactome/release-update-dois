@@ -43,7 +43,6 @@ public class GenerateInstance {
 		// create_ghost equivalent; Returns a mock homologue that is needed in cases of unsuccessful inference
 		public static GKInstance newMockGKInstance(GKInstance instanceToBeMocked) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 		{
-			System.out.println("Boo!!");
 			SchemaClass geeClass = dba.getSchema().getClassByName(ReactomeJavaConstants.GenomeEncodedEntity);
 			GKInstance mockedInst = new GKInstance(geeClass);
 			mockedInst.setDbAdaptor(dba);
@@ -61,8 +60,6 @@ public class GenerateInstance {
 			@SuppressWarnings("unchecked")
 			Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
 			if (identicalInstances != null) {
-//				System.out.println(identicalInstances.size());
-//				System.out.println(identicalInstances);
 				if (identicalInstances.size() == 1) {
 					return identicalInstances.iterator().next();
 				} else if (identicalInstances.size() > 1) {
