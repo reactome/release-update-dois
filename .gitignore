@@ -34,3 +34,4 @@ config.properties
 .settings
 target
 *.report
+.attach_pid*
