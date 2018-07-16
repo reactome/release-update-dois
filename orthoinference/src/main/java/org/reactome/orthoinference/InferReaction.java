@@ -29,9 +29,9 @@ public class InferReaction {
 	// This function mimics the Perl version of InferEvent, inferring attribute instances of input, output, catalyst activity, and regulations
 	public static void inferEvent(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
-		String dbId = reactionInst.getAttributeValue("DB_ID").toString();
-		String stableId = reactionInst.getAttributeValue("name").toString();
-		System.out.println("\nReaction: [" + dbId + "] " + stableId);	
+//		String dbId = reactionInst.getAttributeValue("DB_ID").toString();
+//		String stableId = reactionInst.getAttributeValue("name").toString();
+//		System.out.println("\nReaction: [" + dbId + "] " + stableId);	
 		
 		if (SkipTests.skipInstance(reactionInst))
 		{
@@ -225,8 +225,15 @@ public class InferReaction {
 	{
 		return inferrableHumanEvents;
 	}
+	
 	public static HashMap<GKInstance, GKInstance> getInferredEvent()
 	{
 		return inferredEvent;
+	}
+	public static int[] getCounts()
+	{
+		int[] counts = {eligibleCount, inferredCount};
+		return counts;
+		
 	}
 }

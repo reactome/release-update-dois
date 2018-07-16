@@ -2,9 +2,13 @@ package org.reactome.orthoinference;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,7 +41,7 @@ public class InferEvents
 	public static void main(String args[]) throws Exception
 	{
 		String pathToConfig = "src/main/resources/config.properties";
-		
+
 		if (args.length > 0 && !args[0].equals(""))
 		{
 			pathToConfig = args[0];
@@ -113,9 +117,10 @@ public class InferEvents
 				Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
 				if (!reactionInstances.isEmpty()) // Output error message if it is empty
 				{
-					ArrayList<GKInstance> filteredReactions = new ArrayList<GKInstance>();
 					for (GKInstance reactionInst : reactionInstances)
 					{
+						String dBId = reactionInst.getAttributeValue("DB_ID").toString();
+
 						ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
 						for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
 						{
@@ -145,12 +150,25 @@ public class InferEvents
 							}
 							continue;
 						}
-					InferReaction.inferEvent(reactionInst);	
+						InferReaction.inferEvent(reactionInst);
 					}
 				}
+			}
 			UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
 			UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
-			}
+			InferEvents.outputReport();
+	}
+	
+	public static void outputReport() throws IOException
+	{
+		int[] counts = InferReaction.getCounts();
+		int percent = 100*counts[1]/counts[0];
+		//TODO: Count warnings; manual report
+		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_65.txt");
+		reportFile.close();
+		String results = "hsp to ddis:\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
+		Files.write(Paths.get("report_ortho_inference_test_reactome_65.txt"), results.getBytes(), StandardOpenOption.APPEND);
+		
 	}
 
 	// Read the species-specific orthopairs file, and create a HashMap with the contents

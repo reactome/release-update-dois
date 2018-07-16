@@ -60,6 +60,11 @@ public class UpdateHumanEvents {
 		}
 		
 		UpdateHumanEvents.inferPrecedingEvents();
+		
+		for (GKInstance humanPathwayInst : updatedInferrableHumanEvents)
+		{
+			// TODO: This is for instance edits; %seen4
+		}
 	}
 	
 	public static void createHumanHierarchy(GKInstance inferrableInst) throws Exception
@@ -131,7 +136,7 @@ public class UpdateHumanEvents {
 						updatedPrecedingEventInstances.add(precedingEvent);
 					}
 				}
-				if (updatedPrecedingEventInstances != null)
+				if (updatedPrecedingEventInstances != null && updatedPrecedingEventInstances.size() > 0)
 				{
 					inferredEvent.get(inferrableEvent).addAttributeValue(ReactomeJavaConstants.precedingEvent, updatedPrecedingEventInstances);
 					dba.updateInstanceAttribute(inferredEvent.get(inferrableEvent), ReactomeJavaConstants.precedingEvent);
