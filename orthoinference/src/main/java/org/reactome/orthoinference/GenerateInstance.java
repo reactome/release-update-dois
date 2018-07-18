@@ -1,10 +1,13 @@
 package org.reactome.orthoinference;
 
 import java.util.Collection;
+import java.util.HashMap;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.GKSchemaAttribute;
+import org.gk.schema.GKSchemaClass;
 import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
@@ -13,6 +16,7 @@ public class GenerateInstance {
 	
 		private static MySQLAdaptor dba; 
 		private static GKInstance speciesInst = null;
+		private static HashMap<String,GKInstance> mockedIdenticals = new HashMap<String,GKInstance>();
 	
 		public static void setAdaptor(MySQLAdaptor dbAdaptor)
 		{
@@ -46,10 +50,28 @@ public class GenerateInstance {
 			SchemaClass geeClass = dba.getSchema().getClassByName(ReactomeJavaConstants.GenomeEncodedEntity);
 			GKInstance mockedInst = new GKInstance(geeClass);
 			mockedInst.setDbAdaptor(dba);
+			//TODO: check intracellular; CFII not congruent between Perl and Java
 			String mockedName = (String) instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.name);
 			mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);
+			mockedInst.addAttributeValue(ReactomeJavaConstants._displayName, "Ghost homologue of " + instanceToBeMocked.getAttributeValue(ReactomeJavaConstants._displayName));
 			mockedInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
-			//TODO: Instance edit; check intracellular; inferred to/from; update;
+			
+			// Caching
+			String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) mockedInst.getSchemClass(), mockedInst);
+			if (mockedIdenticals.get(cacheKey) != null)
+			{
+				mockedInst = mockedIdenticals.get(cacheKey);
+			} else {
+				mockedInst = GenerateInstance.checkForIdenticalInstances(mockedInst);
+				mockedIdenticals.put(cacheKey, mockedInst);
+			}
+			
+			if (GenerateInstance.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo))
+			{
+				instanceToBeMocked.addAttributeValue(ReactomeJavaConstants.inferredTo, mockedInst);
+			}
+			dba.updateInstanceAttribute(instanceToBeMocked, ReactomeJavaConstants.inferredTo);
+			
 			return mockedInst;
 		}
 		
@@ -82,5 +104,46 @@ public class GenerateInstance {
 				}
 			}
 			return false;
+		}
+		
+		// This function goes through each defining attribute of the incoming instance and produces a string of the attribute values (DB ids if the attribute is an instance)
+		@SuppressWarnings("unchecked")
+		public static String getCacheKey(GKSchemaClass instClass, GKInstance infInst) throws InvalidAttributeException, Exception
+		{
+			String key = "";
+			
+			for (GKSchemaAttribute definingAttr : (Collection<GKSchemaAttribute>) instClass.getDefiningAttributes())
+			{
+				if (definingAttr.isMultiple()) 
+				{
+					Collection<Object> multiValueAttributes = infInst.getAttributeValuesList(definingAttr.getName());
+					if (multiValueAttributes.size() > 0)
+					{
+						for (Object attribute : multiValueAttributes)
+						{
+							if (attribute.getClass().getSimpleName().equals("GKInstance"))
+							{
+								GKInstance gkInstance = (GKInstance) attribute;
+								key += gkInstance.getDBID().toString();
+							} else {
+								String notInstance = (String) attribute;
+								key += notInstance.replaceAll("\\s+", "");
+							}
+						}
+					} else {
+						key += "null";
+					}
+				} else {
+					if (definingAttr.isInstanceTypeAttribute() && infInst.getAttributeValue(definingAttr.getName()) != null)
+					{
+						key += ((GKInstance) infInst.getAttributeValue(definingAttr.getName())).getDBID().toString();
+					} else if (infInst.getAttributeValue(definingAttr.getName()) != null) {
+						key += infInst.getAttributeValue(definingAttr.getName().toString());
+					} else {
+						key += "null";
+					}
+				}
+			}
+			return key;
 		}
 }

@@ -1,6 +1,7 @@
 package org.reactome.orthoinference;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.GKSchemaClass;
 import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
@@ -22,13 +24,15 @@ public class OrthologousEntity {
 	private static GKInstance complexSummationInst;
 	private static GKInstance speciesInst;
 	static GKInstance nullInst = null;
+	private static HashMap<String,GKInstance> definedSetIdenticals = new HashMap<String,GKInstance>();
+	private static HashMap<String,GKInstance> complexIdenticals = new HashMap<String,GKInstance>();
+	private static HashMap<String,GKInstance> entitySetIdenticals = new HashMap<String,GKInstance>();
 
 	public static GKInstance createOrthoEntity(GKInstance entityInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		GKInstance infEntity = null;
 		if (entityInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species))
 		{
-			// TODO: hasSpecies function on all instance types
 			if (orthologousEntity.get(entityInst) == null)
 			{
 				if (!SpeciesCheck.hasSpecies(entityInst))
@@ -42,7 +46,7 @@ public class OrthologousEntity {
 					} else {
 						if (override)
 						{
-							GKInstance mockedInst = GenerateInstance.newMockGKInstance(entityInst);
+							GKInstance mockedInst = GenerateInstance.newMockGKInstance(entityInst);						long eendTime = System.nanoTime();
 							return mockedInst;
 						}
 					}
@@ -61,6 +65,7 @@ public class OrthologousEntity {
 				{
 					infEntity = entityInst;
 				} else {
+//					System.out.println("  Unknown");
 				}
 				if (override)
 				{
@@ -92,7 +97,17 @@ public class OrthologousEntity {
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants._displayName, ewasInst.getAttributeValue(ReactomeJavaConstants._displayName));
-				definedSetInst = GenerateInstance.checkForIdenticalInstances(definedSetInst);
+				
+				// Caching
+				String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) definedSetInst.getSchemClass(), definedSetInst);
+				if (definedSetIdenticals.get(cacheKey) != null)
+				{
+					definedSetInst = definedSetIdenticals.get(cacheKey);
+				} else {
+					definedSetInst = GenerateInstance.checkForIdenticalInstances(definedSetInst);
+					definedSetIdenticals.put(cacheKey, definedSetInst);
+				}
+				
 				if (GenerateInstance.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom))
 				{
 					definedSetInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, ewasInst);
@@ -164,7 +179,17 @@ public class OrthologousEntity {
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 			}
 			infComplexInst.addAttributeValue(ReactomeJavaConstants._displayName, complexInst.getAttributeValue(ReactomeJavaConstants._displayName));
-			infComplexInst = GenerateInstance.checkForIdenticalInstances(infComplexInst);
+			
+			// Caching
+			String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infComplexInst.getSchemClass(), infComplexInst);
+			if (complexIdenticals.get(cacheKey) != null)
+			{
+				infComplexInst = complexIdenticals.get(cacheKey);
+			} else {
+				infComplexInst = GenerateInstance.checkForIdenticalInstances(infComplexInst);
+				complexIdenticals.put(cacheKey, infComplexInst);
+			}
+			
 			if (infComplexInst.getDBID() != complexInst.getDBID())
 			{
 				if (GenerateInstance.addAttributeValueIfNeccesary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom))
@@ -284,7 +309,17 @@ public class OrthologousEntity {
 				}
 			}
 			infEntitySetInst.addAttributeValue(ReactomeJavaConstants._displayName, entitySetInst.getAttributeValue(ReactomeJavaConstants._displayName));
-			infEntitySetInst = GenerateInstance.checkForIdenticalInstances(infEntitySetInst);
+
+			// Caching
+			String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infEntitySetInst.getSchemClass(), infEntitySetInst);
+			if (entitySetIdenticals.get(cacheKey) != null)
+			{
+				infEntitySetInst = entitySetIdenticals.get(cacheKey);
+			} else {
+				infEntitySetInst = GenerateInstance.checkForIdenticalInstances(infEntitySetInst);
+				entitySetIdenticals.put(cacheKey, infEntitySetInst);
+			}
+			
 			if (infEntitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entitySetInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 			{
 				if (GenerateInstance.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom))
