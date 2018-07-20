@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -26,22 +27,19 @@ import org.gk.schema.SchemaClass;
  */
 
 public class InferEvents 
-{
-//	private static final String SchemaClass = null;
-	
+{	
 	static MySQLAdaptor dbAdaptor = null;
-	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
 	private static GKInstance speciesInst = null;
 	static boolean refDb = true;
-	
 	private static HashMap<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static ArrayList<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 	
+	//TODO: instance edit initialization; GO_CellularComponent instance;
 	@SuppressWarnings("unchecked")
 	public static void main(String args[]) throws Exception
 	{
 		String pathToConfig = "src/main/resources/config.properties";
-
+		
 		if (args.length > 0 && !args[0].equals(""))
 		{
 			pathToConfig = args[0];
@@ -55,108 +53,105 @@ public class InferEvents
 		InferReaction.setEligibleFilename("eligible_ddis_75.txt");
 		InferReaction.setInferredFilename("inferred_ddis_75.txt");
 		
-		Collection<GKInstance> sourceSpeciesInst;
+		Properties props = new Properties();
+		props.load(new FileInputStream(pathToConfig));
 		
-			Properties props = new Properties();
-			props.load(new FileInputStream(pathToConfig));
-			
-			//TODO: Create config equivalent for species as seen in Config_Species.pm; Parameterize all input values in properties file
+		//TODO: Create config equivalent for species as seen in Config_Species.pm; Parameterize all input values in properties file
 //			ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
 //			String speciesToInferFromShort = "hsap";
-			Object speciesToInferFromLong = "Homo sapiens";
-			String username = props.getProperty("username");
-			String password = props.getProperty("password");
-			String database = props.getProperty("database");
-			String host = props.getProperty("host");
-			int port = Integer.valueOf(props.getProperty("port"));
+		Object speciesToInferFromLong = "Homo sapiens";
+		String username = props.getProperty("username");
+		String password = props.getProperty("password");
+		String database = props.getProperty("database");
+		String host = props.getProperty("host");
+		int port = Integer.valueOf(props.getProperty("port"));
 
-			// Set-Up
-			//TODO: 'Setup' function -- Organize by class
-			dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
-			InferReaction.setAdaptor(dbAdaptor);
-			SkipTests.setAdaptor(dbAdaptor);
-			GenerateInstance.setAdaptor(dbAdaptor);
-			OrthologousEntity.setAdaptor(dbAdaptor);
-			InferEWAS.setAdaptor(dbAdaptor);
-			UpdateHumanEvents.setAdaptor(dbAdaptor);
-			
-			InferEvents.readHomologueMappingFile("ddis", "hsap");
-			ProteinCount.setHomologueMappingFile(homologueMappings);
-			InferEWAS.setHomologueMappingFile(homologueMappings);
-			InferEWAS.readENSGMappingFile("ddis");
-			InferEWAS.createUniprotDbInst();
-			InferEWAS.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
-			InferEWAS.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
-			if (refDb)
+		// Set-Up
+		//TODO: 'Setup' function -- Organize by class
+		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
+		
+		InferReaction.setAdaptor(dbAdaptor);
+		SkipTests.setAdaptor(dbAdaptor);
+		GenerateInstance.setAdaptor(dbAdaptor);
+		OrthologousEntity.setAdaptor(dbAdaptor);
+		InferEWAS.setAdaptor(dbAdaptor);
+		UpdateHumanEvents.setAdaptor(dbAdaptor);
+		
+		HashMap<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile("ddis", "hsap");
+		ProteinCount.setHomologueMappingFile(homologueMappings);
+		InferEWAS.setHomologueMappingFile(homologueMappings);
+		InferEWAS.readENSGMappingFile("ddis");
+		InferEWAS.createUniprotDbInst();
+		InferEWAS.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
+		InferEWAS.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
+		if (refDb)
+		{
+			InferEWAS.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
+		}
+		
+		InferEvents.createSpeciesInst("Dictyostelium discoideum");
+		OrthologousEntity.setSpeciesInst(speciesInst);
+		InferEWAS.setSpeciesInst(speciesInst);
+		GenerateInstance.setSpeciesInst(speciesInst);
+		
+		InferEvents.setSummationInst();
+		InferEvents.setEvidenceTypeInst();
+		OrthologousEntity.setComplexSummationInst();
+
+		SkipTests.getSkipList("normal_event_skip_list.txt");
+		// TODO: load_class_attribute_values_of_multiple_instances for reactions and ewas'
+		// Get DB instances of source species
+		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
+		if (!sourceSpeciesInst.isEmpty())
+		{
+			String dbId = null;
+			for (GKInstance speciesInst : sourceSpeciesInst) 
 			{
-				InferEWAS.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
+				dbId = speciesInst.getAttributeValue("DB_ID").toString();
 			}
+			// Gets Reaction instances of source species
+			Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
 			
-			InferEvents.createSpeciesInst("Dictyostelium discoideum");
-			OrthologousEntity.setSpeciesInst(speciesInst);
-			InferEWAS.setSpeciesInst(speciesInst);
-			GenerateInstance.setSpeciesInst(speciesInst);
-			
-			InferEvents.setSummationInst();
-			InferEvents.setEvidenceTypeInst();
-			OrthologousEntity.setComplexSummationInst();
-
-			SkipTests.getSkipList("normal_event_skip_list.txt");
-			// TODO: load_class_attribute_values_of_multiple_instances for reactions and ewas'
-			// Get DB instances of source species
-			sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
-			if (!sourceSpeciesInst.isEmpty())
+			if (!reactionInstances.isEmpty()) // Output error message if it is empty
 			{
-				String dbId = null;
-				for (GKInstance speciesInst : sourceSpeciesInst) 
+				for (GKInstance reactionInst : reactionInstances)
 				{
-					dbId = speciesInst.getAttributeValue("DB_ID").toString();
-					
-				}
-				// Gets Reaction instances of source species
-				Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
-				if (!reactionInstances.isEmpty()) // Output error message if it is empty
-				{
-					for (GKInstance reactionInst : reactionInstances)
+					ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
+					for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
 					{
-						String dBId = reactionInst.getAttributeValue("DB_ID").toString();
-
-						ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
-						for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
+						GKInstance reactionSpeciesInst = (GKInstance) orthoEventInst.getAttributeValue(ReactomeJavaConstants.species);
+						if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && orthoEventInst.getAttributeValue(ReactomeJavaConstants.isChimeric) == null)
 						{
-							GKInstance reactionSpeciesInst = (GKInstance) orthoEventInst.getAttributeValue(ReactomeJavaConstants.species);
-							if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && orthoEventInst.getAttributeValue(ReactomeJavaConstants.isChimeric) == null)
-							{
-								previouslyInferredInstances.add(orthoEventInst);
-							}
+							previouslyInferredInstances.add(orthoEventInst);
 						}
-						for (GKInstance inferredFromInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.inferredFrom))
-						{
-							GKInstance reactionSpeciesInst = (GKInstance) inferredFromInst.getAttributeValue(ReactomeJavaConstants.species);
-							if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && inferredFromInst.getAttributeValue(ReactomeJavaConstants.isChimeric) == null)
-							{
-								previouslyInferredInstances.add(inferredFromInst);
-							}
-						}
-						if (previouslyInferredInstances.size() > 0)
-						{
-							GKInstance prevInfInst = previouslyInferredInstances.get(0);
-							if (prevInfInst.getAttributeValue(ReactomeJavaConstants.disease) == null) 
-							{
-								manualEventToNonHumanSource.put(reactionInst, prevInfInst);
-								manualHumanEvents.add(reactionInst);
-							} else {
-								System.out.println("Skipping building of hierarchy around pre-existing disease reaction " + prevInfInst);
-							}
-							continue;
-						}
-						InferReaction.inferEvent(reactionInst);
 					}
+					for (GKInstance inferredFromInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.inferredFrom))
+					{
+						GKInstance reactionSpeciesInst = (GKInstance) inferredFromInst.getAttributeValue(ReactomeJavaConstants.species);
+						if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && inferredFromInst.getAttributeValue(ReactomeJavaConstants.isChimeric) == null)
+						{
+							previouslyInferredInstances.add(inferredFromInst);
+						}
+					}
+					if (previouslyInferredInstances.size() > 0)
+					{
+						GKInstance prevInfInst = previouslyInferredInstances.get(0);
+						if (prevInfInst.getAttributeValue(ReactomeJavaConstants.disease) == null) 
+						{
+							manualEventToNonHumanSource.put(reactionInst, prevInfInst);
+							manualHumanEvents.add(reactionInst);
+						} else {
+							System.out.println("Skipping building of hierarchy around pre-existing disease reaction " + prevInfInst);
+						}
+						continue;
+					}
+					InferReaction.inferEvent(reactionInst);
 				}
 			}
-			UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
-			UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
-			InferEvents.outputReport();
+		}
+		UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
+		UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
+		InferEvents.outputReport();		
 	}
 	
 	public static void outputReport() throws IOException
@@ -172,7 +167,7 @@ public class InferEvents
 	}
 
 	// Read the species-specific orthopairs file, and create a HashMap with the contents
-	public static void readHomologueMappingFile(String toSpecies, String fromSpecies) throws IOException
+	public static HashMap<String, String[]> readHomologueMappingFile(String toSpecies, String fromSpecies) throws IOException
 	{
 		String mappingFileName = fromSpecies + "_" + toSpecies + "_mapping.txt";
 		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
@@ -180,6 +175,7 @@ public class InferEvents
 		BufferedReader br = new BufferedReader(fr);
 		
 		String currentLine;
+		HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
 		while ((currentLine = br.readLine()) != null)
 		{
 			String[] tabSplit = currentLine.split("\t");
@@ -189,6 +185,7 @@ public class InferEvents
 		}
 		br.close();
 		fr.close();
+		return homologueMappings;
 	}
 	
 	public static void createSpeciesInst(String toSpeciesLong) throws Exception

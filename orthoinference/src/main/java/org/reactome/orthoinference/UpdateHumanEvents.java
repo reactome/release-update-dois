@@ -18,44 +18,53 @@ public class UpdateHumanEvents {
 	private static ArrayList<GKInstance> updatedInferrableHumanEvents = new ArrayList<GKInstance>();
 	private static HashMap<GKInstance, GKInstance> inferredEvent = new HashMap<GKInstance,GKInstance>();
 	
+	@SuppressWarnings("unchecked")
 	public static void updateHumanEvents(ArrayList<GKInstance> inferrableHumanEvents) throws Exception 
 	{
 		// TODO: Release date; %inferred_event
 		updatedInferrableHumanEvents.addAll(inferrableHumanEvents);
+		HashSet<Long> seenHumanHierarchy = new HashSet<Long>();
 		for (GKInstance inferrableInst : inferrableHumanEvents)
 		{
-			// TODO: %seen
-			UpdateHumanEvents.createHumanHierarchy(inferrableInst);
+			if (!seenHumanHierarchy.contains(inferrableInst.getDBID()))
+			{
+				UpdateHumanEvents.createHumanHierarchy(inferrableInst);
+				seenHumanHierarchy.add(inferrableInst.getDBID());
+			}
 		}
+		HashSet<Long> seenFilledPathway = new HashSet<Long>();
 		for (GKInstance humanPathwayInst : updatedInferrableHumanEvents)
 		{
-			//TODO: %seen3
-			if (humanPathwayInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.hasEvent))
+			if (!seenFilledPathway.contains(humanPathwayInst.getDBID()))
 			{
-				ArrayList<GKInstance> pathwayComponents = new ArrayList<GKInstance>();
-				for (GKInstance pathwayComponent : (Collection<GKInstance>) humanPathwayInst.getAttributeValuesList(ReactomeJavaConstants.hasEvent))
+				if (humanPathwayInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.hasEvent))
 				{
-					if (inferredEvent.get(pathwayComponent) != null)
+					ArrayList<GKInstance> pathwayComponents = new ArrayList<GKInstance>();
+					for (GKInstance pathwayComponent : (Collection<GKInstance>) humanPathwayInst.getAttributeValuesList(ReactomeJavaConstants.hasEvent))
 					{
-						pathwayComponents.add(inferredEvent.get(pathwayComponent));
-					}
-				}
-				if (inferredEvent.get(humanPathwayInst).getSchemClass().isValidAttribute(ReactomeJavaConstants.hasEvent))
-				{
-					boolean updateNeeded = false;
-					for (GKInstance pathwayComponent : pathwayComponents) 
-					{
-						if (GenerateInstance.addAttributeValueIfNeccesary(inferredEvent.get(humanPathwayInst), pathwayComponent, ReactomeJavaConstants.hasEvent))
+						if (inferredEvent.get(pathwayComponent) != null)
 						{
-							inferredEvent.get(humanPathwayInst).addAttributeValue(ReactomeJavaConstants.hasEvent, pathwayComponent);
-							updateNeeded = true;
+							pathwayComponents.add(inferredEvent.get(pathwayComponent));
 						}
 					}
-					if (updateNeeded)
+					if (inferredEvent.get(humanPathwayInst).getSchemClass().isValidAttribute(ReactomeJavaConstants.hasEvent))
 					{
-						dba.updateInstanceAttribute(inferredEvent.get(humanPathwayInst), ReactomeJavaConstants.hasEvent);
+						boolean updateNeeded = false;
+						for (GKInstance pathwayComponent : pathwayComponents) 
+						{
+							if (GenerateInstance.addAttributeValueIfNeccesary(inferredEvent.get(humanPathwayInst), pathwayComponent, ReactomeJavaConstants.hasEvent))
+							{
+								inferredEvent.get(humanPathwayInst).addAttributeValue(ReactomeJavaConstants.hasEvent, pathwayComponent);
+								updateNeeded = true;
+							}
+						}
+						if (updateNeeded)
+						{
+							dba.updateInstanceAttribute(inferredEvent.get(humanPathwayInst), ReactomeJavaConstants.hasEvent);
+						}
 					}
 				}
+				seenFilledPathway.add(humanPathwayInst.getDBID());
 			}
 		}
 		

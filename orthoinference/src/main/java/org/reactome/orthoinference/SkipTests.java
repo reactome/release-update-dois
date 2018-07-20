@@ -92,7 +92,6 @@ public class SkipTests {
 		}
 		
 		Collection<GKInstance> speciesInstances = (Collection<GKInstance>) SkipTests.entitiesContainMultipleSpecies(reactionInst);
-		
 		if (speciesInstances.size() > 1)
 		{
 			return true;
@@ -111,7 +110,8 @@ public class SkipTests {
 			GKInstance physicalEntity = (GKInstance) physicalEntityObj;
 			physicalEntities.addAll(physicalEntity.getAttributeValuesList(ReactomeJavaConstants.physicalEntity));
 		}
-		ArrayList<GKInstance> regulatedEntities = (ArrayList<GKInstance>) reactionInst.getReferers(ReactomeJavaConstants.regulatedEntity);
+		ArrayList<GKInstance> regulatedEntities = (ArrayList<GKInstance>) reactionInst.getAttributeValuesList("regulatedBy");
+
 		if (regulatedEntities != null) 
 		{
 			for (GKInstance regulatedEntity : regulatedEntities)

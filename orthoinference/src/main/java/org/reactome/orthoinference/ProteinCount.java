@@ -3,6 +3,7 @@ package org.reactome.orthoinference;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -38,7 +39,6 @@ public class ProteinCount {
 		int total = 0;
 		int inferrable = 0;
 		int max = 0;
-		
 		for (GKInstance entity : followedInstances)
 		{
 			if (entity.getSchemClass().isa(ReactomeJavaConstants.ReferenceGeneProduct))
@@ -182,8 +182,22 @@ public class ProteinCount {
 			@SuppressWarnings("unchecked")
 			Collection<GKInstance> candidateSetFollowedInstances = InstanceUtilities.followInstanceAttributes(candidateSet, candidateSetInstancesToFollow, candidateSetOutClasses);
 			
+			HashMap<Long, GKInstance> unsortedInstances = new HashMap<Long,GKInstance>();
+			ArrayList<Long> dbids = new ArrayList<Long>();
+			for (GKInstance instance : candidateSetFollowedInstances) 
+			{
+				unsortedInstances.put(instance.getDBID(), instance);
+				dbids.add(instance.getDBID());
+			}
+			Collections.sort(dbids);
+			ArrayList<GKInstance> sortedCandidateSetInstances = new ArrayList<GKInstance>();
+			for (Long id : dbids)
+			{
+				sortedCandidateSetInstances.add(unsortedInstances.get(id));
+			}
+			
 			boolean uncountedInstances = false;
-			for (GKInstance physicalEntity : candidateSetFollowedInstances)
+			for (GKInstance physicalEntity : sortedCandidateSetInstances)
 			{
 				for (GKInstance earlyFollowedInstance : followedInstances)
 				{
@@ -198,7 +212,7 @@ public class ProteinCount {
 			{
 				return checkedCandidates;
 			}
-			for (GKInstance physicalEntity : candidateSetFollowedInstances)
+			for (GKInstance physicalEntity : sortedCandidateSetInstances)
 			{
 				if (physicalEntity.getSchemClass().isa(ReactomeJavaConstants.Complex) || physicalEntity.getSchemClass().isa(ReactomeJavaConstants.Polymer))
 				{
@@ -234,12 +248,14 @@ public class ProteinCount {
 					if (count > 0)
 					{
 						candidateInferrable = 1;
+					}
+					if (candidateInferrable == 0)
+					{
 						flag++;
 					}
 				}
 			} 
-			
-			if (flag == 0)
+			if (flag > 0)
 			{
 				checkedCandidates.add(candidateTotal);
 				checkedCandidates.add(0); // candidateInferred value is dropped, 0 is returned instead
