@@ -18,21 +18,23 @@ public class InferReaction {
 
 	private static MySQLAdaptor dba;
 	private static String eligibleFilehandle;
-	private static  String inferredFilehandle;
+	private static String inferredFilehandle;
 	private static GKInstance summationInst;
 	private static GKInstance evidenceTypeInst;
+	private static HashMap<GKInstance, GKInstance> inferredCatalyst = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> inferredEvent = new HashMap<GKInstance,GKInstance>();
 	private static Integer eligibleCount = 0;
 	private static Integer inferredCount = 0;
 	private static ArrayList<GKInstance> inferrableHumanEvents = new ArrayList<GKInstance>();
 	
-	// This function mimics the Perl version of InferEvent, inferring attribute instances of input, output, catalyst activity, and regulations
+	// Infers PhysicalEntity instances of input, output, catalyst activity, and regulations that are associated with incoming reactionInst.
 	public static void inferEvent(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
 //		String dbId = reactionInst.getAttributeValue("DB_ID").toString();
 //		String stableId = reactionInst.getAttributeValue("name").toString();
 //		System.out.println("\nReaction: [" + dbId + "] " + stableId);	
 		
+		// Checks if an instance's inference should be skipped, based on a variety of factors such as a manual skip list, if it's chimeric, etc. 
 		if (SkipTests.skipInstance(reactionInst))
 		{
 			return;
@@ -41,7 +43,7 @@ public class InferReaction {
 		if (inferredEvent.get(reactionInst) == null)
 		{
 			// TODO: Release date/instance edit; %inferred_event (not till the end); %being_inferred; Global variables for summation/evidence type (rather than recreating it each time); 75% threshold as variable or hard-coded?
-			// Creates inferred instance of reaction
+			// Creates inferred instance of reaction.
 			GKInstance infReactionInst = GenerateInstance.newInferredGKInstance(reactionInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.goBiologicalProcess, reactionInst.getAttributeValue(ReactomeJavaConstants.goBiologicalProcess));
@@ -49,22 +51,31 @@ public class InferReaction {
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants._displayName, reactionInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			
+			// Filter critera that finds the total number of distinct proteins associated with an instance, as well as the number that can be inferred.
+			// Total proteins are stored in reactionProteinCounts index 0, inferrable proteins index 1, and the maximum number of homologues for any entity involved in index 2.
+			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
 			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
 			if (reactionProteinCounts.get(0) > 0) {
 				String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
+				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, and orthoinference is attempted.
 				eligibleCount++;
 				Files.write(Paths.get(eligibleFilehandle), eligibleEvent.getBytes(), StandardOpenOption.APPEND);
+				// Attempt to infer all PhysicalEntities associated with this reaction's Input, Output, CatalystActivity and RegulatedBy attributes.
+				// Failure to successfully infer any of these attributes will end orthoinference for this reaction.
 				if (InferReaction.inferAttributes(reactionInst, infReactionInst, ReactomeJavaConstants.input))
 				{
 					if (InferReaction.inferAttributes(reactionInst, infReactionInst, ReactomeJavaConstants.output))
 					{
 						if (InferReaction.inferCatalyst(reactionInst, infReactionInst))
 						{
+							// Many reactions are not regulated at all, meaning orthoinference is attempted but will not end the process if there is nothing to infer. 
+							// The orthoinference process will end though if inferRegulations returns an invalid value.
 							ArrayList<GKInstance> inferredRegulations = InferReaction.inferRegulation(reactionInst);
 							if (inferredRegulations.size() == 1 && inferredRegulations.get(0) == null)
 							{
 								return;
 							}
+							// Prevents the addition of redundant instances to the database
 							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom) && GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom))
 							{
@@ -79,6 +90,7 @@ public class InferReaction {
 							reactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infReactionInst);
 							dba.updateInstanceAttribute(reactionInst, ReactomeJavaConstants.orthologousEvent);
 							inferredEvent.put(reactionInst, infReactionInst);
+							// Regulations instances require the DB to contain the orthoinferred reaction
 							if (inferredRegulations.size() > 0)
 							{
 								for (GKInstance infRegulation : inferredRegulations)
@@ -88,6 +100,7 @@ public class InferReaction {
 									dba.updateInstanceAttribute(infReactionInst, "regulatedBy");
 								}
 							}
+							// After successfully adding a new orthoinferred instance to the DB, it is recorded in the 'inferred reactions' file
 							inferredCount++;
 							inferrableHumanEvents.add(reactionInst);
 							String inferredEvent = infReactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + infReactionInst.getDisplayName() + "\n";	
@@ -100,12 +113,11 @@ public class InferReaction {
 		}
 	}
 	
-	// Function used to create inferred instances related to either 'input' or 'output'
+	// Function used to create inferred PhysicalEntities contained in the 'input' or 'output' attributes of the current reaction instance.
 	@SuppressWarnings("unchecked")
-	public static boolean inferAttributes(GKInstance reactionInst, Instance infReactionInst, String attribute) throws InvalidAttributeException, Exception
+	public static boolean inferAttributes(GKInstance reactionInst, GKInstance infReactionInst, String attribute) throws InvalidAttributeException, Exception
 	{
 		ArrayList<GKInstance> infAttributeInstances = new ArrayList<GKInstance>();
-		//TODO: Return true if there isn't any null inferred instances
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
 			GKInstance infAttributeInst = OrthologousEntity.createOrthoEntity(attributeInst, false);
@@ -119,9 +131,11 @@ public class InferReaction {
 		return true;
 	}
 	
-	// Function used to created inferred catalysts
+	// Function used to creat inferred catalysts associated with the current reaction instance.
+	// Infers all PhysicalEntity's associated with the reaction's 'catalystActivity' and 'activeUnit' attributes
+	// TODO: %homol_cat; RegulatedBy; null catalyst instance check
 	@SuppressWarnings("unchecked")
-	public static boolean inferCatalyst(GKInstance reactionInst, Instance infReactionInst) throws InvalidAttributeException, Exception
+	public static boolean inferCatalyst(GKInstance reactionInst, GKInstance infReactionInst) throws InvalidAttributeException, Exception
 	{
 		for (GKInstance catalystInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity))
 		{
@@ -151,7 +165,6 @@ public class InferReaction {
 			infCatalystInst.addAttributeValue(ReactomeJavaConstants.activeUnit, activeUnits);
 			infCatalystInst.addAttributeValue(ReactomeJavaConstants._displayName, catalystInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			infCatalystInst = GenerateInstance.checkForIdenticalInstances(infCatalystInst);
-			// TODO: %homol_cat; RegulatedBy; null catalyst instance check
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.catalystActivity, infCatalystInst);
 		}
 		return true;
@@ -230,6 +243,7 @@ public class InferReaction {
 	{
 		return inferredEvent;
 	}
+	// Returns total number of eligible and inferred reactions
 	public static int[] getCounts()
 	{
 		int[] counts = {eligibleCount, inferredCount};

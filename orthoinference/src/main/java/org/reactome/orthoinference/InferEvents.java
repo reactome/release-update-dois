@@ -34,7 +34,7 @@ public class InferEvents
 	private static HashMap<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static ArrayList<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 	
-	//TODO: instance edit initialization; GO_CellularComponent instance;
+	//TODO: instance edit initialization; GO_CellularComponent instance; Config_Species.pm; load_class_attribute_values_of_multiple_instances (complex/ewas)
 	@SuppressWarnings("unchecked")
 	public static void main(String args[]) throws Exception
 	{
@@ -45,20 +45,17 @@ public class InferEvents
 			pathToConfig = args[0];
 		}
 		
+		// Creates two files that a) list reactions that are eligible for inference and b) those that are successfully inferred
 		PrintWriter eligibleFile = new PrintWriter("eligible_ddis_75.txt");
 		PrintWriter inferredFile = new PrintWriter("inferred_ddis_75.txt");
 		eligibleFile.close();
 		inferredFile.close();
-		
 		InferReaction.setEligibleFilename("eligible_ddis_75.txt");
 		InferReaction.setInferredFilename("inferred_ddis_75.txt");
 		
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
 		
-		//TODO: Create config equivalent for species as seen in Config_Species.pm; Parameterize all input values in properties file
-//			ArrayList<String> speciesToInferTo = new ArrayList<String>(Arrays.asList("ddis"));
-//			String speciesToInferFromShort = "hsap";
 		Object speciesToInferFromLong = "Homo sapiens";
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
@@ -66,10 +63,7 @@ public class InferEvents
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
 
-		// Set-Up
-		//TODO: 'Setup' function -- Organize by class
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
-		
 		InferReaction.setAdaptor(dbAdaptor);
 		SkipTests.setAdaptor(dbAdaptor);
 		GenerateInstance.setAdaptor(dbAdaptor);
@@ -77,6 +71,7 @@ public class InferEvents
 		InferEWAS.setAdaptor(dbAdaptor);
 		UpdateHumanEvents.setAdaptor(dbAdaptor);
 		
+		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used 
 		HashMap<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile("ddis", "hsap");
 		ProteinCount.setHomologueMappingFile(homologueMappings);
 		InferEWAS.setHomologueMappingFile(homologueMappings);
@@ -88,34 +83,29 @@ public class InferEvents
 		{
 			InferEWAS.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
 		}
-		
 		InferEvents.createSpeciesInst("Dictyostelium discoideum");
 		OrthologousEntity.setSpeciesInst(speciesInst);
 		InferEWAS.setSpeciesInst(speciesInst);
 		GenerateInstance.setSpeciesInst(speciesInst);
-		
 		InferEvents.setSummationInst();
 		InferEvents.setEvidenceTypeInst();
 		OrthologousEntity.setComplexSummationInst();
-
+		
 		SkipTests.getSkipList("normal_event_skip_list.txt");
-		// TODO: load_class_attribute_values_of_multiple_instances for reactions and ewas'
-		// Get DB instances of source species
+		
+		// Gets DB instances of source species
 		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
 		if (!sourceSpeciesInst.isEmpty())
 		{
-			String dbId = null;
-			for (GKInstance speciesInst : sourceSpeciesInst) 
-			{
-				dbId = speciesInst.getAttributeValue("DB_ID").toString();
-			}
+			String dbId = sourceSpeciesInst.iterator().next().getDBID().toString();
 			// Gets Reaction instances of source species
 			Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
-			
-			if (!reactionInstances.isEmpty()) // Output error message if it is empty
+			if (!reactionInstances.isEmpty()) // TODO: Output error message if it is empty
 			{
 				for (GKInstance reactionInst : reactionInstances)
 				{
+					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute. 
+					// Adds to manualHumanEvents array if it passes conditions.
 					ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
 					for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
 					{
@@ -145,6 +135,7 @@ public class InferEvents
 						}
 						continue;
 					}
+					// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
 					InferReaction.inferEvent(reactionInst);
 				}
 			}
@@ -166,7 +157,7 @@ public class InferEvents
 		
 	}
 
-	// Read the species-specific orthopairs file, and create a HashMap with the contents
+	// Read the species-specific orthopair 'mapping' file, and create a HashMap with the contents
 	public static HashMap<String, String[]> readHomologueMappingFile(String toSpecies, String fromSpecies) throws IOException
 	{
 		String mappingFileName = fromSpecies + "_" + toSpecies + "_mapping.txt";
@@ -188,6 +179,7 @@ public class InferEvents
 		return homologueMappings;
 	}
 	
+	// Find the instance specific to this species
 	public static void createSpeciesInst(String toSpeciesLong) throws Exception
 	{
 		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
@@ -196,6 +188,7 @@ public class InferEvents
 		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
 		speciesInst = GenerateInstance.checkForIdenticalInstances(speciesInst);
 	}
+	// Create and set static Summation instance 
 	public static void setSummationInst() throws Exception
 	{
 		GKInstance summationInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Summation));
@@ -205,6 +198,7 @@ public class InferEvents
 		InferReaction.setSummationInst(summationInst);
 		UpdateHumanEvents.setSummationInst(summationInst);
 	}
+	// Create and set static EvidenceType instance
 	public static void setEvidenceTypeInst() throws Exception
 	{
 		GKInstance evidenceTypeInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.EvidenceType));

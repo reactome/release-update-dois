@@ -6,8 +6,8 @@ import org.gk.schema.InvalidAttributeException;
 
 public class SpeciesCheck {
 
-	// Determines if there is a species attribute in any constituent instances of entityInst
-	// Unless its an 'OtherEntity', the function will check the instance or iterate on  it's
+	// Determines if there is a species attribute in any constituent instances of entityInst.
+	// Unless its an 'OtherEntity' (which will return false), the function will check the instance or iterate on it's
 	// sub-instances until it finds an existing 'species' attribute, or else it will return false.
 	public static boolean hasSpecies(GKInstance entityInst) throws InvalidAttributeException, Exception
 	{

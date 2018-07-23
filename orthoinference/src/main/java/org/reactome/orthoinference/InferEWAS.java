@@ -10,17 +10,15 @@ import java.util.HashMap;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
-import org.gk.schema.GKSchemaAttribute;
 import org.gk.schema.GKSchemaClass;
 import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
-import org.gk.schema.SchemaAttribute;
 import org.gk.schema.SchemaClass;
 
 public class InferEWAS {
 
 	private static MySQLAdaptor dba;
-	//TODO: Value of homologueMappings and ensgMappings differs
+	//TODO: Value of homologueMappings and ensgMappings differs; Remove static value when scaling up species total; opt_filt?
 	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
 	private static HashMap<String, ArrayList<String>> ensgMappings = new HashMap<String,ArrayList<String>>();
 	private static HashMap<String, GKInstance> seenRPS = new HashMap<String,GKInstance>();
@@ -28,22 +26,20 @@ public class InferEWAS {
 	private static GKInstance enspDbInst = null;
 	private static GKInstance alternateDbInst = null;
 	private static GKInstance uniprotDbInst = null;
-	//TODO: Remove static value when scaling up species total
 	static boolean refDb = false;
 	private static GKInstance speciesInst = null;
-	
 	private static HashMap<String,GKInstance> ewasIdenticals = new HashMap<String,GKInstance>();
 	private static HashMap<String,GKInstance> residueIdenticals = new HashMap<String,GKInstance>();
 
-/// Creates an array inferred EWAS instances from the homologue mappings file (hsap_species_mapping.txt)
+    // Creates an array of inferred EWAS instances from the homologue mappings file (hsap_species_mapping.txt).
+	@SuppressWarnings("unchecked")
 	public static ArrayList<GKInstance> inferEWAS(GKInstance ewasInst) throws InvalidAttributeException, Exception
 	{
 		ArrayList<GKInstance> infEWASInstances = new ArrayList<GKInstance>();
 		String referenceEntityId = ((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
-		//TODO: opt_filt?
 		if (homologueMappings.get(referenceEntityId) != null)
 			{
-				// Iterate through the array of homologue mappings, creating inferred EWAS instances
+				// Iterate through the array of homologue mappings, attempting to infer EWAS instances for each.
 				for (Object homologue : homologueMappings.get(referenceEntityId))
 				{
 					String[] splitHomologue = homologue.toString().split(":");
@@ -54,6 +50,7 @@ public class InferEWAS {
 					{
 						infReferenceGeneProduct = GenerateInstance.newInferredGKInstance((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity));
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.identifier, homologueId);
+						// Reference DB can differ between homologue mappings, but can be differentiated by the 'homologueSource' found in each mapping.
 						GKInstance referenceDb = null;
 						if (homologueSource.equals("ENSP"))
 						{
@@ -73,12 +70,12 @@ public class InferEWAS {
 						infReferenceGeneProduct = seenRPS.get(homologueId);
 					}
 
-					// Creating inferred EWAS
+					// Creating inferred EWAS.
 					GKInstance infEWAS = GenerateInstance.newInferredGKInstance(ewasInst);
 					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);
 					
-					// Convoluted method for adding start/end coordinates. It is convoluted due to a quirk with assigning the name differently based on coordinate value. 
-					// The name of the entity needs to be at the front of the 'name' array if the coordinate is over 1, and rearranging arrays in Java was not trivial.
+					// Method for adding start/end coordinates. It is convoluted due to a quirk with assigning the name differently based on coordinate value. 
+					// The name of the entity needs to be at the front of the 'name' array if the coordinate is over 1, and rearranging arrays in Java for this was a bit tricky.
 					for (Object startCoordinate : ewasInst.getAttributeValuesList(ReactomeJavaConstants.startCoordinate))
 					{
 						infEWAS.addAttributeValue(ReactomeJavaConstants.startCoordinate, startCoordinate);
@@ -100,7 +97,6 @@ public class InferEWAS {
 						endCoord = Integer.valueOf(infEWAS.getAttributeValue(ReactomeJavaConstants.endCoordinate).toString());
 					}
 					if (startCoord > 1 || endCoord > 1) {
-						@SuppressWarnings("unchecked")
 						ArrayList<String> infAttributeInstNames = (ArrayList<String>) ((GKInstance) ewasInst).getAttributeValuesList(ReactomeJavaConstants.name);
 						infEWAS.addAttributeValue(ReactomeJavaConstants.name, infAttributeInstNames.get(0));
 						infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
@@ -108,12 +104,13 @@ public class InferEWAS {
 						infEWAS.addAttributeValue(ReactomeJavaConstants.name, homologueId);
 					}
 
-					// Infer residue modifications
+					// Infer residue modifications. This was another step where the naming of an EWAS can change.
+					// For this, it is based on the existence of the string 'phospho' in the name of the psiMod attribute. 
+					// If true, 'phospho-' is appended to the start of the EWAS' name attribute.
 					ArrayList<GKInstance> infModifiedResidues = new ArrayList<GKInstance>();
 					boolean phosFlag = true;
-					for (Object modifiedResidueObj : ewasInst.getAttributeValuesList(ReactomeJavaConstants.hasModifiedResidue))
+					for (GKInstance modifiedResidue : (Collection<GKInstance>) ewasInst.getAttributeValuesList(ReactomeJavaConstants.hasModifiedResidue))
 					{
-						GKInstance modifiedResidue = (GKInstance) modifiedResidueObj;
 						GKInstance infModifiedResidue = GenerateInstance.newInferredGKInstance(modifiedResidue);
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.referenceSequence, infReferenceGeneProduct);
 						for (Object coordinate : modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.coordinate))
@@ -122,36 +119,37 @@ public class InferEWAS {
 						}
 						if (infModifiedResidue.getSchemClass().isValidAttribute(ReactomeJavaConstants.modification))
 						{
-							for (Object modified : modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.modification))
+							for (GKInstance modified : (Collection<GKInstance>) modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.modification))
 							{
 								infModifiedResidue.addAttributeValue(ReactomeJavaConstants.modification, modified);
-							}
-							
+							}	
 						}
 						GKInstance psiMod = (GKInstance) modifiedResidue.getAttributeValue(ReactomeJavaConstants.psiMod);
 						if (phosFlag && psiMod.getAttributeValue(ReactomeJavaConstants.name).toString().contains("phospho"))
 						{
 							String phosphoName = "phospho-" + infEWAS.getAttributeValue(ReactomeJavaConstants.name);
-							@SuppressWarnings("unchecked")
 							ArrayList<GKInstance> nameValues = (ArrayList<GKInstance>) infEWAS.getAttributeValuesList(ReactomeJavaConstants.name);
 							nameValues.remove(0);
 							infEWAS.setAttributeValue(ReactomeJavaConstants.name, phosphoName);
-							infEWAS.addAttributeValue(ReactomeJavaConstants.name, nameValues); // In the Perl code, the name attribute is just the phospho-modified value. The identifier (homologueId/$inf_id) is dropped.
+							// In the Perl code, the name attribute is just the phospho-modified value. The identifier (homologueId/$inf_id) is dropped. 
+							// This means attributes without 'phospho- ' retain an array of names, while attributes containing 'phospho-' only contain the single name attribute. 
+							infEWAS.addAttributeValue(ReactomeJavaConstants.name, nameValues); 
+							// Ensures the 'phospho-' is only appended once.
 							phosFlag = false;
 						}
 						if (modifiedResidue.getAttributeValue(ReactomeJavaConstants.coordinate) != null)
 						{
-							// TODO: Abstract this out so that its 'fromSpecies';
+							// TODO: Abstract this out so that its 'in fromSpecies';
 							String newDisplayName = modifiedResidue.getAttributeValue(ReactomeJavaConstants._displayName).toString() + " (in Homo sapiens)";
 							infModifiedResidue.addAttributeValue(ReactomeJavaConstants._displayName, newDisplayName);
 						}
-						for (Object psiModInst : modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.psiMod))
+						for (GKInstance psiModInst : (Collection<GKInstance>) modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.psiMod))
 						{
-							infModifiedResidue.addAttributeValue(ReactomeJavaConstants.psiMod, (GKInstance) psiModInst);
+							infModifiedResidue.addAttributeValue(ReactomeJavaConstants.psiMod, psiModInst);
 						}
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants._displayName, modifiedResidue.getAttributeValue(ReactomeJavaConstants._displayName));
 						
-						// Caching
+						// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
 						String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infModifiedResidue.getSchemClass(), infModifiedResidue);
 						if (residueIdenticals.get(cacheKey) != null)
 						{
@@ -166,7 +164,7 @@ public class InferEWAS {
 					infEWAS.addAttributeValue(ReactomeJavaConstants.hasModifiedResidue, infModifiedResidues);
 					infEWAS.addAttributeValue(ReactomeJavaConstants._displayName, ewasInst.getAttributeValue(ReactomeJavaConstants._displayName));
 					
-					// Caching
+					// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
 					String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infEWAS.getSchemClass(), infEWAS);
 					if (ewasIdenticals.get(cacheKey) != null)
 					{
@@ -192,7 +190,7 @@ public class InferEWAS {
 		return infEWASInstances;
 	}
 
-/// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein
+    // Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein. Creates an instance for the primary database and an alternate, if it exists.
 	public static ArrayList<GKInstance> createReferenceDNASequence(String homologueId, String homologueSource) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		ArrayList<GKInstance> referenceDNAInstances = new ArrayList<GKInstance>();
@@ -225,7 +223,7 @@ public class InferEWAS {
 		return referenceDNAInstances;
 	}
 	
-//// These are setup functions called at the beginning of the script
+    // These are setup functions called at the beginning of the 'inferEvent' script 
 	public static void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
 		InferEWAS.dba = dbAdaptor;

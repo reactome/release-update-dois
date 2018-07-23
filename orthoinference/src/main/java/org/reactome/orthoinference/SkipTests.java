@@ -26,6 +26,7 @@ public class SkipTests {
 		dba = dbAdaptor;
 	}
 	
+	// Skiplist was traditionally provided in a file, but since it's currently just 3 instances, I just hard-code them here.
 	public static void getSkipList(String skipListFilename) throws NumberFormatException, Exception
 	{
 		String[] pathwayIdsToSkip = {"162906","168254","977225"};
@@ -34,6 +35,7 @@ public class SkipTests {
 			GKInstance pathwayInst = dba.fetchInstance(Long.valueOf(pathwayId));
 			if (pathwayInst != null)
 			{
+				// Finds all ReactionLikeEvents associated with the skiplists Pathway and hasEvent attributes, and adds them to skiplist.
 				List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
 				classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Pathway, new String[]{ReactomeJavaConstants.hasEvent}, new String[]{}));
 				String[] outClasses = new String[] {ReactomeJavaConstants.ReactionlikeEvent};
@@ -46,6 +48,7 @@ public class SkipTests {
 				}
 			}
 		}
+		// Generates new skiplist file 
 		String skipListFilePath = "src/main/resources/" + skipListFilename; 
 		FileReader fr = new FileReader(skipListFilePath);
 		BufferedReader br = new BufferedReader(fr);
@@ -57,16 +60,16 @@ public class SkipTests {
 		br.close();
 		fr.close();
 	}
-	
+	// Skip orthoinference of this instance if:
 	public static boolean skipInstance(GKInstance reactionInst) throws NumberFormatException, Exception
 	{
-		
+		// it is found in skiplist array
 		boolean inSkipList = skipList.contains(reactionInst.getDBID().toString());
 		if (inSkipList)
 		{
 			return true;
 		}
-		
+		// it is chimeric
 		if (reactionInst.getAttributeValue(ReactomeJavaConstants.isChimeric) != null)
 		{
 			boolean isChimeric = (boolean) reactionInst.getAttributeValue(ReactomeJavaConstants.isChimeric);
@@ -75,22 +78,22 @@ public class SkipTests {
 				return true;
 			}
 		}
-		
+		// it has related species
 		if (reactionInst.getAttributeValue("relatedSpecies") != null)
 		{
 			return true;
 		}
-		
+		// it is a disease reaction
 		if (reactionInst.getAttributeValue(ReactomeJavaConstants.disease) != null)
 		{
 			return true;
 		}
-		
+		// it is manually inferred
 		if (reactionInst.getAttributeValue(ReactomeJavaConstants.inferredFrom) != null)
 		{
 			return true;
 		}
-		
+		// it contains multiple species
 		Collection<GKInstance> speciesInstances = (Collection<GKInstance>) SkipTests.entitiesContainMultipleSpecies(reactionInst);
 		if (speciesInstances.size() > 1)
 		{
@@ -99,6 +102,7 @@ public class SkipTests {
 		return false;
 	}
 	
+	// Goes through all input/output/catalystActivity/regulatedBy attribute instances, and captures all species instances associates with them. Returns a collection of these instances.
 	@SuppressWarnings("unchecked")
 	public static Collection<GKInstance> entitiesContainMultipleSpecies(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
@@ -145,7 +149,6 @@ public class SkipTests {
 				}
 			}
 		}
-		
 		HashMap<String, GKInstance> speciesHash = new HashMap<String, GKInstance>();
 		for (GKInstance physicalEntity : physicalEntitiesFinal.values())
 		{
@@ -161,6 +164,7 @@ public class SkipTests {
 		return speciesHash.values();
 	}
 	
+	// Looks at referrals of the constituent instances for the species attribute as well
 	public static Collection<GKInstance> recursePhysicalEntityComponents(GKInstance physicalEntity) throws InvalidAttributeException, Exception
 	{
 		HashMap<String, GKInstance> subComponents = new HashMap<String, GKInstance>();

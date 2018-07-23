@@ -21,9 +21,14 @@ public class ProteinCount {
 	{
 		homologueMappings = homologueMappingsCopy;
 	}
-	// TODO: Function descriptions;
+	// This function is meant to emulate the count_distinct_proteins function found in infer_events.pl.
+	// A crucial note is that the Perl version seems to be depend on the order by which instance groups are taken from the DB. Often the DB IDs are ordered smallest to largest, but other times it is a consistent yet 'random' order.
+	// What that means is that every time the Perl version will pull the instances out in the exact same order, but there isn't a clear pattern (such as DB ID order) that is followed. Since this happens as well with the Java code,
+	// sometimes the protein counts will differ from the Perl protein counts. The vast majority of the time this isn't true, but this still suggests the protein count functionality should be re-written, for consistency's sake. 
+	// See the bottom of ProteinCount.checkCandidates for further elaboration. 
 	public static List<Integer> countDistinctProteins (GKInstance instanceToBeInferred) throws InvalidAttributeException, Exception
 	{
+		// Perform an AttributeQueryRequest with specified input attributes (ReactionlikeEvent, CatalystActivity, Complex, Polymer, EWAS) and output attributes (ReferenceGeneProduct, EntitySet).
 		List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
 		classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.ReactionlikeEvent, new String[]{ReactomeJavaConstants.input, ReactomeJavaConstants.output, ReactomeJavaConstants.catalystActivity}, new String[]{}));
 		classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.CatalystActivity, new String[]{ReactomeJavaConstants.physicalEntity}, new String[]{}));
@@ -35,10 +40,12 @@ public class ProteinCount {
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> followedInstances = InstanceUtilities.followInstanceAttributes(instanceToBeInferred, classesToFollow, outClasses);		
 
+		// With the output instances saved in followedInstances, begin the protein count process, which is based on the homologue mappings files.
 		List<Integer> distinctProteinCounts = new ArrayList<Integer>();
 		int total = 0;
 		int inferrable = 0;
 		int max = 0;
+		// If it is a ReferenceGene Product, the inferrable and max values are incremented depending on the number of homologue mappings, while total is incremented for each entity. 
 		for (GKInstance entity : followedInstances)
 		{
 			if (entity.getSchemClass().isa(ReactomeJavaConstants.ReferenceGeneProduct))
@@ -60,6 +67,7 @@ public class ProteinCount {
 				}
 			}
 		}
+		// For EntitySets, another AttributeQueryRequest is completed. This time the output classes are Complex, Polymer, and ReferenceSequence.
 		for (GKInstance entity : followedInstances)
 		{
 			if (entity.getSchemClass().isa(ReactomeJavaConstants.EntitySet))
@@ -74,6 +82,7 @@ public class ProteinCount {
 				Collection<GKInstance> entitySetsFollowedInstances = InstanceUtilities.followInstanceAttributes(entity, entitySetsInstancesToFollow, entitySetsOutClasses);
 				if (entitySetsFollowedInstances.size() == 0 && entity.getSchemClass().isa(ReactomeJavaConstants.CandidateSet))
 				{	
+					// Protein counts are incremented depending on the number and types of candidates
 					List<Integer> checkedCandidates = ProteinCount.checkCandidates(entity, followedInstances);
 					if (checkedCandidates.size() > 0) {
 						total += checkedCandidates.get(0);
@@ -88,7 +97,6 @@ public class ProteinCount {
 					}
 					continue;
 				}
-				//TODO: next unless first element of array
 				if (entitySetsFollowedInstances.size() > 0)
 				{
 					boolean uncountedInstances = false;
@@ -107,6 +115,8 @@ public class ProteinCount {
 					{
 						continue;
 					}
+					// For Complexes and Polymers, the flag and flagInferred variables determine both if and by how much the values are incremented.
+					// These values are determined by the result of a recursive ProteinCount call for each entity in the second followedInstances array. 
 					int flag = 0;
 					int flagInferred = 0;
 					for (GKInstance physicalEntity : entitySetsFollowedInstances)
@@ -134,6 +144,7 @@ public class ProteinCount {
 							}
 						} 
 					}
+					// For ReferenceGeneProducts, max and count are determined by the number of homologue mappings.
 					for (GKInstance physicalEntity : entitySetsFollowedInstances)
 					{
 						if (physicalEntity.getSchemClass().isa(ReactomeJavaConstants.ReferenceGeneProduct))
@@ -155,6 +166,7 @@ public class ProteinCount {
 							}
 						} 
 					}
+					// After going through logic for Complexes/Polymers, ReferenceGeneProduct, the total and inferabble values are incremented by their respective flag totals.
 					total += flag;
 					inferrable += flagInferred;
 				}
@@ -166,11 +178,13 @@ public class ProteinCount {
 		return distinctProteinCounts;
 	}
 	
+	// Function that determines protein counts of CandidateSets. Incoming arguments are the candidateSet of interest, as well as the output array from the first AttributeQueryRequest.
 	public static List<Integer> checkCandidates(GKInstance candidateSet, Collection<GKInstance> followedInstances) throws InvalidAttributeException, Exception
 	{
 		List<Integer> checkedCandidates = new ArrayList<Integer>();
 		if (candidateSet.getAttributeValue(ReactomeJavaConstants.hasCandidate) != null)
 		{
+			// AttributeQueryRequest for candidateSets, where the output instances are Complex, Polymer, and ReferenceSequence
 			int candidateTotal = 0;
 			int candidateInferrable = 0;
 			int candidateMax = 0;
@@ -182,6 +196,8 @@ public class ProteinCount {
 			@SuppressWarnings("unchecked")
 			Collection<GKInstance> candidateSetFollowedInstances = InstanceUtilities.followInstanceAttributes(candidateSet, candidateSetInstancesToFollow, candidateSetOutClasses);
 			
+			// In an attempt to mimic the Perl code, the instances of the candidateSetFollowedInstances are ordered using their DB IDs.
+			// These two for-loops can be commented out if using the other version of this function (see bottom of this function for more).
 			HashMap<Long, GKInstance> unsortedInstances = new HashMap<Long,GKInstance>();
 			ArrayList<Long> dbids = new ArrayList<Long>();
 			for (GKInstance instance : candidateSetFollowedInstances) 
@@ -212,6 +228,7 @@ public class ProteinCount {
 			{
 				return checkedCandidates;
 			}
+			// For instances that are Complex or Polymer, the total, inferrable and max are incremented according to the results of a recursive countDistinctProteins call.
 			for (GKInstance physicalEntity : sortedCandidateSetInstances)
 			{
 				if (physicalEntity.getSchemClass().isa(ReactomeJavaConstants.Complex) || physicalEntity.getSchemClass().isa(ReactomeJavaConstants.Polymer))
@@ -236,6 +253,7 @@ public class ProteinCount {
 							candidateMax = candidateComplexCounts.get(2);
 						}
 					}
+					// ReferenceGeneProduct instances can only have an inferrable of 1
 				} else if (physicalEntity.getSchemClass().isa(ReactomeJavaConstants.ReferenceGeneProduct))
 				{
 					candidateTotal = 1;
@@ -255,6 +273,10 @@ public class ProteinCount {
 					}
 				}
 			} 
+			// This was the tricky bit between Perl and Java. The flag is meant to drop any CandidateSet counts that don't all have an inferrable protein. 
+			// In the Perl version, instance order makes a big difference here, since the flag value persists through the for-loop. 
+			// Example: If a complex of 4 PEs has an inferrable in PE 1, 2, and 4, but not in 3, then the flag wouldn't be raised (incorrect, I believe). Alternatively, if 1 doesn't have an inferrable, but 2, 3, 4 do, then the flag would be raised (correctly). 
+			// The second example given exemplifies how I believe the function is meant to work, but the Perl version doesn't handle it. Currently this emulates the Perl version, but one of my earlier commits of this code section has it the other way (use git blame on this file).
 			if (flag > 0)
 			{
 				checkedCandidates.add(candidateTotal);
