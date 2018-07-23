@@ -83,7 +83,7 @@ public final class EnsemblServiceResponseProcessor
 		}
 		else
 		{
-			logger = LogManager.getLogger();
+			this.logger = LogManager.getLogger();
 		}
 	}
 	
