@@ -137,36 +137,40 @@ public class InferReaction {
 	@SuppressWarnings("unchecked")
 	public static boolean inferCatalyst(GKInstance reactionInst, GKInstance infReactionInst) throws InvalidAttributeException, Exception
 	{
-		for (GKInstance catalystInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity))
-		{
-			GKInstance infCatalystInst = GenerateInstance.newInferredGKInstance(catalystInst);
-			infCatalystInst.setDbAdaptor(dba);
-			infCatalystInst.addAttributeValue(ReactomeJavaConstants.activity, catalystInst.getAttributeValue(ReactomeJavaConstants.activity));
-			if (catalystInst.getAttributeValuesList(ReactomeJavaConstants.physicalEntity) != null)
+			for (GKInstance catalystInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity))
 			{
-				GKInstance infCatalystPEInst = OrthologousEntity.createOrthoEntity((GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity), false);
-				if (infCatalystPEInst != null) 
+				if (inferredCatalyst.get(catalystInst) == null)
 				{
-					infCatalystInst.addAttributeValue(ReactomeJavaConstants.physicalEntity, infCatalystPEInst);
-				} else {
-					return false;
-				}
-			}
-			
-			ArrayList<GKInstance> activeUnits = new ArrayList<GKInstance>();
-			for (GKInstance activeUnitInst : (Collection<GKInstance>) catalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit))
-			{
-				GKInstance infActiveUnitInst = OrthologousEntity.createOrthoEntity(activeUnitInst, false);
-				if (infActiveUnitInst != null)
+				GKInstance infCatalystInst = GenerateInstance.newInferredGKInstance(catalystInst);
+				infCatalystInst.setDbAdaptor(dba);
+				infCatalystInst.addAttributeValue(ReactomeJavaConstants.activity, catalystInst.getAttributeValue(ReactomeJavaConstants.activity));
+				if (catalystInst.getAttributeValuesList(ReactomeJavaConstants.physicalEntity) != null)
 				{
-					activeUnits.add(infActiveUnitInst);
+					GKInstance infCatalystPEInst = OrthologousEntity.createOrthoEntity((GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity), false);
+					if (infCatalystPEInst != null) 
+					{
+						infCatalystInst.addAttributeValue(ReactomeJavaConstants.physicalEntity, infCatalystPEInst);
+					} else {
+						return false;
+					}
 				}
-			}
-			infCatalystInst.addAttributeValue(ReactomeJavaConstants.activeUnit, activeUnits);
-			infCatalystInst.addAttributeValue(ReactomeJavaConstants._displayName, catalystInst.getAttributeValue(ReactomeJavaConstants._displayName));
-			infCatalystInst = GenerateInstance.checkForIdenticalInstances(infCatalystInst);
-			infReactionInst.addAttributeValue(ReactomeJavaConstants.catalystActivity, infCatalystInst);
-		}
+				
+				ArrayList<GKInstance> activeUnits = new ArrayList<GKInstance>();
+				for (GKInstance activeUnitInst : (Collection<GKInstance>) catalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit))
+				{
+					GKInstance infActiveUnitInst = OrthologousEntity.createOrthoEntity(activeUnitInst, false);
+					if (infActiveUnitInst != null)
+					{
+						activeUnits.add(infActiveUnitInst);
+					}
+				}
+				infCatalystInst.addAttributeValue(ReactomeJavaConstants.activeUnit, activeUnits);
+				infCatalystInst.addAttributeValue(ReactomeJavaConstants._displayName, catalystInst.getAttributeValue(ReactomeJavaConstants._displayName));
+				infCatalystInst = GenerateInstance.checkForIdenticalInstances(infCatalystInst);
+				inferredCatalyst.put(catalystInst, infCatalystInst);
+				infReactionInst.addAttributeValue(ReactomeJavaConstants.catalystActivity, infCatalystInst);
+			} 
+		} 
 		return true;
 	}
 	

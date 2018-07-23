@@ -104,8 +104,8 @@ public class InferEvents
 			{
 				for (GKInstance reactionInst : reactionInstances)
 				{
-					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute. 
-					// Adds to manualHumanEvents array if it passes conditions.
+//					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute. 
+//					// Adds to manualHumanEvents array if it passes conditions.
 					ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
 					for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
 					{
@@ -152,7 +152,7 @@ public class InferEvents
 		//TODO: Count warnings; manual report
 		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_65.txt");
 		reportFile.close();
-		String results = "hsp to ddis:\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
+		String results = "hsap to ddis:\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
 		Files.write(Paths.get("report_ortho_inference_test_reactome_65.txt"), results.getBytes(), StandardOpenOption.APPEND);
 		
 	}
