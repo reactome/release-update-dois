@@ -30,19 +30,14 @@ public class InferReaction {
 	// Infers PhysicalEntity instances of input, output, catalyst activity, and regulations that are associated with incoming reactionInst.
 	public static void inferEvent(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
-//		String dbId = reactionInst.getAttributeValue("DB_ID").toString();
-//		String stableId = reactionInst.getAttributeValue("name").toString();
-//		System.out.println("\nReaction: [" + dbId + "] " + stableId);	
-		
 		// Checks if an instance's inference should be skipped, based on a variety of factors such as a manual skip list, if it's chimeric, etc. 
 		if (SkipTests.skipInstance(reactionInst))
 		{
 			return;
 		}
-		
 		if (inferredEvent.get(reactionInst) == null)
 		{
-			// TODO: Release date/instance edit; %inferred_event (not till the end); %being_inferred; Global variables for summation/evidence type (rather than recreating it each time); 75% threshold as variable or hard-coded?
+			// TODO: Release date/instance edit;
 			// Creates inferred instance of reaction.
 			GKInstance infReactionInst = GenerateInstance.newInferredGKInstance(reactionInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
@@ -52,7 +47,7 @@ public class InferReaction {
 			infReactionInst.addAttributeValue(ReactomeJavaConstants._displayName, reactionInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			
 			// Filter critera that finds the total number of distinct proteins associated with an instance, as well as the number that can be inferred.
-			// Total proteins are stored in reactionProteinCounts index 0, inferrable proteins index 1, and the maximum number of homologues for any entity involved in index 2.
+			// Total proteins are stored in reactionProteinCounts index 0, inferrable proteins in index 1, and the maximum number of homologues for any entity involved in index 2.
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
 			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
 			if (reactionProteinCounts.get(0) > 0) {
@@ -133,14 +128,14 @@ public class InferReaction {
 	
 	// Function used to creat inferred catalysts associated with the current reaction instance.
 	// Infers all PhysicalEntity's associated with the reaction's 'catalystActivity' and 'activeUnit' attributes
-	// TODO: %homol_cat; RegulatedBy; null catalyst instance check
+	// TODO: RegulatedBy; null catalyst instance check
 	@SuppressWarnings("unchecked")
 	public static boolean inferCatalyst(GKInstance reactionInst, GKInstance infReactionInst) throws InvalidAttributeException, Exception
 	{
-			for (GKInstance catalystInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity))
+		for (GKInstance catalystInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity))
+		{
+			if (inferredCatalyst.get(catalystInst) == null)
 			{
-				if (inferredCatalyst.get(catalystInst) == null)
-				{
 				GKInstance infCatalystInst = GenerateInstance.newInferredGKInstance(catalystInst);
 				infCatalystInst.setDbAdaptor(dba);
 				infCatalystInst.addAttributeValue(ReactomeJavaConstants.activity, catalystInst.getAttributeValue(ReactomeJavaConstants.activity));

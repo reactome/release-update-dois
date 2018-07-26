@@ -313,6 +313,10 @@ public class InferEWAS {
 		refDb = true;
 	}
 	
+	public static void updateRefDb() {
+		refDb = false;
+	}
+	
 	// Sets the species instance for inferEWAS to use
 	public static void setSpeciesInst(GKInstance speciesInstCopy)
 	{

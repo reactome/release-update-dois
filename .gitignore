@@ -35,3 +35,7 @@ normal_event_skip_list.txt
 config.properties
 */target
 *.report
+
+orthoinference/inferred*
+orthoinference/eligible*
+orthoinference/report*

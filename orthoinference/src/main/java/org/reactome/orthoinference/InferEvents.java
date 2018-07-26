@@ -10,8 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -19,6 +19,9 @@ import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.SchemaClass;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 /**
  * 
@@ -30,7 +33,6 @@ public class InferEvents
 {	
 	static MySQLAdaptor dbAdaptor = null;
 	private static GKInstance speciesInst = null;
-	static boolean refDb = true;
 	private static HashMap<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static ArrayList<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 	
@@ -39,19 +41,12 @@ public class InferEvents
 	public static void main(String args[]) throws Exception
 	{
 		String pathToConfig = "src/main/resources/config.properties";
+		String pathToSpeciesConfig = "src/main/resources/Species.json";
 		
 		if (args.length > 0 && !args[0].equals(""))
 		{
 			pathToConfig = args[0];
 		}
-		
-		// Creates two files that a) list reactions that are eligible for inference and b) those that are successfully inferred
-		PrintWriter eligibleFile = new PrintWriter("eligible_ddis_75.txt");
-		PrintWriter inferredFile = new PrintWriter("inferred_ddis_75.txt");
-		eligibleFile.close();
-		inferredFile.close();
-		InferReaction.setEligibleFilename("eligible_ddis_75.txt");
-		InferReaction.setInferredFilename("inferred_ddis_75.txt");
 		
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
@@ -62,7 +57,7 @@ public class InferEvents
 		String database = props.getProperty("database");
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
-
+		
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);	
 		InferReaction.setAdaptor(dbAdaptor);
 		SkipTests.setAdaptor(dbAdaptor);
@@ -71,28 +66,65 @@ public class InferEvents
 		InferEWAS.setAdaptor(dbAdaptor);
 		UpdateHumanEvents.setAdaptor(dbAdaptor);
 		
-		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used 
-		HashMap<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile("ddis", "hsap");
-		ProteinCount.setHomologueMappingFile(homologueMappings);
-		InferEWAS.setHomologueMappingFile(homologueMappings);
-		InferEWAS.readENSGMappingFile("ddis");
-		InferEWAS.createUniprotDbInst();
-		InferEWAS.createEnsemblProteinDbInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/Transcript/ProteinSummary?peptide=###ID###");
-		InferEWAS.createEnsemblGeneDBInst("Dictyostelium discoideum", "http://protists.ensembl.org/Dictyostelium_discoideum/Info/Index", "http://protists.ensembl.org/Dictyostelium_discoideum/geneview?gene=###ID###&db=core");
-		if (refDb)
+		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat", "mtub"));
+		JSONParser parser = new JSONParser();
+		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
+		JSONObject jsonObject = (JSONObject) obj;
+		for (String species : speciesList)
 		{
-			InferEWAS.createAlternateReferenceDBInst("Dictyostelium discoideum", "dictyBase", "http://www.dictybase.org/", "http://dictybase.org/db/cgi-bin/search/search.pl?query=###ID###");
-		}
-		InferEvents.createSpeciesInst("Dictyostelium discoideum");
-		OrthologousEntity.setSpeciesInst(speciesInst);
-		InferEWAS.setSpeciesInst(speciesInst);
-		GenerateInstance.setSpeciesInst(speciesInst);
-		InferEvents.setSummationInst();
-		InferEvents.setEvidenceTypeInst();
-		OrthologousEntity.setComplexSummationInst();
+			JSONObject speciesObject = (JSONObject) jsonObject.get(species);
+			JSONArray speciesNames = (JSONArray) speciesObject.get("name");
+			String speciesName = (String) speciesNames.get(0);
+			System.out.println("Beginning orthoinference of " + speciesName + ".");
+			JSONObject refDb = (JSONObject) speciesObject.get("refdb");
+			String refDbUrl = (String) refDb.get("url");
+			String refDbProteinUrl = (String) refDb.get("access");
+			String refDbGeneUrl = (String) refDb.get("ensg_access");
+			
+			JSONObject altRefDb = (JSONObject) speciesObject.get("alt_refdb");
+		
+			// Creates two files that a) list reactions that are eligible for inference and b) those that are successfully inferred
+			String eligibleFilename = "eligible_" + species	+ "_75.txt";
+			String inferredFilename = "inferred_" + species + "_75.txt";
+			PrintWriter eligibleFile = new PrintWriter(eligibleFilename);
+			PrintWriter inferredFile = new PrintWriter(inferredFilename);
+			eligibleFile.close();
+			inferredFile.close();
+			InferReaction.setEligibleFilename(eligibleFilename);
+			InferReaction.setInferredFilename(inferredFilename);
+		
+			// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used 
+			try {
+				HashMap<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile(species, "hsap");
+				ProteinCount.setHomologueMappingFile(homologueMappings);
+				InferEWAS.setHomologueMappingFile(homologueMappings);
+			} catch (FileNotFoundException e) {
+				System.out.println("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
+				continue;
+			}
+			InferEWAS.readENSGMappingFile(species);
+			InferEWAS.createUniprotDbInst();
+	
+			InferEWAS.createEnsemblProteinDbInst(speciesName, refDbUrl, refDbProteinUrl);
+			InferEWAS.createEnsemblGeneDBInst(speciesName, refDbUrl, refDbGeneUrl);
+			if (altRefDb != null)
+			{
+				JSONArray altRefDbNames = (JSONArray) altRefDb.get("dbname");
+				String altRefDbUrl = (String) altRefDb.get("url");
+				String altRefDbAccess = (String) altRefDb.get("access");
+				InferEWAS.createAlternateReferenceDBInst(speciesName, (String) altRefDbNames.get(0), altRefDbUrl, altRefDbAccess);
+			} else {
+				InferEWAS.updateRefDb();
+			}
+			InferEvents.createSpeciesInst(speciesName);
+			OrthologousEntity.setSpeciesInst(speciesInst);
+			InferEWAS.setSpeciesInst(speciesInst);
+			GenerateInstance.setSpeciesInst(speciesInst);
+			InferEvents.setSummationInst();
+			InferEvents.setEvidenceTypeInst();
+			OrthologousEntity.setComplexSummationInst();
 		
 		SkipTests.getSkipList("normal_event_skip_list.txt");
-		
 		// Gets DB instances of source species
 		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
 		if (!sourceSpeciesInst.isEmpty())
@@ -142,18 +174,20 @@ public class InferEvents
 		}
 		UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
 		UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
-		InferEvents.outputReport();		
+		InferEvents.outputReport(species);		
+		}
 	}
 	
-	public static void outputReport() throws IOException
+	public static void outputReport(String species) throws IOException
 	{
 		int[] counts = InferReaction.getCounts();
 		int percent = 100*counts[1]/counts[0];
 		//TODO: Count warnings; manual report
 		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_65.txt");
 		reportFile.close();
-		String results = "hsap to ddis:\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
+		String results = "hsap to " + species + ":\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
 		Files.write(Paths.get("report_ortho_inference_test_reactome_65.txt"), results.getBytes(), StandardOpenOption.APPEND);
+		//TODO: manual human events handling
 		
 	}
 
