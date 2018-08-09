@@ -17,53 +17,50 @@ import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
 import org.gk.util.GKApplicationUtilities;
 
-public class findNewDOIsAndUpdate {
+public class FindNewDOIsAndUpdate {
 
-	final static Logger logger = Logger.getLogger(findNewDOIsAndUpdate.class);
+	final static Logger logger = Logger.getLogger(FindNewDOIsAndUpdate.class);
 
-	private MySQLAdaptor dbaTestReactome;
-	private MySQLAdaptor dbaGkCentral;
+	private static MySQLAdaptor dbaTestReactome;
+	private static MySQLAdaptor dbaGkCentral;
 
-	// Create adaptors for test_reactome and gk_central
-	public void setTestReactomeAdaptor(MySQLAdaptor adaptor) {
-		this.dbaTestReactome = adaptor;
-	}
-
-	public void setGkCentralAdaptor(MySQLAdaptor adaptor) {
-		this.dbaGkCentral = adaptor;
+	// Create adaptors for Test Reactome and GKCentral
+	public static void setAdaptors(MySQLAdaptor adaptorTR, MySQLAdaptor adaptorGK) {
+		dbaTestReactome = adaptorTR;
+		dbaGkCentral = adaptorGK;
 	}
 
 	@SuppressWarnings("unchecked")
-	public void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport) {
+	public static void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport) {
 
-		Collection<GKInstance> trdois;
-		Collection<GKInstance> gkdois;
+		Collection<GKInstance> doisTR;
+		Collection<GKInstance> doisGK;
 
 		// Initialize instance edits for each DB
 		String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
-		GKInstance instanceEditTestReactome = this.createInstanceEdit(this.dbaTestReactome, authorIdTR, creatorFile);
-		GKInstance instanceEditGkCentral = this.createInstanceEdit(this.dbaGkCentral, authorIdGK, creatorFile);
+		GKInstance instanceEditTR = FindNewDOIsAndUpdate.createInstanceEdit(FindNewDOIsAndUpdate.dbaTestReactome, authorIdTR, creatorFile);
+		GKInstance instanceEditGK = FindNewDOIsAndUpdate.createInstanceEdit(FindNewDOIsAndUpdate.dbaGkCentral, authorIdGK, creatorFile);
 		// Gets the updated report file if it was provided for this release
-		HashMap<String, String> reportContents = this.getReportContents(pathToReport);
+		HashMap<String, String> reportContents = FindNewDOIsAndUpdate.getReportContents(pathToReport);
 		int reportHits = 0;
 		int fetchHits = 0;
 		ArrayList<String> updatedDOIs = new ArrayList<String>();
 		try 
 		{
-			// Get all instances in test_reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
-			 trdois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
+			 doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
 			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
 			{
-				if (!trdois.isEmpty())
+				if (!doisTR.isEmpty())
 				{
-					for (GKInstance trdoi : trdois)
+					for (GKInstance trDOI : doisTR)
 					{
 						// The dois are constructed from the instances 'stableIdentifier', which should be in the db already
-						String stableIdFromDb = ((GKInstance) trdoi.getAttributeValue("stableIdentifier")).getDisplayName();
-						String nameFromDb = trdoi.getAttributeValue("name").toString();
+						String stableIdFromDb = ((GKInstance) trDOI.getAttributeValue("stableIdentifier")).getDisplayName();
+						String nameFromDb = trDOI.getAttributeValue("name").toString();
 						String updatedDoi = "10.3180/" + stableIdFromDb;
-						String dbId = trdoi.getAttributeValue("DB_ID").toString();
+						String dbId = trDOI.getAttributeValue("DB_ID").toString();
 
 						// Used to verify that report contents are as expected, based on provided list from curators
 						fetchHits++;
@@ -73,25 +70,25 @@ public class findNewDOIsAndUpdate {
 							reportHits++;
 						}
 
-						// This updates the 'modified' field for Pathways, keeping track of when changes happened for each instance
-						trdoi.getAttributeValuesList("modified");
-						trdoi.addAttributeValue("modified", instanceEditTestReactome);
-						trdoi.setAttributeValue("doi", updatedDoi);
-						this.dbaTestReactome.updateInstanceAttribute(trdoi, "modified");
-						this.dbaTestReactome.updateInstanceAttribute(trdoi, "doi");
+						// This updates the 'modified' field for Pathways instances, keeping track of when changes happened for each instance
+						trDOI.getAttributeValuesList("modified");
+						trDOI.addAttributeValue("modified", instanceEditTR);
+						trDOI.setAttributeValue("doi", updatedDoi);
+						dbaTestReactome.updateInstanceAttribute(trDOI, "modified");
+						dbaTestReactome.updateInstanceAttribute(trDOI, "doi");
 
-						// Grabs instance from gk central based on DB_ID taken from test_reactome and updates it's DOI
+						// Grabs instance from GKCentral based on DB_ID taken from Test Reactome and updates it's DOI
 						dbaGkCentral.startTransaction();
-						gkdois = this.dbaGkCentral.fetchInstanceByAttribute("Pathway", "DB_ID", "=", dbId);
-						if (!gkdois.isEmpty())
+						doisGK = dbaGkCentral.fetchInstanceByAttribute("Pathway", "DB_ID", "=", dbId);
+						if (!doisGK.isEmpty())
 						{
-							for (GKInstance gkdoi : gkdois)
+							for (GKInstance gkDOI : doisGK)
 							{
-								gkdoi.getAttributeValuesList("modified");
-								gkdoi.addAttributeValue("modified", instanceEditGkCentral);
-								gkdoi.setAttributeValue("doi", updatedDoi);
-								this.dbaGkCentral.updateInstanceAttribute(gkdoi, "modified");
-								this.dbaGkCentral.updateInstanceAttribute(gkdoi, "doi");
+								gkDOI.getAttributeValuesList("modified");
+								gkDOI.addAttributeValue("modified", instanceEditGK);
+								gkDOI.setAttributeValue("doi", updatedDoi);
+								dbaGkCentral.updateInstanceAttribute(gkDOI, "modified");
+								dbaGkCentral.updateInstanceAttribute(gkDOI, "doi");
 
 								logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
 							}
@@ -141,7 +138,7 @@ public class findNewDOIsAndUpdate {
 	}
 
 	// Parses input report and places each line's contents in HashMap
-	public HashMap<String, String> getReportContents(String pathToReport) {
+	public static HashMap<String, String> getReportContents(String pathToReport) {
 
 		HashMap<String, String> reportContents = new HashMap<String, String>();
 		try {
@@ -174,7 +171,7 @@ public class findNewDOIsAndUpdate {
 	 *            part of the program.
 	 * @return
 	 */
-	public GKInstance createInstanceEdit(MySQLAdaptor dbAdaptor, long personID, String creatorName) {
+	public static GKInstance createInstanceEdit(MySQLAdaptor dbAdaptor, long personID, String creatorName) {
 		GKInstance instanceEdit = null;
 		try {
 			instanceEdit = createDefaultIE(dbAdaptor, personID, true, "Inserted by " + creatorName);
@@ -204,7 +201,7 @@ public class findNewDOIsAndUpdate {
 			throws Exception {
 		GKInstance defaultPerson = dba.fetchInstance(defaultPersonId);
 		if (defaultPerson != null) {
-			GKInstance newIE = findNewDOIsAndUpdate.createDefaultInstanceEdit(defaultPerson);
+			GKInstance newIE = FindNewDOIsAndUpdate.createDefaultInstanceEdit(defaultPerson);
 			newIE.addAttributeValue(ReactomeJavaConstants.dateTime, GKApplicationUtilities.getDateTime());
 			newIE.addAttributeValue(ReactomeJavaConstants.note, note);
 			InstanceDisplayNameGenerator.setDisplayName(newIE);

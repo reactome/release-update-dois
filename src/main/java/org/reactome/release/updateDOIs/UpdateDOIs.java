@@ -23,22 +23,17 @@ public class UpdateDOIs {
       pathToConfig = args[0];
       pathToReport = args[1];
     }
-    // TODO: Structurally, does this really make sense? Function overkill
-    UpdateDOIs.executeUpdateDOIs(pathToConfig, pathToReport);
-  }
 
-  public static void executeUpdateDOIs(String pathToResources, String pathToReport) {
-
-    MySQLAdaptor testReactomeDBA = null;
-    MySQLAdaptor gkCentralDBA = null;
+    MySQLAdaptor dbaTestReactome = null;
+    MySQLAdaptor dbaGkCentral = null;
     long authorIdTR = 0;
     long authorIdGK = 0;
 
-    // Properties file contains information needed to access current Test_Reactome and GK_Central databases
+    // Properties file should contain information needed to access current Test Reactome and GKCentral databases
     try 
     {
       Properties props = new Properties();
-      props.load(new FileInputStream(pathToResources));
+      props.load(new FileInputStream(pathToConfig));
 
       String userTR = props.getProperty("userTR");
       String userGK = props.getProperty("userGK");
@@ -48,21 +43,18 @@ public class UpdateDOIs {
       String hostGK = props.getProperty("hostGK");
       String databaseTR = props.getProperty("databaseTR");
       String databaseGK = props.getProperty("databaseGK");
-      int port = Integer.valueOf(props.getProperty("port"));
       authorIdTR = Integer.valueOf(props.getProperty("authorIdTR"));
       authorIdGK = Integer.valueOf(props.getProperty("authorIdGK"));
+      int port = Integer.valueOf(props.getProperty("port"));
 
       // Set up db connections.
-      testReactomeDBA = new MySQLAdaptor(hostTR, databaseTR, userTR, passwordTR, port);
-      gkCentralDBA = new MySQLAdaptor(hostTR, databaseGK, userTR, passwordTR, port);
+      dbaTestReactome = new MySQLAdaptor(hostTR, databaseTR, userTR, passwordTR, port);
+      dbaGkCentral = new MySQLAdaptor(hostGK, databaseGK, userGK, passwordGK, port);
     } catch (Exception e) {
       e.printStackTrace();
     }
-      // TODO: This could be done more succintly
-      findNewDOIsAndUpdate findNewDOIsAndUpdate = new findNewDOIsAndUpdate();
-      findNewDOIsAndUpdate.setTestReactomeAdaptor(testReactomeDBA);
-      findNewDOIsAndUpdate.setGkCentralAdaptor(gkCentralDBA);
-      findNewDOIsAndUpdate.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport);
+      FindNewDOIsAndUpdate.setAdaptors(dbaTestReactome, dbaGkCentral);
+      FindNewDOIsAndUpdate.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport);
 
       logger.info( "UpdateDOIs Complete" );
     }
