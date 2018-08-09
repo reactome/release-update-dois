@@ -35,8 +35,7 @@ public class TestUpdateDOIs {
 	public void testfindNewDOIsAndUpdate() throws Exception 
 	{
 		FindNewDOIsAndUpdate check = new FindNewDOIsAndUpdate();
-		check.setTestReactomeAdaptor(mockAdaptor);
-		check.setGkCentralAdaptor(mockAdaptor);
+		check.setAdaptors(mockAdaptor, mockAdaptor);
 		
 		GKInstance inst1 = PowerMockito.mock(GKInstance.class);
 		
@@ -57,8 +56,7 @@ public class TestUpdateDOIs {
 	public void testfindNewDOIsAndUpdateEmptyList() throws Exception 
 	{
 		FindNewDOIsAndUpdate check = new FindNewDOIsAndUpdate();
-		check.setTestReactomeAdaptor(mockAdaptor);
-		check.setGkCentralAdaptor(mockAdaptor);
+		check.setAdaptors(mockAdaptor, mockAdaptor);
 		
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180")).thenReturn(new ArrayList<GKInstance>());
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "DB_ID", "=", "67890")).thenReturn(new ArrayList<GKInstance>());
@@ -70,8 +68,7 @@ public class TestUpdateDOIs {
 	public void testfindNewDOIsAndUpdateDeepEmptyList() throws Exception 
 	{
 		FindNewDOIsAndUpdate check = new FindNewDOIsAndUpdate();
-		check.setTestReactomeAdaptor(mockAdaptor);
-		check.setGkCentralAdaptor(mockAdaptor);
+		check.setAdaptors(mockAdaptor, mockAdaptor);
 		
 		GKInstance inst1 = PowerMockito.mock(GKInstance.class);
 		Collection<GKInstance> testResults = Arrays.asList(inst1);
