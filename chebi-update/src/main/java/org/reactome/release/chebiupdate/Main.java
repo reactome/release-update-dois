@@ -6,8 +6,6 @@ import java.util.Properties;
 
 public class Main
 {
-//	private static final Logger logger = LogManager.getLogger("ChEBIUpdateLogger");
-	
 	public static void main(String[] args) throws SQLException, Exception
 	{
 		// Assume the path the the properties file is ./chebi-update.properties

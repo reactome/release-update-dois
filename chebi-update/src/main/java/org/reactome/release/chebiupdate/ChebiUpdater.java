@@ -31,7 +31,7 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 
 
 public class ChebiUpdater {
-	private static final Logger logger = LogManager.getLogger("ChEBIUpdateLogger");
+	private static final Logger logger = LogManager.getLogger();
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
 	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
@@ -352,8 +352,7 @@ public class ChebiUpdater {
 				AttributeQueryRequest aqrIdentifier = adaptor.new AttributeQueryRequest("ReferenceMolecule", "identifier", "IS NULL", "");
 				Collection<GKInstance> refDBs = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI");
 				AttributeQueryRequest aqrDBName = adaptor.new AttributeQueryRequest("ReferenceMolecule", "referenceDatabase", "=", refDBs.stream().findFirst().get().getDBID());
-				
-				//dupesOfIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "IS NULL", "");
+
 				dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(aqrIdentifier, aqrDBName));
 			}
 			else
