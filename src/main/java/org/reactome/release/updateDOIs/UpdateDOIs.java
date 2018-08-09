@@ -13,6 +13,9 @@ public class UpdateDOIs {
 
   public static void main( String[] args ) {
 
+	 // Default locations of properties and pre-set report files
+	 // Will override if arguments are provided
+	 // TODO: Lots of room for error here if only 1 argument provided, or if the report file isn't updated
     String pathToConfig = "src/main/resources/config.properties";
     String pathToReport = "src/main/resources/UpdateDOIs.report";
     if (args.length > 0 && !args[0].equals(""))
@@ -20,7 +23,7 @@ public class UpdateDOIs {
       pathToConfig = args[0];
       pathToReport = args[1];
     }
-
+    // TODO: Structurally, does this really make sense? Function overkill
     UpdateDOIs.executeUpdateDOIs(pathToConfig, pathToReport);
   }
 
@@ -31,6 +34,7 @@ public class UpdateDOIs {
     long authorIdTR = 0;
     long authorIdGK = 0;
 
+    // Properties file contains information needed to access current Test_Reactome and GK_Central databases
     try 
     {
       Properties props = new Properties();
@@ -54,6 +58,7 @@ public class UpdateDOIs {
     } catch (Exception e) {
       e.printStackTrace();
     }
+      // TODO: This could be done more succintly
       findNewDOIsAndUpdate findNewDOIsAndUpdate = new findNewDOIsAndUpdate();
       findNewDOIsAndUpdate.setTestReactomeAdaptor(testReactomeDBA);
       findNewDOIsAndUpdate.setGkCentralAdaptor(gkCentralDBA);

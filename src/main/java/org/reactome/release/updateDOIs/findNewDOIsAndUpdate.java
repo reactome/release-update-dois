@@ -33,33 +33,37 @@ public class findNewDOIsAndUpdate {
 		this.dbaGkCentral = adaptor;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport) {
 
-		Collection<GKInstance> dois;
+		Collection<GKInstance> trdois;
 		Collection<GKInstance> gkdois;
 
+		// Initialize instance edits for each DB
 		String creatorFile = "org.reactome.release.updateDOIs.UpdateDOIs";
 		GKInstance instanceEditTestReactome = this.createInstanceEdit(this.dbaTestReactome, authorIdTR, creatorFile);
 		GKInstance instanceEditGkCentral = this.createInstanceEdit(this.dbaGkCentral, authorIdGK, creatorFile);
-
+		// Gets the updated report file if it was provided for this release
 		HashMap<String, String> reportContents = this.getReportContents(pathToReport);
 		int reportHits = 0;
 		int fetchHits = 0;
 		ArrayList<String> updatedDOIs = new ArrayList<String>();
 		try 
 		{
-			 dois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
-
+			// Get all instances in test_reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
+			 trdois = this.dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
 			{
-				if (!dois.isEmpty())
+				if (!trdois.isEmpty())
 				{
-					for (GKInstance doi : dois)
+					for (GKInstance trdoi : trdois)
 					{
-						String stableIdFromDb = ((GKInstance) doi.getAttributeValue("stableIdentifier")).getDisplayName();
-						String nameFromDb = doi.getAttributeValue("name").toString();
+						// The dois are constructed from the instances 'stableIdentifier', which should be in the db already
+						String stableIdFromDb = ((GKInstance) trdoi.getAttributeValue("stableIdentifier")).getDisplayName();
+						String nameFromDb = trdoi.getAttributeValue("name").toString();
 						String updatedDoi = "10.3180/" + stableIdFromDb;
-						String dbId = doi.getAttributeValue("DB_ID").toString();
+						String dbId = trdoi.getAttributeValue("DB_ID").toString();
 
 						// Used to verify that report contents are as expected, based on provided list from curators
 						fetchHits++;
@@ -69,12 +73,12 @@ public class findNewDOIsAndUpdate {
 							reportHits++;
 						}
 
-						// This updates the 'modified' field for Pathways, keeping track of when changes happened.
-						doi.getAttributeValuesList("modified");
-						doi.addAttributeValue("modified", instanceEditTestReactome);
-						doi.setAttributeValue("doi", updatedDoi);
-						this.dbaTestReactome.updateInstanceAttribute(doi, "modified");
-						this.dbaTestReactome.updateInstanceAttribute(doi, "doi");
+						// This updates the 'modified' field for Pathways, keeping track of when changes happened for each instance
+						trdoi.getAttributeValuesList("modified");
+						trdoi.addAttributeValue("modified", instanceEditTestReactome);
+						trdoi.setAttributeValue("doi", updatedDoi);
+						this.dbaTestReactome.updateInstanceAttribute(trdoi, "modified");
+						this.dbaTestReactome.updateInstanceAttribute(trdoi, "doi");
 
 						// Grabs instance from gk central based on DB_ID taken from test_reactome and updates it's DOI
 						dbaGkCentral.startTransaction();
