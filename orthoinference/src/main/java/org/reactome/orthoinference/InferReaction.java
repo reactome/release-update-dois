@@ -51,6 +51,7 @@ public class InferReaction {
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
 			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
 			if (reactionProteinCounts.get(0) > 0) {
+				
 				String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
 				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, and orthoinference is attempted.
 				eligibleCount++;
@@ -247,6 +248,14 @@ public class InferReaction {
 	{
 		int[] counts = {eligibleCount, inferredCount};
 		return counts;
-		
+	}
+	
+	public static void resetVariables() 
+	{
+		inferredCatalyst = new HashMap<GKInstance,GKInstance>();
+		inferredEvent = new HashMap<GKInstance,GKInstance>();
+		eligibleCount = 0;
+		inferredCount = 0;
+		inferrableHumanEvents = new ArrayList<GKInstance>();
 	}
 }

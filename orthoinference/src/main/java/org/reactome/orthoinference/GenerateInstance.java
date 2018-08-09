@@ -146,4 +146,9 @@ public class GenerateInstance {
 		}
 		return key;
 	}
+	
+	public static void resetVariables()
+	{
+		mockedIdenticals = new HashMap<String,GKInstance>();
+	}
 }

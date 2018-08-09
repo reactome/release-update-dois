@@ -313,7 +313,8 @@ public class InferEWAS {
 		refDb = true;
 	}
 	
-	public static void updateRefDb() {
+	public static void updateRefDb() 
+	{
 		refDb = false;
 	}
 	
@@ -321,5 +322,14 @@ public class InferEWAS {
 	public static void setSpeciesInst(GKInstance speciesInstCopy)
 	{
 		speciesInst = speciesInstCopy;
+	}
+	
+	public static void resetVariables() 
+	{
+		homologueMappings = new HashMap<String,String[]>();
+		ensgMappings = new HashMap<String,ArrayList<String>>();
+		seenRPS = new HashMap<String,GKInstance>();
+		ewasIdenticals = new HashMap<String,GKInstance>();
+		residueIdenticals = new HashMap<String,GKInstance>();
 	}
 }

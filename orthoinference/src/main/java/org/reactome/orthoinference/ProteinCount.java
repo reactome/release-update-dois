@@ -290,4 +290,9 @@ public class ProteinCount {
 		}
 		return checkedCandidates;
 	}
+	
+	public static void resetVariables() 
+	{
+		homologueMappings = new HashMap<String,String[]>();
+	}
 }

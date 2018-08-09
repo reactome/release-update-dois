@@ -170,4 +170,10 @@ public class UpdateHumanEvents {
 	{
 		inferredEvent = inferredEventCopy;
 	}
+	
+	public static void resetVariables()
+	{
+		updatedInferrableHumanEvents = new ArrayList<GKInstance>();
+		inferredEvent = new HashMap<GKInstance,GKInstance>();
+	}
 }

@@ -12,6 +12,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -66,7 +67,9 @@ public class InferEvents
 		InferEWAS.setAdaptor(dbAdaptor);
 		UpdateHumanEvents.setAdaptor(dbAdaptor);
 		
-		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat", "mtub"));
+		SkipTests.getSkipList("normal_event_skip_list.txt");
+		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
+		
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
 		JSONObject jsonObject = (JSONObject) obj;
@@ -98,6 +101,7 @@ public class InferEvents
 				HashMap<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile(species, "hsap");
 				ProteinCount.setHomologueMappingFile(homologueMappings);
 				InferEWAS.setHomologueMappingFile(homologueMappings);
+				homologueMappings = new HashMap<String,String[]>();
 			} catch (FileNotFoundException e) {
 				System.out.println("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
 				continue;
@@ -124,7 +128,7 @@ public class InferEvents
 			InferEvents.setEvidenceTypeInst();
 			OrthologousEntity.setComplexSummationInst();
 		
-		SkipTests.getSkipList("normal_event_skip_list.txt");
+		
 		// Gets DB instances of source species
 		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
 		if (!sourceSpeciesInst.isEmpty())
@@ -136,8 +140,8 @@ public class InferEvents
 			{
 				for (GKInstance reactionInst : reactionInstances)
 				{
-//					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute. 
-//					// Adds to manualHumanEvents array if it passes conditions.
+					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute. 
+					// Adds to manualHumanEvents array if it passes conditions.
 					ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
 					for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
 					{
@@ -174,7 +178,9 @@ public class InferEvents
 		}
 		UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
 		UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
-		InferEvents.outputReport(species);		
+		InferEvents.outputReport(species);	
+		InferEvents.resetVariables();
+		System.gc();
 		}
 	}
 	
@@ -188,7 +194,17 @@ public class InferEvents
 		String results = "hsap to " + species + ":\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
 		Files.write(Paths.get("report_ortho_inference_test_reactome_65.txt"), results.getBytes(), StandardOpenOption.APPEND);
 		//TODO: manual human events handling
-		
+	}
+	
+	public static void resetVariables() {
+		InferReaction.resetVariables();
+		OrthologousEntity.resetVariables();
+		InferEWAS.resetVariables();
+		ProteinCount.resetVariables();
+		GenerateInstance.resetVariables();
+		UpdateHumanEvents.resetVariables();
+		manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
+		manualHumanEvents = new ArrayList<GKInstance>();
 	}
 
 	// Read the species-specific orthopair 'mapping' file, and create a HashMap with the contents

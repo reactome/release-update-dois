@@ -87,7 +87,6 @@ public class OrthologousEntity {
 			} 
 			return orthologousEntity.get(entityInst);
 		} else {
-			//TODO: check intracellular; if flag create clone;
 			return entityInst;
 		}
 	}
@@ -383,5 +382,16 @@ public class OrthologousEntity {
 		complexSummationInst.setDbAdaptor(dba);
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
 		complexSummationInst = GenerateInstance.checkForIdenticalInstances(complexSummationInst);
+	}
+	
+	public static void resetVariables()
+	{
+		orthologousEntity = new HashMap<GKInstance,GKInstance>();
+		homolGEE = new HashMap<GKInstance,GKInstance>();
+		complexPolymer = new HashMap<GKInstance, GKInstance>();
+		inferredGSE = new HashMap<GKInstance, GKInstance>();
+		definedSetIdenticals = new HashMap<String,GKInstance>();
+		complexIdenticals = new HashMap<String,GKInstance>();
+		entitySetIdenticals = new HashMap<String,GKInstance>();
 	}
 }
