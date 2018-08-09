@@ -41,7 +41,7 @@ public class FindNewDOIsAndUpdate {
 		GKInstance instanceEditTR = FindNewDOIsAndUpdate.createInstanceEdit(FindNewDOIsAndUpdate.dbaTestReactome, authorIdTR, creatorFile);
 		GKInstance instanceEditGK = FindNewDOIsAndUpdate.createInstanceEdit(FindNewDOIsAndUpdate.dbaGkCentral, authorIdGK, creatorFile);
 		// Gets the updated report file if it was provided for this release
-		HashMap<String, String> reportContents = FindNewDOIsAndUpdate.getReportContents(pathToReport);
+		HashMap<String, HashMap<String,String>> expectedUpdatedDOIs = FindNewDOIsAndUpdate.getExpectedUpdatedDOIs(pathToReport);
 		int reportHits = 0;
 		int fetchHits = 0;
 		ArrayList<String> updatedDOIs = new ArrayList<String>();
@@ -65,11 +65,10 @@ public class FindNewDOIsAndUpdate {
 						// Used to verify that report contents are as expected, based on provided list from curators
 						fetchHits++;
 						updatedDOIs.add(updatedDoi);
-						if (reportContents.get(updatedDoi) != null && reportContents.get(updatedDoi).toString().equals(nameFromDb))
+						if (expectedUpdatedDOIs.get(updatedDoi) != null && expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
 						{
 							reportHits++;
 						}
-
 						// This updates the 'modified' field for Pathways instances, keeping track of when changes happened for each instance
 						trDOI.getAttributeValuesList("modified");
 						trDOI.addAttributeValue("modified", instanceEditTR);
@@ -96,28 +95,7 @@ public class FindNewDOIsAndUpdate {
 							logger.error("Could not find attribute in gk_central");
 						}
 					}
-					// Checking if provided list matched updated instances
-					if (reportContents.size() != 0 && reportHits < reportContents.size())
-					{
-						for (Object updatedDOI : updatedDOIs)
-						{
-							reportContents.remove(updatedDOI);
-						}
-						logger.warn("The following DOIs from the provided list were not updated: ");
-						logger.warn("  " + reportContents.keySet());
-					} else if (reportContents.size() != 0 && fetchHits > reportContents.size()) {
-						logger.warn("The following DOIs were unexpectedly updated: ");
-						for (Object updatedDOI : updatedDOIs)
-						{
-							if (reportContents.get(updatedDOI) == null)
-							{
-								logger.warn("  " + updatedDOI);
-							}
-						}
-					} else if (reportContents.size() != 0) {
-
-						logger.info("All expected DOIs updated");
-					}
+					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updatedDOIs, reportHits, fetchHits );
 				} else {
 					logger.info("No DOIs to update");
 				}
@@ -138,25 +116,36 @@ public class FindNewDOIsAndUpdate {
 	}
 
 	// Parses input report and places each line's contents in HashMap
-	public static HashMap<String, String> getReportContents(String pathToReport) {
+	public static HashMap<String, HashMap<String,String>> getExpectedUpdatedDOIs(String pathToReport) {
 
-		HashMap<String, String> reportContents = new HashMap<String, String>();
+		HashMap<String, HashMap<String, String>> expectedUpdatedDOIs = new HashMap<String, HashMap<String,String>>();
 		try {
 			FileReader fr = new FileReader(pathToReport);
 			BufferedReader br = new BufferedReader(fr);
 
 			String sCurrentLine;
 			while ((sCurrentLine = br.readLine()) != null) {
-				String[] splitLine = sCurrentLine.split(",");
-				reportContents.put(splitLine[0], splitLine[1]);
+				HashMap<String, String> doiAttributes = new HashMap<String,String>();
+				String[] commaSplit = sCurrentLine.split(",");
+				String reactomeDoi = commaSplit[0];
+				String displayName = commaSplit[1];
+				int lastPeriodIndex = commaSplit[0].lastIndexOf(".");
+				String[] versionSplit = {reactomeDoi.substring(0, lastPeriodIndex), reactomeDoi.substring(lastPeriodIndex+1)};
+				String stableId = versionSplit[0].replace("10.3180/", "");
+				String stableIdVersion = versionSplit[1];
+				doiAttributes.put("displayName", displayName);
+				doiAttributes.put("stableId", stableId);
+				doiAttributes.put("stableIdVersion", stableIdVersion);
+				expectedUpdatedDOIs.put(reactomeDoi, doiAttributes);
 			}
 			br.close();
 			fr.close();
 
 		} catch (Exception e) {
 			logger.warn("No input file found -- Continuing without checking DOIs");
+			e.printStackTrace();
 		}
-		return reportContents;
+		return expectedUpdatedDOIs;
 	}
 
 	/**
