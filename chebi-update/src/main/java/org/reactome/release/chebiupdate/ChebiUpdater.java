@@ -371,19 +371,29 @@ public class ChebiUpdater {
 			try
 			{
 				String identifier = (String) molecule.getAttributeValue("identifier");
-				Entity entity = this.chebiClient.getCompleteEntity(identifier);
-				if (entity != null)
+				if (identifier != null && !identifier.trim().equals(""))
 				{
-					entityMap.put(molecule.getDBID(), entity);
-				}
-				else
-				{
-					failedEntitiesList.add(molecule);
+					Entity entity = this.chebiClient.getCompleteEntity(identifier);
+					if (entity != null)
+					{
+						entityMap.put(molecule.getDBID(), entity);
+					}
+					else
+					{
+						failedEntitiesList.add(molecule);
+					}
 				}
 			}
 			catch (ChebiWebServiceFault_Exception e)
 			{
-				logger.error("WebService error! {}", e.getMessage());
+				try
+				{
+					logger.error("WebService error: {} ; Identifier that triggered it: {}", e.getMessage(), (String) molecule.getAttributeValue("identifier"));
+				}
+				catch (Exception e1)
+				{
+					e1.printStackTrace();
+				}
 				e.printStackTrace();
 				// Webservice error should probably break execution - if one fails, they will all probably fail.
 				// This is *not* a general principle, but is based on my experience with the ChEBI webservice specifically -
