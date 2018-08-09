@@ -42,7 +42,8 @@ public class FindNewDOIsAndUpdate {
 		GKInstance instanceEditGK = FindNewDOIsAndUpdate.createInstanceEdit(FindNewDOIsAndUpdate.dbaGkCentral, authorIdGK, creatorFile);
 		// Gets the updated report file if it was provided for this release
 		HashMap<String, HashMap<String,String>> expectedUpdatedDOIs = FindNewDOIsAndUpdate.getExpectedUpdatedDOIs(pathToReport);
-		int reportHits = 0;
+		ArrayList<String> updated = new ArrayList<String>();
+		ArrayList<String> notUpdated = new ArrayList<String>();
 		int fetchHits = 0;
 		ArrayList<String> updatedDOIs = new ArrayList<String>();
 		try 
@@ -66,10 +67,14 @@ public class FindNewDOIsAndUpdate {
 						fetchHits++;
 						updatedDOIs.add(updatedDoi);
 						if (expectedUpdatedDOIs.get(updatedDoi) != null && expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
-						{
-							reportHits++;
+						{	
+							updated.add(updatedDoi);
+						} else {
+							String doiWithName = updatedDoi + ":" + nameFromDb;
+							notUpdated.add(doiWithName);
 						}
 						// This updates the 'modified' field for Pathways instances, keeping track of when changes happened for each instance
+						// TODO: Put this after the update to GK Central so that we make sure values match
 						trDOI.getAttributeValuesList("modified");
 						trDOI.addAttributeValue("modified", instanceEditTR);
 						trDOI.setAttributeValue("doi", updatedDoi);
@@ -89,13 +94,13 @@ public class FindNewDOIsAndUpdate {
 								dbaGkCentral.updateInstanceAttribute(gkDOI, "modified");
 								dbaGkCentral.updateInstanceAttribute(gkDOI, "doi");
 
-								logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
+//								logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
 							}
 						} else {
 							logger.error("Could not find attribute in gk_central");
 						}
 					}
-					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updatedDOIs, reportHits, fetchHits );
+					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updatedDOIs, updated, notUpdated, fetchHits );
 				} else {
 					logger.info("No DOIs to update");
 				}
