@@ -49,7 +49,8 @@ public class FindNewDOIsAndUpdate {
 		try 
 		{
 			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
-			 doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+//			 doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+			doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "1912408|3232118|3232142|4085377|4090294|4655427|4755510|8985947|9013694|9034015");
 			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
 			{
@@ -124,12 +125,14 @@ public class FindNewDOIsAndUpdate {
 	public static HashMap<String, HashMap<String,String>> getExpectedUpdatedDOIs(String pathToReport) {
 
 		HashMap<String, HashMap<String, String>> expectedUpdatedDOIs = new HashMap<String, HashMap<String,String>>();
-		try {
+		try 
+		{
 			FileReader fr = new FileReader(pathToReport);
 			BufferedReader br = new BufferedReader(fr);
 
 			String sCurrentLine;
-			while ((sCurrentLine = br.readLine()) != null) {
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
 				HashMap<String, String> doiAttributes = new HashMap<String,String>();
 				String[] commaSplit = sCurrentLine.split(",");
 				String reactomeDoi = commaSplit[0];
