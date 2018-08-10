@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.reactome.release</groupId>
   <artifactId>release-common-lib</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.0</version>
   <description>Common components used throughout the Release process.</description>
   <properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -10,15 +10,10 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 	<dependencies>
-<!-- 		<dependency>
-			<groupId>org.reactome.server</groupId>
-			<artifactId>reactome-core</artifactId>
-			<version>1.1.2</version>
-		</dependency> -->
 		<dependency>
 			<groupId>org.reactome.base</groupId>
 			<artifactId>reactome-base</artifactId>
-			<version>RELEASE</version>
+			<version>1.2.15</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
@@ -70,7 +65,7 @@
 		</dependency>
 	</dependencies>
 
-	<build>
+	<!-- <build>
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -86,8 +81,8 @@
 				</configuration>
 				<executions>
 					<execution>
-						<id>make-assembly</id> <!-- this is used for inheritance merges -->
-						<phase>package</phase> <!-- bind to the packaging phase -->
+						<id>make-assembly</id> 
+						<phase>package</phase> 
 						<goals>
 							<goal>single</goal>
 						</goals>
@@ -96,7 +91,7 @@
 			</plugin>
 		</plugins>
 	</build>
-
+ -->
 	<!-- This repo is necessary for the chebiWS-client -->
 	<repositories>
 		<repository>
