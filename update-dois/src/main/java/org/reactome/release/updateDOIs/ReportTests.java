@@ -3,25 +3,27 @@ package org.reactome.release.updateDOIs;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 
 public class ReportTests {
 	
-	final static Logger logger = Logger.getLogger(FindNewDOIsAndUpdate.class);
+	private static final Logger logger = LogManager.getLogger();
+	private static final Logger warningsLog = LogManager.getLogger("warningsLog");
 	
 	// Compares the DB IDs and display names of the instances to be updated from Test Reactome and GK Central
 	public static boolean verifyDOIMatches( GKInstance trDOI, GKInstance gkDOI, String newDOI ) {
 		if (trDOI.getDBID().equals(gkDOI.getDBID()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
 			return true;
 		} else if (trDOI.getDBID().equals(gkDOI.getDBID()) && !trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
-			logger.warn("[" + newDOI + "] Display names do not match: [Test Reactome]: " + trDOI.getDisplayName() + " ~ [GK Central]: " + gkDOI.getDisplayName());
+			warningsLog.warn("[" + newDOI + "] Display names do not match: [Test Reactome]: " + trDOI.getDisplayName() + " ~ [GK Central]: " + gkDOI.getDisplayName());
 			return false;
 		} else if (!trDOI.getDBID().equals(gkDOI.getDBID()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
-			logger.warn("[" + newDOI + "] DB IDs do not match: [Test Reactome]: " + trDOI.getDBID() + " ~ [GK Central]: " + gkDOI.getDBID());
+			warningsLog.warn("[" + newDOI + "] DB IDs do not match: [Test Reactome]: " + trDOI.getDBID() + " ~ [GK Central]: " + gkDOI.getDBID());
 			return false;
 		} else {
-			logger.warn("DB ID and display name do not match: [Test Reactome]: " + trDOI + " ~ [GK Central]: " + gkDOI);
+			warningsLog.warn("DB ID and display name do not match: [Test Reactome]: " + trDOI + " ~ [GK Central]: " + gkDOI);
 			return false;
 		}
 		
@@ -42,22 +44,25 @@ public class ReportTests {
 				String missedStableId = missedClean.split("\\.")[0];
 				String missedStableIdVersion = missedClean.split("\\.")[1];
 				int resolved = 0;
+				// Iterate through each of the DOI's provided in UpdateDOIs.report, trying to find a match for the DOI that wasn't updated. 
+				// If it finds a match of either DB ID, stable ID version, or the display name, it will try to determine which of those 3 fields don't match.
+				// Once it finds the field that doesn't match, it logs it and then ends the current iteration.
 				for (String key : expectedUpdatedDOIs.keySet()) 
 				{
 					if (expectedUpdatedDOIs.get(key).get("stableId").equals(missedStableId)) 
 					{
 						if (!expectedUpdatedDOIs.get(key).get("stableIdVersion").equals(missedStableIdVersion)) 
 						{
-							logger.warn("[" + key + "] StableID 'version' in DB different from expected: [DB] " + missedDoi + "* ~ [Expected] " + key + "*");
+							warningsLog.warn("[" + key + "] StableID 'version' in DB different from expected: [DB] " + missedDoi + "* ~ [Expected] " + key + "*");
 							resolved++;
 							continue;
 						} else if (!expectedUpdatedDOIs.get(key).get("displayName").equals(missedName)) {
-							logger.warn("[" + key + "] 'Display name' in DB different from expected: [DB] " + missedName + " ~ [Expected] " + expectedUpdatedDOIs.get(key).get("displayName"));
+							warningsLog.warn("[" + key + "] 'Display name' in DB different from expected: [DB] " + missedName + " ~ [Expected] " + expectedUpdatedDOIs.get(key).get("displayName"));
 							resolved++;
 							continue;
 						}
 					} else if (expectedUpdatedDOIs.get(key).get("displayName").equals(missedName)) {
-						logger.warn("[" + key + "] 'DB ID' from DB different from expected, but found matching display name: ~ [DB] " + missed + " [Expected] " + key + ":" + missedName);
+						warningsLog.warn("[" + key + "] 'DB ID' from DB different from expected, but found matching display name: ~ [DB] " + missed + " [Expected] " + key + ":" + missedName);
 						resolved++;
 						continue;
 					}
@@ -71,21 +76,21 @@ public class ReportTests {
 			{
 				for (String unresolvedDOI : unresolvedDOIs) 
 				{
-					logger.warn("[" + unresolvedDOI + "]" + "DOI does not match any DOIs expected to be updated -- Could not match display name or DB ID");
+					warningsLog.warn("[" + unresolvedDOI + "]" + "DOI does not match any DOIs expected to be updated -- Could not match display name or DB ID");
 				}
 			}
 		} else if (expectedUpdatedDOIs.size() != 0 && fetchHits > expectedUpdatedDOIs.size()) {
-			logger.warn("The following DOIs were unexpectedly updated: ");
+			warningsLog.warn("The following DOIs were unexpectedly updated: ");
 			for (Object updatedDOI : updated)
 			{
 				if (expectedUpdatedDOIs.get(updatedDOI) == null)
 				{
-					logger.warn("  " + updatedDOI);
+					warningsLog.warn("  " + updatedDOI);
 				}
 			}
 		} else if (expectedUpdatedDOIs.size() != 0) {
 
-			logger.info("All expected DOIs updated");
+			warningsLog.info("All expected DOIs updated");
 		}
 	}
 
