@@ -1,15 +1,19 @@
 package org.reactome.release.updateDOIs;
 
-import org.apache.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
 public class UpdateDOIs {
 
-  final static Logger logger = Logger.getLogger(UpdateDOIs.class);
+//  final static Logger logger = Logger.getLogger(UpdateDOIs.class);
+	private static final Logger logger = LogManager.getLogger();
 
   public static void main( String[] args ) {
 

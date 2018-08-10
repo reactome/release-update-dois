@@ -1,12 +1,12 @@
 package org.reactome.release.updateDOIs;
 
-import org.apache.log4j.Logger;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceDisplayNameGenerator;
 import org.gk.model.PersistenceAdaptor;
@@ -19,7 +19,8 @@ import org.gk.util.GKApplicationUtilities;
 
 public class FindNewDOIsAndUpdate {
 
-	final static Logger logger = Logger.getLogger(FindNewDOIsAndUpdate.class);
+	private static final Logger logger = LogManager.getLogger();
+	private static final Logger warningsLog = LogManager.getLogger("warningsLog");
 
 	private static MySQLAdaptor dbaTestReactome;
 	private static MySQLAdaptor dbaGkCentral;
@@ -48,7 +49,8 @@ public class FindNewDOIsAndUpdate {
 		try 
 		{
 			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
-			 doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+//			 doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+			doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "1912408|3232118|3232142|4085377|4090294|4655427|4755510|8985947|9013694|9034015");
 			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
 			{
@@ -155,7 +157,7 @@ public class FindNewDOIsAndUpdate {
 			fr.close();
 
 		} catch (Exception e) {
-			logger.warn("No input file found -- Continuing without checking DOIs");
+			warningsLog.warn("No input file found -- Continuing without checking DOIs");
 			e.printStackTrace();
 		}
 		return expectedUpdatedDOIs;
