@@ -11,6 +11,26 @@ New features and tests have been implemented for this iteration of UpdateDOIs:
   - Runtime tests ensure conchordance of the instance's being updated in the Test Reactome and GK Central databases
   - Users can provide a report file (UpdateDOIs.report) of DOIs that are expected to be updated. It can be created from the data found <a href="https://docs.google.com/spreadsheets/d/1KtZ_Z3rvBELroubmeO1ai5otbsS26QpXZn6au-oSCWw/edit#gid=1011530219">here</a>. This is explained further in <a href="https://github.com/reactome/data-release-pipeline/new/develop/update-dois#updatedoisreport">UpdateDOIs.report</a> section.
     - If the report has been provided, the script will report any unexpected behaviour and attempt to suggest to the user why it happened
+    
+<h2>Configuration</h2>
+
+The program uses a configuration file, `data-release-pipeline/src/main/resources/config.properties`, that must be updated before running. The file has the following parameters:
+
+```
+userTR=reactomeReleaseMysqlUsername
+userGK=gkCentralMysqlUserName
+passwordTR=reactomeReleaseMysqlPassword
+passwordGK=gkCentralMysqlPassword
+hostTR=testReactomeDatabaseServerName (eg. reactomerelease.oicr.on.ca)
+hostGK=gkCentralDatabaseServerName (eg. reactomecurator.oicr.on.ca)
+# The current release number must be added to this field.
+databaseTR=test_reactome_## 
+databaseGK=gk_central
+# The author DB_IDs for the respective Test Reactome (TR) and GK Central (GK) databases must be added.
+authorIdTR=userIdForTestReactome
+authorIdGK=userIdForGkCentral
+port=3306
+```
 
 <h2>Logging</h2>
 
