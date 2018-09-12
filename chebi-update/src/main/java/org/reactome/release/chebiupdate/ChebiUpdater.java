@@ -3,7 +3,6 @@ package org.reactome.release.chebiupdate;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,7 +17,6 @@ import org.gk.model.InstanceDisplayNameGenerator;
 import org.gk.model.PersistenceAdaptor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
-import org.gk.persistence.MySQLAdaptor.AttributeQueryRequest;
 import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
@@ -31,7 +29,7 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 
 
 public class ChebiUpdater {
-	private static final Logger logger = LogManager.getLogger();
+	private static final Logger logger = LogManager.getLogger("ChEBIUpdateLogger");
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
 	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
@@ -264,6 +262,74 @@ public class ChebiUpdater {
 				{
 					// name[0] does not match - but before adding chebName, ensure that it's not
 					// already somewhere else in the array.
+					// compare to refMolecule name[0] instead of chebiName
+					//String refMolName = molecule.getAttributeValue(attribute)
+					//
+					
+					// Names for SimpleEntities need to follow this order:
+					// 0 - Curator-given name (...if the Curator has given it a name. If not, then the newest name from ChEBI gets highest priority) - DO NOT TOUCH!!! EVER!!
+					// 1 - Newest name from ChEBI
+					// 2 - ReferenceMolecule name - BEFORE it gets newly updated value from ChEBI
+					// 3 and onwareds - other older names.
+					@SuppressWarnings("unchecked")
+					List<String> oldRefMolNames = (List<String>) molecule.getAttributeValue(ReactomeJavaConstants.name);
+					if (oldRefMolNames != null && oldRefMolNames.size() > 0)
+					{
+						String oldName = oldRefMolNames.get(0);
+						// First thing: check that the RefMol's first name (PRE-update) is the same as the SimpleEntity's *current* first name
+						if (oldName.equalsIgnoreCase(names.get(0)))
+						{
+							boolean namesContainsChEBIName = names.stream().anyMatch(s -> s.equalsIgnoreCase(chebiName));
+							// If the ChEBI name is not in the names list, add it at close to the head of the array. Curators might curate up to 3 names,
+							// so the name should be inserted at the 4th position if possible.
+							if (!namesContainsChEBIName)
+							{
+								addChEBINameAtAppropriatePosition(chebiName, names);
+							}
+							else
+							// If the ChEBI name IS in the list, we need to move the ChEBI name from wherever it is TO after the Curated names (there could be up to 3 curated names).
+							{
+								boolean done = false;
+								int i = 0;
+								
+								// default to -1 - this will probably trigger an IndexOutOfBounds since -1 is not a valid index in an array.
+								// This should not happen because in this block: namesContainsChEBIName == true BUT if this does get triggered,
+								// it means the logic to find the name was flawed somehow... 
+								int positionOfChebi = -1;
+								
+								while (!done)
+								{
+									if (names.get(i).equalsIgnoreCase(chebiName))
+									{
+										positionOfChebi = i;
+										done = true;
+									}
+									i++;
+									if (i > names.size())
+									{
+										done = true;
+									}
+								}
+								names.remove(positionOfChebi);
+								// don't do any array manipulation if the ChEBI name is *already* in 4th place,
+								// since that's where it will get re-added anyway.
+								if (positionOfChebi != 3)
+								{
+									addChEBINameAtAppropriatePosition(chebiName, names);
+								}
+							}
+						}
+						else // old RefMol name does not match SimpleEntity name...
+						{
+							// Now we need to check that the ChEBI name is NOT in the first three positions of "names" because
+							// those could have been manually modified by curators. 
+							
+						}
+					}
+					
+					
+					// Old logic (not quite correct)
+					/*
 					if (!names.get(0).toLowerCase().equals(chebiName.toLowerCase()))
 					{
 						int i = 0;
@@ -272,6 +338,7 @@ public class ChebiUpdater {
 						{
 							String name = names.get(i);
 							// We found the chebi name so now we swap.
+							// NOTE: This should only be done if the instance is a SimpleEntity *not* a ReferenceMolecule.
 							if (name.toLowerCase().equals(chebiName.toLowerCase()))
 							{
 								nameFound = true;
@@ -291,6 +358,7 @@ public class ChebiUpdater {
 							logger.debug("Adding new name to {}, names: {}", refEntity.toString(), names);
 						}
 					}
+					*/
 				}
 				// Update the names of the ReferenceEntity.
 				refEntity.setAttributeValue(ReactomeJavaConstants.name, names);
@@ -301,6 +369,20 @@ public class ChebiUpdater {
 					adaptor.updateInstanceAttribute(refEntity, ReactomeJavaConstants.name);
 				}
 			}
+		}
+	}
+
+	private void addChEBINameAtAppropriatePosition(String chebiName, LinkedList<String> names)
+	{
+		if (names.size() > 3 )
+		{
+			// add after the 3 curated names.
+			names.add(3, chebiName);
+		}
+		else
+		{
+			// add to the end of the list (which is pretty short).
+			names.add(chebiName);
 		}
 	}
 
@@ -334,38 +416,21 @@ public class ChebiUpdater {
 
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
 		logger.info("*** Duplicate ReferenceMolecules ***\n");
-		int duplicateIdentifierCount = 0;
+
 		while (duplicates.next())
 		{
-			duplicateIdentifierCount++;
-			String identifier = String.valueOf(duplicates.getInt(1));
-			// getInt returns "0" if the value is NULL
-			if (identifier.equals("0"))
-			{
-				identifier = null;
-			}
+			int identifier = duplicates.getInt(1);
 			int numberOfDuplicates = duplicates.getInt(2);
-			logger.info("** ReferenceMolecule with identifier {} occurs {} times:\n\n", identifier, numberOfDuplicates);
-			Collection<GKInstance> dupesOfIdentifier;
-			if (identifier == null)
-			{
-				AttributeQueryRequest aqrIdentifier = adaptor.new AttributeQueryRequest("ReferenceMolecule", "identifier", "IS NULL", "");
-				Collection<GKInstance> refDBs = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI");
-				AttributeQueryRequest aqrDBName = adaptor.new AttributeQueryRequest("ReferenceMolecule", "referenceDatabase", "=", refDBs.stream().findFirst().get().getDBID());
-
-				dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(aqrIdentifier, aqrDBName));
-			}
-			else
-			{
-				dupesOfIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", identifier);
-			}
+			this.duplicatesSB.append("** ReferenceMolecule with identifier " + identifier + " occurs " + numberOfDuplicates + " times:\n\n");
+			@SuppressWarnings("unchecked")
+			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", identifier);
 			for (GKInstance duplicate : dupesOfIdentifier)
 			{
-				logger.info(duplicate.toStanza());
+				this.duplicatesSB.append(duplicate.toStanza()).append("\n");
 			}
 		}
 		duplicates.close();
-		if (duplicateIdentifierCount > 0)
+		if (this.duplicatesSB.length() > 0)
 		{
 			logger.info(this.duplicatesSB.toString());
 		}
@@ -389,47 +454,27 @@ public class ChebiUpdater {
 		// The web service calls are a bit slow to respond, so do them in parallel.
 		refMolecules.parallelStream().forEach(molecule ->
 		{
-			String identifier = null;
 			try
 			{
-				identifier = (String) molecule.getAttributeValue("identifier");
-				if (identifier != null && !identifier.trim().equals(""))
+				String identifier = (String) molecule.getAttributeValue("identifier");
+				Entity entity = this.chebiClient.getCompleteEntity(identifier);
+				if (entity != null)
 				{
-					// Identifiers in Reactome *probably* won't have the "CHEBI:" prefix so we'll have to add it.
-					if (!identifier.startsWith("CHEBI:"))
-					{
-						identifier = "CHEBI:" + identifier;
-					}
-					Entity entity = this.chebiClient.getCompleteEntity(identifier);
-					if (entity != null)
-					{
-						entityMap.put(molecule.getDBID(), entity);
-					}
-					else
-					{
-						failedEntitiesList.add(molecule);
-					}
+					entityMap.put(molecule.getDBID(), entity);
+				}
+				else
+				{
+					failedEntitiesList.add(molecule);
 				}
 			}
 			catch (ChebiWebServiceFault_Exception e)
 			{
-				try
-				{
-					logger.error("WebService error: {} ; Identifier that triggered it: {}; Molecule DB ID: {}", e.getMessage(), identifier, molecule.getDBID());
-				}
-				catch (Exception e1)
-				{
-					e1.printStackTrace();
-				}
-				//e.printStackTrace();
+				logger.error("WebService error! {}", e.getMessage());
+				e.printStackTrace();
 				// Webservice error should probably break execution - if one fails, they will all probably fail.
 				// This is *not* a general principle, but is based on my experience with the ChEBI webservice specifically -
 				// it's a pretty stable service so it's unlikely that if one service call fails, the others will succeed.
-				if (!e.getMessage().equals("ERROR (Entity status): the entity in question is deleted, obsolete, or not yet released.")
-					&& !e.getMessage().equals("ERROR (CHEBI id): invalid ChEBI identifier - it must be either a number or be a number with the prefix 'CHEBI:'."))
-				{
-					throw new RuntimeException(e);
-				}
+				throw new RuntimeException(e);
 			}
 			catch (InvalidAttributeException e)
 			{
