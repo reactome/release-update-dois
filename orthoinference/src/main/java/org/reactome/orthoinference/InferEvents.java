@@ -39,19 +39,8 @@ public class InferEvents
 	
 	//TODO: instance edit initialization; GO_CellularComponent instance; Config_Species.pm; load_class_attribute_values_of_multiple_instances (complex/ewas)
 	@SuppressWarnings("unchecked")
-	public static void main(String args[]) throws Exception
+	public static void eventInferrer(Properties props, String pathToConfig, String pathToSpeciesConfig) throws Exception
 	{
-		String pathToConfig = "src/main/resources/config.properties";
-		String pathToSpeciesConfig = "src/main/resources/Species.json";
-		
-		if (args.length > 0 && !args[0].equals(""))
-		{
-			pathToConfig = args[0];
-		}
-		
-		Properties props = new Properties();
-		props.load(new FileInputStream(pathToConfig));
-		
 		Object speciesToInferFromLong = "Homo sapiens";
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
@@ -108,7 +97,6 @@ public class InferEvents
 			}
 			InferEWAS.readENSGMappingFile(species);
 			InferEWAS.createUniprotDbInst();
-	
 			InferEWAS.createEnsemblProteinDbInst(speciesName, refDbUrl, refDbProteinUrl);
 			InferEWAS.createEnsemblGeneDBInst(speciesName, refDbUrl, refDbGeneUrl);
 			if (altRefDb != null)
@@ -129,6 +117,9 @@ public class InferEvents
 			OrthologousEntity.setComplexSummationInst();
 		
 		
+/**
+ *  Start of code
+ */
 		// Gets DB instances of source species
 		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
 		if (!sourceSpeciesInst.isEmpty())
@@ -136,10 +127,21 @@ public class InferEvents
 			String dbId = sourceSpeciesInst.iterator().next().getDBID().toString();
 			// Gets Reaction instances of source species
 			Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
+//			
+			ArrayList<Long> dbids = new ArrayList<Long>();
+			HashMap<Long, GKInstance> reactionMap = new HashMap<Long, GKInstance>();
+			for (GKInstance reactionInst : reactionInstances) {
+				dbids.add(reactionInst.getDBID());
+				reactionMap.put(reactionInst.getDBID(), reactionInst);
+			}
+			Collections.sort(dbids);
+//			
 			if (!reactionInstances.isEmpty()) // TODO: Output error message if it is empty
 			{
-				for (GKInstance reactionInst : reactionInstances)
+				for (Long dbid : dbids)
+//				for (GKInstance reactionInst : reactionInstances)
 				{
+					GKInstance reactionInst = reactionMap.get(dbid);
 					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute. 
 					// Adds to manualHumanEvents array if it passes conditions.
 					ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
@@ -172,7 +174,7 @@ public class InferEvents
 						continue;
 					}
 					// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
-					InferReaction.inferEvent(reactionInst);
+					InferReaction.reactionInferrer(reactionInst);
 				}
 			}
 		}

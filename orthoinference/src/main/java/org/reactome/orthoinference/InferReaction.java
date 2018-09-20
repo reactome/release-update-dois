@@ -28,7 +28,7 @@ public class InferReaction {
 	private static ArrayList<GKInstance> inferrableHumanEvents = new ArrayList<GKInstance>();
 	
 	// Infers PhysicalEntity instances of input, output, catalyst activity, and regulations that are associated with incoming reactionInst.
-	public static void inferEvent(GKInstance reactionInst) throws InvalidAttributeException, Exception
+	public static void reactionInferrer(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
 		// Checks if an instance's inference should be skipped, based on a variety of factors such as a manual skip list, if it's chimeric, etc. 
 		if (SkipTests.skipInstance(reactionInst))
