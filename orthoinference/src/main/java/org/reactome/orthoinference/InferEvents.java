@@ -58,7 +58,7 @@ public class InferEvents
 		
 		SkipTests.getSkipList("normal_event_skip_list.txt");
 		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
-		
+
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
 		JSONObject jsonObject = (JSONObject) obj;
@@ -116,9 +116,8 @@ public class InferEvents
 			InferEvents.setEvidenceTypeInst();
 			OrthologousEntity.setComplexSummationInst();
 		
-		
 /**
- *  Start of code
+ *  Start of ReactionlikeEvent inference 
  */
 		// Gets DB instances of source species
 		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
@@ -136,7 +135,7 @@ public class InferEvents
 			}
 			Collections.sort(dbids);
 //			
-			if (!reactionInstances.isEmpty()) // TODO: Output error message if it is empty
+			if (!reactionInstances.isEmpty())
 			{
 				for (Long dbid : dbids)
 //				for (GKInstance reactionInst : reactionInstances)

@@ -45,13 +45,12 @@ public class InferReaction {
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants._displayName, reactionInst.getAttributeValue(ReactomeJavaConstants._displayName));
-			
-			// Filter critera that finds the total number of distinct proteins associated with an instance, as well as the number that can be inferred.
-			// Total proteins are stored in reactionProteinCounts index 0, inferrable proteins in index 1, and the maximum number of homologues for any entity involved in index 2.
+
+			// Filter criteria that finds the total number of distinct proteins associated with an instance, as well as the number that can be inferred.
+			// Total proteins are stored in reactionProteinCounts[0], inferrable proteins in [1], and the maximum number of homologues for any entity involved in index [2].
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
 			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
 			if (reactionProteinCounts.get(0) > 0) {
-				
 				String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
 				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, and orthoinference is attempted.
 				eligibleCount++;

@@ -18,7 +18,7 @@ public class OrthologousEntity {
 	
 	private static MySQLAdaptor dba;
 	private static HashMap<GKInstance, GKInstance> orthologousEntity = new HashMap<GKInstance,GKInstance>();
-	private static HashMap<GKInstance, GKInstance> homolGEE = new HashMap<GKInstance,GKInstance>();
+	private static HashMap<GKInstance, GKInstance> homolEWAS = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> complexPolymer = new HashMap<GKInstance, GKInstance>();
 	private static HashMap<GKInstance, GKInstance> inferredGSE = new HashMap<GKInstance, GKInstance>();
 	private static GKInstance complexSummationInst;
@@ -29,9 +29,9 @@ public class OrthologousEntity {
 	private static HashMap<String,GKInstance> entitySetIdenticals = new HashMap<String,GKInstance>();
 
 	// The heart of the OrthoInference process. This function takes PhysicalEntity (PE) instances and will infer those that are EWAS', Complexes/Polymers, or EntitySets.
-	// The function's arguements are an incoming PE instance and an override attribute. Instances that are comprised of PE's will often recursively call this createOrthoEntity function
-	// on these constituent PE's with the override attribute set to True. This ensures that these PE's are inferred, despite the fact that they might not pass some filter criteria.
-	// This is often handled using 'mock' instances (ie. 'ghost instances' from Perl script), which allow a PE to be orthoinferred without truly committing it to the DB.
+	// The function's arguments are an incoming PE instance and an override attribute. Instances that are comprised of PE's will often recursively call this createOrthoEntity function
+	// on constituent PE's with the override attribute set to 'true'. This ensures that these PE's are inferred, despite the fact that they might not pass some filter criteria.
+	// This is often handled using 'mock' instances (i.e. 'ghost instances' from Perl script), which allow a PE to be orthoinferred without having to commit it to the DB.
 	public static GKInstance createOrthoEntity(GKInstance entityInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		GKInstance infEntity = null;
@@ -43,7 +43,7 @@ public class OrthologousEntity {
 				if (!SpeciesCheck.hasSpecies(entityInst))
 				{
 					infEntity = entityInst;
-				// Will either infer an EWAS or return a mock GEE instance if needed (ie. if override is currently 'True')
+				// Will either infer an EWAS or return a mock GEE instance if needed (i.e. if override is currently 'True')
 				} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.GenomeEncodedEntity))
 				{
 					if (entityInst.getSchemClass().toString().contains(ReactomeJavaConstants.EntityWithAccessionedSequence))
@@ -71,18 +71,17 @@ public class OrthologousEntity {
 						infEntity = entityInst;
 					}
 				// Handles SimpleEntities by returning the current instance. The idea behind this is that SimpleEntities wouldn't need
-				// to be orthoinferred since they wouldn't change between species {Note from David Croft}.
+				// to be inferred since they wouldn't change between species {Note from infer_events.pl -- David Croft}.
 				} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.SimpleEntity))
 				{
 					infEntity = entityInst;
 				} else {
-//					System.out.println("  Unknown");
+					System.out.println("Unknown PhysicalEntity class: " + entityInst.getClass());
 				}
 				if (override)
 				{
 					return infEntity;
 				}
-				
 				orthologousEntity.put(entityInst, infEntity);
 			} 
 			return orthologousEntity.get(entityInst);
@@ -90,26 +89,26 @@ public class OrthologousEntity {
 			return entityInst;
 		}
 	}
-	// Function that first tries to infer any EWAS' associated the instance. For those that have more than 1, it re-structures the inference to a DefinedSet.
-	// If there is no EWAS instances inferred, it will return a mock instance if override is set. 
+	// Function that first tries to infer any EWAS' associated with the instance. For those that have more than 1, it's re-structured to a DefinedSet instance.
+	// If there is no EWAS instances inferred, it will either return null or, if override is set, return a mock instance. 
 	public static GKInstance createInfEWAS(GKInstance ewasInst, boolean override) throws InvalidAttributeException, Exception
 	{
-		if (homolGEE.get(ewasInst) == null)
+		if (homolEWAS.get(ewasInst) == null)
 		{
-			// Attempt to infer all EWAS' associated with instance
-			ArrayList<GKInstance> infEWASInstances = InferEWAS.inferEWAS(ewasInst);
+			// Attempt to infer the EWAS 
+			ArrayList<GKInstance> infEWASInstances = InferEWAS.ewasInferrer(ewasInst);
 			// If number of EWAS instances is greater than 1, then it is considered a DefinedSet. A new inferred instance with definedSet class is created.
 			if (infEWASInstances.size() > 1)
 			{
-				// TODO: Instance Edit; Check Intracellular; opt_filt logic
+				// TODO: Instance Edit
 				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 				GKInstance definedSetInst = new GKInstance(definedSetClass);
 				definedSetInst.setDbAdaptor(dba);
 				String definedSetName = "Homologues of " + ewasInst.getAttributeValue(ReactomeJavaConstants.name);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
+				definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, ewasInst.getAttributeValue(ReactomeJavaConstants.compartment));
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
-				definedSetInst.addAttributeValue(ReactomeJavaConstants._displayName, ewasInst.getAttributeValue(ReactomeJavaConstants._displayName));
 				
 				// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
 				String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) definedSetInst.getSchemClass(), definedSetInst);
@@ -120,7 +119,10 @@ public class OrthologousEntity {
 					definedSetInst = GenerateInstance.checkForIdenticalInstances(definedSetInst);
 					definedSetIdenticals.put(cacheKey, definedSetInst);
 				}
-				
+				// Name information needs to be updated after getting from cache
+
+				definedSetInst.addAttributeValue(ReactomeJavaConstants._displayName, definedSetName);
+
 				if (GenerateInstance.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom))
 				{
 					definedSetInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, ewasInst);
@@ -131,20 +133,19 @@ public class OrthologousEntity {
 					ewasInst.addAttributeValue(ReactomeJavaConstants.inferredTo, definedSetInst);
 				}
 				dba.updateInstanceAttribute(ewasInst, ReactomeJavaConstants.inferredTo);
-				homolGEE.put(ewasInst, definedSetInst);
+				homolEWAS.put(ewasInst, definedSetInst);
 			} else if (infEWASInstances.size() == 1)
 			{
-				homolGEE.put(ewasInst, infEWASInstances.get(0));
+				homolEWAS.put(ewasInst, infEWASInstances.get(0));
 			} else {
 				if (override) {
-				GKInstance mockedInst = GenerateInstance.newMockGKInstance(ewasInst);
-				return mockedInst;
+				return GenerateInstance.newMockGKInstance(ewasInst);
 				} else {
 					return nullInst;
 				}
 			}
 		}
-		return homolGEE.get(ewasInst);
+		return homolEWAS.get(ewasInst);
 	}
 	// Infers Complex or Polymer instances. These instances are generally comprised of more than 1 PhysicalEntity, and thus calls 'createOrthoEntity' for each one. Complex/Polymer instances
 	// are also subject to the 'countDistinctProteins' function. The result from this needs to have at least 75% of total proteins be inferrable for orthoinference to continue. 
@@ -165,11 +166,7 @@ public class OrthologousEntity {
 			}
 			if (!override)
 			{
-				if (complexTotal > 0 && complexInferrable == 0)
-				{
-					return nullInst;
-				}
-				if (percent < 75)
+				if ((complexTotal > 0 && complexInferrable == 0) || percent < 75)
 				{
 					return nullInst;
 				}
@@ -180,20 +177,20 @@ public class OrthologousEntity {
 			//TODO: Remove brackets from name?
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.name, complexInst.getAttributeValue(ReactomeJavaConstants.name));
 			ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
-			// Constituent instance handling is different depending on if it is a Complex or a Polymer. Complexes will infer all 'components' while Polymers will infer all 'repeatedUnits'.
+			// Inference handling is different depending on if it is a Complex or a Polymer. Complexes will infer all 'components' while Polymers will infer all 'repeatedUnits'.
 			if (complexInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
 			{
 				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
 				{		
 					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
 				}
-			infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
+				infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
 			} else {
 				for (Object repeatedUnitInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
 				{		
 					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) repeatedUnitInst, true));
 				}
-			infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
+				infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 			}
 			infComplexInst.addAttributeValue(ReactomeJavaConstants._displayName, complexInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			
@@ -206,7 +203,7 @@ public class OrthologousEntity {
 				infComplexInst = GenerateInstance.checkForIdenticalInstances(infComplexInst);
 				complexIdenticals.put(cacheKey, infComplexInst);
 			}
-			
+
 			if (infComplexInst.getDBID() != complexInst.getDBID())
 			{
 				if (GenerateInstance.addAttributeValueIfNeccesary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom))
@@ -224,9 +221,8 @@ public class OrthologousEntity {
 			if (override)
 			{
 				return infComplexInst;
-			} else {
-				complexPolymer.put(complexInst, infComplexInst);
-			}
+			} 
+			complexPolymer.put(complexInst, infComplexInst);
 		}
 		return complexPolymer.get(complexInst);
 	}
@@ -252,6 +248,7 @@ public class OrthologousEntity {
 					membersList.add(infMember);
 				}
 			}
+			// Begin inference of EntitySet
 			GKInstance infEntitySetInst = GenerateInstance.newInferredGKInstance(entitySetInst);
 			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.name, entitySetInst.getAttributeValuesList(ReactomeJavaConstants.name));
 			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasMember, membersList);
@@ -329,10 +326,9 @@ public class OrthologousEntity {
 					} else if (membersList.size() == 1) {
 						infEntitySetInst = membersList.get(0);
 					}
-					// If it has more than 1 member, nothing happens here; all members are stored in this inferred instances 'HasMember' attribute.
+					// If it has more than 1 member (which is the logic that would theoretically go here, nothing happens here; all members are stored in this inferred instances 'HasMember' attribute.
 				}
 			}
-			infEntitySetInst.addAttributeValue(ReactomeJavaConstants._displayName, entitySetInst.getAttributeValue(ReactomeJavaConstants._displayName));
 
 			// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
 			String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infEntitySetInst.getSchemClass(), infEntitySetInst);
@@ -343,7 +339,9 @@ public class OrthologousEntity {
 				infEntitySetInst = GenerateInstance.checkForIdenticalInstances(infEntitySetInst);
 				entitySetIdenticals.put(cacheKey, infEntitySetInst);
 			}
-			
+			// displayName information needs to be updated once it's been grabbed from the cache
+			infEntitySetInst.addAttributeValue(ReactomeJavaConstants._displayName, entitySetInst.getAttributeValue(ReactomeJavaConstants._displayName));
+
 			if (infEntitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entitySetInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 			{
 				if (GenerateInstance.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom))
@@ -387,7 +385,7 @@ public class OrthologousEntity {
 	public static void resetVariables()
 	{
 		orthologousEntity = new HashMap<GKInstance,GKInstance>();
-		homolGEE = new HashMap<GKInstance,GKInstance>();
+		homolEWAS = new HashMap<GKInstance,GKInstance>();
 		complexPolymer = new HashMap<GKInstance, GKInstance>();
 		inferredGSE = new HashMap<GKInstance, GKInstance>();
 		definedSetIdenticals = new HashMap<String,GKInstance>();
