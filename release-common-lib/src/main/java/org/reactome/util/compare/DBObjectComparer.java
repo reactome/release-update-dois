@@ -1,14 +1,15 @@
 package org.reactome.util.compare;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.gk.model.GKInstance;
 import org.gk.model.Instance;
-import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.SchemaAttribute;
 import org.gk.schema.SchemaClass;
 
@@ -33,7 +34,26 @@ public class DBObjectComparer
 	 */
 	public static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb)
 	{
-		return compareInstances(inst1, inst2, sb, 5);
+		return compareInstances(inst1, inst2, sb, 5, false);
+	}
+	
+	/**
+	 * Compares two GKInstances.
+	 * @param inst1 - the first instance.
+	 * @param inst2 - the second instance.
+	 * @param sb - a StringBuilder that will contain a detailed report of differences.
+	 * @param checkReferrers - Should referring instances also be checked? If <b>true</b>, then referring attributes will <em>also</em> be checked for differences.
+	 * They will be followed to the same recursion depth as regular attributes. Using this with a high maxRecursionDepth could lead to a very long execution time. Be careful!!
+	 * You might also want to use a custom predicate to filter out attributes that could lead to a cyclical difference check.
+	 * @return The number of differences between the two instances.
+	 * A single-valued attribute that differs will count as 1 diff.
+	 * If the instances have different schema classes, that will count as 1 diff.
+	 * If a multi-valued attribute has a different number of elements between the two intances, 
+	 * that will count as 1 diff and the elements will NOT be compared.
+	 */
+	public static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb, boolean checkReferrers)
+	{
+		return compareInstances(inst1, inst2, sb, 5, checkReferrers);
 	}
 	
 	/**
@@ -42,15 +62,18 @@ public class DBObjectComparer
 	 * @param inst2 - the second instance.
 	 * @param sb - a StringBuilder that will contain a detailed report of differences.
 	 * @param maxRecursionDepth - the maximum depth of recursion that will be allowed. Normally a depth of 2 or 3 is probably sufficient.
+	 * @param checkReferrers - Should referring instances also be checked? If <b>true</b>, then referring attributes will <em>also</em> be checked for differences.
+	 * They will be followed to the same recursion depth as regular attributes. Using this with a high maxRecursionDepth could lead to a very long execution time. Be careful!!
+	 * You might also want to use a custom predicate to filter out attributes that could lead to a cyclical difference check.
 	 * @return The number of differences between the two instances.
 	 * A single-valued attribute that differs will count as 1 diff.
 	 * If the instances have different schema classes, that will count as 1 diff.
 	 * If a multi-valued attribute has a different number of elements between the two intances, 
 	 * that will count as 1 diff and the elements will NOT be compared.
 	 */
-	public static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb, int maxRecursionDepth)
+	public static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb, int maxRecursionDepth, boolean checkReferrers)
 	{
-		return compareInstances(inst1, inst2, sb, 0, 0, maxRecursionDepth, null);
+		return compareInstances(inst1, inst2, sb, 0, 0, maxRecursionDepth, null, checkReferrers);
 	}
 	
 	/**
@@ -59,15 +82,26 @@ public class DBObjectComparer
 	 * @param inst2 - the second instance.
 	 * @param sb - a StringBuilder that will contain a detailed report of differences.
 	 * @param maxRecursionDepth - the maximum depth of recursion that will be allowed. Normally a depth of 2 or 3 is probably sufficient.
+	 * @param customAttributeNameFilter - A custom Predicate that will be used to filter attribute names. The default predicate looks like this:<pre>
+Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
+						return !a.getName().equals("DB_ID")
+							&& !a.getName().equals("dateTime")
+							&& !a.getName().equals("modified")
+							&& !a.getName().equals("created");
+					};
+	 </pre>
+	 * @param checkReferrers - Should referring instances also be checked? If <b>true</b>, then referring attributes will <em>also</em> be checked for differences.
+	 * They will be followed to the same recursion depth as regular attributes. Using this with a high maxRecursionDepth could lead to a very long execution time. Be careful!!
+	 * You might also want to use a custom predicate to filter out attributes that could lead to a cyclical difference check.
 	 * @return The number of differences between the two instances.
 	 * A single-valued attribute that differs will count as 1 diff.
 	 * If the instances have different schema classes, that will count as 1 diff.
 	 * If a multi-valued attribute has a different number of elements between the two intances, 
 	 * that will count as 1 diff and the elements will NOT be compared.
 	 */
-	public static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb, int maxRecursionDepth, Predicate<? super SchemaAttribute> customAttributeNameFilter)
+	public static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb, int maxRecursionDepth, Predicate<? super SchemaAttribute> customAttributeNameFilter, boolean checkReferrers)
 	{
-		return compareInstances(inst1, inst2, sb, 0, 0, maxRecursionDepth, customAttributeNameFilter);
+		return compareInstances(inst1, inst2, sb, 0, 0, maxRecursionDepth, customAttributeNameFilter, checkReferrers);
 	}
 	
 	/**
@@ -77,13 +111,24 @@ public class DBObjectComparer
 	 * @param sb - a StringBuilder that will contain a detailed report of differences.
 	 * @param diffCount - The number of differences so far. Should start at 0.
 	 * @param recursionDepth - The depth of the recursion so far. Should start at 0.
+	 * @param customAttributeNameFilter - A custom Predicate that will be used to filter attribute names. The default predicate looks like this:<pre>
+Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
+						return !a.getName().equals("DB_ID")
+							&& !a.getName().equals("dateTime")
+							&& !a.getName().equals("modified")
+							&& !a.getName().equals("created");
+					};
+	 </pre>
+	 * @param checkReferrers - Should referring instances also be checked? If <b>true</b>, then referring attributes will <em>also</em> be checked for differences.
+	 * They will be followed to the same recursion depth as regular attributes. Using this with a high maxRecursionDepth could lead to a very long execution time. Be careful!!
+	 * You might also want to use a custom predicate to filter out attributes that could lead to a cyclical difference check.
 	 * @return The number of differences between the two instances.
 	 * A single-valued attribute that differs will count as 1 diff.
 	 * If the instances have different schema classes, that will count as 1 diff.
 	 * If a multi-valued attribute has a different number of elements between the two intances, 
 	 * that will count as 1 diff and the elements will NOT be compared.
 	 */
-	private static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb, int diffCount, int recursionDepth, int maxRecursionDepth, Predicate<? super SchemaAttribute> customAttributeNameFilter)
+	private static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb, int diffCount, int recursionDepth, int maxRecursionDepth, Predicate<? super SchemaAttribute> customAttributeNameFilter, boolean checkReferrers)
 	{
 		int count = diffCount;
 		SchemaClass class1 = inst1.getSchemClass();
@@ -91,9 +136,13 @@ public class DBObjectComparer
 		
 		if (!class1.getName().equals("InstanceEdit") && !class2.getName().equals("InstanceEdit"))
 		{
+			String[] indentArray = new String[recursionDepth * 2];
+			Arrays.fill(indentArray, " ");
+			String indentString = String.join("", indentArray);
+			
 			if (!class1.getName().equals(class2.getName()))
 			{
-				sb.append("Schema classes don't match, so instances can't be compared! Instance 1 is a " + class1.getName() + " and Instance 2 is a " + class2.getName()).append("\n");
+				sb.append(indentString + "Schema classes don't match, so instances can't be compared! Instance 1 is a " + class1.getName() + " and Instance 2 is a " + class2.getName()).append("\n");
 				return 1;
 			}
 			else
@@ -114,47 +163,68 @@ public class DBObjectComparer
 							&& !a.getName().equals("dateTime")
 							&& !a.getName().equals("modified")
 							&& !a.getName().equals("created");
-					};	
+					};
 				}
 				
 				
 				
 				@SuppressWarnings("unchecked")
-				List<SchemaAttribute> attributes = ( (Collection<SchemaAttribute>) class1.getAttributes()).stream().filter(attributeNameFilter).collect(Collectors.toList());
+				List<SchemaAttribute> regularAttributes = ( (Collection<SchemaAttribute>) class1.getAttributes()).stream().filter(attributeNameFilter).collect(Collectors.toList());
+				@SuppressWarnings("unchecked")
+				List<SchemaAttribute> referrerAttributes = ( (Collection<SchemaAttribute>) class1.getReferers()).stream().filter(attributeNameFilter).collect(Collectors.toList());
+				List<SchemaAttribute> allAttributes = new ArrayList<SchemaAttribute>(regularAttributes.size() + referrerAttributes.size());
 				
-				for (SchemaAttribute attrib : attributes)
+				allAttributes.addAll(regularAttributes);
+				if (checkReferrers)
 				{
+					allAttributes.addAll(referrerAttributes);
+				}
+				
+				for (SchemaAttribute attrib : allAttributes)
+				{
+					String attributeQualifier = "";
+					BiFunction<String, GKInstance, List<?>> getValuesFunction;
+					if (regularAttributes.contains(attrib))
+					{
+						getValuesFunction = (s, i) ->
+						{
+							try
+							{
+								return (List<GKInstance>) i.getAttributeValuesList(s);
+							}
+							catch (Exception e)
+							{
+								e.printStackTrace();
+							}
+							return null;
+						} ;
+					}
+					else
+					{
+						attributeQualifier = " referrer";
+						getValuesFunction = (s, i) ->
+						{
+							try
+							{
+								return (List<GKInstance>) i.getReferers(s);
+							}
+							catch (Exception e)
+							{
+								e.printStackTrace();
+							}
+							return null;
+						} ;
+					}
+
 					if (attrib.getType().equals(GKInstance.class) || attrib.getType().equals(Instance.class))
 					{
 						List<GKInstance> values1 = new ArrayList<GKInstance>();
-						try
-						{
-							values1 = (List<GKInstance>) inst1.getAttributeValuesList(attrib.getName());
-						}
-						catch (InvalidAttributeException e)
-						{
-							e.printStackTrace();
-						}
-						catch (Exception e)
-						{
-							e.printStackTrace();
-						}
+						values1 = (List<GKInstance>) getValuesFunction.apply(attrib.getName(), inst1);
 						
 						List<GKInstance> values2 = new ArrayList<GKInstance>();
-						try
-						{
-							values2 = (List<GKInstance>) inst2.getAttributeValuesList(attrib.getName());
-						}
-						catch (InvalidAttributeException e)
-						{
-							e.printStackTrace();
-						}
-						catch (Exception e)
-						{
-							e.printStackTrace();
-						}
-						
-						if (!values1.isEmpty() && !values2.isEmpty())
+						values2 = (List<GKInstance>) getValuesFunction.apply(attrib.getName(), inst2);
+
+						if (values1 != null && values2 != null)
 						{
 							if (values1.size() == values2.size())
 							{
@@ -162,50 +232,29 @@ public class DBObjectComparer
 								{
 									if (recursionDepth < maxRecursionDepth)
 									{
-										count = compareInstances(values1.get(i), values2.get(i), sb, count, recursionDepth + 1, maxRecursionDepth, attributeNameFilter);
+										sb.append(indentString).append(" Recursing on ").append(attrib.getName()).append("...\n"); 
+										count = compareInstances(values1.get(i), values2.get(i), sb, count, recursionDepth + 1, maxRecursionDepth, attributeNameFilter, checkReferrers);
 									}
 								}
 							}
 							else
 							{
-								sb.append("Count mismatch for multi-valued attribute \"" + attrib.getName() + "\" Instance 1 has " + values1.size() + " elements but Instance 2 has " + values2.size() + " elements.\n");
+								sb.append(indentString + "Count mismatch for multi-valued"+attributeQualifier+" attribute \"" + attrib.getName() + "\" Instance 1 (\""+inst1.toString()+"\") has " + values1.size() + " elements but Instance 2 (\""+inst2.toString()+"\") has " + values2.size() + " elements.\n");
 								count ++;
 							}
 						}
-						
 					}
 					else
 					{	
 						List<Object> values1 = new ArrayList<Object>();
-						try
-						{
-							values1 = inst1.getAttributeValuesList(attrib.getName());
-						}
-						catch (InvalidAttributeException e)
-						{
-							e.printStackTrace();
-						}
-						catch (Exception e)
-						{
-							e.printStackTrace();
-						}
+						//values1 = inst1.getAttributeValuesList(attrib.getName());
+						values1 = (List<Object>) getValuesFunction.apply(attrib.getName(), inst1);
 						
 						List<Object> values2 = new ArrayList<Object>();
-						try
-						{
-							values2 = inst2.getAttributeValuesList(attrib.getName());
-						}
-						catch (InvalidAttributeException e)
-						{
-							e.printStackTrace();
-						}
-						catch (Exception e)
-						{
-							e.printStackTrace();
-						}
+						//values2 = inst2.getAttributeValuesList(attrib.getName());
+						values2 = (List<Object>) getValuesFunction.apply(attrib.getName(), inst2);
 						
-
-						if (!values1.isEmpty() && !values2.isEmpty())
+						if (values1 != null && values2 != null)
 						{
 							if (values1.size() == values2.size())
 							{
@@ -213,14 +262,14 @@ public class DBObjectComparer
 								{
 									if (!values1.get(i).equals(values2.get(i)))
 									{
-										sb.append("Mismatch on attribute \""+attrib.getName()+"\"\nInstance 1 has value:\t"+values1.get(i) + "\nInstance 2 has value:\t"+values2.get(i)).append("\n");
+										sb.append(indentString + "Mismatch on"+attributeQualifier+" attribute \""+attrib.getName()+"\"\n"+indentString+"Instance 1 (\""+inst1.toString()+"\") has value:\t"+values1.get(i) + "\n"+indentString+"Instance 2 (\""+inst2.toString()+"\") has value:\t"+values2.get(i)).append("\n");
 										count++;
 									}
 								}
 							}
 							else
 							{
-								sb.append("Count mismatch for multi-valued attribute \"" + attrib.getName() + "\"Instance 1 has " + values1.size() + " elements but Instance 2 has " + values2.size() + " elements.\n");
+								sb.append(indentString + "Count mismatch for multi-valued"+attributeQualifier+" attribute \"" + attrib.getName() + "\" Instance 1 (\""+inst1.toString()+"\") has " + values1.size() + " elements but Instance 2 (\""+inst2.toString()+"\") has " + values2.size() + " elements.\n");
 								count ++;
 							}
 
