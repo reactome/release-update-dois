@@ -20,8 +20,6 @@ public class JavaVsPerlComparison
 		MySQLAdaptor perlUpdatedDB = new MySQLAdaptor("localhost", "gk_central_R66_before_chebi_update.sql", "root", "root", 3308);
 		int diffCount = 0;
 		int sameCount = 0;
-//		int simpleEntityDiffCount = 0;
-//		int simpleEntitySameCount = 0;
 
 		@SuppressWarnings("unchecked")
 		String chebiRefDBID = (new ArrayList<GKInstance>( javaUpdatedDB.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "ChEBI"))).get(0).getDBID().toString();
@@ -32,7 +30,6 @@ public class JavaVsPerlComparison
 //		@SuppressWarnings("unchecked")
 //		Collection<GKInstance> perlRefMolecules = (Collection<GKInstance>) perlUpdatedDB.fetchInstanceByAttribute("ReferenceMolecule", "referenceDatabase", "=", chebiRefDBID);
 
-		
 		for (GKInstance javaInstance : javaRefMolecules)
 		{
 			StringBuilder sb = new StringBuilder();
@@ -41,7 +38,8 @@ public class JavaVsPerlComparison
 				return !(new HashSet<String>(Arrays.asList("DB_ID", "dateTime", "modified", "created",
 								"input", "output", "crossReference", "compartment", "stableIdentifier",
 								"termProvider", "vertex", "hasMember", "referenceDatabase", "representedInstance"))).contains(a.getName())
-						// This condition below is to avoid recursing from the SimpleEntity back the ReferenceMolecule.
+						// This condition below is to avoid recursing from the SimpleEntity back the ReferenceMolecule via SimpleEntity's referenceEntity attribute.
+						// The maxRecursionDepth would prevent things from getting too out of hand, but you'll still get a lot of redundant diffs if you don't do this.
 						&& !( ( new ArrayList<SchemaClass>(a.getSchemaClass())).get(0).getName().equals(ReactomeJavaConstants.SimpleEntity) && a.getName().equals(ReactomeJavaConstants.referenceEntity));
 				}, true);
 			 
@@ -56,32 +54,8 @@ public class JavaVsPerlComparison
 			}
 			
 			diffCount += currentDiff;
-//			int simpleEntityCurrentDiff = 0;
-//			Collection<GKInstance> simpleEntities = javaInstance.getReferers(ReactomeJavaConstants.referenceEntity);
-//			if (simpleEntities != null && simpleEntities.size() > 0)
-//			{
-//				System.out.println("Checking simpleEntities referring to "+javaInstance.toString());
-//				for (GKInstance simpleEntity : simpleEntities)
-//				{
-//					StringBuilder sb2 = new StringBuilder();
-//					GKInstance perlSimpleEntity = perlUpdatedDB.fetchInstance(simpleEntity.getDBID());
-//					simpleEntityCurrentDiff = DBObjectComparer.compareInstances(simpleEntity, perlSimpleEntity, sb2, 2, true);
-//					if (simpleEntityCurrentDiff > 0)
-//					{
-//						System.out.println("Diffs on instance: "+simpleEntity.toString());
-//						System.out.println(sb2.toString());
-//					}
-//					else
-//					{
-//						simpleEntitySameCount++;
-//					}
-//				}
-//				simpleEntityDiffCount += simpleEntityCurrentDiff;
-//			}	
 		}
 		
 		System.out.println("Number of ReferenceMolecule diffs: "+diffCount + " Number of sames: "+sameCount);
-//		System.out.println("Number of SimpleEntity diffs: "+simpleEntityDiffCount+ " Number of sames: "+simpleEntitySameCount);
 	}
-
 }
