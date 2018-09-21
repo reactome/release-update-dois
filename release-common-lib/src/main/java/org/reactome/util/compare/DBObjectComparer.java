@@ -166,8 +166,6 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 					};
 				}
 				
-				
-				
 				@SuppressWarnings("unchecked")
 				List<SchemaAttribute> regularAttributes = ( (Collection<SchemaAttribute>) class1.getAttributes()).stream().filter(attributeNameFilter).collect(Collectors.toList());
 				@SuppressWarnings("unchecked")
@@ -177,13 +175,19 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 				allAttributes.addAll(regularAttributes);
 				if (checkReferrers)
 				{
+					// Add the referrer attributes to the list of all attributes, if the user wants to check referrer attributes.
 					allAttributes.addAll(referrerAttributes);
 				}
 				
 				for (SchemaAttribute attrib : allAttributes)
 				{
 					String attributeQualifier = "";
+					// getValuesFunction will refer to whichever function needs to be called,
+					// depending on whether or not the current attribute is a regular attribute or a referrer attribute.
 					BiFunction<String, GKInstance, List<?>> getValuesFunction;
+					// If the current attribute is in the "regular" attributes list, then the function that needs
+					// to get called is getAttributeValuesList() so we will
+					// create a lambda for that and assign it to getValuesFunction for later use.
 					if (regularAttributes.contains(attrib))
 					{
 						getValuesFunction = (s, i) ->
@@ -201,6 +205,8 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 					}
 					else
 					{
+						// In this case, the attribute was not in the "regular" attributes so it must be a referrer.
+						// The function that will need to be called is getReferrers()
 						attributeQualifier = " referrer";
 						getValuesFunction = (s, i) ->
 						{
@@ -216,6 +222,7 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 						} ;
 					}
 
+					// Deal with attributes that return GKInstance objects.
 					if (attrib.getType().equals(GKInstance.class) || attrib.getType().equals(Instance.class))
 					{
 						List<GKInstance> values1 = new ArrayList<GKInstance>();
@@ -228,8 +235,10 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 						{
 							if (values1.size() == values2.size())
 							{
+								// compare each item in one list to the corresponding item in the other list - the MySQLAdaptor seems to preserve sequence of items in lists properly.
 								for (int i = 0 ; i < values1.size() ; i++)
 								{
+									// Recurse, if max depth has not yet been reacehed.
 									if (recursionDepth < maxRecursionDepth)
 									{
 										sb.append(indentString).append(" Recursing on ").append(attrib.getName()).append("...\n"); 
@@ -239,19 +248,19 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 							}
 							else
 							{
+								// no point comparing/recursing if the lists don't even have the same size. Just write a message about that.
 								sb.append(indentString + "Count mismatch for multi-valued"+attributeQualifier+" attribute \"" + attrib.getName() + "\" Instance 1 (\""+inst1.toString()+"\") has " + values1.size() + " elements but Instance 2 (\""+inst2.toString()+"\") has " + values2.size() + " elements.\n");
 								count ++;
 							}
 						}
 					}
+					// Deal with attributes that return "simple" things (Strings, numbers, etc..., arrays of Strings/numbers/etc...)
 					else
 					{	
 						List<Object> values1 = new ArrayList<Object>();
-						//values1 = inst1.getAttributeValuesList(attrib.getName());
 						values1 = (List<Object>) getValuesFunction.apply(attrib.getName(), inst1);
 						
 						List<Object> values2 = new ArrayList<Object>();
-						//values2 = inst2.getAttributeValuesList(attrib.getName());
 						values2 = (List<Object>) getValuesFunction.apply(attrib.getName(), inst2);
 						
 						if (values1 != null && values2 != null)
@@ -260,6 +269,7 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 							{
 								for (int i = 0 ; i < values1.size() ; i++)
 								{
+									// compare each item in one list to the corresponding item in the other list - the MySQLAdaptor seems to preserve sequence of items in lists properly.
 									if (!values1.get(i).equals(values2.get(i)))
 									{
 										sb.append(indentString + "Mismatch on"+attributeQualifier+" attribute \""+attrib.getName()+"\"\n"+indentString+"Instance 1 (\""+inst1.toString()+"\") has value:\t"+values1.get(i) + "\n"+indentString+"Instance 2 (\""+inst2.toString()+"\") has value:\t"+values2.get(i)).append("\n");
@@ -269,10 +279,10 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 							}
 							else
 							{
+								// no point comparing if the lists don't even have the same size. Just write a message about that.
 								sb.append(indentString + "Count mismatch for multi-valued"+attributeQualifier+" attribute \"" + attrib.getName() + "\" Instance 1 (\""+inst1.toString()+"\") has " + values1.size() + " elements but Instance 2 (\""+inst2.toString()+"\") has " + values2.size() + " elements.\n");
 								count ++;
 							}
-
 						}
 					}
 				}
