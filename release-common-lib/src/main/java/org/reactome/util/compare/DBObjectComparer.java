@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import org.gk.model.GKInstance;
 import org.gk.model.Instance;
+import org.gk.model.InstanceUtilities;
+import org.gk.model.ReactomeJavaConstants;
 import org.gk.schema.SchemaAttribute;
 import org.gk.schema.SchemaClass;
 
@@ -159,10 +161,10 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 				else
 				{
 					attributeNameFilter = a -> {
-						return !a.getName().equals("DB_ID")
-							&& !a.getName().equals("dateTime")
-							&& !a.getName().equals("modified")
-							&& !a.getName().equals("created");
+						return !a.getName().equals(ReactomeJavaConstants.DB_ID)
+							&& !a.getName().equals(ReactomeJavaConstants.dateTime)
+							&& !a.getName().equals(ReactomeJavaConstants.modified)
+							&& !a.getName().equals(ReactomeJavaConstants.created);
 					};
 				}
 				
@@ -233,6 +235,10 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 
 						if (values1 != null && values2 != null)
 						{
+							// Make sure the lists are sorted so that you are always comparing objects in the same sequence: I don't think the database adaptor applies 
+							// any explicit order to Instances that don't have a rank/order attribute.
+							InstanceUtilities.sortInstances(values1);
+							InstanceUtilities.sortInstances(values2);
 							if (values1.size() == values2.size())
 							{
 								// compare each item in one list to the corresponding item in the other list - the MySQLAdaptor seems to preserve sequence of items in lists properly.
@@ -241,7 +247,7 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 									// Recurse, if max depth has not yet been reacehed.
 									if (recursionDepth < maxRecursionDepth)
 									{
-										sb.append(indentString).append(" Recursing on ").append(attrib.getName()).append("...\n"); 
+										sb.append(indentString).append(" Recursing on ").append(attrib.getName()).append(" attribute...\n"); 
 										count = compareInstances(values1.get(i), values2.get(i), sb, count, recursionDepth + 1, maxRecursionDepth, attributeNameFilter, checkReferrers);
 									}
 								}
