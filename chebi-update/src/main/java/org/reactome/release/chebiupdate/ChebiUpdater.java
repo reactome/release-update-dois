@@ -1,5 +1,10 @@
 package org.reactome.release.chebiupdate;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -130,7 +135,7 @@ public class ChebiUpdater {
 			// If the ChEBI name was updated, update the referenceEntities that refer to the molecule.
 			if (nameUpdated)
 			{
-				updateReferenceEntities(molecule, chebiName);
+				updateReferenceEntities(molecule, chebiName, instanceEdit);
 			}
 			
 			if (identifierUpdated || nameUpdated || formulaUpdated)
@@ -268,7 +273,7 @@ public class ChebiUpdater {
 	 * @throws InvalidAttributeException
 	 * @throws InvalidAttributeValueException
 	 */
-	private void updateReferenceEntities(GKInstance molecule, String chebiName) throws Exception, InvalidAttributeException, InvalidAttributeValueException
+	private void updateReferenceEntities(GKInstance molecule, String chebiName, GKInstance instanceEdit) throws Exception, InvalidAttributeException, InvalidAttributeValueException
 	{
 		// now, update the any Entities that refer to the ReferenceMolecule by appending chebiName to the list of names. TODO: Refactor to a function.
 		@SuppressWarnings("unchecked")
@@ -293,6 +298,7 @@ public class ChebiUpdater {
 							names.add(chebiName);
 							referrer.setAttributeValue(ReactomeJavaConstants.name, names);
 							adaptor.updateInstanceAttribute(referrer, ReactomeJavaConstants.name);
+							addInstanceEditToExistingModifieds(instanceEdit, referrer);
 							logger.info("\"{}\" has been updated; \"{}\" has been added to the list of names: ", referrer.toString(), chebiName, ((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString());
 						}
 						else
@@ -390,6 +396,22 @@ public class ChebiUpdater {
 	}
 
 	/**
+	 * This looks weird, I know. I needed to be able to set the Formulae on an Entity 
+	 * and the Entity class provided by ChEBI does not have a setter for that. It has setters for
+	 * other members, just not all of them.
+	 * @author sshorser
+	 *
+	 */
+	class AccessibleEntity extends Entity
+	{
+	
+		public void setFormulae(List<DataItem> formulae)
+		{
+			this.formulae = formulae;
+		}
+	}
+	
+	/**
 	 * Makes calls to the ChEBI web service to get info for speciefied ChEBI
 	 * identifiers.
 	 * 
@@ -397,9 +419,28 @@ public class ChebiUpdater {
 	 * @param refMolecules - a list of ReferenceMolecules. The Identifier of each of these molecules will be sent to ChEBI to get up-to-date information for that Identifier.
 	 * @param entityMap - a ReferenceMolecule DB_ID-to-ChEBI Entity map. Will be updated by this method.
 	 * @param failedEntitiesList - A list of ReferenceMolecules for which no information was returned by ChEBI. Will be updated by this method.
+	 * @throws IOException 
 	 */
-	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntitiesList)
+	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntitiesList) throws IOException
 	{
+		// TODO: Write the data to disk. The ChEBI web service is not 100% reliable so having a cached version on disk would be useful for testing (but probably should not be used for production).
+
+		Map<String,List<String>> chebiCache = Collections.synchronizedMap(new HashMap<String, List<String>>());
+		// if the cache exists, load it.
+		if (Files.exists(Paths.get("chebi-cache")))
+		{
+			Files.readAllLines(Paths.get("chebi-cache")).parallelStream().forEach( line -> {
+				String[] parts = line.split("\t");
+				String chebiID = parts[0];
+				String name = parts[1];
+				String formula = parts.length > 2 ? parts[2] : "";
+				chebiCache.put(chebiID, Arrays.asList(name, formula));
+			});
+		}
+		logger.debug("{} entries in the chebi-cache", chebiCache.size());
+		FileWriter fileWriter = new FileWriter("chebi-cache", true);
+		// BufferedWriter is thread-safe.
+		BufferedWriter bw = new BufferedWriter(fileWriter);
 		AtomicInteger counter = new AtomicInteger(0);
 		// The web service calls are a bit slow to respond, so do them in parallel.
 		refMolecules.parallelStream().forEach(molecule ->
@@ -410,14 +451,31 @@ public class ChebiUpdater {
 				identifier = (String) molecule.getAttributeValue("identifier");
 				if (identifier != null && !identifier.trim().equals(""))
 				{
-					Entity entity = this.chebiClient.getCompleteEntity(identifier);
-					if (entity != null)
+					// only query web service if the data is not in the chebi-cache
+					if (!chebiCache.containsKey("CHEBI:"+identifier))
 					{
-						entityMap.put(molecule.getDBID(), entity);
+						Entity entity = this.chebiClient.getCompleteEntity(identifier);
+						if (entity != null)
+						{
+							entityMap.put(molecule.getDBID(), entity);
+							bw.write(entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\n");
+							bw.flush();
+						}
+						else
+						{
+							failedEntitiesList.add(molecule);
+						}
 					}
 					else
 					{
-						failedEntitiesList.add(molecule);
+						AccessibleEntity entity = new AccessibleEntity();
+						entity.setChebiId(identifier);
+						entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(0) );
+						// TODO: figure out how to set data item for formula
+						DataItem formula = new DataItem();
+						formula.setData(chebiCache.get("CHEBI:"+identifier).get(1));
+						entity.setFormulae(Arrays.asList(formula));
+						entityMap.put(molecule.getDBID(), entity);
 					}
 				}
 				else
@@ -465,6 +523,7 @@ public class ChebiUpdater {
 				e.printStackTrace();
 			}
 		});
+		bw.close();
 	}
 
 	/**
