@@ -1,5 +1,6 @@
 package org.reactome.release.downloadDirectory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -13,10 +14,23 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 public class SBMLDumper {
 	// Initialize data structures used in module
@@ -28,11 +42,17 @@ public class SBMLDumper {
 	public static void execute(MySQLAdaptor dba) throws Exception {
 		GKInstance human = dba.fetchInstance(48887L);
 		Collection<GKInstance> reactionInstances = dba.fetchInstanceByAttribute(ReactomeJavaConstants.ReactionlikeEvent, ReactomeJavaConstants.species, "=", human);
+		int count = 0;
 		for (GKInstance reactionInst : reactionInstances) {
 			dissectEvent(reactionInst);
+			count++;
+			if (count == 50) {
+				break;
+			}
 		}
 		
 		generateSBMLFile();
+		validateSBMLFile();
 	}
 	
 	// Retrieve input/output/catalyst data for each reaction and update the reactions hashmap
@@ -245,12 +265,36 @@ public class SBMLDumper {
 		
 		xmlLines.add(reactionListEnd);
 		xmlLines.add("</model>\n");
-		xmlLines.add("</smbl>");
+		xmlLines.add("</sbml>");
 		
 		PrintWriter sbmlFile = new PrintWriter("homo_sapiens_java.sbml");
 		for (String xml : xmlLines) {
 			Files.write(Paths.get("homo_sapiens_java.sbml"), xml.getBytes(), StandardOpenOption.APPEND);
 		}
 		sbmlFile.close();
+	}
+	
+	public static void validateSBMLFile() throws IOException, ParserConfigurationException, SAXException {
+	    // parse an XML document into a DOM tree
+	    DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+	    Document document = parser.parse(new File("homo_sapiens_perl.sbml"));
+
+	    // create a SchemaFactory capable of understanding WXS schemas
+	    SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+
+	    // load a WXS schema, represented by a Schema instance
+	    Source schemaFile = new StreamSource(new File("sbml.xsd"));
+	    Schema schema = factory.newSchema(schemaFile);
+
+	    // create a Validator instance, which can be used to validate an instance document
+	    Validator validator = schema.newValidator();
+
+	    // validate the DOM tree
+	    try {
+	        validator.validate(new DOMSource(document));
+	    } catch (SAXException e) {
+	    	e.printStackTrace();
+	        // instance document is invalid!
+	    }
 	}
 }

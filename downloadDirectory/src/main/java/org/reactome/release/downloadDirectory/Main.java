@@ -28,6 +28,7 @@ public class Main {
 		
 		//Begin download directory
 		DatabaseDumps.execute(dbAdaptor);
-		SBMLDumper.execute(dbAdaptor);
+		//SBMLDumper.execute(dbAdaptor);
+		OutputCuratedComplexes.fetchInstancesAndOutput(dbAdaptor);
 	}
 }
