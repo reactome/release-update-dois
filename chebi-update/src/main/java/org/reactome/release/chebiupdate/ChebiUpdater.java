@@ -186,11 +186,13 @@ public class ChebiUpdater
 			{
 				logger.info("\t{}",message);
 			}
+			// linebreak - make it easier to read.
+			logger.info("\n");
 		}
 	}
 
 	/**
-	 * Update a molecule's formula.
+	 * Update a molecule's formula. Should always update (set to the ChEBI formula) if the current formula and the formula from ChEBI differ.
 	 * 
 	 * @param molecule
 	 * @param chebiFormulae
@@ -219,8 +221,10 @@ public class ChebiUpdater
 					this.formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
 					updated = true;
 				}
-				molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
-				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.formula);
+				//else
+				//{
+					// Not updated.
+				//}
 			}
 			else
 			{
@@ -229,6 +233,13 @@ public class ChebiUpdater
 				{
 					logger.warn("Got empty/NULL formula for {}, old formula was: {}", molecule.toString(), moleculeFormulae);
 				}
+				updated = true;
+			}
+			// If "updated" was set to true, then the molecule actually needs an update (just set the formula to whatever came from ChEBI).
+			if (updated)
+			{
+				molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
+				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.formula);
 			}
 		}
 		return updated;
@@ -427,13 +438,12 @@ public class ChebiUpdater
 	/**
 	 * This looks weird, I know. I needed to be able to set the Formulae on an Entity 
 	 * and the Entity class provided by ChEBI does not have a setter for that. It has setters for
-	 * other members, just not all of them.
+	 * other members, just not all of them. So I added a setter, hence the "accessible" name.
 	 * @author sshorser
 	 *
 	 */
 	class AccessibleEntity extends Entity
 	{
-	
 		public void setFormulae(List<DataItem> formulae)
 		{
 			this.formulae = formulae;
@@ -452,8 +462,7 @@ public class ChebiUpdater
 	 */
 	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntitiesList) throws IOException
 	{
-		// TODO: Write the data to disk. The ChEBI web service is not 100% reliable so having a cached version on disk would be useful for testing (but probably should not be used for production).
-
+		// TODO: Add a config flag that can be used to ignore the cached file (for when you want only the *freshest* results)
 		Map<String,List<String>> chebiCache = Collections.synchronizedMap(new HashMap<String, List<String>>());
 		// if the cache exists, load it.
 		if (Files.exists(Paths.get("chebi-cache")))
