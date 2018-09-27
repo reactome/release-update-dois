@@ -96,20 +96,10 @@ public class ChebiUpdater {
 		}
 		
 		GKInstance instanceEdit = null;
-		if (!testMode)
-		{
-			instanceEdit = createInstanceEdit(this.adaptor, this.personID, this.getClass().getCanonicalName());
-		}
-
+		adaptor.startTransaction();
+		instanceEdit = createInstanceEdit(this.adaptor, this.personID, this.getClass().getCanonicalName());
 		for (Long moleculeDBID : entityMap.keySet())
 		{
-			// One transaction per molecule - is this too many? If this runs too slow, maybe switch to one transaction per
-			// program execution.
-			if (!testMode && adaptor.supportsTransactions())
-			{
-				adaptor.startTransaction();
-			}
-			
 			GKInstance molecule = adaptor.fetchInstance(moleculeDBID);
 			Entity entity = entityMap.get(moleculeDBID);
 
@@ -120,8 +110,6 @@ public class ChebiUpdater {
 			String chebiName = entity.getChebiAsciiName();
 			List<DataItem> chebiFormulae = entity.getFormulae();
 
-			//String updateRefEntMessage = updateReferenceEntities(molecule, chebiName, instanceEdit);
-			//refEntChanges.append(updateRefEntMessage);
 			// Now, check to see if we need to update the ReferenceMolecule itself.
 			String moleculeIdentifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
 			String moleculeName = (String) molecule.getAttributeValuesList(ReactomeJavaConstants.name).get(0);
@@ -145,17 +133,14 @@ public class ChebiUpdater {
 				InstanceDisplayNameGenerator.setDisplayName(molecule);
 				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants._displayName);
 			}
-			if (!testMode)
-			{
-				if (adaptor.supportsTransactions())
-				{
-					adaptor.commit();
-				}
-			}
-			else
-			{
-				adaptor.rollback();
-			}
+		}
+		if (!testMode)
+		{
+			adaptor.commit();
+		}
+		else
+		{
+			adaptor.rollback();
 		}
 		logger.info("*** Formula-fill changes ***");
 		logger.info(this.formulaFillSB.toString());
@@ -200,7 +185,7 @@ public class ChebiUpdater {
 					updated = true;
 				}
 				molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
-				if (!testMode)
+//				if (!testMode)
 				{
 					adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.formula);
 				}
@@ -228,7 +213,7 @@ public class ChebiUpdater {
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.name, chebiName);
 			this.nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
-			if (!testMode)
+//			if (!testMode)
 			{
 				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.name);
 			}
@@ -299,11 +284,11 @@ public class ChebiUpdater {
 							referrer.setAttributeValue(ReactomeJavaConstants.name, names);
 							adaptor.updateInstanceAttribute(referrer, ReactomeJavaConstants.name);
 							addInstanceEditToExistingModifieds(instanceEdit, referrer);
-							logger.info("\"{}\" has been updated; \"{}\" has been added to the list of names: ", referrer.toString(), chebiName, ((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString());
+							logger.info("\"{}\" has been updated; \"{}\" has been added to the list of names: {}", referrer.toString(), chebiName, ((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString());
 						}
 						else
 						{
-							logger.info("\"{}\" *already* has \"{}\" as in its list of names: {}", referrer.toString(), chebiName, names.toString());
+							logger.info("\"{}\" *already* has \"{}\" as in its list of names; it will not be added again. Names: {}", referrer.toString(), chebiName, names.toString());
 						}
 					}
 					else
@@ -606,7 +591,6 @@ public class ChebiUpdater {
 		instanceEdit.setDbAdaptor(adaptor);
 		SchemaClass cls = adaptor.getSchema().getClassByName(ReactomeJavaConstants.InstanceEdit);
 		instanceEdit.setSchemaClass(cls);
-
 		try
 		{
 			instanceEdit.addAttributeValue(ReactomeJavaConstants.author, person);
