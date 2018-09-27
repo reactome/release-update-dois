@@ -11,10 +11,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,8 +36,8 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.ChebiWebServiceFault_Exception;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.DataItem;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 
-
-public class ChebiUpdater {
+public class ChebiUpdater
+{
 	private static final Logger logger = LogManager.getLogger("ChEBIUpdateLogger");
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
@@ -45,8 +47,31 @@ public class ChebiUpdater {
 	private StringBuilder formulaFillSB = new StringBuilder();
 	private StringBuilder nameSB = new StringBuilder();
 	private StringBuilder duplicatesSB = new StringBuilder();
-	private StringBuilder refEntChanges = new StringBuilder();
+	private Map<GKInstance, List<String>> referenceEntityChanges = new HashMap<GKInstance, List<String>>();
 	private long personID;
+	// A Comparator object that will compare GKInstances, assuming that they are of the "Person" type, with a surname and firstname.
+	private Comparator<GKInstance> personComparator = new Comparator<GKInstance>()
+		{
+			@Override
+			public int compare(GKInstance o1, GKInstance o2)
+			{
+				try
+				{
+					int surnameCompare = ((String)o1.getAttributeValue(ReactomeJavaConstants.surname)).compareTo((String)o2.getAttributeValue(ReactomeJavaConstants.surname));
+					if (surnameCompare == 0)
+					{
+						return ((String)o1.getAttributeValue(ReactomeJavaConstants.firstname)).compareTo((String)o2.getAttributeValue(ReactomeJavaConstants.firstname));
+					}
+					return surnameCompare;
+				}
+				catch (Exception e)
+				{
+					System.err.println("Error while trying to compare objects: o1: "+o1.toString()+ " ; o2: "+o2.toString() + " ; they will be treated as equivalent.");
+					e.printStackTrace();
+				}
+				return 0;
+			}
+		};
 	
 	public ChebiUpdater(MySQLAdaptor adaptor, boolean testMode, long personID)
 	{
@@ -142,6 +167,7 @@ public class ChebiUpdater {
 		{
 			adaptor.rollback();
 		}
+		
 		logger.info("*** Formula-fill changes ***");
 		logger.info(this.formulaFillSB.toString());
 		logger.info("*** Formula update changes ***");
@@ -151,7 +177,16 @@ public class ChebiUpdater {
 		logger.info("*** Identifier update changes ***");
 		logger.info(this.identifierSB.toString());
 		logger.info("*** SimpleEntity changes ***");
-		logger.info(refEntChanges.toString());
+		
+		// Print the referenceEntities that have changes, sorted by who created them.
+		for (GKInstance creator : referenceEntityChanges.keySet().stream().sorted(this.personComparator).collect(Collectors.toList()))
+		{
+			logger.info("referenceEntity changes for Curator {}:",creator.toString());
+			for (String message : referenceEntityChanges.get(creator))
+			{
+				logger.info("\t{}",message);
+			}
+		}
 	}
 
 	/**
@@ -172,7 +207,7 @@ public class ChebiUpdater {
 		if (!chebiFormulae.isEmpty())
 		{
 			String firstFormula = chebiFormulae.get(0).getData();
-			if (firstFormula != null)
+			if (firstFormula != null && !firstFormula.trim().equals(""))
 			{
 				if (moleculeFormulae == null)
 				{
@@ -185,11 +220,15 @@ public class ChebiUpdater {
 					updated = true;
 				}
 				molecule.setAttributeValue(ReactomeJavaConstants.formula, firstFormula);
-//				if (!testMode)
+				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.formula);
+			}
+			else
+			{
+				// Only print a warning if we're going from non-NULL formula to NULL formula.
+				if (moleculeFormulae != null && !moleculeFormulae.trim().equals(""))
 				{
-					adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.formula);
+					logger.warn("Got empty/NULL formula for {}, old formula was: {}", molecule.toString(), moleculeFormulae);
 				}
-
 			}
 		}
 		return updated;
@@ -213,10 +252,7 @@ public class ChebiUpdater {
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.name, chebiName);
 			this.nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
-//			if (!testMode)
-			{
-				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.name);
-			}
+			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.name);
 			return true;
 		}
 		return false;
@@ -240,10 +276,7 @@ public class ChebiUpdater {
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.identifier, chebiID);
 			this.identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
-			if (!testMode)
-			{
-				adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.identifier);
-			}
+			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.identifier);
 			return true;
 		}
 		return false;
@@ -284,7 +317,18 @@ public class ChebiUpdater {
 							referrer.setAttributeValue(ReactomeJavaConstants.name, names);
 							adaptor.updateInstanceAttribute(referrer, ReactomeJavaConstants.name);
 							addInstanceEditToExistingModifieds(instanceEdit, referrer);
-							logger.info("\"{}\" has been updated; \"{}\" has been added to the list of names: {}", referrer.toString(), chebiName, ((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString());
+							GKInstance createdInstanceEdit = (GKInstance) referrer.getAttributeValue(ReactomeJavaConstants.created);
+							GKInstance creator = (GKInstance) createdInstanceEdit.getAttributeValue(ReactomeJavaConstants.author);
+							String message = "\""+referrer.toString()+"\" has been updated; \""+chebiName+"\" has been added to the list of names: " + ((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
+							// Add the message to the map of messages, keyed by the creator.
+							if (this.referenceEntityChanges.containsKey(creator))
+							{
+								this.referenceEntityChanges.get(creator).add(message);
+							}
+							else
+							{
+								this.referenceEntityChanges.put(creator, new ArrayList<String>(Arrays.asList(message)));
+							}
 						}
 						else
 						{
