@@ -179,25 +179,15 @@ public class ChebiUpdater
 		logger.info(this.formulaFillSB.toString());
 		logger.info("*** Formula update changes ***");
 		logger.info(this.formulaUpdateSB.toString());
-//		logger.info("*** Name update changes ***");
-//		logger.info(this.nameSB.toString());
-//		logger.info("*** Identifier update changes ***");
-//		logger.info(this.identifierSB.toString());
-//		logger.info("*** SimpleEntity changes ***");
-		
 		
 		refEntChangeLog.info("# Creator\tAffected ReferenceEntity\tNew ChEBI Name\tUpdated list of all names");
 		// Print the referenceEntities that have changes, sorted by who created them.
 		for (GKInstance creator : referenceEntityChanges.keySet().stream().sorted(this.personComparator).collect(Collectors.toList()))
 		{
-			//logger.info("referenceEntity changes for Curator {}:",creator.toString());
 			for (String message : referenceEntityChanges.get(creator))
 			{
-				//logger.info("\t{}",message);
 				refEntChangeLog.info("{}\t{}",creator.toString(), message);
 			}
-			// linebreak - make it easier to read.
-			//logger.info("\n");
 		}
 	}
 
@@ -272,7 +262,6 @@ public class ChebiUpdater
 		if (!chebiName.equals(moleculeName))
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.name, chebiName);
-			//this.nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
 			refMolNameChangeLog.info("{}\t{}\t{}",molecule.toString() , moleculeName, chebiName);
 			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.name);
 			return true;
@@ -298,7 +287,6 @@ public class ChebiUpdater
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.identifier, chebiID);
 			refMolIdentChangeLog.info("{}\t{}\t{}", molecule.toString(), moleculeIdentifier, chebiID);
-			//this.identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
 			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.identifier);
 			return true;
 		}
@@ -342,7 +330,7 @@ public class ChebiUpdater
 							addInstanceEditToExistingModifieds(instanceEdit, referrer);
 							GKInstance createdInstanceEdit = (GKInstance) referrer.getAttributeValue(ReactomeJavaConstants.created);
 							GKInstance creator = (GKInstance) createdInstanceEdit.getAttributeValue(ReactomeJavaConstants.author);
-							//String message = "\""+referrer.toString()+"\" has been updated; \""+chebiName+"\" has been added to the list of names: " + ((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
+
 							@SuppressWarnings("unchecked")
 							String message = referrer.toString()+"\t"+chebiName+"\t"+((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
 							// Add the message to the map of messages, keyed by the creator.
@@ -405,14 +393,9 @@ public class ChebiUpdater
 				+ "inner join ReferenceDatabase_2_name on ReferenceDatabase_2_name.DB_ID = ReferenceDatabase.DB_ID\n"
 				+ "where ReferenceDatabase_2_name.name = 'ChEBI'\n" + "group by ReferenceEntity.identifier\n"
 				+ "having count(ReferenceMolecule.DB_ID) > 1;\n";
-//		for (Long k : duplicateInstanceMap.keySet())
-//		{
-//			this.duplicatesSB.append(duplicateInstanceMap.get(k).toStanza()).append("\n");
-//		}
+
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
 		logger.info("*** Duplicate ReferenceMolecules ***\n");
-
-		//Map<Long, GKInstance> duplicateInstanceMap = new HashMap<Long, GKInstance>();
 
 		// Should only be one, but API returns collection.
 		@SuppressWarnings("unchecked")
@@ -434,14 +417,10 @@ public class ChebiUpdater
 			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(chebiAQR, identifierAQR));
 			for (GKInstance duplicate : dupesOfIdentifier)
 			{
-				//duplicateInstanceMap.put(duplicate.getDBID(), duplicate);
 				this.duplicatesSB.append(duplicate.toString()).append("\n");
 			}
 		}
-//		for (Long k : duplicateInstanceMap.keySet())
-//		{
-//			this.duplicatesSB.append(duplicateInstanceMap.get(k).toStanza()).append("\n");
-//		}
+
 		duplicates.close();
 		if (this.duplicatesSB.length() > 0)
 		{
@@ -495,7 +474,7 @@ public class ChebiUpdater
 		}
 		logger.debug("{} entries in the chebi-cache", chebiCache.size());
 		FileWriter fileWriter = new FileWriter("chebi-cache", true);
-		// BufferedWriter is thread-safe.
+		// BufferedWriter is supposed to be thread-safe.
 		BufferedWriter bw = new BufferedWriter(fileWriter);
 		AtomicInteger counter = new AtomicInteger(0);
 		// The web service calls are a bit slow to respond, so do them in parallel.
@@ -527,7 +506,6 @@ public class ChebiUpdater
 						AccessibleEntity entity = new AccessibleEntity();
 						entity.setChebiId(identifier);
 						entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(0) );
-						// TODO: figure out how to set data item for formula
 						DataItem formula = new DataItem();
 						formula.setData(chebiCache.get("CHEBI:"+identifier).get(1));
 						entity.setFormulae(Arrays.asList(formula));
