@@ -1,1 +1,3 @@
 chebi-update.properties
+logs/*.csv
+logs/*.tsv

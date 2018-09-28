@@ -12,7 +12,7 @@
 					<OnStartupTriggeringPolicy />
 				</Policies>
 		</RollingFile>
-		<RollingFile name="MoleculeNameChanges" fileName="logs/ChEBI_Update_MoleculeNameChanges-${date:MM-dd-yyyy_HH.mm.ss}.log" filePattern="logs/ChEBI_Update_MoleculeNameChanges-%d{MM-dd-yyyy_HH.mm.ss}.log">
+		<RollingFile name="MoleculeNameChanges" fileName="logs/ChEBI_Update_MoleculeNameChanges-${date:MM-dd-yyyy_HH.mm.ss}.tsv" filePattern="logs/ChEBI_Update_MoleculeNameChanges-%d{MM-dd-yyyy_HH.mm.ss}.tsv">
 			<PatternLayout>
 				<Pattern>%msg%n</Pattern>
 			</PatternLayout>
@@ -20,7 +20,7 @@
 					<OnStartupTriggeringPolicy />
 				</Policies>
 		</RollingFile>
-		<RollingFile name="MoleculeIdentifierChanges" fileName="logs/ChEBI_Update_MoleculeIdentifierChanges-${date:MM-dd-yyyy_HH.mm.ss}.log" filePattern="logs/ChEBI_Update_MoleculeIdentifierChanges-%d{MM-dd-yyyy_HH.mm.ss}.log">
+		<RollingFile name="MoleculeIdentifierChanges" fileName="logs/ChEBI_Update_MoleculeIdentifierChanges-${date:MM-dd-yyyy_HH.mm.ss}.tsv" filePattern="logs/ChEBI_Update_MoleculeIdentifierChanges-%d{MM-dd-yyyy_HH.mm.ss}.tsv">
 			<PatternLayout>
 				<Pattern>%msg%n</Pattern>
 			</PatternLayout>
@@ -28,7 +28,7 @@
 					<OnStartupTriggeringPolicy />
 				</Policies>
 		</RollingFile>
-		<RollingFile name="ReferenceEntityChanges" fileName="logs/ChEBI_Update_ReferenceEntity-${date:MM-dd-yyyy_HH.mm.ss}.log" filePattern="logs/ChEBI_Update_ReferenceEntity-%d{MM-dd-yyyy_HH.mm.ss}.log">
+		<RollingFile name="ReferenceEntityChanges" fileName="logs/ChEBI_Update_ReferenceEntityNameUpdates-${date:MM-dd-yyyy_HH.mm.ss}.tsv" filePattern="logs/ChEBI_Update_ReferenceEntityNameUpdates-%d{MM-dd-yyyy_HH.mm.ss}.tsv">
 			<PatternLayout>
 				<Pattern>%msg%n</Pattern>
 			</PatternLayout>
