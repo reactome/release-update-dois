@@ -38,14 +38,17 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 
 public class ChebiUpdater
 {
-	private static final Logger logger = LogManager.getLogger("ChEBIUpdateLogger");
+	private static final Logger logger = LogManager.getLogger();
+	private static final Logger refMolNameChangeLog = LogManager.getLogger("molNameChangeLog");
+	private static final Logger refMolIdentChangeLog = LogManager.getLogger("molIdentChangeLog");
+	private static final Logger refEntChangeLog = LogManager.getLogger("refEntChangeLog");
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
 	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
-	private StringBuilder identifierSB = new StringBuilder();
+//	private StringBuilder identifierSB = new StringBuilder();
 	private StringBuilder formulaUpdateSB = new StringBuilder();
 	private StringBuilder formulaFillSB = new StringBuilder();
-	private StringBuilder nameSB = new StringBuilder();
+//	private StringBuilder nameSB = new StringBuilder();
 	private StringBuilder duplicatesSB = new StringBuilder();
 	private Map<GKInstance, List<String>> referenceEntityChanges = new HashMap<GKInstance, List<String>>();
 	private long personID;
@@ -66,7 +69,7 @@ public class ChebiUpdater
 				}
 				catch (Exception e)
 				{
-					System.err.println("Error while trying to compare objects: o1: "+o1.toString()+ " ; o2: "+o2.toString() + " ; they will be treated as equivalent.");
+					logger.error("Error while trying to compare objects: o1: "+o1.toString()+ " ; o2: "+o2.toString() + " ; they will be treated as equivalent.");
 					e.printStackTrace();
 				}
 				return 0;
@@ -120,6 +123,10 @@ public class ChebiUpdater
 			logger.info("Could not get info from ChEBI for: {}", molecule.toString());
 		}
 		
+		// print headers for log files
+		refMolIdentChangeLog.info("# Reference Molecule\tOld Identifier\tNew Identifier");
+		refMolNameChangeLog.info("# Reference Molecule\tOld Name\tNew Name");
+		
 		GKInstance instanceEdit = null;
 		adaptor.startTransaction();
 		instanceEdit = createInstanceEdit(this.adaptor, this.personID, this.getClass().getCanonicalName());
@@ -172,22 +179,25 @@ public class ChebiUpdater
 		logger.info(this.formulaFillSB.toString());
 		logger.info("*** Formula update changes ***");
 		logger.info(this.formulaUpdateSB.toString());
-		logger.info("*** Name update changes ***");
-		logger.info(this.nameSB.toString());
-		logger.info("*** Identifier update changes ***");
-		logger.info(this.identifierSB.toString());
-		logger.info("*** SimpleEntity changes ***");
+//		logger.info("*** Name update changes ***");
+//		logger.info(this.nameSB.toString());
+//		logger.info("*** Identifier update changes ***");
+//		logger.info(this.identifierSB.toString());
+//		logger.info("*** SimpleEntity changes ***");
 		
+		
+		refEntChangeLog.info("# Creator\tAffected ReferenceEntity\tNew ChEBI Name\tUpdated list of all names");
 		// Print the referenceEntities that have changes, sorted by who created them.
 		for (GKInstance creator : referenceEntityChanges.keySet().stream().sorted(this.personComparator).collect(Collectors.toList()))
 		{
-			logger.info("referenceEntity changes for Curator {}:",creator.toString());
+			//logger.info("referenceEntity changes for Curator {}:",creator.toString());
 			for (String message : referenceEntityChanges.get(creator))
 			{
-				logger.info("\t{}",message);
+				//logger.info("\t{}",message);
+				refEntChangeLog.info("{}\t{}",creator.toString(), message);
 			}
 			// linebreak - make it easier to read.
-			logger.info("\n");
+			//logger.info("\n");
 		}
 	}
 
@@ -262,7 +272,8 @@ public class ChebiUpdater
 		if (!chebiName.equals(moleculeName))
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.name, chebiName);
-			this.nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
+			//this.nameSB.append(prefix).append(" Old Name: ").append(moleculeName).append(" ; ").append("New Name: ").append(chebiName).append("\n");
+			refMolNameChangeLog.info("{}\t{}\t{}",molecule.toString() , moleculeName, chebiName);
 			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.name);
 			return true;
 		}
@@ -286,7 +297,8 @@ public class ChebiUpdater
 		if (!chebiID.equals(moleculeIdentifier))
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.identifier, chebiID);
-			this.identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
+			refMolIdentChangeLog.info("{}\t{}\t{}", molecule.toString(), moleculeIdentifier, chebiID);
+			//this.identifierSB.append(prefix).append(" Old Identifier: ").append(moleculeIdentifier).append(" ; ").append("New Identifier: ").append(chebiID).append("\n");
 			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.identifier);
 			return true;
 		}
@@ -330,7 +342,9 @@ public class ChebiUpdater
 							addInstanceEditToExistingModifieds(instanceEdit, referrer);
 							GKInstance createdInstanceEdit = (GKInstance) referrer.getAttributeValue(ReactomeJavaConstants.created);
 							GKInstance creator = (GKInstance) createdInstanceEdit.getAttributeValue(ReactomeJavaConstants.author);
-							String message = "\""+referrer.toString()+"\" has been updated; \""+chebiName+"\" has been added to the list of names: " + ((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
+							//String message = "\""+referrer.toString()+"\" has been updated; \""+chebiName+"\" has been added to the list of names: " + ((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
+							@SuppressWarnings("unchecked")
+							String message = referrer.toString()+"\t"+chebiName+"\t"+((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
 							// Add the message to the map of messages, keyed by the creator.
 							if (this.referenceEntityChanges.containsKey(creator))
 							{
@@ -391,11 +405,14 @@ public class ChebiUpdater
 				+ "inner join ReferenceDatabase_2_name on ReferenceDatabase_2_name.DB_ID = ReferenceDatabase.DB_ID\n"
 				+ "where ReferenceDatabase_2_name.name = 'ChEBI'\n" + "group by ReferenceEntity.identifier\n"
 				+ "having count(ReferenceMolecule.DB_ID) > 1;\n";
-
+//		for (Long k : duplicateInstanceMap.keySet())
+//		{
+//			this.duplicatesSB.append(duplicateInstanceMap.get(k).toStanza()).append("\n");
+//		}
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
 		logger.info("*** Duplicate ReferenceMolecules ***\n");
 
-		Map<Long, GKInstance> duplicateInstanceMap = new HashMap<Long, GKInstance>();
+		//Map<Long, GKInstance> duplicateInstanceMap = new HashMap<Long, GKInstance>();
 
 		// Should only be one, but API returns collection.
 		@SuppressWarnings("unchecked")
@@ -408,7 +425,7 @@ public class ChebiUpdater
 		{
 			String identifier = duplicates.getString(1);
 			int numberOfDuplicates = duplicates.getInt(2);
-			this.duplicatesSB.append("** ReferenceMolecule with identifier " + identifier + " occurs " + numberOfDuplicates + " times:\n\n");
+			this.duplicatesSB.append("\n** ReferenceMolecule with identifier " + identifier + " occurs " + numberOfDuplicates + " times:\n\n");
 			String operator = identifier == null ? "IS NULL" : "=";
 			
 			AttributeQueryRequest identifierAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, operator, identifier);
@@ -417,13 +434,14 @@ public class ChebiUpdater
 			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(chebiAQR, identifierAQR));
 			for (GKInstance duplicate : dupesOfIdentifier)
 			{
-				duplicateInstanceMap.put(duplicate.getDBID(), duplicate);
+				//duplicateInstanceMap.put(duplicate.getDBID(), duplicate);
+				this.duplicatesSB.append(duplicate.toString()).append("\n");
 			}
 		}
-		for (Long k : duplicateInstanceMap.keySet())
-		{
-			this.duplicatesSB.append(duplicateInstanceMap.get(k).toStanza()).append("\n");
-		}
+//		for (Long k : duplicateInstanceMap.keySet())
+//		{
+//			this.duplicatesSB.append(duplicateInstanceMap.get(k).toStanza()).append("\n");
+//		}
 		duplicates.close();
 		if (this.duplicatesSB.length() > 0)
 		{

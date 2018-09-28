@@ -12,11 +12,44 @@
 					<OnStartupTriggeringPolicy />
 				</Policies>
 		</RollingFile>
+		<RollingFile name="MoleculeNameChanges" fileName="logs/ChEBI_Update_MoleculeNameChanges-${date:MM-dd-yyyy_HH.mm.ss}.log" filePattern="logs/ChEBI_Update_MoleculeNameChanges-%d{MM-dd-yyyy_HH.mm.ss}.log">
+			<PatternLayout>
+				<Pattern>%msg%n</Pattern>
+			</PatternLayout>
+				<Policies>
+					<OnStartupTriggeringPolicy />
+				</Policies>
+		</RollingFile>
+		<RollingFile name="MoleculeIdentifierChanges" fileName="logs/ChEBI_Update_MoleculeIdentifierChanges-${date:MM-dd-yyyy_HH.mm.ss}.log" filePattern="logs/ChEBI_Update_MoleculeIdentifierChanges-%d{MM-dd-yyyy_HH.mm.ss}.log">
+			<PatternLayout>
+				<Pattern>%msg%n</Pattern>
+			</PatternLayout>
+				<Policies>
+					<OnStartupTriggeringPolicy />
+				</Policies>
+		</RollingFile>
+		<RollingFile name="ReferenceEntityChanges" fileName="logs/ChEBI_Update_ReferenceEntity-${date:MM-dd-yyyy_HH.mm.ss}.log" filePattern="logs/ChEBI_Update_ReferenceEntity-%d{MM-dd-yyyy_HH.mm.ss}.log">
+			<PatternLayout>
+				<Pattern>%msg%n</Pattern>
+			</PatternLayout>
+				<Policies>
+					<OnStartupTriggeringPolicy />
+				</Policies>
+		</RollingFile>
 	</Appenders>
 	<Loggers>
 		<Root level="debug">
 			<AppenderRef ref="Console" level="debug"/>
 			<AppenderRef ref="LogFile" level="info"/>
 		</Root>
+		<Logger name="molNameChangeLog" level="info" additivity="false">
+			<AppenderRef ref="MoleculeNameChanges"/>
+		</Logger>
+		<Logger name="molIdentChangeLog" level="info" additivity="false">
+			<AppenderRef ref="MoleculeIdentifierChanges"/>
+		</Logger>
+		<Logger name="refEntChangeLog" level="info" additivity="false">
+			<AppenderRef ref="ReferenceEntityChanges"/>
+		</Logger>
 	</Loggers>
 </Configuration>
