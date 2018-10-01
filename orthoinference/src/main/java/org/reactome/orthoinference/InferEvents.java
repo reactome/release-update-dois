@@ -58,7 +58,6 @@ public class InferEvents
 		
 		SkipTests.getSkipList("normal_event_skip_list.txt");
 		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
-
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
 		JSONObject jsonObject = (JSONObject) obj;
@@ -126,7 +125,7 @@ public class InferEvents
 			String dbId = sourceSpeciesInst.iterator().next().getDBID().toString();
 			// Gets Reaction instances of source species
 			Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
-//			
+			
 			ArrayList<Long> dbids = new ArrayList<Long>();
 			HashMap<Long, GKInstance> reactionMap = new HashMap<Long, GKInstance>();
 			for (GKInstance reactionInst : reactionInstances) {
@@ -134,11 +133,10 @@ public class InferEvents
 				reactionMap.put(reactionInst.getDBID(), reactionInst);
 			}
 			Collections.sort(dbids);
-//			
+	
 			if (!reactionInstances.isEmpty())
 			{
 				for (Long dbid : dbids)
-//				for (GKInstance reactionInst : reactionInstances)
 				{
 					GKInstance reactionInst = reactionMap.get(dbid);
 					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute. 
@@ -182,6 +180,7 @@ public class InferEvents
 		InferEvents.outputReport(species);	
 		InferEvents.resetVariables();
 		System.gc();
+		System.out.println("Finished orthoinference of " + speciesName + ".");
 		}
 	}
 	

@@ -157,7 +157,6 @@ public class OrthologousEntity {
 			int complexTotal = complexProteinCounts.get(0);
 			int complexInferrable = complexProteinCounts.get(1);
 //			int complexMax = complexProteinCounts.get(2); // Doesn't get used, since MaxHomologue isn't a valid attribute anymore.
-			
 			// Filtering based on results of ProteinCounts and threshold (currently hard-coded at 75%).
 			int percent = 0;
 			if (complexTotal > 0)
