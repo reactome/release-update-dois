@@ -36,7 +36,7 @@ public class Main {
 		//TODO: runGSEAOutput
 		//TODO: TheReactomeBookPDF
 		//TODO: TheReactomeBookRTF
-//		FetchEmptyProject.execute(dbAdaptor, releaseNumber);
+		//TODO: FetchEmptyProject
 		//TODO: release_tarball
 		PathwaySummationMappingFile.execute(dbAdaptor);
 		//TODO: StableIdToUniprotAccessionMappingFile
