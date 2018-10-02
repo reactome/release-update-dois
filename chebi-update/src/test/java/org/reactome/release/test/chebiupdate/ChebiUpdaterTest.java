@@ -11,11 +11,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.persistence.MySQLAdaptor.AttributeQueryRequest;
 import org.gk.schema.GKSchemaAttribute;
 import org.gk.schema.GKSchemaClass;
 import org.gk.schema.InvalidAttributeException;
@@ -23,8 +26,10 @@ import org.gk.schema.Schema;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -202,7 +207,6 @@ public class ChebiUpdaterTest
 			
 			updator.updateChebiReferenceMolecules();
 		}
-
 		catch (Exception e)
 		{
 			fail(e.getMessage());
@@ -216,13 +220,18 @@ public class ChebiUpdaterTest
 	@Test
 	public void testCheckForDuplicates() throws SQLException, Exception
 	{
-		when(adaptor.executeQuery(anyString(), (List) nullable(List.class))).thenReturn(duplicateResults);
+		when(adaptor.executeQuery(anyString(), (List<?>) nullable(List.class))).thenReturn(duplicateResults);
 		when(duplicateResults.next()).thenReturn(true).thenReturn(true).thenReturn(false);
-		when(duplicateResults.getInt(1)).thenReturn(123).thenReturn(456);
+		when(duplicateResults.getString(1)).thenReturn("123").thenReturn("456");
 		when(duplicateResults.getInt(2)).thenReturn(2).thenReturn(3);
+		AttributeQueryRequest mockAQR = Mockito.mock(AttributeQueryRequest.class);
+		PowerMockito.whenNew(AttributeQueryRequest.class).withAnyArguments().thenReturn(mockAQR);
 		
-		when(adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", 123)).thenReturn(Arrays.asList(molecule1));
-		when(adaptor.fetchInstanceByAttribute("ReferenceMolecule", "identifier", "=", 456)).thenReturn(Arrays.asList(molecule2));
+		Set<GKInstance> result1 = new HashSet<GKInstance>();
+		result1.add(molecule1);
+		Set<GKInstance> result2 = new HashSet<GKInstance>();
+		result2.add(molecule2);
+		when(adaptor._fetchInstance(ArgumentMatchers.anyList())).thenReturn( result1 ).thenReturn( result2 );
 		
 		updator.checkForDuplicates();
 	}
