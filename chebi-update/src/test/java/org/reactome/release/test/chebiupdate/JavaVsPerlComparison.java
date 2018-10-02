@@ -16,7 +16,7 @@ public class JavaVsPerlComparison
 
 	public static void main(String[] args) throws Exception
 	{
-		MySQLAdaptor javaUpdatedDB = new MySQLAdaptor("localhost", "gk_central_R66_before_chebi_update.sql", "root", "root", 3307);
+		MySQLAdaptor javaUpdatedDB = new MySQLAdaptor("localhost", "gk_central_R66_before_chebi_update.sql", "root", "root", 3309);
 		MySQLAdaptor perlUpdatedDB = new MySQLAdaptor("localhost", "gk_central_R66_before_chebi_update.sql", "root", "root", 3308);
 		int diffCount = 0;
 		int sameCount = 0;
@@ -34,13 +34,14 @@ public class JavaVsPerlComparison
 		{
 			StringBuilder sb = new StringBuilder();
 			GKInstance perlInstance = perlUpdatedDB.fetchInstance(javaInstance.getDBID());
-			int currentDiff = DBObjectComparer.compareInstances(javaInstance, perlInstance, sb, 2, a -> {
-				return !(new HashSet<String>(Arrays.asList("DB_ID", "dateTime", "modified", "created",
-								"input", "output", "crossReference", "compartment", "stableIdentifier",
-								"termProvider", "vertex", "hasMember", "referenceDatabase", "representedInstance"))).contains(a.getName())
+			int currentDiff = DBObjectComparer.compareInstances(javaInstance, perlInstance, sb, 1, a -> {
+				return (new HashSet<String>(Arrays.asList(ReactomeJavaConstants.name, ReactomeJavaConstants._displayName, ReactomeJavaConstants.referenceEntity,
+											ReactomeJavaConstants.formula, ReactomeJavaConstants.identifier))).contains(a.getName())
 						// This condition below is to avoid recursing from the SimpleEntity back the ReferenceMolecule via SimpleEntity's referenceEntity attribute.
 						// The maxRecursionDepth would prevent things from getting too out of hand, but you'll still get a lot of redundant diffs if you don't do this.
-						&& !( ( new ArrayList<SchemaClass>(a.getSchemaClass())).get(0).getName().equals(ReactomeJavaConstants.SimpleEntity) && a.getName().equals(ReactomeJavaConstants.referenceEntity));
+						//&& !( ( new ArrayList<SchemaClass>(a.getSchemaClass())).get(0).getOrderedAncestors().stream().anyMatch(p -> ((SchemaClass)p).getName().equals(ReactomeJavaConstants.SimpleEntity) )
+						&& !( ( new ArrayList<SchemaClass>(a.getSchemaClass())).get(0).getName().equals(ReactomeJavaConstants.SimpleEntity)  
+								&& a.getName().equals(ReactomeJavaConstants.referenceEntity) );
 				}, true);
 			 
 			if (currentDiff > 0)
@@ -56,6 +57,6 @@ public class JavaVsPerlComparison
 			diffCount += currentDiff;
 		}
 		
-		System.out.println("Number of ReferenceMolecule diffs: "+diffCount + " Number of sames: "+sameCount);
+		System.out.println("Number of ReferenceMolecule diffs: "+diffCount + "; Number of sames: "+sameCount + "; Total number of RefernceMolecules compared: "+javaRefMolecules.size());
 	}
 }
