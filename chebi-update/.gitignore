@@ -1,3 +1,5 @@
 chebi-update.properties
-logs/*.csv
-logs/*.tsv
+logs
+chebi-cache*
+logs.tgz
+.clover
