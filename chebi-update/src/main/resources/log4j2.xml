@@ -2,16 +2,14 @@
 <Configuration status="info">
 	<Properties>
 		<Property name="baseDir">logs</Property>
-		<Property name="archiveDir">${baseDir}/archive/%d{yyyy-MM-dd}.gz</Property>
+		<Property name="archiveDir">${baseDir}/archive/%d{yyyy-MM-dd}</Property>
 	</Properties>
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d{YYYY-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
 		</Console>
 		<RollingFile name="LogFile" fileName="${baseDir}/ChEBI_Update.log" filePattern="${archiveDir}/ChEBI_Update-%d{yyyy-MM-dd_HH.mm.ss}.log.gz">
-			<PatternLayout>
-				<Pattern>%msg%n</Pattern>
-			</PatternLayout>
+			<PatternLayout pattern="%d{YYYY-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
 			<Policies>
 				<OnStartupTriggeringPolicy />
 			</Policies>
@@ -60,8 +58,8 @@
 	</Appenders>
 	<Loggers>
 		<Root level="trace">
-			<AppenderRef ref="Console" level="debug"/>
-			<AppenderRef ref="LogFile" level="info"/>
+			<AppenderRef ref="Console" level="info"/>
+			<AppenderRef ref="LogFile" level="trace"/>
 		</Root>
 		<Logger name="molNameChangeLog" level="info" additivity="false">
 			<AppenderRef ref="MoleculeNameChanges"/>
