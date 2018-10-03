@@ -41,6 +41,7 @@ public class ChebiUpdater
 	private static final Logger refMolIdentChangeLog = LogManager.getLogger("molIdentChangeLog");
 	private static final Logger refEntChangeLog = LogManager.getLogger("refEntChangeLog");
 	private static final Logger duplicatesLog = LogManager.getLogger("duplicatesLog");
+	private static final Logger failedChebiLookupsLog = LogManager.getLogger("failedChebiLookupsLog");
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
 	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
@@ -49,6 +50,7 @@ public class ChebiUpdater
 	private StringBuilder duplicatesSB = new StringBuilder();
 	private Map<GKInstance, List<String>> referenceEntityChanges = new HashMap<GKInstance, List<String>>();
 	private long personID;
+	private boolean useCache;
 	// A Comparator object that will compare GKInstances, assuming that they are of the "Person" type, with a surname and firstname.
 	private Comparator<GKInstance> personComparator = new Comparator<GKInstance>()
 		{
@@ -73,11 +75,12 @@ public class ChebiUpdater
 			}
 		};
 	
-	public ChebiUpdater(MySQLAdaptor adaptor, boolean testMode, long personID)
+	public ChebiUpdater(MySQLAdaptor adaptor, boolean testMode, long personID, boolean useCache)
 	{
 		this.adaptor = adaptor;
 		this.testMode = testMode;
 		this.personID = personID;
+		this.useCache = useCache;
 	}
 
 	/**
@@ -106,7 +109,7 @@ public class ChebiUpdater
 		// uk.ac.ebi.chebi.webapps.chebiWS.model.Entity from ChEBI.
 		Map<Long, Entity> entityMap = Collections.synchronizedMap(new HashMap<Long, Entity>());
 		// A list of the ReferenceMolecules where we could nto get info from ChEBI.
-		List<GKInstance> failedEntitiesList = Collections.synchronizedList(new ArrayList<GKInstance>());
+		Map<GKInstance, String> failedEntitiesList = Collections.synchronizedMap(new HashMap<GKInstance, String>());
 
 		logger.info("{} ChEBI ReferenceMolecules to check...", refMolecules.size());
 
@@ -115,9 +118,10 @@ public class ChebiUpdater
 		logger.info("Number of entities we were able to retrieve information about: {}", entityMap.size());
 		logger.info("Number of entities we were NOT able to retrieve information about: {}", failedEntitiesList.size());
 
-		for (GKInstance molecule : failedEntitiesList)
+		failedChebiLookupsLog.info("# ReferenceMolecule\tReason");
+		for (GKInstance molecule : failedEntitiesList.keySet())
 		{
-			logger.info("Could not get info from ChEBI for: {}", molecule.toString());
+			failedChebiLookupsLog.info("{}\t{}", molecule.toString(), failedEntitiesList.get(molecule));
 		}
 		
 		// print headers for log files
@@ -455,22 +459,29 @@ public class ChebiUpdater
 	 * @param failedEntitiesList - A list of ReferenceMolecules for which no information was returned by ChEBI. Will be updated by this method.
 	 * @throws IOException 
 	 */
-	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, List<GKInstance> failedEntitiesList) throws IOException
+	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, Map<GKInstance, String> failedEntitiesList) throws IOException
 	{
-		// TODO: Add a config flag that can be used to ignore the cached file (for when you want only the *freshest* results)
 		Map<String,List<String>> chebiCache = Collections.synchronizedMap(new HashMap<String, List<String>>());
-		// if the cache exists, load it.
-		if (Files.exists(Paths.get("chebi-cache")))
+		if (this.useCache)
 		{
-			Files.readAllLines(Paths.get("chebi-cache")).parallelStream().forEach( line -> {
-				String[] parts = line.split("\t");
-				String chebiID = parts[0];
-				String name = parts[1];
-				String formula = parts.length > 2 ? parts[2] : "";
-				chebiCache.put(chebiID, Arrays.asList(name, formula));
-			});
+			logger.info("useCache is TRUE - chebi-cache file will be read, and populated. Identifiers not in the cache will be queried from ChEBI.");
+			// if the cache exists, load it.
+			if (Files.exists(Paths.get("chebi-cache")))
+			{
+				Files.readAllLines(Paths.get("chebi-cache")).parallelStream().forEach( line -> {
+					String[] parts = line.split("\t");
+					String chebiID = parts[0];
+					String name = parts[1];
+					String formula = parts.length > 2 ? parts[2] : "";
+					chebiCache.put(chebiID, Arrays.asList(name, formula));
+				});
+			}
+			logger.debug("{} entries in the chebi-cache", chebiCache.size());
 		}
-		logger.debug("{} entries in the chebi-cache", chebiCache.size());
+		else
+		{
+			logger.info("useCache is FALSE - chebi-cache will NOT be read. ChEBI will be queried for ALL identifiers.");
+		}
 		FileWriter fileWriter = new FileWriter("chebi-cache", true);
 		// BufferedWriter is supposed to be thread-safe.
 		BufferedWriter bw = new BufferedWriter(fileWriter);
@@ -484,19 +495,26 @@ public class ChebiUpdater
 				identifier = (String) molecule.getAttributeValue("identifier");
 				if (identifier != null && !identifier.trim().equals(""))
 				{
-					// only query web service if the data is not in the chebi-cache
+					// only query web service if the data is not in the chebi-cache - NOTE: chebiCache will always be empty if this.useCache == false
 					if (!chebiCache.containsKey("CHEBI:"+identifier))
 					{
+						if (this.useCache && chebiCache.size() > 0)
+						{
+							logger.trace("Cache miss for CHEBI:{}", identifier);
+						}
 						Entity entity = this.chebiClient.getCompleteEntity(identifier);
 						if (entity != null)
 						{
 							entityMap.put(molecule.getDBID(), entity);
-							bw.write(entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\n");
-							bw.flush();
+							if (this.useCache)
+							{
+								bw.write(entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\n");
+								bw.flush();
+							}
 						}
 						else
 						{
-							failedEntitiesList.add(molecule);
+							failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
 						}
 					}
 					else
@@ -513,6 +531,7 @@ public class ChebiUpdater
 				else
 				{
 					logger.error("ERROR: Instance \"{}\" has an empty/null identifier. This should not be allowed.", molecule.toString());
+					failedEntitiesList.put(molecule, molecule.toString() + " has an empty/NULL identifier.");
 				}
 				int i = counter.getAndIncrement();
 				if (i % 250 == 0)
@@ -526,11 +545,13 @@ public class ChebiUpdater
 				if (e.getMessage().contains("invalid ChEBI identifier"))
 				{
 					logger.error("ERROR: ChEBI Identifier \"{}\" is not formatted correctly.", identifier);
+					failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is not formatted correctly.");
 				}
 				// Log this identifier, but don't fail.
 				else if (e.getMessage().contains("the entity in question is deleted, obsolete, or not yet released"))
 				{
 					logger.error("ERROR: ChEBI Identifier \"{}\" is deleted, obsolete, or not yet released.", identifier);
+					failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is deleted, obsolete, or not yet released.");
 				}
 				else
 				{
@@ -557,97 +578,4 @@ public class ChebiUpdater
 		});
 		bw.close();
 	}
-
-//	/**
-//	 * Create an InstanceEdit.
-//	 * 
-//	 * @param personID
-//	 *            - ID of the associated Person entity.
-//	 * @param creatorName
-//	 *            - The name of the thing that is creating this InstanceEdit.
-//	 *            Typically, you would want to use the package and classname that
-//	 *            uses <i>this</i> object, so it can be traced to the appropriate
-//	 *            part of the program.
-//	 * @return
-//	 */
-//	public GKInstance createInstanceEdit(MySQLAdaptor adaptor, long personID, String creatorName)
-//	{
-//		GKInstance instanceEdit = null;
-//		try
-//		{
-//			instanceEdit = createDefaultIE(adaptor, personID, true, "Inserted by " + creatorName);
-//			instanceEdit.getDBID();
-//			adaptor.updateInstance(instanceEdit);
-//		}
-//		catch (Exception e)
-//		{
-//			// logger.error("Exception caught while trying to create an InstanceEdit: {}",
-//			// e.getMessage());
-//			e.printStackTrace();
-//		}
-//		return instanceEdit;
-//	}
-//
-//	// This code below was taken from 'add-links' repo:
-//	// org.reactomeaddlinks.db.ReferenceCreator
-//	/**
-//	 * Create and save in the database a default InstanceEdit associated with the
-//	 * Person entity whose DB_ID is <i>defaultPersonId</i>.
-//	 * 
-//	 * @param dba
-//	 * @param defaultPersonId
-//	 * @param needStore
-//	 * @return an InstanceEdit object.
-//	 * @throws Exception
-//	 */
-//	public static GKInstance createDefaultIE(MySQLAdaptor dba, Long defaultPersonId, boolean needStore, String note) throws Exception
-//	{
-//		GKInstance defaultPerson = dba.fetchInstance(defaultPersonId);
-//		if (defaultPerson != null)
-//		{
-//			GKInstance newIE = createDefaultInstanceEdit(defaultPerson);
-//			newIE.addAttributeValue(ReactomeJavaConstants.dateTime, GKApplicationUtilities.getDateTime());
-//			newIE.addAttributeValue(ReactomeJavaConstants.note, note);
-//			InstanceDisplayNameGenerator.setDisplayName(newIE);
-//
-//			if (needStore)
-//			{
-//				dba.storeInstance(newIE);
-//			}
-//			else
-//			{
-//				logger.info("needStore set to false");
-//			}
-//			return newIE;
-//		}
-//		else
-//		{
-//			throw new Exception("Could not fetch Person entity with ID " + defaultPersonId + ". Please check that a Person entity exists in the database with this ID.");
-//		}
-//	}
-//
-//	/**
-//	 * Create an InstanceEdit for a specific Person.
-//	 * @param person The Person.
-//	 * @return An InstanceEdit.
-//	 */
-//	public static GKInstance createDefaultInstanceEdit(GKInstance person)
-//	{
-//		GKInstance instanceEdit = new GKInstance();
-//		PersistenceAdaptor adaptor = person.getDbAdaptor();
-//		instanceEdit.setDbAdaptor(adaptor);
-//		SchemaClass cls = adaptor.getSchema().getClassByName(ReactomeJavaConstants.InstanceEdit);
-//		instanceEdit.setSchemaClass(cls);
-//		try
-//		{
-//			instanceEdit.addAttributeValue(ReactomeJavaConstants.author, person);
-//		}
-//		catch (InvalidAttributeException | InvalidAttributeValueException e)
-//		{
-//			e.printStackTrace();
-//			// throw this back up the stack - no way to recover from in here.
-//			throw new Error(e);
-//		}
-//		return instanceEdit;
-//	}
 }

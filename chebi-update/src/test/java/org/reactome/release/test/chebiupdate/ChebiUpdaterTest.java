@@ -88,7 +88,7 @@ public class ChebiUpdaterTest
 	Entity chebiEntity2;
 	
 	@InjectMocks
-	ChebiUpdater updator = new ChebiUpdater(adaptor, true, PERSON_ID);
+	ChebiUpdater updator = new ChebiUpdater(adaptor, true, PERSON_ID, false);
 	
 	@Mock
 	GKInstance person;
