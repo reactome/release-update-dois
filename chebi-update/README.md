@@ -22,6 +22,7 @@ db.name=reactome_database
 db.port=3306
 person.id=somepersonIDNumber
 testMode=true
+useCache=false
 ```
 
 This application needs to be able to connect to a Reactome relational database The following settings in the properties file can be used to configure this connection:
@@ -31,7 +32,8 @@ This application needs to be able to connect to a Reactome relational database T
  - db.password - this is the password of the user that the application should connect as. _No default!_
  - db.name - this is the name of the database that the application should connect to. _No default!_
  - db.port - this is the port number that the application should connect to. _Default:_ 3306
- - person.id - when the Molecules are updated, an instance edit will be created and they will be associated with the Person instance which this DB_ID refers to.
+ - person.id - when the Molecules are updated, an instance edit will be created and they will be associated with the Person instance which this DB\_ID refers to. _No default!_
+ - useCache - a cache of ChEBI identifier information can be built up and used as the input for later executions. This primary purpose of this is to speed up testing, so developers don't need to wait for real-time communication with ChEBI. The only time this should be used in production is when you are experiencing connectivity problems with ChEBI and you have a good, fresh cache to use. The cache format is a TSV with the following columns: ChEBI ID (including the "CHEBI:" prefix), ChEBI Name, ChEBI Formula. Namd and Forumal are optional. _Default_: false
 
 Additionally, there is one non-connection related configuration option:
 
@@ -40,6 +42,13 @@ Additionally, there is one non-connection related configuration option:
 ## Logging
  
 This application will log to a file under `./logs/ChEBI_Update.log`. This file will have the same content as the console (stdout/stderr) except without the log4j prefix.
+
+Reports will be written under `./logs`. The reports are:
+ - DuplicateMoleculeIdentifiers.tsv - This report will list ChEBI Identifiers that are duplicated in the database. The code that generates this report runs at the begining of the process and at the end, so users will know if duplicates were introduced by the process of if they existed before. Because of that, some rows in this file might appear more than once.
+ - FailedChEBIQueries.tsv - This report will list ReferenceMolecules which failed when ChEBI was queried, and the reason for the failure.
+ - MoleculeIdentifierChanges.tsv - This report will list ReferenceMolecules whose ChEBI identifiers have changed, including the old and new identifiers.
+ - MoleculeNameChanges.tsv - This report will list ReferenceMolecules whose names have changed, including the old and new names.
+ - ReferenceEntityNameChanges.tsv - This report will list any Entity that refers to a ReferenceMolecule whose name has changed. This report contains the Creator of the Entity, information about the affected Entity, the new name from ChEBI, and the full list of names, *after* the update. 
 
 ## Compiling & Running
 
