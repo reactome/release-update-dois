@@ -26,7 +26,6 @@ public class Main {
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
-		
 		//Begin download directory
 //		DatabaseDumps.execute(dbAdaptor);
 		//SBMLDumper.execute(dbAdaptor);
@@ -38,9 +37,9 @@ public class Main {
 		//TODO: TheReactomeBookRTF
 		//TODO: FetchEmptyProject
 		//TODO: release_tarball
-		PathwaySummationMappingFile.execute(dbAdaptor);
+//		PathwaySummationMappingFile.execute(dbAdaptor);
 		//TODO: StableIdToUniprotAccessionMappingFile
-		//TODO: reactome_stable_ids_mapping
+		MapOldStableIds.execute(username, password, releaseNumber);
 		
 		//TODO: Files Mover [gene_association.reactome, biomodels]
 		
