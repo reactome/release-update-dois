@@ -118,15 +118,15 @@ public class ChebiUpdater
 		logger.info("Number of entities we were able to retrieve information about: {}", entityMap.size());
 		logger.info("Number of entities we were NOT able to retrieve information about: {}", failedEntitiesList.size());
 
-		failedChebiLookupsLog.info("# ReferenceMolecule\tReason");
+		failedChebiLookupsLog.info("# DB_ID\tReferenceMolecule\tReason");
 		for (GKInstance molecule : failedEntitiesList.keySet())
 		{
-			failedChebiLookupsLog.info("{}\t{}", molecule.toString(), failedEntitiesList.get(molecule));
+			failedChebiLookupsLog.info("{}\t{}\t{}", molecule.getDBID(), molecule.toString(), failedEntitiesList.get(molecule));
 		}
 		
 		// print headers for log files
-		refMolIdentChangeLog.info("# Reference Molecule\tOld Identifier\tNew Identifier");
-		refMolNameChangeLog.info("# Reference Molecule\tOld Name\tNew Name");
+		refMolIdentChangeLog.info("# DB_ID\tReference Molecule\tOld Identifier\tNew Identifier");
+		refMolNameChangeLog.info("# DB_ID\tReference Molecule\tOld Name\tNew Name");
 		
 		GKInstance instanceEdit = null;
 		adaptor.startTransaction();
@@ -181,11 +181,11 @@ public class ChebiUpdater
 		logger.info("*** Formula update changes ***");
 		logger.info(this.formulaUpdateSB.toString());
 		
-		refEntChangeLog.info("# Creator\tAffected ReferenceEntity\tNew ChEBI Name\tUpdated list of all names");
+		refEntChangeLog.info("# DB_ID\tCreator\tAffected ReferenceEntity\tNew ChEBI Name\tUpdated list of all names");
 		// Print the referenceEntities that have changes, sorted by who created them.
-		for (GKInstance creator : referenceEntityChanges.keySet().stream().sorted(this.personComparator).collect(Collectors.toList()))
+		for (GKInstance creator : this.referenceEntityChanges.keySet().stream().sorted(this.personComparator).collect(Collectors.toList()))
 		{
-			for (String message : referenceEntityChanges.get(creator))
+			for (String message : this.referenceEntityChanges.get(creator))
 			{
 				refEntChangeLog.info("{}\t{}",creator.toString(), message);
 			}
@@ -263,7 +263,7 @@ public class ChebiUpdater
 		if (!chebiName.equals(moleculeName))
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.name, chebiName);
-			refMolNameChangeLog.info("{}\t{}\t{}",molecule.toString() , moleculeName, chebiName);
+			refMolNameChangeLog.info("{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString() , moleculeName, chebiName);
 			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.name);
 			return true;
 		}
@@ -287,7 +287,7 @@ public class ChebiUpdater
 		if (!chebiID.equals(moleculeIdentifier))
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.identifier, chebiID);
-			refMolIdentChangeLog.info("{}\t{}\t{}", molecule.toString(), moleculeIdentifier, chebiID);
+			refMolIdentChangeLog.info("{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString(), moleculeIdentifier, chebiID);
 			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.identifier);
 			return true;
 		}
@@ -333,7 +333,7 @@ public class ChebiUpdater
 							GKInstance creator = (GKInstance) createdInstanceEdit.getAttributeValue(ReactomeJavaConstants.author);
 
 							@SuppressWarnings("unchecked")
-							String message = referrer.toString()+"\t"+chebiName+"\t"+((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
+							String message = referrer.getDBID()+"\t"+referrer.toString()+"\t"+chebiName+"\t"+((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
 							// Add the message to the map of messages, keyed by the creator.
 							if (this.referenceEntityChanges.containsKey(creator))
 							{
@@ -397,7 +397,7 @@ public class ChebiUpdater
 
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
 //		logger.info("*** Duplicate ReferenceMolecules ***\n");
-		duplicatesLog.info("# Duplicated Identifier\tReferenceMolecule");
+		duplicatesLog.info("# DB_ID\tDuplicated Identifier\tReferenceMolecule");
 
 		// Should only be one, but API returns collection.
 		@SuppressWarnings("unchecked")
@@ -419,7 +419,7 @@ public class ChebiUpdater
 			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(chebiAQR, identifierAQR));
 			for (GKInstance duplicate : dupesOfIdentifier)
 			{
-				duplicatesLog.info("{}\t{}", identifier, duplicate.toString());
+				duplicatesLog.info("{}\t{}\t{}", duplicate.getDBID(), identifier, duplicate.toString());
 			}
 		}
 
