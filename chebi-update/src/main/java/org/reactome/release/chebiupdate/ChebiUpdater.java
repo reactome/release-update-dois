@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -125,7 +126,7 @@ public class ChebiUpdater
 		}
 		
 		// print headers for log files
-		refMolIdentChangeLog.info("# DB_ID\tReference Molecule\tOld Identifier\tNew Identifier");
+		refMolIdentChangeLog.info("# DB_ID\tReference Molecule\tDeprecated Identifier\tReplacement Identifier\tAffected referenceEntity DB_IDs\tDB_ID of Molecule with Replacement Identifier\tDB_IDs of referenceEntities of Molecule with Replacement Identifier");
 		refMolNameChangeLog.info("# DB_ID\tReference Molecule\tOld Name\tNew Name");
 		
 		GKInstance instanceEdit = null;
@@ -150,7 +151,7 @@ public class ChebiUpdater
 
 			String prefix = "ReferenceMolecule (DB ID: " + molecule.getDBID() + " / ChEBI ID: " + moleculeIdentifier + ") has changes: ";
 
-			boolean identifierUpdated = updateMoleculeIdentifier(molecule, chebiID, moleculeIdentifier, prefix);
+			reportIfMoleculeIdentifierChanged(molecule, chebiID, moleculeIdentifier, prefix);
 			boolean nameUpdated = updateMoleculeName(molecule, chebiName, moleculeName, prefix);
 			boolean formulaUpdated = updateMoleculeFormula(molecule, chebiFormulae, moleculeFormulae, prefix);
 			// If the ChEBI name was updated, update the referenceEntities that refer to the molecule.
@@ -159,7 +160,7 @@ public class ChebiUpdater
 				updateReferenceEntities(molecule, chebiName, instanceEdit);
 			}
 			
-			if (identifierUpdated || nameUpdated || formulaUpdated)
+			if (nameUpdated || formulaUpdated)
 			{
 				addInstanceEditToExistingModifieds(instanceEdit, molecule);
 				// Update the display name.
@@ -271,27 +272,62 @@ public class ChebiUpdater
 	}
 
 	/**
-	 * Update a molecule's identifier.
+	 * Writes report lines if a molecule's Identifier has changed, according to ChEBI.
 	 * 
 	 * @param molecule
-	 * @param chebiID
-	 * @param moleculeIdentifier
+	 * @param newChebiID
+	 * @param oldMoleculeIdentifier
 	 * @param prefix
 	 * @return True if the identifier was updated, false otherwise.
 	 * @throws InvalidAttributeException
 	 * @throws InvalidAttributeValueException
 	 * @throws Exception
 	 */
-	private boolean updateMoleculeIdentifier(GKInstance molecule, String chebiID, String moleculeIdentifier, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	private void reportIfMoleculeIdentifierChanged(GKInstance molecule, String newChebiID, String oldMoleculeIdentifier, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
-		if (!chebiID.equals(moleculeIdentifier))
+		if (!newChebiID.equals(oldMoleculeIdentifier))
 		{
-			molecule.setAttributeValue(ReactomeJavaConstants.identifier, chebiID);
-			refMolIdentChangeLog.info("{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString(), moleculeIdentifier, chebiID);
-			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.identifier);
-			return true;
+			String oldIdentifierReferrersString = "";
+			// Need to get list of DB_IDs of referrers for *old* Identifier and also for *new* Identifier.
+			@SuppressWarnings("unchecked")
+			List<GKInstance> oldIdentifierReferrers = (List<GKInstance>) molecule.getReferers(ReactomeJavaConstants.referenceEntity);
+			if (oldIdentifierReferrers != null && !oldIdentifierReferrers.isEmpty())
+			{
+				for (GKInstance referrer : oldIdentifierReferrers)
+				{
+					oldIdentifierReferrersString += referrer.getDBID().toString() + "|";
+				}
+			}
+			
+			// It's possible that the "new" identifier is already in our system. And duplicate ReferenceMolecules are also *possible*, so this will
+			// get a little bit messy...
+			@SuppressWarnings("unchecked")
+			Collection<GKInstance> refMolsWithNewIdentifier = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, "=", newChebiID);
+			// IF there is an existing ReferenceMolecule(s) already using the "new" identifier,
+			// the report needs to contain the DB_ID of anything already using that reference molecule AND the DB_IDs of the referrers to that molecule(s).
+			if (refMolsWithNewIdentifier != null && !refMolsWithNewIdentifier.isEmpty())
+			{
+				// for each ReferenceMolecule with the "new" identifier...
+				for (GKInstance refMol : refMolsWithNewIdentifier)
+				{
+					@SuppressWarnings("unchecked")
+					List<GKInstance> newIdentifierReferrers = (List<GKInstance>) refMol.getReferers(ReactomeJavaConstants.referenceEntity);
+					String newIdentifierReferrersString = "";
+					if (newIdentifierReferrers != null && !newIdentifierReferrers.isEmpty())
+					{
+						for (GKInstance referrer : newIdentifierReferrers)
+						{
+							newIdentifierReferrersString += referrer.getDBID() + "|";
+						}
+					}
+					refMolIdentChangeLog.info("{}\t{}\t{}\t{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString(), oldMoleculeIdentifier, newChebiID, refMol.getDBID(), oldIdentifierReferrersString, newIdentifierReferrersString);
+				}
+			}
+			else // the report line will have and Empty String for the DB_ID of the existing molecule and referrers to that molecule.
+			{
+				refMolIdentChangeLog.info("{}\t{}\t{}\t{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString(), oldMoleculeIdentifier, newChebiID, "", oldIdentifierReferrersString, "");
+			}
 		}
-		return false;
 	}
 
 	/**
@@ -470,10 +506,11 @@ public class ChebiUpdater
 			{
 				Files.readAllLines(Paths.get("chebi-cache")).parallelStream().forEach( line -> {
 					String[] parts = line.split("\t");
-					String chebiID = parts[0];
-					String name = parts[1];
-					String formula = parts.length > 2 ? parts[2] : "";
-					chebiCache.put(chebiID, Arrays.asList(name, formula));
+					String oldChebiID = parts[0];
+					String newChebiID = parts[1];
+					String name = parts[2];
+					String formula = parts.length > 2 ? parts[3] : "";
+					chebiCache.put(oldChebiID, Arrays.asList(newChebiID, name, formula));
 				});
 			}
 			logger.debug("{} entries in the chebi-cache", chebiCache.size());
@@ -508,7 +545,7 @@ public class ChebiUpdater
 							entityMap.put(molecule.getDBID(), entity);
 							if (this.useCache)
 							{
-								bw.write(entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\n");
+								bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
 								bw.flush();
 							}
 						}
@@ -520,10 +557,10 @@ public class ChebiUpdater
 					else
 					{
 						AccessibleEntity entity = new AccessibleEntity();
-						entity.setChebiId(identifier);
-						entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(0) );
+						entity.setChebiId(chebiCache.get("CHEBI:"+identifier).get(0));
+						entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(1) );
 						DataItem formula = new DataItem();
-						formula.setData(chebiCache.get("CHEBI:"+identifier).get(1));
+						formula.setData(chebiCache.get("CHEBI:"+identifier).get(2));
 						entity.setFormulae(Arrays.asList(formula));
 						entityMap.put(molecule.getDBID(), entity);
 					}
