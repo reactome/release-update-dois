@@ -392,7 +392,7 @@ public class ChebiUpdater
 				+ "inner join ReferenceEntity on ReferenceEntity.DB_ID = ReferenceMolecule.DB_ID\n"
 				+ "inner join ReferenceDatabase on ReferenceDatabase.DB_ID = ReferenceEntity.referenceDatabase\n"
 				+ "inner join ReferenceDatabase_2_name on ReferenceDatabase_2_name.DB_ID = ReferenceDatabase.DB_ID\n"
-				+ "where ReferenceDatabase_2_name.name = 'ChEBI'\n" + "group by ReferenceEntity.identifier\n"
+				+ "where ReferenceDatabase_2_name.name = 'ChEBI' and identifier is not null\n" + "group by ReferenceEntity.identifier\n"
 				+ "having count(ReferenceMolecule.DB_ID) > 1;\n";
 
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
