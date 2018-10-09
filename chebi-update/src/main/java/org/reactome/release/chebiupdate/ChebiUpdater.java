@@ -144,7 +144,7 @@ public class ChebiUpdater
 			String chebiName = entity.getChebiAsciiName();
 			List<DataItem> chebiFormulae = entity.getFormulae();
 
-			// Now, check to see if we need to update the ReferenceMolecule itself.
+
 			String moleculeIdentifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
 			String moleculeName = (String) molecule.getAttributeValuesList(ReactomeJavaConstants.name).get(0);
 			String moleculeFormulae = (String) molecule.getAttributeValue(ReactomeJavaConstants.formula);
@@ -159,7 +159,7 @@ public class ChebiUpdater
 			{
 				updateReferenceEntities(molecule, chebiName, instanceEdit);
 			}
-			
+			// Now, check to see if we need to update the ReferenceMolecule itself.
 			if (nameUpdated || formulaUpdated)
 			{
 				addInstanceEditToExistingModifieds(instanceEdit, molecule);
@@ -432,7 +432,6 @@ public class ChebiUpdater
 				+ "having count(ReferenceMolecule.DB_ID) > 1;\n";
 
 		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
-//		logger.info("*** Duplicate ReferenceMolecules ***\n");
 		duplicatesLog.info("# DB_ID\tDuplicated Identifier\tReferenceMolecule");
 
 		// Should only be one, but API returns collection.
@@ -477,7 +476,7 @@ public class ChebiUpdater
 	 * @author sshorser
 	 *
 	 */
-	class AccessibleEntity extends Entity
+	private class AccessibleEntity extends Entity
 	{
 		public void setFormulae(List<DataItem> formulae)
 		{
@@ -532,6 +531,7 @@ public class ChebiUpdater
 				identifier = (String) molecule.getAttributeValue("identifier");
 				if (identifier != null && !identifier.trim().equals(""))
 				{
+					Entity entity;
 					// only query web service if the data is not in the chebi-cache - NOTE: chebiCache will always be empty if this.useCache == false
 					if (!chebiCache.containsKey("CHEBI:"+identifier))
 					{
@@ -539,29 +539,29 @@ public class ChebiUpdater
 						{
 							logger.trace("Cache miss for CHEBI:{}", identifier);
 						}
-						Entity entity = this.chebiClient.getCompleteEntity(identifier);
-						if (entity != null)
+						entity = this.chebiClient.getCompleteEntity(identifier);
+						if (entity != null && this.useCache)
 						{
-							entityMap.put(molecule.getDBID(), entity);
-							if (this.useCache)
-							{
-								bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
-								bw.flush();
-							}
+							bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
+							bw.flush();
 						}
 						else
 						{
 							failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
 						}
 					}
-					else
+					else // ...Load data from the cache. Use the AccessibleEntity to set the formula.
 					{
-						AccessibleEntity entity = new AccessibleEntity();
+						entity = new AccessibleEntity();
 						entity.setChebiId(chebiCache.get("CHEBI:"+identifier).get(0));
 						entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(1) );
 						DataItem formula = new DataItem();
 						formula.setData(chebiCache.get("CHEBI:"+identifier).get(2));
-						entity.setFormulae(Arrays.asList(formula));
+						((AccessibleEntity)entity).setFormulae(Arrays.asList(formula));
+					}
+					// Add entity to map (if it's non-null)
+					if (entity != null)
+					{
 						entityMap.put(molecule.getDBID(), entity);
 					}
 				}
