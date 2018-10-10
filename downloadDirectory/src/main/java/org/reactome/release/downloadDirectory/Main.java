@@ -16,7 +16,9 @@ public class Main {
 		String pathToConfig = "src/main/resources/config.properties";
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
-		int releaseNumber = 65;
+		int releaseNumber = 66;
+		
+		//TODO: Check stable identifiers db exists; 
 		
 		//Set up DB adaptor
 		Object speciesToInferFromLong = "Homo sapiens";
@@ -26,12 +28,12 @@ public class Main {
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
+		
+//		Runtime.getRuntime().exec("mkdir -p " + releaseNumber);
 		//Begin download directory
-//		DatabaseDumps.execute(dbAdaptor);
-		//SBMLDumper.execute(dbAdaptor);
-		//TODO: runDiagramDumper
-//		OutputCuratedComplexInstances.execute(dbAdaptor);
+//		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
 		//TODO: run_biopax
+		Biopax.execute(dbAdaptor);
 		//TODO: runGSEAOutput
 		//TODO: TheReactomeBookPDF
 		//TODO: TheReactomeBookRTF
@@ -39,7 +41,7 @@ public class Main {
 		//TODO: release_tarball
 //		PathwaySummationMappingFile.execute(dbAdaptor);
 		//TODO: StableIdToUniprotAccessionMappingFile
-		MapOldStableIds.execute(username, password, releaseNumber);
+//		MapOldStableIds.execute(username, password, releaseNumber);
 		
 		//TODO: Files Mover [gene_association.reactome, biomodels]
 		
