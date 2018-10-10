@@ -1,9 +1,6 @@
 package org.reactome.release.downloadDirectory;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Properties;
 
 import org.gk.persistence.MySQLAdaptor;
@@ -16,7 +13,6 @@ public class Main {
 		String pathToConfig = "src/main/resources/config.properties";
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
-		int releaseNumber = 66;
 		
 		//TODO: Check stable identifiers db exists; 
 		
@@ -27,13 +23,14 @@ public class Main {
 		String database = props.getProperty("database");
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
+		int releaseNumber = Integer.valueOf(props.getProperty("release"));
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		
-//		Runtime.getRuntime().exec("mkdir -p " + releaseNumber);
+		Runtime.getRuntime().exec("mkdir -p " + releaseNumber);
 		//Begin download directory
-//		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
+		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
 		//TODO: run_biopax
-		Biopax.execute(dbAdaptor);
+//		Biopax.execute(dbAdaptor);
 		//TODO: runGSEAOutput
 		//TODO: TheReactomeBookPDF
 		//TODO: TheReactomeBookRTF
