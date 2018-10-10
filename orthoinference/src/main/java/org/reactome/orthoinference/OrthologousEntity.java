@@ -106,7 +106,13 @@ public class OrthologousEntity {
 				definedSetInst.setDbAdaptor(dba);
 				String definedSetName = "Homologues of " + ewasInst.getAttributeValue(ReactomeJavaConstants.name);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
-				definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, ewasInst.getAttributeValue(ReactomeJavaConstants.compartment));
+				
+				GKInstance compartmentInst = (GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.compartment);
+				if (compartmentInst.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
+					definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, ewasInst.getAttributeValue(ReactomeJavaConstants.compartment));
+				} else {
+					System.out.println("\tNot a compartment: " + compartmentInst);
+				}				
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
 				
