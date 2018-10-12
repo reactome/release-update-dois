@@ -30,15 +30,14 @@ public class Main {
 		
 		//Begin download directory
 //		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
-		//TODO: run_biopax
-		Biopax.execute(username, password, host, port, database, releaseNumber);
+//		Biopax.execute(username, password, host, port, database, releaseNumber);
+		GSEAOutput.execute(username, password, host, port, database);
 		//TODO: runGSEAOutput
 		//TODO: TheReactomeBookPDF
 		//TODO: TheReactomeBookRTF
 		//TODO: FetchEmptyProject
 		//TODO: release_tarball
 //		PathwaySummationMappingFile.execute(dbAdaptor);
-		//TODO: StableIdToUniprotAccessionMappingFile
 //		MapOldStableIds.execute(username, password, releaseNumber);
 		
 		//TODO: Files Mover [gene_association.reactome, biomodels]
