@@ -10,17 +10,16 @@ import org.biopax.validator.api.*;
 import org.biopax.validator.api.beans.Validation;
 import org.biopax.validator.api.beans.ValidatorResponse;
 import org.biopax.validator.impl.IdentifierImpl;
-import org.biopax.validator.impl.ValidatorImpl;
 
-import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
@@ -54,9 +53,42 @@ public class Biopax {
 				runValidator(validator, getFileToValidate(owlFile), owlFile.split("/")[1].split("\\.")[0], releaseNumber);
 			}
 		}	
+		
+		folderFiles = folder.listFiles();
+		
+		FileOutputStream biopaxOutputStream = new FileOutputStream("biopax2.zip");
+		FileOutputStream validatorOutputStream = new FileOutputStream("biopax2_validator.zip");
+		
+		ZipOutputStream biopaxZipStream = new ZipOutputStream(biopaxOutputStream);
+		ZipOutputStream validatorZipStream = new ZipOutputStream(validatorOutputStream);
+		
+		for (int i = 0; i < folderFiles.length; i++) {
+			if (folderFiles[i].toString().endsWith(".owl")) {
+				writeToZipFile(folderFiles[i], biopaxZipStream);
+			} else if (folderFiles[i].toString().endsWith(".xml")) {
+				writeToZipFile(folderFiles[i], validatorZipStream);
+			}
+		}
+		
+		biopaxZipStream.close();
+		validatorZipStream.close();
 	}
 	
-protected static void runValidator(Validator validator, Resource owlFileAsResource, String speciesName, int releaseNumber) throws IOException {
+	public static void writeToZipFile(File file, ZipOutputStream zipOutputStream) throws IOException {
+		
+		FileInputStream zipInputStream = new FileInputStream(file);
+		ZipEntry zipEntry = new ZipEntry(file.getName().toString());
+		zipOutputStream.putNextEntry(zipEntry);
+		byte[] bytes = new byte[1024];
+		int length = 0;
+		while ((length = zipInputStream.read(bytes)) >= 0) {
+			zipOutputStream.write(bytes, 0, length);
+		}
+		zipOutputStream.closeEntry();
+		zipInputStream.close();
+	}
+	
+	public static void runValidator(Validator validator, Resource owlFileAsResource, String speciesName, int releaseNumber) throws IOException {
 		
 		final ValidatorResponse consolidatedReport = new ValidatorResponse();
 		
