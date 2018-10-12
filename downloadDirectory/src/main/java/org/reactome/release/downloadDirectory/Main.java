@@ -27,10 +27,11 @@ public class Main {
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		
 		Runtime.getRuntime().exec("mkdir -p " + releaseNumber);
+		
 		//Begin download directory
-		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
+//		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
 		//TODO: run_biopax
-//		Biopax.execute(dbAdaptor);
+		Biopax.execute(username, password, host, port, database, releaseNumber);
 		//TODO: runGSEAOutput
 		//TODO: TheReactomeBookPDF
 		//TODO: TheReactomeBookRTF
