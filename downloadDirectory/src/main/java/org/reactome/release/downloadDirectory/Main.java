@@ -26,16 +26,15 @@ public class Main {
 		int releaseNumber = Integer.valueOf(props.getProperty("release"));
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		
-		Runtime.getRuntime().exec("mkdir -p " + releaseNumber);
+//		Runtime.getRuntime().exec("mkdir -p " + releaseNumber);
 		
 		//Begin download directory
 //		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
 //		Biopax.execute(username, password, host, port, database, releaseNumber);
-		GSEAOutput.execute(username, password, host, port, database);
-		//TODO: runGSEAOutput
+//		GSEAOutput.execute(username, password, host, port, database);
 		//TODO: TheReactomeBookPDF
 		//TODO: TheReactomeBookRTF
-		//TODO: FetchEmptyProject
+		FetchEmptyProject.execute(dbAdaptor, username, password);
 		//TODO: release_tarball
 //		PathwaySummationMappingFile.execute(dbAdaptor);
 //		MapOldStableIds.execute(username, password, releaseNumber);
