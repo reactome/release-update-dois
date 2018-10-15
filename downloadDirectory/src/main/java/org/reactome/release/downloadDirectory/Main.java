@@ -34,7 +34,7 @@ public class Main {
 //		GSEAOutput.execute(username, password, host, port, database);
 		//TODO: TheReactomeBookPDF
 		//TODO: TheReactomeBookRTF
-		FetchEmptyProject.execute(dbAdaptor, username, password);
+		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password);
 		//TODO: release_tarball
 //		PathwaySummationMappingFile.execute(dbAdaptor);
 //		MapOldStableIds.execute(username, password, releaseNumber);
