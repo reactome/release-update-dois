@@ -56,7 +56,11 @@
     <artifactId>spring-instrument</artifactId>
     <version>4.3.19.RELEASE</version>
 </dependency>
-
+<dependency>
+    <groupId>org.eclipse.jgit</groupId>
+    <artifactId>org.eclipse.jgit</artifactId>
+    <version>4.8.0.201706111038-r</version>
+</dependency>
 
 
 
