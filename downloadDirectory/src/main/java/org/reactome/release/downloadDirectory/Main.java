@@ -35,12 +35,16 @@ public class Main {
 		//TODO: TheReactomeBookPDF
 		//TODO: TheReactomeBookRTF
 //		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password);
-		CreateReleaseTarball.execute(releaseNumber);
-		//TODO: release_tarball
+//		CreateReleaseTarball.execute(releaseNumber);
 //		PathwaySummationMappingFile.execute(dbAdaptor);
 //		MapOldStableIds.execute(username, password, releaseNumber);
 		
-		//TODO: Files Mover [gene_association.reactome, biomodels]
+		// These file copy commands now use absolute paths instead of relative ones
+		String releaseDirAbsolute = "/usr/local/gkb/scripts/release";
+		Process copyGeneAssociationFile = Runtime.getRuntime().exec("cp " + releaseDirAbsolute + "/goa_prepare/gene_association.reactome .");
+		copyGeneAssociationFile.waitFor();
+		Process copyModels2PathwaysFile = Runtime.getRuntime().exec("cp " + releaseDirAbsolute + "/biomodels/models2pathways.tsv .");
+		copyModels2PathwaysFile.waitFor();
 		
 		//TODO: create_reactome2biosystems
 	}
