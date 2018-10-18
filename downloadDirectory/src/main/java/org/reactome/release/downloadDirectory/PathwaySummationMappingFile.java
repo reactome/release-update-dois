@@ -44,10 +44,6 @@ public class PathwaySummationMappingFile {
 						rowHash.add(row);
 					}
 				}
-//				File pathwaySummationFile = new File("pathway2summation.txt");
-//				if (pathwaySummationFile.exists()) {
-//				
-//				}
 			}
 		}
 		Runtime.getRuntime().exec("mv pathway2summation.txt " + releaseNumber);

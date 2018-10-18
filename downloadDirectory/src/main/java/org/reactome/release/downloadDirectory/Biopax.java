@@ -50,21 +50,21 @@ public class Biopax {
 				SpeciesAllPathwaysLevel3Converter.main(new String[]{host, "test_reactome_66_final", username, password, Integer.toString(port), biopaxDir});
 			}
 			
-		File folder = new File(releaseNumber + "/");
+		File folder = new File(biopaxDir);
 		File[] folderFiles = folder.listFiles();
 		// Rename owl files removing spaces, and then validate them
+		System.out.println("\tRunning Biopax validation on each species...");
 		for (int j = 0; j < folderFiles.length; j++) {
 			if (folderFiles[j].toString().endsWith(".owl")) {
 				String owlFile = folderFiles[j].toString();
 				owlFile = owlFile.replaceAll(" +", "_");
 				File formattedOwlFile = new File(owlFile);
 				folderFiles[j].renameTo(formattedOwlFile);
-				runValidator(validator, getFileToValidate(owlFile), owlFile.split("/")[1].split("\\.")[0], releaseNumber);
+				runValidator(validator, getFileToValidate(owlFile), owlFile.split("/")[1].split("\\.")[0], biopaxDir);
 			}
 		}	
-	
 		folderFiles = folder.listFiles();
-		
+
 		// Compress all Biopax and validation files into individual zip files
 		FileOutputStream biopaxOutputStream;
 		FileOutputStream validatorOutputStream;
@@ -95,7 +95,7 @@ public class Biopax {
 		Runtime.getRuntime().exec("mv biopax2_validator.zip " + releaseNumber);
 		Runtime.getRuntime().exec("mv biopax.zip " + releaseNumber);
 		Runtime.getRuntime().exec("mv biopax_validator.zip " + releaseNumber);
-		Process removeBiopaxDir = Runtime.getRuntime().exec("rm -r " + releaseNumber + "_biopax");
+		Process removeBiopaxDir = Runtime.getRuntime().exec("rm -r " + biopaxDir);
 		removeBiopaxDir.waitFor();
 	}
 	
@@ -115,9 +115,9 @@ public class Biopax {
 	}
 	
 	// Function taken from the Biopax validator project, largely imitating their own 'main' function but leaving out much that we don't need for this
-	public static void runValidator(Validator validator, Resource owlFileAsResource, String speciesName, int releaseNumber) throws IOException {
+	public static void runValidator(Validator validator, Resource owlFileAsResource, String speciesName, String biopaxDir) throws IOException {
 		
-		System.out.println("\t" + speciesName);
+		System.out.println("\t\t Validating " + speciesName);
 		Validation result = new Validation(new IdentifierImpl(), owlFileAsResource.getDescription(), autofix, null, maxErrors, profile);
 		result.setDescription(owlFileAsResource.getDescription());
 		// The actual validation function
@@ -133,7 +133,7 @@ public class Biopax {
 
 		// Save the validation results
 		PrintWriter writer;
-		writer = new PrintWriter(releaseNumber + "/" + speciesName + "_validator_output." + outFormat);
+		writer = new PrintWriter(biopaxDir + "/" + speciesName + "_validator_output." + outFormat);
 		Source xsltSrc = (outFormat.equalsIgnoreCase("html")) ? new StreamSource(ctx.getResource("classpath:html-result.xsl").getInputStream()) : null;
 		ValidatorUtils.write(result, writer, xsltSrc);
 		writer.close();
