@@ -10,19 +10,19 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 public class CreateReleaseTarball {
 
 	public static void execute(int releaseNumber) throws IOException, InterruptedException {
-		
+		System.out.println("Running CreateReleaseTarball...");
 		String tarDirRelease = "reactome_tar/" + releaseNumber + "/Release";
 		String absReleaseDir = "/usr/local/gkb/scripts/release/website_files_update";
 		String absReactomeDir = "/usr/local/reactomes/Reactome/production/Website/static/download/" + releaseNumber;
-		Runtime.getRuntime().exec("mkdir -p " + tarDirRelease);
-		
+		Process makeReleaseDir = Runtime.getRuntime().exec("mkdir -p " + tarDirRelease);
+		makeReleaseDir.waitFor();
 		// Remove any existing Release repositorys
 		File releaseDir = new File(tarDirRelease);
 		if (releaseDir.list().length > 0) {
 			Process removeReleaseRepo = Runtime.getRuntime().exec("rm -r " + tarDirRelease);
 			removeReleaseRepo.waitFor();
 		} 
-		
+
 		try {
 			Git.cloneRepository().setURI("https://github.com/reactome/Release.git").setDirectory(Paths.get(tarDirRelease).toFile()).call();
 		} catch (GitAPIException e) {
@@ -66,8 +66,12 @@ public class CreateReleaseTarball {
 		// It usually created a 'RESTful' directory here. All it contains is an empty 'temp' subdirectory, so it wasn't included for this rewrite.
 		
 		// Tar everything
-		Process reactomeTar = Runtime.getRuntime().exec("tar czf reactome.tar.gz -C reactome_tar/" + releaseNumber + "/reactome/ .");
+		Process reactomeTar = Runtime.getRuntime().exec("tar czf " + releaseNumber + "/reactome.tar.gz -C reactome_tar/" + releaseNumber + "/reactome/ .");
 		reactomeTar.waitFor();
+		
+		Process removeReactomeTarDir = Runtime.getRuntime().exec("rm -r reactome_tar");
+		removeReactomeTarDir.waitFor();
+		
 		
 		// TODO: Solr, apache-tomcat(?), install_reactome.sh modification
 		

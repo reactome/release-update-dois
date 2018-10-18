@@ -1,5 +1,6 @@
 package org.reactome.release.downloadDirectory;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -13,8 +14,8 @@ import org.gk.persistence.MySQLAdaptor;
 
 public class PathwaySummationMappingFile {
 
-	public static void execute(MySQLAdaptor dba) throws Exception {
-		
+	public static void execute(MySQLAdaptor dba, int releaseNumber) throws Exception {
+		System.out.println("Running PathwaySummationMappingFile...");
 		// Get all Pathway instances
 		Collection<GKInstance> pathwayInstances = dba.fetchInstancesByClass(ReactomeJavaConstants.Pathway);
 		HashSet<String> rowHash = new HashSet<String>();
@@ -43,7 +44,12 @@ public class PathwaySummationMappingFile {
 						rowHash.add(row);
 					}
 				}
+//				File pathwaySummationFile = new File("pathway2summation.txt");
+//				if (pathwaySummationFile.exists()) {
+//				
+//				}
 			}
 		}
+		Runtime.getRuntime().exec("mv pathway2summation.txt " + releaseNumber);
 	}
 }

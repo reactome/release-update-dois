@@ -10,8 +10,8 @@ import org.reactome.gsea.ReactomeToMsigDBExport;
 
 public class GSEAOutput {
 
-	public static void execute(String username, String password, String host, int port, String database) {
-		
+	public static void execute(String username, String password, String host, int port, String database, int releaseNumber) {
+		System.out.println("Running GSEAOutput...");
 		String outFilename = "ReactomePathways.gmt";
 		ReactomeToMsigDBExport.main(new String[] {host, "test_reactome_66_final", username, password, Integer.toString(port), outFilename});
 		
@@ -34,6 +34,7 @@ public class GSEAOutput {
 			zos.closeEntry();
 			zos.close();
 			Runtime.getRuntime().exec("rm " + outFilename);
+			Runtime.getRuntime().exec("mv " + outFilename + ".zip " + releaseNumber);
 			
 		} catch (IOException e) {
 			e.printStackTrace();

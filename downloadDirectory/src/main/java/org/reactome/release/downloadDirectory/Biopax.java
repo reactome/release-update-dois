@@ -32,19 +32,22 @@ public class Biopax {
 	static String outFormat = "xml";
 	
 	public static void execute(String username, String password, String host, int port, String database, int releaseNumber) throws Exception {
-		
+		System.out.println("Running Biopax...");
 		// Biopax validation requires loading of rules, which takes a few minutes
-		System.out.println("Fetching validation rules");
+		System.out.println("\tFetching validation rules");
 		ctx = new ClassPathXmlApplicationContext(new String[] {"META-INF/spring/appContext-loadTimeWeaving.xml", "META-INF/spring/appContext-validator.xml"});
 		Validator validator = (Validator) ctx.getBean("validator");
 		
+		String biopaxDir = releaseNumber + "_biopax";
 		// We want to run Biopax twice, once each for Biopax level 2 and 3
 		for (int i = 0; i < 2; i++) {
 //			Runtime.getRuntime().exec("rm -fr " + releaseNumber);
 			if (i == 0) {
-//				SpeciesAllPathwaysConverter.main(new String[]{host, "test_reactome_66_final", username, password, Integer.toString(port), Integer.toString(releaseNumber)});
+				System.out.println("\tGenerating Biopax2 Species Files");
+				SpeciesAllPathwaysConverter.main(new String[]{host, "test_reactome_66_final", username, password, Integer.toString(port), biopaxDir});
 			} else {
-//				SpeciesAllPathwaysLevel3Converter.main(new String[]{host, "test_reactome_66_final", username, password, Integer.toString(port), Integer.toString(releaseNumber)});
+				System.out.println("\tGenerating Biopax3 Species Files");
+				SpeciesAllPathwaysLevel3Converter.main(new String[]{host, "test_reactome_66_final", username, password, Integer.toString(port), biopaxDir});
 			}
 			
 		File folder = new File(releaseNumber + "/");
@@ -65,7 +68,7 @@ public class Biopax {
 		// Compress all Biopax and validation files into individual zip files
 		FileOutputStream biopaxOutputStream;
 		FileOutputStream validatorOutputStream;
-		System.out.println("Beginning compression...");
+		System.out.println("\tBeginning compression of Biopax files...");
 		if (i == 0) {
 			biopaxOutputStream = new FileOutputStream("biopax2.zip");
 			validatorOutputStream = new FileOutputStream("biopax2_validator.zip");
@@ -86,8 +89,14 @@ public class Biopax {
 		}
 		biopaxZipStream.close();
 		validatorZipStream.close();
-		System.out.println("Biopax run complete");
+		System.out.println("\tBiopax run complete");
 		}
+		Runtime.getRuntime().exec("mv biopax2.zip " + releaseNumber);
+		Runtime.getRuntime().exec("mv biopax2_validator.zip " + releaseNumber);
+		Runtime.getRuntime().exec("mv biopax.zip " + releaseNumber);
+		Runtime.getRuntime().exec("mv biopax_validator.zip " + releaseNumber);
+		Process removeBiopaxDir = Runtime.getRuntime().exec("rm -r " + releaseNumber + "_biopax");
+		removeBiopaxDir.waitFor();
 	}
 	
 	//Function for compressing Biopax and validation files
@@ -108,7 +117,7 @@ public class Biopax {
 	// Function taken from the Biopax validator project, largely imitating their own 'main' function but leaving out much that we don't need for this
 	public static void runValidator(Validator validator, Resource owlFileAsResource, String speciesName, int releaseNumber) throws IOException {
 		
-		System.out.println(speciesName);
+		System.out.println("\t" + speciesName);
 		Validation result = new Validation(new IdentifierImpl(), owlFileAsResource.getDescription(), autofix, null, maxErrors, profile);
 		result.setDescription(owlFileAsResource.getDescription());
 		// The actual validation function

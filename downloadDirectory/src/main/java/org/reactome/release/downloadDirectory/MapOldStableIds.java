@@ -27,7 +27,7 @@ public class MapOldStableIds {
 	private static ResultSet resultSet = null;
 	
 	public static void execute(String username, String password, int releaseNumber) throws Exception {
-		
+		System.out.println("Running MapOldStableIds...");
 		// Need to use mysql driver to access stable_identifiers db
 		Class.forName("com.mysql.jdbc.Driver");
 		connect = DriverManager.getConnection("jdbc:mysql://localhost/stable_identifiers?" + "user=" + username + "&password=" + password);
@@ -106,6 +106,7 @@ public class MapOldStableIds {
 			String line = primaryId + "\t" + String.join(",", secondaryIds) + "\n";
 			Files.write(Paths.get("reactome_stable_ids.txt"), line.getBytes(), StandardOpenOption.APPEND);
 		}
+		Runtime.getRuntime().exec("mv reactome_stable_ids.txt " + releaseNumber);
 		
 	}
 }

@@ -11,7 +11,7 @@ public class DatabaseDumps {
 
 	public static void execute(MySQLAdaptor dba, int releaseNumber, String username, String password, String host, int port, String testReactomeDatabase) throws IOException, InterruptedException {
 		// Take mysqldumps of 'stable_identifiers' and 'test_reactome_##' and compress them using gzip.
-		
+		System.out.println("Running DatabaseDumps..");
 		// Create databases folder
 		Runtime.getRuntime().exec("mkdir -p " + releaseNumber + "/databases");
 		

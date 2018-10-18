@@ -25,8 +25,9 @@ public class FetchTestReactomeOntologyFiles {
 	private static Statement statement = null;
 	private PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
-	public static void execute(MySQLAdaptor dba, String username, String password) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
-		
+	
+	public static void execute(MySQLAdaptor dba, String username, String password, int releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
+		System.out.println("Running FetchTestReactomeOntologyFiles...");
 		Class.forName("com.mysql.jdbc.Driver");
 		connect = DriverManager.getConnection("jdbc:mysql://localhost/test_reactome_66_final?" + "user=" + username + "&password=" + password);
 		statement = connect.createStatement();
@@ -111,5 +112,8 @@ public class FetchTestReactomeOntologyFiles {
 		pprjWriter.close();
 		pontWriter.close();
 		pinsWriter.close();
+		Runtime.getRuntime().exec("mv reactome_data_model.pprj " + releaseNumber);
+		Runtime.getRuntime().exec("mv reactome_data_model.pont " + releaseNumber);
+		Runtime.getRuntime().exec("mv reactome_data_model.pins " + releaseNumber);
 	}
 }
