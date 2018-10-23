@@ -1,13 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.reactome.release</groupId>
-  <artifactId>downloadDirectory</artifactId>
+  <groupId>org.fileGeneration</groupId>
+  <artifactId>using-validator-example</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>downloadDirectory</name>
+  <name>using-validator-example</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -15,59 +15,128 @@
   </properties>
 
   <dependencies>
-    <dependency>
-    	<groupId>junit</groupId>
-    	<artifactId>junit</artifactId>
-    	<version>3.8.1</version>
-    	<scope>test</scope>
-    </dependency>
-    <dependency>
+  	<dependency>
 		<groupId>org.reactome.server</groupId>
 		<artifactId>reactome-core</artifactId>
 		<version>1.1.2</version>
-  	</dependency>
-  	        <dependency>
-            <groupId>org.reactome.base</groupId>
-            <artifactId>reactome-base</artifactId>
-            <version>1.2.15</version>
-        </dependency>
+	</dependency>
+	<dependency>
+		<groupId>org.reactome.base</groupId>
+		<artifactId>reactome-base</artifactId>
+		<version>1.2.15</version>
+	</dependency>
+  <!-- Locally installed pathway exchange jar -->
   	<dependency>
-  		<groupId>org.reactome.biopax</groupId>
+  		<groupId>org.reactome.pathway-exchange</groupId>
   		<artifactId>pathwayExchange</artifactId>
   		<version>1.0.0</version>
-  	</dependency>
-  	<dependency>
+ 	</dependency>
+    <dependency>
+      <groupId>org.biopax.validator</groupId>
+      <artifactId>biopax-validator</artifactId>
+      <version>4.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.biopax.paxtools</groupId>
+      <artifactId>paxtools-core</artifactId>
+      <version>5.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.biopax.paxtools</groupId>
+      <artifactId>paxtools-trove</artifactId>
+      <version>5.1.0</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>4.2.4.RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-instrument</artifactId>
+      <version>4.2.4.RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <version>1.7.25</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.3</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
 	    <groupId>org.jdom</groupId>
 	    <artifactId>jdom</artifactId>
 	    <version>1.1</version>
 	</dependency>
-	<dependency>
-	    <groupId>org.biopax.validator</groupId>
-	    <artifactId>biopax-validator</artifactId>
-	    <version>4.0.0</version>
-	</dependency> 
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-beans</artifactId>
-    <version>4.3.19.RELEASE</version>
-</dependency>
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-instrument</artifactId>
-    <version>4.3.19.RELEASE</version>
-</dependency>
-<dependency>
-    <groupId>org.eclipse.jgit</groupId>
-    <artifactId>org.eclipse.jgit</artifactId>
-    <version>4.8.0.201706111038-r</version>
-</dependency>
-
-
-
+		<dependency>
+	    <groupId>org.eclipse.jgit</groupId>
+	    <artifactId>org.eclipse.jgit</artifactId>
+	    <version>4.8.0.201706111038-r</version>
+	</dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+          <!--<release>8</release>-->
+          <source>8</source>
+          <target>8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.0.2</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>org.reactome.release.downloadDirectory.Main</mainClass>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+            </manifest>
+          </archive>
+          <finalName>downloadDirectory</finalName>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <finalName>downloadDirectory</finalName>
+          <descriptors>
+            <descriptor>src/main/resources/assembly.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
   
-  	<repositories>
-		<repository>
+	<repositories>
+  		<repository>
 			<id>nexus-ebi-repo</id>
 			<name>The EBI internal repository</name>
 			<url>http://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-repo/</url>
@@ -98,4 +167,5 @@
 			</releases>
 		</repository>
 	</repositories>
+  
 </project>

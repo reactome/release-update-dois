@@ -30,10 +30,9 @@ public class Main {
 		
 		//Begin download directory
 		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
-		Biopax.execute(username, password, host, port, database, releaseNumber);
 		GSEAOutput.execute(username, password, host, port, database, releaseNumber);
-		//TODO: TheReactomeBookPDF
-		//TODO: TheReactomeBookRTF
+//		//TODO: TheReactomeBookPDF
+//		//TODO: TheReactomeBookRTF
 		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, releaseNumber);
 		CreateReleaseTarball.execute(releaseNumber);
 		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
@@ -47,5 +46,9 @@ public class Main {
 		copyModels2PathwaysFile.waitFor();
 		
 		CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
+		
+		Biopax.execute(username, password, host, Integer.toString(port), database, Integer.toString(releaseNumber));
 	}
 }
+
+
