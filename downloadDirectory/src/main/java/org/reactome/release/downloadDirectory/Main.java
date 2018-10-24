@@ -15,9 +15,8 @@ public class Main {
 		props.load(new FileInputStream(pathToConfig));
 		
 		//TODO: Check stable identifiers db exists; 
-		//TODO: Describe each functions outputs
+		//TODO: Describe each functions outputs in documentation
 		//Set up DB adaptor
-		Object speciesToInferFromLong = "Homo sapiens";
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
 		String database = props.getProperty("database");
@@ -30,10 +29,9 @@ public class Main {
 		
 		//Begin download directory
 		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
+		Biopax.execute(username, password, host, Integer.toString(port), database, Integer.toString(releaseNumber));
 		GSEAOutput.execute(username, password, host, port, database, releaseNumber);
 		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber);
-		//TODO: TheReactomeBookPDF
-		//TODO: TheReactomeBookRTF
 		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, releaseNumber);
 		CreateReleaseTarball.execute(releaseNumber);
 		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
@@ -47,8 +45,6 @@ public class Main {
 		copyModels2PathwaysFile.waitFor();
 		
 		CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
-		
-		Biopax.execute(username, password, host, Integer.toString(port), database, Integer.toString(releaseNumber));
 	}
 }
 
