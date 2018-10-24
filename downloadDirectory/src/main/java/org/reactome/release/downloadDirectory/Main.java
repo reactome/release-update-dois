@@ -1,6 +1,9 @@
 package org.reactome.release.downloadDirectory;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.gk.persistence.MySQLAdaptor;
@@ -15,7 +18,13 @@ public class Main {
 		props.load(new FileInputStream(pathToConfig));
 		
 		//TODO: Check stable identifiers db exists; 
+		//TODO: Archive previous version download directory
 		//TODO: Describe each functions outputs in documentation
+		//TODO: File existence check and size check
+		//TODO: Configurable runs
+		//TODO: Parallelize executions
+		//TODO: Integration with Perl wrapper
+		
 		//Set up DB adaptor
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
@@ -45,6 +54,15 @@ public class Main {
 		copyModels2PathwaysFile.waitFor();
 		
 		CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
+		
+		// Move files to downloadDirectory release folder
+		String releaseDownloadDir = "/usr/local/gkb/scripts/release/download_directory/" + releaseNumber;
+		File folder = new File(Integer.toString(releaseNumber));
+		File[] releaseFiles = folder.listFiles();
+		for (int i = 0; i < releaseFiles.length; i++) {
+			Process moveFileToDownloadDir = Runtime.getRuntime().exec("mv " + releaseFiles[i] + " " + releaseDownloadDir);
+			moveFileToDownloadDir.waitFor();
+		}
 	}
 }
 
