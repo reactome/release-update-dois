@@ -26,11 +26,11 @@ public class MapOldStableIds {
 	private PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
 	
-	public static void execute(String username, String password, int releaseNumber) throws Exception {
+	public static void execute(String username, String password, String host, int releaseNumber) throws Exception {
 		System.out.println("Running MapOldStableIds...");
 		// Need to use mysql driver to access stable_identifiers db
 		Class.forName("com.mysql.jdbc.Driver");
-		connect = DriverManager.getConnection("jdbc:mysql://localhost/stable_identifiers?" + "user=" + username + "&password=" + password);
+		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/stable_identifiers?" + "user=" + username + "&password=" + password);
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("SELECT identifier,instanceId FROM StableIdentifier");
 		

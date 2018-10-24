@@ -43,14 +43,15 @@ public class Biopax {
   public static void execute(String username, String password, String host, String port, String database, String releaseNumber) throws Exception {
     //the first arg is a path to biopax owl files to validate
 	  	String biopaxDir = releaseNumber + "_biopax";
-	  	Runtime.getRuntime().exec("mkdir -p " + biopaxDir);
+        Process makeBiopaxDir = Runtime.getRuntime().exec("mkdir -p " + biopaxDir);
+        makeBiopaxDir.waitFor();
 		for (int i = 0; i < 2; i++) {
 			if (i == 0) {
 				System.out.println("\tGenerating Biopax2 Species Files");
-//				SpeciesAllPathwaysConverter.main(new String[]{host, database, username, password, port, biopaxDir});
+				SpeciesAllPathwaysConverter.main(new String[]{host, database, username, password, port, biopaxDir});
 			} else {
 				System.out.println("\tGenerating Biopax3 Species Files");
-//				SpeciesAllPathwaysLevel3Converter.main(new String[]{host, database, username, password, port, biopaxDir});
+				SpeciesAllPathwaysLevel3Converter.main(new String[]{host, database, username, password, port, biopaxDir});
 			}
 			
 			// Rename files
