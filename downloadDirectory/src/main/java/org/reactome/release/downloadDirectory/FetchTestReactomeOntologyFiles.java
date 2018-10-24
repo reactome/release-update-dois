@@ -29,10 +29,10 @@ public class FetchTestReactomeOntologyFiles {
 	private PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
 	
-	public static void execute(MySQLAdaptor dba, String username, String password, String host, int releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
+	public static void execute(MySQLAdaptor dba, String username, String password, String host, String database, int releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
 		logger.info("Running FetchTestReactomeOntologyFiles...");
 		Class.forName("com.mysql.jdbc.Driver");
-		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/test_reactome_66_final?" + "user=" + username + "&password=" + password);
+		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?" + "user=" + username + "&password=" + password);
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("SELECT ontology FROM Ontology");
 		// The returned value is a single blob composed of binary and text. The three files produced by this step (pprj, pins, pont) are found within this blob.

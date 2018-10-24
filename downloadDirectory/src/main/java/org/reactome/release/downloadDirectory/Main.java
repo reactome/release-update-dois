@@ -41,7 +41,7 @@ public class Main {
 		Biopax.execute(username, password, host, Integer.toString(port), database, Integer.toString(releaseNumber));
 		GSEAOutput.execute(username, password, host, port, database, releaseNumber);
 		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber);
-		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, releaseNumber);
+		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
 		CreateReleaseTarball.execute(releaseNumber);
 		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
 		MapOldStableIds.execute(username, password, host, releaseNumber);
