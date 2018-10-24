@@ -1,5 +1,7 @@
 package org.reactome.release.downloadDirectory;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.ReactomeJavaConstants;
 
 import java.io.PrintWriter;
@@ -20,21 +22,24 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class MapOldStableIds {
-
+	private static final Logger logger = LogManager.getLogger();
+	
 	private static Connection connect = null;
 	private static Statement statement = null;
 	private PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
 	
 	public static void execute(String username, String password, String host, int releaseNumber) throws Exception {
-		System.out.println("Running MapOldStableIds...");
+		logger.info("Running MapOldStableIds");
 		// Need to use mysql driver to access stable_identifiers db
+		logger.info("Connecting to stable_identifers db...");
 		Class.forName("com.mysql.jdbc.Driver");
 		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/stable_identifiers?" + "user=" + username + "&password=" + password);
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("SELECT identifier,instanceId FROM StableIdentifier");
 		
 		// Iterate through returned results of DB IDs and stable IDs 
+		logger.info("Mapping Old Stable IDs to Current Stable IDs...");
 		HashMap<String,ArrayList<String>> dbIdToStableIds = new HashMap<String,ArrayList<String>>();
 		ArrayList<String> dbIds = new ArrayList<String>();
 		while (resultSet.next()) {
@@ -108,5 +113,6 @@ public class MapOldStableIds {
 		}
 		Runtime.getRuntime().exec("mv reactome_stable_ids.txt " + releaseNumber);
 		
+		logger.info("MapOldStableIds finished");
 	}
 }

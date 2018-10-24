@@ -6,19 +6,21 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
 public class Main {
 	static MySQLAdaptor dbAdaptor = null;
+	private static final Logger logger = LogManager.getLogger();
 	
 	public static void main(String[] args) throws Exception {
 		
+		logger.info("Beginning Download Directory step");
 		String pathToConfig = "src/main/resources/config.properties";
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
-		
-		//TODO: Check stable identifiers db exists; 
-		//TODO: Archive previous version download directory
+		//TODO: Check stable identifiers db exists
 		//TODO: Describe each functions outputs in documentation
 		//TODO: File existence check and size check
 		//TODO: Configurable runs
@@ -48,21 +50,27 @@ public class Main {
 		
 		// These file copy commands now use absolute paths instead of relative ones
 		String releaseDirAbsolute = "/usr/local/gkb/scripts/release";
+		logger.info("Copying gene_association.reactome to release directory");
 		Process copyGeneAssociationFile = Runtime.getRuntime().exec("cp " + releaseDirAbsolute + "/goa_prepare/gene_association.reactome " + releaseNumber);
 		copyGeneAssociationFile.waitFor();
+		logger.info("Copying models2pathways.tsv to release directory");
 		Process copyModels2PathwaysFile = Runtime.getRuntime().exec("cp " + releaseDirAbsolute + "/biomodels/models2pathways.tsv " + releaseNumber);
 		copyModels2PathwaysFile.waitFor();
 		
 		CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
 		
 		// Move files to downloadDirectory release folder
+		logger.info("Moving all generated files to ");
 		String releaseDownloadDir = "/usr/local/gkb/scripts/release/download_directory/" + releaseNumber;
+		logger.info("Moving all generated files to " + releaseDownloadDir);
 		File folder = new File(Integer.toString(releaseNumber));
 		File[] releaseFiles = folder.listFiles();
 		for (int i = 0; i < releaseFiles.length; i++) {
 			Process moveFileToDownloadDir = Runtime.getRuntime().exec("mv " + releaseFiles[i] + " " + releaseDownloadDir);
 			moveFileToDownloadDir.waitFor();
 		}
+		
+		logger.info("Finished DownloadDirectory for release " + releaseNumber);
 	}
 }
 

@@ -5,18 +5,22 @@ import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Arrays;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
 public class DatabaseDumps {
-
+	private static final Logger logger = LogManager.getLogger();
+	
 	public static void execute(MySQLAdaptor dba, int releaseNumber, String username, String password, String host, int port, String testReactomeDatabase) throws IOException, InterruptedException {
 		// Take mysqldumps of 'stable_identifiers' and 'test_reactome_##' and compress them using gzip.
-		System.out.println("Running DatabaseDumps..");
+		logger.info("Generating DatabaseDumps");
 		// Create databases folder
 		Runtime.getRuntime().exec("mkdir -p " + releaseNumber + "/databases");
 		
 		// Start with stable_identifiers dump
 		//TODO: Sticking to GK naming conventions?
+		logger.info("Dumping stable_identifiers to gk_stable_ids.sql...");
 		// The first ProcessBuilder requires the file to already exist, so another exec is run
 		Runtime.getRuntime().exec("touch " + releaseNumber + "/databases/gk_stable_ids.sql");
 		File stableIdsFile = new File(releaseNumber + "/databases/gk_stable_ids.sql");
@@ -31,6 +35,7 @@ public class DatabaseDumps {
 		gzipStableIds.waitFor();
 
 		// Now test_reactome dump
+		logger.info("Dumping test_reactome_" + releaseNumber + " to gk_current.sql");
 		File gkCurrentFile = new File(releaseNumber + "/databases/gk_current.sql");
 		
 		String[] gkCurrentCommand = new String[]{"mysqldump", "-h" + host,"-u" + username, "-p" + password, "-P" + port, testReactomeDatabase};
@@ -44,5 +49,6 @@ public class DatabaseDumps {
 		Process gzipGkCurrent = Runtime.getRuntime().exec("gzip " + releaseNumber + "/databases/gk_current.sql");
 		gzipGkCurrent.waitFor();
 		
+		logger.info("Finished DatabaseDumps");
 	}
 }

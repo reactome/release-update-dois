@@ -18,16 +18,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
 public class FetchTestReactomeOntologyFiles {
+	private static final Logger logger = LogManager.getLogger();
 	private static Connection connect = null;
 	private static Statement statement = null;
 	private PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
 	
 	public static void execute(MySQLAdaptor dba, String username, String password, String host, int releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
-		System.out.println("Running FetchTestReactomeOntologyFiles...");
+		logger.info("Running FetchTestReactomeOntologyFiles...");
 		Class.forName("com.mysql.jdbc.Driver");
 		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/test_reactome_66_final?" + "user=" + username + "&password=" + password);
 		statement = connect.createStatement();
@@ -39,6 +42,7 @@ public class FetchTestReactomeOntologyFiles {
 		
 		// The returned value is a single blob composed of binary and text. The three files produced by this step (pprj, pins, pont) are found within this blob.
 		// A handful of regexes and conditional statements are used to handle this data and output the 3 files. 
+		
 		while (resultSet.next()) {
 			
 			Blob blob = resultSet.getBlob("ontology");
@@ -50,6 +54,7 @@ public class FetchTestReactomeOntologyFiles {
 			boolean pprjSwitch = true;
 			boolean pontSwitch = false;
 			String str;
+			logger.info("Generating reactome_data_model.pprj, reactome_data_model.pont, and reactome_data_model.pins files...");
 			while ((str = br.readLine()) != null) {
 				
 				String[] splitLine = str.split(";");
@@ -73,6 +78,7 @@ public class FetchTestReactomeOntologyFiles {
 				str += "\n";
 				
 				// Generate pprj file
+				
 				if (dateTimeCounter == 1 && pprjSwitch) {
 					if (str.contains("pprj_file_content")) {
 						str = "\n";
@@ -115,5 +121,7 @@ public class FetchTestReactomeOntologyFiles {
 		Runtime.getRuntime().exec("mv reactome_data_model.pprj " + releaseNumber);
 		Runtime.getRuntime().exec("mv reactome_data_model.pont " + releaseNumber);
 		Runtime.getRuntime().exec("mv reactome_data_model.pins " + releaseNumber);
+		
+		logger.info("Finished FetchTestReactomeOntologyFiles");
 	}
 }

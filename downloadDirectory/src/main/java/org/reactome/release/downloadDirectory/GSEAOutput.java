@@ -10,15 +10,19 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.reactome.gsea.ReactomeToMsigDBExport;
 
 public class GSEAOutput {
-
+	private static final Logger logger = LogManager.getLogger();
+	
 	public static void execute(String username, String password, String host, int port, String database, int releaseNumber) {
-		System.out.println("Running GSEAOutput...");
+		logger.info("Running GSEAOutput...");
 		String outFilename = "ReactomePathways.gmt";
-		ReactomeToMsigDBExport.main(new String[] {host, "test_reactome_66_final", username, password, Integer.toString(port), outFilename});
+		ReactomeToMsigDBExport.main(new String[] {host, database, username, password, Integer.toString(port), outFilename});
 		
+		logger.info("Updating ReactomePathways.gmt with 'Reactome Pathway' column...");
 		// Initial output file needs to have a column inserted that contains 'Reactome Pathway'
 		try {
 			FileReader fr = new FileReader(outFilename);
@@ -47,7 +51,7 @@ public class GSEAOutput {
 			e.printStackTrace();
 		}
 		
-		
+		logger.info("Zipping ReactomePathways.gmt...");
 		// Zip the output and then remove it
 		try {
 			FileOutputStream fos = new FileOutputStream(outFilename + ".zip");
@@ -69,10 +73,9 @@ public class GSEAOutput {
 			Runtime.getRuntime().exec("rm " + outFilename);
 			Runtime.getRuntime().exec("mv " + outFilename + ".zip " + releaseNumber);
 			
-			//TODO: Insert 'Reactome Pathway' in third column of file
-			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		logger.info("Finished GSEAOutput");
 	}
 }

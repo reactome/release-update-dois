@@ -8,18 +8,22 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.HashSet;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 
 public class PathwaySummationMappingFile {
-
+	private static final Logger logger = LogManager.getLogger();
+	
 	public static void execute(MySQLAdaptor dba, int releaseNumber) throws Exception {
-		System.out.println("Running PathwaySummationMappingFile...");
+		logger.info("Running PathwaySummationMappingFile");
 		// Get all Pathway instances
 		Collection<GKInstance> pathwayInstances = dba.fetchInstancesByClass(ReactomeJavaConstants.Pathway);
 		HashSet<String> rowHash = new HashSet<String>();
 		//Create file
+		logger.info("Generating pathway2summation.txt file...");
 		PrintWriter pathwaySummationFilename = new PrintWriter("pathway2summation.txt");
 		for (GKInstance pathwayInst : pathwayInstances) {
 			boolean containsHumanEntry = false;
@@ -47,5 +51,7 @@ public class PathwaySummationMappingFile {
 			}
 		}
 		Runtime.getRuntime().exec("mv pathway2summation.txt " + releaseNumber);
+		
+		logger.info("Finished PathwaySummationMappingFile");
 	}
 }
