@@ -15,13 +15,12 @@ public class DatabaseDumps {
 	public static void execute(MySQLAdaptor dba, int releaseNumber, String username, String password, String host, int port, String testReactomeDatabase) throws IOException, InterruptedException {
 		// Take mysqldumps of 'stable_identifiers' and 'test_reactome_##' and compress them using gzip.
 		logger.info("Generating DatabaseDumps");
-		// Create databases folder
+		// Create databases folder that will hold the DB dumps
 		Runtime.getRuntime().exec("mkdir -p " + releaseNumber + "/databases");
 		
 		// Start with stable_identifiers dump
 		//TODO: Sticking to GK naming conventions?
 		logger.info("Dumping stable_identifiers to gk_stable_ids.sql...");
-		// The first ProcessBuilder requires the file to already exist, so another exec is run
 		Runtime.getRuntime().exec("touch " + releaseNumber + "/databases/gk_stable_ids.sql");
 		File stableIdsFile = new File(releaseNumber + "/databases/gk_stable_ids.sql");
 		String[] stableIdsCommand = new String[]{"mysqldump", "-h" + host,"-u" + username, "-p" + password, "-P" + port, "stable_identifiers"};

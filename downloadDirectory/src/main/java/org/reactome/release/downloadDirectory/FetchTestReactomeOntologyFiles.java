@@ -35,13 +35,12 @@ public class FetchTestReactomeOntologyFiles {
 		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/test_reactome_66_final?" + "user=" + username + "&password=" + password);
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("SELECT ontology FROM Ontology");
+		// The returned value is a single blob composed of binary and text. The three files produced by this step (pprj, pins, pont) are found within this blob.
+		// A handful of regexes and conditional statements are used to handle this data and output the 3 files. 
 		
 		PrintWriter pprjWriter = new PrintWriter("reactome_data_model.pprj");
 		PrintWriter pontWriter = new PrintWriter("reactome_data_model.pont");
 		PrintWriter pinsWriter = new PrintWriter("reactome_data_model.pins");
-		
-		// The returned value is a single blob composed of binary and text. The three files produced by this step (pprj, pins, pont) are found within this blob.
-		// A handful of regexes and conditional statements are used to handle this data and output the 3 files. 
 		
 		while (resultSet.next()) {
 			
@@ -78,7 +77,6 @@ public class FetchTestReactomeOntologyFiles {
 				str += "\n";
 				
 				// Generate pprj file
-				
 				if (dateTimeCounter == 1 && pprjSwitch) {
 					if (str.contains("pprj_file_content")) {
 						str = "\n";

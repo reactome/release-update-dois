@@ -42,12 +42,12 @@ public class Biopax {
     });
     validator = (Validator) ctx.getBean("validator");
   }
-  //TODO: Remove white space from filenames
+  
   public static void execute(String username, String password, String host, String port, String database, String releaseNumber) throws Exception {
-    //the first arg is a path to biopax owl files to validate
 	  	String biopaxDir = releaseNumber + "_biopax";
         Process makeBiopaxDir = Runtime.getRuntime().exec("mkdir -p " + biopaxDir);
         makeBiopaxDir.waitFor();
+        // First, generate owl files. This particular step requires a local maven installation of the PathwayExchange jar
 		for (int i = 0; i < 2; i++) {
 			int biopaxLevel = i + 2;
 			if (i == 0) {
@@ -58,7 +58,7 @@ public class Biopax {
 				SpeciesAllPathwaysLevel3Converter.main(new String[]{host, database, username, password, port, biopaxDir});
 			}
 			
-			// Rename files
+			// Rename files, replacing whitespace with underscores
 		    Files.newDirectoryStream(Paths.get(biopaxDir),
 		    	      path -> path.toString().endsWith(".owl"))
 		    	      .forEach(f -> {
@@ -67,7 +67,7 @@ public class Biopax {
 		    	          File formattedFile = new File(spath);
 		    	          f.toFile().renameTo(formattedFile);
 		    	      });
-		    // Validate each owl file produced by PathwaysConverter
+		    // Validate each owl file in the biopax output directory produced by PathwaysConverter
 		    logger.info("Validating owl files...");
 			runBiopaxValidation(biopaxDir);
 
@@ -127,8 +127,8 @@ public class Biopax {
 	zipInputStream.close();
   }
   
+  // This function runs each file in the biopax output directory through the biopax validator
   public static void runBiopaxValidation(String directory) throws Exception {
-    //TODO: rename orig. owl files; validate them; generate output file names and write the result
     Files.newDirectoryStream(Paths.get(directory),
       path -> path.toString().endsWith(".owl"))
       .forEach(f -> {
@@ -143,7 +143,7 @@ public class Biopax {
   }
 
   // Function taken from the Biopax validator project, largely imitating their own 'main' function
-  // but leaving out much that we don't need for this
+  // but leaving out much that we don't need for this. Validates each owl file that is passed through.
   static void validate(Resource owlResource) throws IOException {
     // define a new  validation result for the input data
     Validation result = new Validation(new IdentifierImpl(), owlResource.getDescription(), autofix, null, maxErrors, profile);
@@ -156,10 +156,6 @@ public class Biopax {
 
     // Save the validation results
     PrintWriter writer = new PrintWriter(owlResource.getFile().getPath() + "_validation." + outFormat);
-//    Source xsltSrc = (outFormat.equalsIgnoreCase("html"))
-//      ? new StreamSource(ctx.getResource("classpath:html-result.xsl").getInputStream())
-//        : null;
-//    ValidatorUtils.write(result, writer, xsltSrc);
     ValidatorUtils.write(result, writer, null);
     writer.close();
 

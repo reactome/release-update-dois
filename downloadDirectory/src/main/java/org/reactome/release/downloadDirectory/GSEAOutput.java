@@ -23,7 +23,7 @@ public class GSEAOutput {
 		ReactomeToMsigDBExport.main(new String[] {host, database, username, password, Integer.toString(port), outFilename});
 		
 		logger.info("Updating ReactomePathways.gmt with 'Reactome Pathway' column...");
-		// Initial output file needs to have a column inserted that contains 'Reactome Pathway'
+		// Initial output file needs to be updated so that the third column contains 'Reactome Pathway' 
 		try {
 			FileReader fr = new FileReader(outFilename);
 			BufferedReader br = new BufferedReader(fr);
