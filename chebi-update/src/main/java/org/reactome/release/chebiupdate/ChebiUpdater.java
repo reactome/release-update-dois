@@ -60,10 +60,16 @@ public class ChebiUpdater
 			{
 				try
 				{
-					int surnameCompare = ((String)o1.getAttributeValue(ReactomeJavaConstants.surname)).compareTo((String)o2.getAttributeValue(ReactomeJavaConstants.surname));
+					String surname1 = (String)o1.getAttributeValue(ReactomeJavaConstants.surname);
+					String surname2 = (String)o2.getAttributeValue(ReactomeJavaConstants.surname);
+					int surnameCompare = surname1.compareTo(surname2);
+					// If surnames are the same, compare firstnames.
 					if (surnameCompare == 0)
 					{
-						return ((String)o1.getAttributeValue(ReactomeJavaConstants.firstname)).compareTo((String)o2.getAttributeValue(ReactomeJavaConstants.firstname));
+						String firstname1 = (String)o1.getAttributeValue(ReactomeJavaConstants.firstname);
+						String firstname2 = (String)o2.getAttributeValue(ReactomeJavaConstants.firstname);
+						// MUST return result of firstname-comparison, we're not going any deeper than firstname for Person comparisons.
+						return firstname1.compareTo(firstname2);
 					}
 					return surnameCompare;
 				}
