@@ -1,9 +1,14 @@
 package org.reactome.release.downloadDirectory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,9 +39,17 @@ public class DatabaseDumps {
 		Process stableIdsProcess = stableIdsprocessBuilder.start();
 		stableIdsProcess.waitFor();
 		
-		Process gzipStableIds  = Runtime.getRuntime().exec("gzip " + releaseNumber + "/databases/gk_stable_ids.sql");
-		gzipStableIds.waitFor();
-
+		byte[] buffer = new byte[1024];
+		GZIPOutputStream gzosStableIds = new GZIPOutputStream(new FileOutputStream(releaseNumber + "/databases/gk_stable_ids.sql.gz"));
+		FileInputStream fisStableIds = new FileInputStream(releaseNumber + "/databases/gk_stable_ids.sql");
+		int lengthStId;
+		while ((lengthStId = fisStableIds.read(buffer)) > 0) {
+			gzosStableIds.write(buffer, 0, lengthStId);
+		}
+		fisStableIds.close();
+		gzosStableIds.finish();
+		gzosStableIds.close();
+		Files.delete(Paths.get(releaseNumber + "/databases/gk_stable_ids.sql"));
 		// Now test_reactome dump
 		logger.info("Dumping test_reactome_" + releaseNumber + " to gk_current.sql");
 		File gkCurrentFile = new File(releaseNumber + "/databases/gk_current.sql");
@@ -49,8 +62,17 @@ public class DatabaseDumps {
 		Process gkCurrentProcess = gkCurrentProcessBuilder.start();
 		gkCurrentProcess.waitFor();
 		
-		Process gzipGkCurrent = Runtime.getRuntime().exec("gzip " + releaseNumber + "/databases/gk_current.sql");
-		gzipGkCurrent.waitFor();
+		GZIPOutputStream gzosGkCurrent = new GZIPOutputStream(new FileOutputStream(releaseNumber + "/databases/gk_current.sql.gz"));
+		FileInputStream fisGkCurrent = new FileInputStream(releaseNumber + "/databases/gk_current.sql");
+		int lengthGk;
+		while ((lengthGk = fisGkCurrent.read(buffer)) > 0) {
+			gzosGkCurrent.write(buffer, 0, lengthGk);
+		}
+		fisGkCurrent.close();
+		gzosGkCurrent.finish();
+		gzosGkCurrent.close();
+		
+		Files.delete(Paths.get(releaseNumber + "/databases/gk_current.sql"));
 		
 		logger.info("Finished DatabaseDumps");
 	}
