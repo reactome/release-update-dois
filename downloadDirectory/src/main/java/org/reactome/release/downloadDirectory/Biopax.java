@@ -57,10 +57,12 @@ public class Biopax {
 			int biopaxLevel = i + 2;
 			if (i == 0) {
 				logger.info("Generating BioPAX2 Species owl Files...");
-				SpeciesAllPathwaysConverter.main(new String[]{host, database, username, password, port, biopaxDir});
+				SpeciesAllPathwaysConverter converter = new SpeciesAllPathwaysConverter();
+				converter.doDump(new String[]{host, database, username, password, port, biopaxDir});
 			} else {
 				logger.info("Generating BioPAX3 Species owl Files...");
-				SpeciesAllPathwaysLevel3Converter.main(new String[]{host, database, username, password, port, biopaxDir});
+				SpeciesAllPathwaysLevel3Converter level3converter = new SpeciesAllPathwaysLevel3Converter();
+				level3converter.doDump(new String[]{host, database, username, password, port, biopaxDir});
 			}
 			
 			// Rename files, replacing whitespace with underscores

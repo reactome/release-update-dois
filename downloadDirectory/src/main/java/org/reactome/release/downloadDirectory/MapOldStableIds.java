@@ -64,24 +64,27 @@ public class MapOldStableIds {
 			ArrayList<String> stableIds = dbIdToStableIds.get(dbId);
 			Collections.sort(stableIds);
 
+			boolean properStableIdObject = true;
 			if (stableIds.size() < 2 || !stableIds.get(0).matches("^R-.*")) {
-				continue;
+				properStableIdObject = false;
 			}
 			
 			// After sorting the first stable ID in the array is considered the primary ID.
 			// An Array of Arrays is used here, with each interior array's first element being 
 			// the primaryId string and the second element being an array of the remaining stable IDs.
-			String primaryId = stableIds.get(0);
-			stableIds.remove(0);
-			ArrayList<Object> organizedIds = new ArrayList<Object>();
-			if (primaryId.matches("R-HSA.*")) {
-				organizedIds.add(primaryId);
-				organizedIds.add(stableIds);
-				hsaIds.add(organizedIds);
-			} else {
-				organizedIds.add(primaryId);
-				organizedIds.add(stableIds);
-				nonHsaIds.add(organizedIds);
+			if (properStableIdObject) {
+				String primaryId = stableIds.get(0);
+				stableIds.remove(0);
+				ArrayList<Object> organizedIds = new ArrayList<Object>();
+				if (primaryId.matches("R-HSA.*")) {
+					organizedIds.add(primaryId);
+					organizedIds.add(stableIds);
+					hsaIds.add(organizedIds);
+				} else {
+					organizedIds.add(primaryId);
+					organizedIds.add(stableIds);
+					nonHsaIds.add(organizedIds);
+				}
 			}
 		}
 

@@ -47,12 +47,12 @@ public class Main {
 		//Begin download directory
 //		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
 //		Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber);
-		GSEAOutput.execute(dbAdaptor, releaseNumber);
+//		GSEAOutput.execute(dbAdaptor, releaseNumber);
 //		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir);
 //		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
 //		CreateReleaseTarball.execute(releaseNumber);
 //		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
-//		MapOldStableIds.execute(username, password, host, releaseNumber);
+		MapOldStableIds.execute(username, password, host, releaseNumber);
 		
 		// These file copy commands now use absolute paths instead of relative ones
 //		logger.info("Copying gene_association.reactome to release directory");
