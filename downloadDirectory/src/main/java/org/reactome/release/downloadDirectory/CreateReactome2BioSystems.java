@@ -1,10 +1,12 @@
 package org.reactome.release.downloadDirectory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.biosystems.ReactomeToBioSystemsConverter;
@@ -19,8 +21,7 @@ public class CreateReactome2BioSystems {
 		ReactomeToBioSystemsConverter.main(new String[] {host, database, username, password, Integer.toString(port), "BioSystems" });
 		String outpathName = releaseNumber + "/ReactomeToBioSystems.zip";
 		Files.move(Paths.get("BioSystems/ReactomeToBioSystems.zip"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
-		Runtime.getRuntime().exec("rm -r BioSystems");
-		
+		FileUtils.deleteDirectory(new File("BioSystems"));
 		logger.info("Finished CreateReactome2BioSystems");
 	}
 }

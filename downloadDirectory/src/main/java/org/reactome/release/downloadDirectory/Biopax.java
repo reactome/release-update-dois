@@ -1,5 +1,6 @@
 package org.reactome.release.downloadDirectory;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biopax.validator.api.Validator;
@@ -113,8 +114,9 @@ public class Biopax {
 		String outpathBiopax3 = releaseNumber + "/biopax.zip";
 		Files.move(Paths.get("biopax2.zip"), Paths.get(outpathBiopax2), StandardCopyOption.REPLACE_EXISTING); 
 		Files.move(Paths.get("biopax.zip"), Paths.get(outpathBiopax3), StandardCopyOption.REPLACE_EXISTING); 
-//		Process removeBiopaxDir = Runtime.getRuntime().exec("rm -r " + biopaxDir);
-//		removeBiopaxDir.waitFor();
+		
+		FileUtils.deleteDirectory(new File(biopaxDir));
+		
   }
 	//Function for compressing Biopax and validation files
   public static void writeToZipFile(File file, ZipOutputStream zipOutputStream) throws IOException {

@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
@@ -36,7 +37,6 @@ public class Main {
 		int port = Integer.valueOf(props.getProperty("port"));
 		String releaseNumber = props.getProperty("release") + "/";
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
-		
 		File releaseDir = new File(releaseNumber);
 		if (!releaseDir.exists()) {
 			releaseDir.mkdir();
@@ -47,18 +47,16 @@ public class Main {
 		GSEAOutput.execute(username, password, host, port, database, releaseNumber);
 		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber);
 		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
-		CreateReleaseTarball.execute(releaseNumber);
+//		CreateReleaseTarball.execute(releaseNumber);
 		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
 		MapOldStableIds.execute(username, password, host, releaseNumber);
 		
 		// These file copy commands now use absolute paths instead of relative ones
 		String releaseDirAbsolute = "/usr/local/gkb/scripts/release";
 		logger.info("Copying gene_association.reactome to release directory");
-		Process copyGeneAssociationFile = Runtime.getRuntime().exec("cp " + releaseDirAbsolute + "/goa_prepare/gene_association.reactome " + releaseNumber);
-		copyGeneAssociationFile.waitFor();
+		Files.copy(Paths.get(releaseDirAbsolute + "/goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
 		logger.info("Copying models2pathways.tsv to release directory");
-		Process copyModels2PathwaysFile = Runtime.getRuntime().exec("cp " + releaseDirAbsolute + "/biomodels/models2pathways.tsv " + releaseNumber);
-		copyModels2PathwaysFile.waitFor();
+		Files.copy(Paths.get(releaseDirAbsolute + "/biomodels/models2pathways.tsv"), Paths.get(releaseNumber + "models2pathways.tsv"), StandardCopyOption.REPLACE_EXISTING);
 		
 		CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
 		
@@ -70,8 +68,7 @@ public class Main {
 		File[] releaseFiles = folder.listFiles();
 		for (int i = 0; i < releaseFiles.length; i++) {
 			if (releaseFiles[i].isDirectory() && releaseFiles[i].getName().equalsIgnoreCase("databases")) {
-				Process removeDatabasesFolder = Runtime.getRuntime().exec("rm -r " + releaseDownloadDir + "/databases");
-				removeDatabasesFolder.waitFor();
+				FileUtils.deleteDirectory(new File(releaseDownloadDir + "/databases"));
 			}
 			
 			Files.move(Paths.get(releaseFiles[i].toString()), Paths.get(releaseDownloadDir + "/" + releaseFiles[i].getName()), StandardCopyOption.REPLACE_EXISTING); 

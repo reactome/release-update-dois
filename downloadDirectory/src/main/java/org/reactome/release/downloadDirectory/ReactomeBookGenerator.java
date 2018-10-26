@@ -1,10 +1,12 @@
 package org.reactome.release.downloadDirectory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
@@ -26,8 +28,8 @@ public class ReactomeBookGenerator {
 		zipPDFBook.waitFor();
 		
 		Files.move(Paths.get("TheReactomeBook.pdf.zip"), Paths.get(releaseNumber + "/TheReactomeBook.pdf.zip"), StandardCopyOption.REPLACE_EXISTING); 
-		Runtime.getRuntime().exec("rm TheReactomeBook.pdf");
-		//TODO: rm
+		Files.delete(Paths.get("TheReactomeBook.pdf"));
+
 		logger.info("Generating RTF Reactome Book ...");
 		Process generateRTFBook = Runtime.getRuntime().exec(rtfBookCommand);
 		generateRTFBook.waitFor();
@@ -35,7 +37,7 @@ public class ReactomeBookGenerator {
 		Process zipRTFBook = Runtime.getRuntime().exec("zip TheReactomeBook.rtf.zip TheReactomeBook");
 		zipRTFBook.waitFor();
 		Files.move(Paths.get("TheReactomeBook.rtf.zip"), Paths.get(releaseNumber + "/TheReactomeBook.rtf.zip"), StandardCopyOption.REPLACE_EXISTING); 
-		Runtime.getRuntime().exec("rm -rf TheReactomeBook");
+		FileUtils.deleteDirectory(new File("TheReactomeBook"));
 		
 		logger.info("Finished generating Reactome Books");
 	}
