@@ -9,6 +9,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.sql.Blob;
 import java.sql.Connection;
@@ -29,7 +30,7 @@ public class FetchTestReactomeOntologyFiles {
 	private PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
 	
-	public static void execute(MySQLAdaptor dba, String username, String password, String host, String database, int releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
+	public static void execute(MySQLAdaptor dba, String username, String password, String host, String database, String releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
 		logger.info("Running FetchTestReactomeOntologyFiles...");
 		Class.forName("com.mysql.jdbc.Driver");
 		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?" + "user=" + username + "&password=" + password);
@@ -116,9 +117,10 @@ public class FetchTestReactomeOntologyFiles {
 		pprjWriter.close();
 		pontWriter.close();
 		pinsWriter.close();
-		Runtime.getRuntime().exec("mv reactome_data_model.pprj " + releaseNumber);
-		Runtime.getRuntime().exec("mv reactome_data_model.pont " + releaseNumber);
-		Runtime.getRuntime().exec("mv reactome_data_model.pins " + releaseNumber);
+		String outpathName = releaseNumber + "/reactome_data_model.";
+		Files.move(Paths.get("reactome_data_model.pprj"), Paths.get(outpathName + "pprj"), StandardCopyOption.REPLACE_EXISTING); 
+		Files.move(Paths.get("reactome_data_model.pont"), Paths.get(outpathName + "pont"), StandardCopyOption.REPLACE_EXISTING); 
+		Files.move(Paths.get("reactome_data_model.pins"), Paths.get(outpathName + "pins"), StandardCopyOption.REPLACE_EXISTING); 
 		
 		logger.info("Finished FetchTestReactomeOntologyFiles");
 	}

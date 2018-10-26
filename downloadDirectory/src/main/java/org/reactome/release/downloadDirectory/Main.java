@@ -2,6 +2,9 @@ package org.reactome.release.downloadDirectory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,14 +34,16 @@ public class Main {
 		String database = props.getProperty("database");
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
-		int releaseNumber = Integer.valueOf(props.getProperty("release"));
+		String releaseNumber = props.getProperty("release") + "/";
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		
-		Runtime.getRuntime().exec("mkdir -p " + releaseNumber);
-		
+		File releaseDir = new File(releaseNumber);
+		if (!releaseDir.exists()) {
+			releaseDir.mkdir();
+		}
 		//Begin download directory
 		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
-		Biopax.execute(username, password, host, Integer.toString(port), database, Integer.toString(releaseNumber));
+		Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber);
 		GSEAOutput.execute(username, password, host, port, database, releaseNumber);
 		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber);
 		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
@@ -61,11 +66,15 @@ public class Main {
 		logger.info("Moving all generated files to ");
 		String releaseDownloadDir = "/usr/local/gkb/scripts/release/download_directory/" + releaseNumber;
 		logger.info("Moving all generated files to " + releaseDownloadDir);
-		File folder = new File(Integer.toString(releaseNumber));
+		File folder = new File(releaseNumber);
 		File[] releaseFiles = folder.listFiles();
 		for (int i = 0; i < releaseFiles.length; i++) {
-			Process moveFileToDownloadDir = Runtime.getRuntime().exec("mv " + releaseFiles[i] + " " + releaseDownloadDir);
-			moveFileToDownloadDir.waitFor();
+			if (releaseFiles[i].isDirectory() && releaseFiles[i].getName().equalsIgnoreCase("databases")) {
+				Process removeDatabasesFolder = Runtime.getRuntime().exec("rm -r " + releaseDownloadDir + "/databases");
+				removeDatabasesFolder.waitFor();
+			}
+			
+			Files.move(Paths.get(releaseFiles[i].toString()), Paths.get(releaseDownloadDir + "/" + releaseFiles[i].getName()), StandardCopyOption.REPLACE_EXISTING); 
 		}
 		
 		logger.info("Finished DownloadDirectory for release " + releaseNumber);

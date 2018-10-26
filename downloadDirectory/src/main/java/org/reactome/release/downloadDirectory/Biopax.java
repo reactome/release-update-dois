@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -44,9 +45,12 @@ public class Biopax {
   }
   
   public static void execute(String username, String password, String host, String port, String database, String releaseNumber) throws Exception {
+	  	releaseNumber = releaseNumber.replace("/", "");
 	  	String biopaxDir = releaseNumber + "_biopax";
-        Process makeBiopaxDir = Runtime.getRuntime().exec("mkdir -p " + biopaxDir);
-        makeBiopaxDir.waitFor();
+        File biopaxDirFile = new File(biopaxDir);
+        if (!biopaxDirFile.exists()) {
+        	biopaxDirFile.mkdir();
+        }
         // First, generate owl files. This particular step requires a local maven installation of the PathwayExchange jar
 		for (int i = 0; i < 2; i++) {
 			int biopaxLevel = i + 2;
@@ -105,10 +109,10 @@ public class Biopax {
 		    
 		    logger.info("Finished BioPAX");
 		}
-		Runtime.getRuntime().exec("mv biopax2.zip " + releaseNumber);
-//		Runtime.getRuntime().exec("mv biopax2_validator.zip " + releaseNumber);
-		Runtime.getRuntime().exec("mv biopax.zip " + releaseNumber);
-//		Runtime.getRuntime().exec("mv biopax_validator.zip " + releaseNumber);
+		String outpathBiopax2 = releaseNumber + "/biopax2.zip";
+		String outpathBiopax3 = releaseNumber + "/biopax.zip";
+		Files.move(Paths.get("biopax2.zip"), Paths.get(outpathBiopax2), StandardCopyOption.REPLACE_EXISTING); 
+		Files.move(Paths.get("biopax.zip"), Paths.get(outpathBiopax3), StandardCopyOption.REPLACE_EXISTING); 
 //		Process removeBiopaxDir = Runtime.getRuntime().exec("rm -r " + biopaxDir);
 //		removeBiopaxDir.waitFor();
   }

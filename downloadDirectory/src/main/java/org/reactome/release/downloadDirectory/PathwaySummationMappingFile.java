@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.HashSet;
@@ -17,7 +18,7 @@ import org.gk.persistence.MySQLAdaptor;
 public class PathwaySummationMappingFile {
 	private static final Logger logger = LogManager.getLogger();
 	
-	public static void execute(MySQLAdaptor dba, int releaseNumber) throws Exception {
+	public static void execute(MySQLAdaptor dba, String releaseNumber) throws Exception {
 		logger.info("Running PathwaySummationMappingFile");
 		// Get all Pathway instances
 		Collection<GKInstance> pathwayInstances = dba.fetchInstancesByClass(ReactomeJavaConstants.Pathway);
@@ -50,7 +51,8 @@ public class PathwaySummationMappingFile {
 				}
 			}
 		}
-		Runtime.getRuntime().exec("mv pathway2summation.txt " + releaseNumber);
+		String outpathName = releaseNumber + "/pathway2summation.txt";
+		Files.move(Paths.get("pathway2summation.txt"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
 		
 		logger.info("Finished PathwaySummationMappingFile");
 	}

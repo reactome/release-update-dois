@@ -12,12 +12,17 @@ import org.gk.persistence.MySQLAdaptor;
 public class DatabaseDumps {
 	private static final Logger logger = LogManager.getLogger();
 	
-	public static void execute(MySQLAdaptor dba, int releaseNumber, String username, String password, String host, int port, String testReactomeDatabase) throws IOException, InterruptedException {
+	public static void execute(MySQLAdaptor dba, String releaseNumber, String username, String password, String host, int port, String testReactomeDatabase) throws IOException, InterruptedException {
 		// Take mysqldumps of 'stable_identifiers' and 'test_reactome_##' and compress them using gzip.
+		
+		//TODO: The gzipped and non-gzipped files might be getting moved 
+		
 		logger.info("Generating DatabaseDumps");
 		// Create databases folder that will hold the DB dumps
-		Runtime.getRuntime().exec("mkdir -p " + releaseNumber + "/databases");
-		
+		File databaseDir = new File(releaseNumber + "/databases");
+		if (!databaseDir.exists()) {
+			databaseDir.mkdir();
+		}
 		// Start with stable_identifiers dump
 		//TODO: Sticking to GK naming conventions?
 		logger.info("Dumping stable_identifiers to gk_stable_ids.sql...");

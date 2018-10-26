@@ -7,6 +7,7 @@ import org.gk.model.ReactomeJavaConstants;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -29,7 +30,7 @@ public class MapOldStableIds {
 	private PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
 	
-	public static void execute(String username, String password, String host, int releaseNumber) throws Exception {
+	public static void execute(String username, String password, String host, String releaseNumber) throws Exception {
 		logger.info("Running MapOldStableIds");
 		// Need to use mysql driver to access stable_identifiers db
 		logger.info("Connecting to stable_identifers db...");
@@ -111,7 +112,8 @@ public class MapOldStableIds {
 			String line = primaryId + "\t" + String.join(",", secondaryIds) + "\n";
 			Files.write(Paths.get("reactome_stable_ids.txt"), line.getBytes(), StandardOpenOption.APPEND);
 		}
-		Runtime.getRuntime().exec("mv reactome_stable_ids.txt " + releaseNumber);
+		String outpathName = releaseNumber + "/reactome_stable_ids.txt";
+		Files.move(Paths.get("reactome_stable_ids.txt"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
 		
 		logger.info("MapOldStableIds finished");
 	}

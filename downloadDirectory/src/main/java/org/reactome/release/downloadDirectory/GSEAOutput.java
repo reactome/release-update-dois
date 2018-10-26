@@ -6,6 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -17,7 +20,7 @@ import org.reactome.gsea.ReactomeToMsigDBExport;
 public class GSEAOutput {
 	private static final Logger logger = LogManager.getLogger();
 	
-	public static void execute(String username, String password, String host, int port, String database, int releaseNumber) {
+	public static void execute(String username, String password, String host, int port, String database, String releaseNumber) {
 		logger.info("Running GSEAOutput...");
 		String outFilename = "ReactomePathways.gmt";
 		ReactomeToMsigDBExport.main(new String[] {host, database, username, password, Integer.toString(port), outFilename});
@@ -71,7 +74,8 @@ public class GSEAOutput {
 			zos.closeEntry();
 			zos.close();
 			Runtime.getRuntime().exec("rm " + outFilename);
-			Runtime.getRuntime().exec("mv " + outFilename + ".zip " + releaseNumber);
+			String outpathName = releaseNumber + "/" + outFilename + ".zip";
+			Files.move(Paths.get(outFilename + ".zip"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
 			
 		} catch (IOException e) {
 			e.printStackTrace();
