@@ -188,6 +188,11 @@ public class ChebiUpdater
 		logger.info("*** Formula update changes ***");
 		logger.info(this.formulaUpdateSB.toString());
 		
+		reportReferenceEntityChanges();
+	}
+
+	private void reportReferenceEntityChanges()
+	{
 		refEntChangeLog.info("# DB_ID\tCreator\tAffected ReferenceEntity\tNew ChEBI Name\tUpdated list of all names");
 		// Print the referenceEntities that have changes, sorted by who created them.
 		for (GKInstance creator : this.referenceEntityChanges.keySet().stream().sorted(this.personComparator).collect(Collectors.toList()))
