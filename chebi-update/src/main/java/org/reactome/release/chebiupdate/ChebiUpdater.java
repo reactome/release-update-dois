@@ -136,10 +136,11 @@ public class ChebiUpdater
 		// print headers for log files
 		refMolIdentChangeLog.info("# DB_ID\tReference Molecule\tDeprecated Identifier\tReplacement Identifier\tAffected referenceEntity DB_IDs\tDB_ID of Molecule with Replacement Identifier\tDB_IDs of referenceEntities of Molecule with Replacement Identifier");
 		refMolNameChangeLog.info("# DB_ID\tReference Molecule\tOld Name\tNew Name");
-		
-		GKInstance instanceEdit = null;
+		// Begin the transaction (all database-write activities in this process should take place within a single transaction).
 		adaptor.startTransaction();
-		instanceEdit = InstanceEditUtils.createInstanceEdit(this.adaptor, this.personID, this.getClass().getCanonicalName());
+		GKInstance instanceEdit = InstanceEditUtils.createInstanceEdit(this.adaptor, this.personID, this.getClass().getCanonicalName());
+		// Process the results that we got back from querying the ChEBI web service. Each key in the map is the DB ID of a molecule 
+		// whose ChEBI Identifier was sent as a query to the ChEBI web service.
 		for (Long moleculeDBID : entityMap.keySet())
 		{
 			GKInstance molecule = adaptor.fetchInstance(moleculeDBID);
@@ -151,17 +152,10 @@ public class ChebiUpdater
 
 			String chebiName = entity.getChebiAsciiName();
 			List<DataItem> chebiFormulae = entity.getFormulae();
-
-
-			String moleculeIdentifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
-			String moleculeName = (String) molecule.getAttributeValuesList(ReactomeJavaConstants.name).get(0);
-			String moleculeFormulae = (String) molecule.getAttributeValue(ReactomeJavaConstants.formula);
-
-			String prefix = "ReferenceMolecule (DB ID: " + molecule.getDBID() + " / ChEBI ID: " + moleculeIdentifier + ") has changes: ";
-
-			reportIfMoleculeIdentifierChanged(molecule, chebiID, moleculeIdentifier, prefix);
-			boolean nameUpdated = updateMoleculeName(molecule, chebiName, moleculeName, prefix);
-			boolean formulaUpdated = updateMoleculeFormula(molecule, chebiFormulae, moleculeFormulae, prefix);
+			
+			reportIfMoleculeIdentifierChanged(molecule, chebiID);
+			boolean nameUpdated = updateMoleculeName(molecule, chebiName);
+			boolean formulaUpdated = updateMoleculeFormula(molecule, chebiFormulae);
 			// If the ChEBI name was updated, update the referenceEntities that refer to the molecule.
 			if (nameUpdated)
 			{
@@ -211,16 +205,17 @@ public class ChebiUpdater
 	 * 
 	 * @param molecule
 	 * @param chebiFormulae
-	 * @param moleculeFormulae
-	 * @param prefix
 	 * @return true if the formula was updated, or if the field was populated (i.e. was NULL before). False, otherwise.
 	 * @throws InvalidAttributeException
 	 * @throws InvalidAttributeValueException
 	 * @throws Exception
 	 */
-	private boolean updateMoleculeFormula(GKInstance molecule, List<DataItem> chebiFormulae, String moleculeFormulae, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	private boolean updateMoleculeFormula(GKInstance molecule, List<DataItem> chebiFormulae) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
+		String moleculeFormulae = (String) molecule.getAttributeValue(ReactomeJavaConstants.formula);
 		boolean updated = false;
+		String moleculeIdentifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
+		String reportLinePrefix = "ReferenceMolecule (DB ID: " + molecule.getDBID() + " / ChEBI ID: " + moleculeIdentifier + ") has changes: ";
 		if (!chebiFormulae.isEmpty())
 		{
 			String firstFormula = chebiFormulae.get(0).getData();
@@ -228,12 +223,13 @@ public class ChebiUpdater
 			{
 				if (moleculeFormulae == null)
 				{
-					this.formulaFillSB.append(prefix).append("New Formula: ").append(firstFormula).append("\n");
+					this.formulaFillSB.append(reportLinePrefix).append("New Formula: ").append(firstFormula).append("\n");
 					updated = true;
 				}
 				else if (!firstFormula.equals(moleculeFormulae))
 				{
-					this.formulaUpdateSB.append(prefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ").append("New Formula: ").append(firstFormula).append("\n");
+					this.formulaUpdateSB.append(reportLinePrefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ")
+														.append("New Formula: ").append(firstFormula).append("\n");
 					updated = true;
 				}
 				//else
@@ -265,15 +261,14 @@ public class ChebiUpdater
 	 * 
 	 * @param molecule
 	 * @param chebiName
-	 * @param moleculeName
-	 * @param prefix
 	 * @return True if the name was updated. False if not.
 	 * @throws InvalidAttributeException
 	 * @throws InvalidAttributeValueException
 	 * @throws Exception
 	 */
-	private boolean updateMoleculeName(GKInstance molecule, String chebiName, String moleculeName, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	private boolean updateMoleculeName(GKInstance molecule, String chebiName) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
+		String moleculeName = (String) molecule.getAttributeValuesList(ReactomeJavaConstants.name).get(0);
 		if (!chebiName.equals(moleculeName))
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.name, chebiName);
@@ -289,15 +284,14 @@ public class ChebiUpdater
 	 * 
 	 * @param molecule
 	 * @param newChebiID
-	 * @param oldMoleculeIdentifier
-	 * @param prefix
 	 * @return True if the identifier was updated, false otherwise.
 	 * @throws InvalidAttributeException
 	 * @throws InvalidAttributeValueException
 	 * @throws Exception
 	 */
-	private void reportIfMoleculeIdentifierChanged(GKInstance molecule, String newChebiID, String oldMoleculeIdentifier, String prefix) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	private void reportIfMoleculeIdentifierChanged(GKInstance molecule, String newChebiID) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
+		String oldMoleculeIdentifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
 		if (!newChebiID.equals(oldMoleculeIdentifier))
 		{
 			String oldIdentifierReferrersString = "";
