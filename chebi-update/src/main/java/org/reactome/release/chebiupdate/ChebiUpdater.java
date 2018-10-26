@@ -52,8 +52,17 @@ public class ChebiUpdater
 	private Map<GKInstance, List<String>> referenceEntityChanges = new HashMap<GKInstance, List<String>>();
 	private long personID;
 	private boolean useCache;
-	// A Comparator object that will compare GKInstances, assuming that they are of the "Person" type, with a surname and firstname.
-	private Comparator<GKInstance> personComparator = new Comparator<GKInstance>()
+	private Comparator<GKInstance> personComparator;
+	
+	public ChebiUpdater(MySQLAdaptor adaptor, boolean testMode, long personID, boolean useCache)
+	{
+		this.adaptor = adaptor;
+		this.testMode = testMode;
+		this.personID = personID;
+		this.useCache = useCache;
+
+		// A Comparator object that will compare GKInstances, assuming that they are of the "Person" type, with a surname and firstname.		
+		this.personComparator = new Comparator<GKInstance>()
 		{
 			@Override
 			public int compare(GKInstance o1, GKInstance o2)
@@ -81,13 +90,6 @@ public class ChebiUpdater
 				return 0;
 			}
 		};
-	
-	public ChebiUpdater(MySQLAdaptor adaptor, boolean testMode, long personID, boolean useCache)
-	{
-		this.adaptor = adaptor;
-		this.testMode = testMode;
-		this.personID = personID;
-		this.useCache = useCache;
 	}
 
 	/**
