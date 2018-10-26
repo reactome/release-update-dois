@@ -51,7 +51,8 @@ public class ChebiUpdaterTest
 {
 	private static final long PERSON_ID = 12345L;
 
-	ChebiWebServiceClient chebiClient;
+	@Mock(name="chebiClient")
+	ChebiWebServiceClient chebiClient = PowerMockito.mock(ChebiWebServiceClient.class);
 	
 	@Mock(name = "adaptor")
 	MySQLAdaptor adaptor;
@@ -79,6 +80,15 @@ public class ChebiUpdaterTest
 	
 	@Mock
 	GKInstance refEnt3;
+	
+	@Mock
+	GKInstance refEnt4;
+
+	@Mock
+	GKInstance refEnt5;
+	
+	@Mock
+	GKInstance refEnt6;
 	
 	// need to mock the Chebi Entities because they don't have a setter for Formulae
 	@Mock
@@ -119,6 +129,26 @@ public class ChebiUpdaterTest
 	{
 		MockitoAnnotations.initMocks(this);
 		
+		
+		when(attribute.isMultiple()).thenReturn(false);
+		
+		when(refMolSchemaClass.getName()).thenReturn(ReactomeJavaConstants.ReferenceMolecule);
+		when(simpleEntitySchemaClass.getName()).thenReturn(ReactomeJavaConstants.SimpleEntity);
+		when(chemicalDrugSchemaClass.getName()).thenReturn(ReactomeJavaConstants.ChemicalDrug);
+		PowerMockito.mockStatic(InstanceEditUtils.class);
+		when(adaptor.fetchInstance(PERSON_ID)).thenReturn(person);
+		
+		when(adaptor.getSchema()).thenReturn(schema);
+
+		when(schema.getClassByName(ReactomeJavaConstants.ReferenceMolecule)).thenReturn(refMolSchemaClass);
+		when(person.getDbAdaptor()).thenReturn(adaptor);
+		when(createdInstance.getAttributeValue(ReactomeJavaConstants.author)).thenReturn(person);
+		
+		when(InstanceEditUtils.createInstanceEdit(adaptor, PERSON_ID, updator.getClass().getCanonicalName())).thenReturn(person);
+		
+		when(chebiRefDB.getDBID()).thenReturn(123456L);
+		when(adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI")).thenReturn(Arrays.asList(chebiRefDB)) ;
+
 	}
 	
 	@Test
@@ -126,22 +156,7 @@ public class ChebiUpdaterTest
 	{
 		try
 		{
-			chebiClient = PowerMockito.mock(ChebiWebServiceClient.class);
-			when(attribute.isMultiple()).thenReturn(false);
 			
-			when(refMolSchemaClass.getName()).thenReturn(ReactomeJavaConstants.ReferenceMolecule);
-			when(simpleEntitySchemaClass.getName()).thenReturn(ReactomeJavaConstants.SimpleEntity);
-			when(chemicalDrugSchemaClass.getName()).thenReturn(ReactomeJavaConstants.ChemicalDrug);
-			PowerMockito.mockStatic(InstanceEditUtils.class);
-			when(adaptor.fetchInstance(PERSON_ID)).thenReturn(person);
-			
-			when(adaptor.getSchema()).thenReturn(schema);
-
-			when(schema.getClassByName(ReactomeJavaConstants.ReferenceMolecule)).thenReturn(refMolSchemaClass);
-			when(person.getDbAdaptor()).thenReturn(adaptor);
-			when(createdInstance.getAttributeValue(ReactomeJavaConstants.author)).thenReturn(person);
-			
-			when(InstanceEditUtils.createInstanceEdit(adaptor, PERSON_ID, updator.getClass().getCanonicalName())).thenReturn(person);
 			when(chebiEntity1.getChebiAsciiName()).thenReturn("NAME1");
 			when(chebiEntity2.getChebiAsciiName()).thenReturn("NAME-2");
 			
@@ -152,10 +167,6 @@ public class ChebiUpdaterTest
 			d.setData("H2");
 			when(chebiEntity1.getFormulae()).thenReturn(Arrays.asList( d ));
 			when(chebiEntity2.getFormulae()).thenReturn(Arrays.asList( d ));
-			
-			when(chebiRefDB.getDBID()).thenReturn(123456L);
-			
-			when(adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI")).thenReturn(Arrays.asList(chebiRefDB)) ;
 			
 			when(chebiClient.getCompleteEntity("112233")).thenReturn(chebiEntity1);
 			when(chebiClient.getCompleteEntity("332211")).thenReturn(chebiEntity2);
@@ -183,8 +194,6 @@ public class ChebiUpdaterTest
 			when(molecule4.getSchemClass()).thenReturn(refMolSchemaClass);
 			when(molecule4.getDBID()).thenReturn(444L);
 			when(adaptor.fetchInstance(444L)).thenReturn(molecule4);
-			
-			
 			
 			when(refEnt1.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("OTHERNAME", "NAME1", "BLAH")));
 			when(refEnt1.getSchemClass()).thenReturn(simpleEntitySchemaClass);
@@ -216,6 +225,72 @@ public class ChebiUpdaterTest
 		assertTrue(true);
 	}
 	
+	@Test
+	public void testChangedIdentifiers() throws InvalidAttributeException, Exception
+	{
+		when(chebiEntity1.getChebiAsciiName()).thenReturn("NAME1");
+		// This mock ChEBI entity will return a different ChEBI ID! It's ID is now the same as molecule2.
+		when(chebiEntity1.getChebiId()).thenReturn("CHEBI:332211");
+		
+		when(chebiEntity2.getChebiAsciiName()).thenReturn("NAME-2");
+		when(chebiEntity2.getChebiId()).thenReturn("CHEBI:332211");
+		
+		when(chebiClient.getCompleteEntity("112233")).thenReturn(chebiEntity1);
+		when(chebiClient.getCompleteEntity("332211")).thenReturn(chebiEntity2);
+
+		DataItem d = new DataItem();
+		d.setData("H2");
+		when(chebiEntity1.getFormulae()).thenReturn(Arrays.asList( d ));
+		when(chebiEntity2.getFormulae()).thenReturn(Arrays.asList( d ));
+
+		when(molecule1.getAttributeValue("identifier")).thenReturn("112233");
+		when(molecule1.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME1")));
+		when(molecule1.getAttributeValue("formula")).thenReturn("H3");
+		when(molecule1.getDBID()).thenReturn(123L);
+		when(molecule1.getSchemClass()).thenReturn(refMolSchemaClass);
+		when(adaptor.fetchInstance(123L)).thenReturn(molecule1);
+		
+		when(molecule2.getAttributeValue("identifier")).thenReturn("332211");
+		when(molecule2.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME2")));
+		when(molecule2.getDBID()).thenReturn(456L);
+		when(molecule2.getSchemClass()).thenReturn(refMolSchemaClass);
+		when(adaptor.fetchInstance(456L)).thenReturn(molecule2);
+
+		
+		when(refEnt1.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("OTHERNAME", "NAME1", "BLAH")));
+		when(refEnt1.getSchemClass()).thenReturn(simpleEntitySchemaClass);
+		when(refEnt1.getDBID()).thenReturn(1111L);
+		when(refEnt2.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("TEST", "NAME2")));
+		when(refEnt2.getSchemClass()).thenReturn(simpleEntitySchemaClass);
+		when(refEnt2.getDBID()).thenReturn(2222L);
+		when(refEnt3.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME-2", "ASDFQ@#$FASFASDF","NOPE")));
+		when(refEnt3.getDBID()).thenReturn(3333L);
+		when(refEnt4.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("BLAH4", "more blah")));
+		when(refEnt4.getDBID()).thenReturn(4444L);
+		when(refEnt5.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("5BLAH", "more blah")));
+		when(refEnt5.getDBID()).thenReturn(5555L);
+		when(refEnt6.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("BL_6_AH", "more blah")));
+		when(refEnt6.getDBID()).thenReturn(6666L);
+
+		when(refEnt1.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
+		when(refEnt2.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
+		when(refEnt3.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
+		when(refEnt5.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
+		when(refEnt6.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
+
+		Collection<GKInstance> referrers1 = Arrays.asList(refEnt1, refEnt4, refEnt6);
+		Collection<GKInstance> referrers2 = Arrays.asList(refEnt2, refEnt3, refEnt5); 
+		
+		when(molecule1.getReferers("referenceEntity")).thenReturn(referrers1);
+		when(molecule2.getReferers("referenceEntity")).thenReturn(referrers2);
+		Collection<GKInstance> molecules = Arrays.asList(molecule1, molecule2);
+		when(adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.referenceDatabase, "=", "123456")).thenReturn(molecules);
+		//adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, "=", newChebiID);
+		when(adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, "=", "332211")).thenReturn(Arrays.asList(molecule2));
+		updator.updateChebiReferenceMolecules();
+		// If we got this far, it means nothing crashed!
+		assertTrue(true);
+	}
 	
 	@Test
 	public void testCheckForDuplicates() throws SQLException, Exception

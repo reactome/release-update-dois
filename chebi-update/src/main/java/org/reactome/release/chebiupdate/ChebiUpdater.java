@@ -229,7 +229,7 @@ public class ChebiUpdater
 				else if (!firstFormula.equals(moleculeFormulae))
 				{
 					this.formulaUpdateSB.append(reportLinePrefix).append(" Old Formula: ").append(moleculeFormulae).append(" ; ")
-														.append("New Formula: ").append(firstFormula).append("\n");
+																.append("New Formula: ").append(firstFormula).append("\n");
 					updated = true;
 				}
 				//else
@@ -294,18 +294,9 @@ public class ChebiUpdater
 		String oldMoleculeIdentifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
 		if (!newChebiID.equals(oldMoleculeIdentifier))
 		{
-			String oldIdentifierReferrersString = "";
-			// Need to get list of DB_IDs of referrers for *old* Identifier and also for *new* Identifier.
-			@SuppressWarnings("unchecked")
-			List<GKInstance> oldIdentifierReferrers = (List<GKInstance>) molecule.getReferers(ReactomeJavaConstants.referenceEntity);
-			if (oldIdentifierReferrers != null && !oldIdentifierReferrers.isEmpty())
-			{
-				for (GKInstance referrer : oldIdentifierReferrers)
-				{
-					oldIdentifierReferrersString += referrer.getDBID().toString() + "|";
-				}
-			}
-			
+			 //Need to get list of DB_IDs of referrers for *old* Identifier and also for *new* Identifier.
+			String oldIdentifierReferrersString = referrerIDJoiner(molecule);
+
 			// It's possible that the "new" identifier is already in our system. And duplicate ReferenceMolecules are also *possible*, so this will
 			// get a little bit messy...
 			@SuppressWarnings("unchecked")
@@ -317,16 +308,7 @@ public class ChebiUpdater
 				// for each ReferenceMolecule with the "new" identifier...
 				for (GKInstance refMol : refMolsWithNewIdentifier)
 				{
-					@SuppressWarnings("unchecked")
-					List<GKInstance> newIdentifierReferrers = (List<GKInstance>) refMol.getReferers(ReactomeJavaConstants.referenceEntity);
-					String newIdentifierReferrersString = "";
-					if (newIdentifierReferrers != null && !newIdentifierReferrers.isEmpty())
-					{
-						for (GKInstance referrer : newIdentifierReferrers)
-						{
-							newIdentifierReferrersString += referrer.getDBID() + "|";
-						}
-					}
+					String newIdentifierReferrersString = referrerIDJoiner(refMol);
 					refMolIdentChangeLog.info("{}\t{}\t{}\t{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString(), oldMoleculeIdentifier, newChebiID, refMol.getDBID(), oldIdentifierReferrersString, newIdentifierReferrersString);
 				}
 			}
@@ -335,6 +317,21 @@ public class ChebiUpdater
 				refMolIdentChangeLog.info("{}\t{}\t{}\t{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString(), oldMoleculeIdentifier, newChebiID, "", oldIdentifierReferrersString, "");
 			}
 		}
+	}
+
+	
+	/**
+	 * Returns the DB_IDs of the referrers of a ReferenceMolecule, all joined by "|".
+	 * @param molecule
+	 * @return Returns the DB_IDs of the referrers of a ReferenceMolecule, all joined by "|".
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	private String referrerIDJoiner(GKInstance molecule) throws Exception
+	{
+		return ((Collection<GKInstance>) molecule.getReferers(ReactomeJavaConstants.referenceEntity)).stream()
+												.map(referrer -> referrer.getDBID().toString())
+												.collect(Collectors.joining("|"));
 	}
 
 	/**
@@ -554,7 +551,10 @@ public class ChebiUpdater
 						}
 						else
 						{
-							failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
+							if (entity == null)
+							{
+								failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
+							}
 						}
 					}
 					else // ...Load data from the cache. Use the AccessibleEntity to set the formula.
