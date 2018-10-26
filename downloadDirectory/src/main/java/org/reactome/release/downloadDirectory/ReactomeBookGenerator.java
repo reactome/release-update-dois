@@ -14,9 +14,8 @@ import org.gk.persistence.MySQLAdaptor;
 public class ReactomeBookGenerator {
 	private static final Logger logger = LogManager.getLogger();
 	
-	static public void execute(String username, String password, String host, int port, String database, String releaseNumber) throws IOException, InterruptedException {
+	static public void execute(String username, String password, String host, int port, String database, String releaseNumber, String releaseDir ) throws IOException, InterruptedException {
 		logger.info("Generating Reactome Books");
-		String releaseDir = "/release/scripts/release/download_directory";
 		String pdfBookCommand = "perl " + releaseDir + "/genbook_pdf.pl -depth 100 -db " + database + " -host " + host + " -user " + username + " -pass " + password + " -port " + port + " -stdout -react_rep 2";
 		String rtfBookCommand = "perl " + releaseDir + "/genbook_rtf.pl -depth 100 -db " + database + " -host " + host + " -user " + username + " -pass " + password + " -port " + port + " -split -react_rep 2";
 		

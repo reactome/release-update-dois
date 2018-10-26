@@ -17,15 +17,20 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.gk.persistence.MySQLAdaptor;
 import org.reactome.gsea.ReactomeToMsigDBExport;
 
 public class GSEAOutput {
 	private static final Logger logger = LogManager.getLogger();
 	
-	public static void execute(String username, String password, String host, int port, String database, String releaseNumber) {
+	public static void execute(MySQLAdaptor dba, String releaseNumber) throws Exception {
 		logger.info("Running GSEAOutput...");
 		String outFilename = "ReactomePathways.gmt";
-		ReactomeToMsigDBExport.main(new String[] {host, database, username, password, Integer.toString(port), outFilename});
+		
+		ReactomeToMsigDBExport exporter = new ReactomeToMsigDBExport();
+		exporter.setIsForGMT(true);
+		exporter.setDBA(dba);
+		exporter.export(outFilename);
 		
 		logger.info("Updating ReactomePathways.gmt with 'Reactome Pathway' column...");
 		// Initial output file needs to be updated so that the third column contains 'Reactome Pathway' 

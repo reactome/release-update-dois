@@ -36,43 +36,43 @@ public class Main {
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
 		String releaseNumber = props.getProperty("release") + "/";
+		String releaseDirAbsolute = props.getProperty("absoluteReleaseDirectoryPath");
+		String releaseDownloadDir = props.getProperty("releaseDownloadDirectoryPath");
+		String releaseDownloadDirWithNumber = releaseDownloadDir + releaseNumber;
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		File releaseDir = new File(releaseNumber);
 		if (!releaseDir.exists()) {
 			releaseDir.mkdir();
 		}
 		//Begin download directory
-		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
-		Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber);
-		GSEAOutput.execute(username, password, host, port, database, releaseNumber);
-		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber);
-		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
+//		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
+//		Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber);
+		GSEAOutput.execute(dbAdaptor, releaseNumber);
+//		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir);
+//		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
 //		CreateReleaseTarball.execute(releaseNumber);
-		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
-		MapOldStableIds.execute(username, password, host, releaseNumber);
+//		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
+//		MapOldStableIds.execute(username, password, host, releaseNumber);
 		
 		// These file copy commands now use absolute paths instead of relative ones
-		String releaseDirAbsolute = "/usr/local/gkb/scripts/release";
-		logger.info("Copying gene_association.reactome to release directory");
-		Files.copy(Paths.get(releaseDirAbsolute + "/goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
-		logger.info("Copying models2pathways.tsv to release directory");
-		Files.copy(Paths.get(releaseDirAbsolute + "/biomodels/models2pathways.tsv"), Paths.get(releaseNumber + "models2pathways.tsv"), StandardCopyOption.REPLACE_EXISTING);
-		
-		CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
-		
-		// Move files to downloadDirectory release folder
-		logger.info("Moving all generated files to ");
-		String releaseDownloadDir = "/usr/local/gkb/scripts/release/download_directory/" + releaseNumber;
-		logger.info("Moving all generated files to " + releaseDownloadDir);
-		File folder = new File(releaseNumber);
-		File[] releaseFiles = folder.listFiles();
-		for (int i = 0; i < releaseFiles.length; i++) {
-			if (releaseFiles[i].isDirectory() && releaseFiles[i].getName().equalsIgnoreCase("databases")) {
-				FileUtils.deleteDirectory(new File(releaseDownloadDir + "/databases"));
-			}
-			
-			Files.move(Paths.get(releaseFiles[i].toString()), Paths.get(releaseDownloadDir + "/" + releaseFiles[i].getName()), StandardCopyOption.REPLACE_EXISTING); 
-		}
+//		logger.info("Copying gene_association.reactome to release directory");
+//		Files.copy(Paths.get(releaseDirAbsolute + "goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
+//		logger.info("Copying models2pathways.tsv to release directory");
+//		Files.copy(Paths.get(releaseDirAbsolute + "biomodels/models2pathways.tsv"), Paths.get(releaseNumber + "models2pathways.tsv"), StandardCopyOption.REPLACE_EXISTING);
+//		
+//		CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
+//		// Move files to downloadDirectory release folder
+//		logger.info("Moving all generated files to " + releaseDownloadDirWithNumber);
+//		File folder = new File(releaseNumber);
+//		File[] releaseFiles = folder.listFiles();
+//		for (int i = 0; i < releaseFiles.length; i++) {
+//			System.out.println(releaseFiles[i]);
+//			if (releaseFiles[i].isDirectory() && releaseFiles[i].getName().equalsIgnoreCase("databases")) {
+//				FileUtils.deleteDirectory(new File(releaseDownloadDirWithNumber + "/databases"));
+//			}
+//			
+//			Files.move(Paths.get(releaseFiles[i].toString()), Paths.get(releaseDownloadDirWithNumber + "/" + releaseFiles[i].getName()), StandardCopyOption.REPLACE_EXISTING); 
+//		}
 		
 		logger.info("Finished DownloadDirectory for release " + releaseNumber);
 	}

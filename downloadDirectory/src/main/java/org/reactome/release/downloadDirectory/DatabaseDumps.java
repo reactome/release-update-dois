@@ -26,7 +26,6 @@ public class DatabaseDumps {
 		// Start with stable_identifiers dump
 		//TODO: Sticking to GK naming conventions?
 		logger.info("Dumping stable_identifiers to gk_stable_ids.sql...");
-		Runtime.getRuntime().exec("touch " + releaseNumber + "/databases/gk_stable_ids.sql");
 		File stableIdsFile = new File(releaseNumber + "/databases/gk_stable_ids.sql");
 		String[] stableIdsCommand = new String[]{"mysqldump", "-h" + host,"-u" + username, "-p" + password, "-P" + port, "stable_identifiers"};
 		ProcessBuilder stableIdsprocessBuilder = new ProcessBuilder(Arrays.asList(stableIdsCommand));
