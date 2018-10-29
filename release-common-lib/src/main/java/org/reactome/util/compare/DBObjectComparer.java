@@ -133,161 +133,165 @@ Predicate&lt;? super SchemaAttribute&gt; attributeNameFilter = a -&gt; {
 	private static int compareInstances(GKInstance inst1, GKInstance inst2, StringBuilder sb, int diffCount, int recursionDepth, int maxRecursionDepth, Predicate<? super SchemaAttribute> customAttributeNameFilter, boolean checkReferrers)
 	{
 		int count = diffCount;
-		SchemaClass class1 = inst1.getSchemClass();
-		SchemaClass class2 = inst2.getSchemClass();
 		
-		if (!class1.getName().equals("InstanceEdit") && !class2.getName().equals("InstanceEdit"))
+		if (inst1 != null && inst2 != null)
 		{
-			String[] indentArray = new String[recursionDepth * 2];
-			Arrays.fill(indentArray, " ");
-			String indentString = String.join("", indentArray);
+			SchemaClass class1 = inst1.getSchemClass();
+			SchemaClass class2 = inst2.getSchemClass();
 			
-			if (!class1.getName().equals(class2.getName()))
+			if (!class1.getName().equals("InstanceEdit") && !class2.getName().equals("InstanceEdit"))
 			{
-				sb.append(indentString + "Schema classes don't match, so instances can't be compared! Instance 1 is a " + class1.getName() + " and Instance 2 is a " + class2.getName()).append("\n");
-				return 1;
-			}
-			else
-			{
-				/*
-				 * Used for filtering out attributes that you don't want to compare because they will
-				 * probably create too much noise if you do.
-				 */
-				Predicate<? super SchemaAttribute> attributeNameFilter;
-				if (customAttributeNameFilter!=null)
+				String[] indentArray = new String[recursionDepth * 2];
+				Arrays.fill(indentArray, " ");
+				String indentString = String.join("", indentArray);
+				
+				if (!class1.getName().equals(class2.getName()))
 				{
-					attributeNameFilter = customAttributeNameFilter;
+					sb.append(indentString + "Schema classes don't match, so instances can't be compared! Instance 1 is a " + class1.getName() + " and Instance 2 is a " + class2.getName()).append("\n");
+					return 1;
 				}
 				else
 				{
-					attributeNameFilter = a -> {
-						return !a.getName().equals(ReactomeJavaConstants.DB_ID)
-							&& !a.getName().equals(ReactomeJavaConstants.dateTime)
-							&& !a.getName().equals(ReactomeJavaConstants.modified)
-							&& !a.getName().equals(ReactomeJavaConstants.created);
-					};
-				}
-				
-				@SuppressWarnings("unchecked")
-				List<SchemaAttribute> regularAttributes = ( (Collection<SchemaAttribute>) class1.getAttributes()).stream().filter(attributeNameFilter).collect(Collectors.toList());
-				@SuppressWarnings("unchecked")
-				List<SchemaAttribute> referrerAttributes = ( (Collection<SchemaAttribute>) class1.getReferers()).stream().filter(attributeNameFilter).collect(Collectors.toList());
-				List<SchemaAttribute> allAttributes = new ArrayList<SchemaAttribute>(regularAttributes.size() + referrerAttributes.size());
-				
-				allAttributes.addAll(regularAttributes);
-				if (checkReferrers)
-				{
-					// Add the referrer attributes to the list of all attributes, if the user wants to check referrer attributes.
-					allAttributes.addAll(referrerAttributes);
-				}
-				
-				for (SchemaAttribute attrib : allAttributes)
-				{
-					String attributeQualifier = "";
-					// getValuesFunction will refer to whichever function needs to be called,
-					// depending on whether or not the current attribute is a regular attribute or a referrer attribute.
-					BiFunction<String, GKInstance, List<?>> getValuesFunction;
-					// If the current attribute is in the "regular" attributes list, then the function that needs
-					// to get called is getAttributeValuesList() so we will
-					// create a lambda for that and assign it to getValuesFunction for later use.
-					if (regularAttributes.contains(attrib))
+					/*
+					 * Used for filtering out attributes that you don't want to compare because they will
+					 * probably create too much noise if you do.
+					 */
+					Predicate<? super SchemaAttribute> attributeNameFilter;
+					if (customAttributeNameFilter!=null)
 					{
-						getValuesFunction = (s, i) ->
-						{
-							try
-							{
-								return (List<GKInstance>) i.getAttributeValuesList(s);
-							}
-							catch (Exception e)
-							{
-								e.printStackTrace();
-							}
-							return null;
-						} ;
+						attributeNameFilter = customAttributeNameFilter;
 					}
 					else
 					{
-						// In this case, the attribute was not in the "regular" attributes so it must be a referrer.
-						// The function that will need to be called is getReferrers()
-						attributeQualifier = " referrer";
-						getValuesFunction = (s, i) ->
-						{
-							try
-							{
-								return (List<GKInstance>) i.getReferers(s);
-							}
-							catch (Exception e)
-							{
-								e.printStackTrace();
-							}
-							return null;
-						} ;
+						attributeNameFilter = a -> {
+							return !a.getName().equals(ReactomeJavaConstants.DB_ID)
+								&& !a.getName().equals(ReactomeJavaConstants.dateTime)
+								&& !a.getName().equals(ReactomeJavaConstants.modified)
+								&& !a.getName().equals(ReactomeJavaConstants.created);
+						};
 					}
-
-					// Deal with attributes that return GKInstance objects.
-					if (attrib.getType().equals(GKInstance.class) || attrib.getType().equals(Instance.class))
+					
+					@SuppressWarnings("unchecked")
+					List<SchemaAttribute> regularAttributes = ( (Collection<SchemaAttribute>) class1.getAttributes()).stream().filter(attributeNameFilter).collect(Collectors.toList());
+					@SuppressWarnings("unchecked")
+					List<SchemaAttribute> referrerAttributes = ( (Collection<SchemaAttribute>) class1.getReferers()).stream().filter(attributeNameFilter).collect(Collectors.toList());
+					List<SchemaAttribute> allAttributes = new ArrayList<SchemaAttribute>(regularAttributes.size() + referrerAttributes.size());
+					
+					allAttributes.addAll(regularAttributes);
+					if (checkReferrers)
 					{
-						List<GKInstance> values1 = new ArrayList<GKInstance>();
-						values1 = (List<GKInstance>) getValuesFunction.apply(attrib.getName(), inst1);
-						
-						List<GKInstance> values2 = new ArrayList<GKInstance>();
-						values2 = (List<GKInstance>) getValuesFunction.apply(attrib.getName(), inst2);
-
-						if (values1 != null && values2 != null)
+						// Add the referrer attributes to the list of all attributes, if the user wants to check referrer attributes.
+						allAttributes.addAll(referrerAttributes);
+					}
+					
+					for (SchemaAttribute attrib : allAttributes)
+					{
+						String attributeQualifier = "";
+						// getValuesFunction will refer to whichever function needs to be called,
+						// depending on whether or not the current attribute is a regular attribute or a referrer attribute.
+						BiFunction<String, GKInstance, List<?>> getValuesFunction;
+						// If the current attribute is in the "regular" attributes list, then the function that needs
+						// to get called is getAttributeValuesList() so we will
+						// create a lambda for that and assign it to getValuesFunction for later use.
+						if (regularAttributes.contains(attrib))
 						{
-							// Make sure the lists are sorted so that you are always comparing objects in the same sequence: I don't think the database adaptor applies 
-							// any explicit order to Instances that don't have a rank/order attribute.
-							InstanceUtilities.sortInstances(values1);
-							InstanceUtilities.sortInstances(values2);
-							if (values1.size() == values2.size())
+							getValuesFunction = (s, i) ->
 							{
-								// compare each item in one list to the corresponding item in the other list - the MySQLAdaptor seems to preserve sequence of items in lists properly.
-								for (int i = 0 ; i < values1.size() ; i++)
+								try
 								{
-									// Recurse, if max depth has not yet been reacehed.
-									if (recursionDepth < maxRecursionDepth)
-									{
-										sb.append(indentString).append(" Recursing on ").append(attrib.getName()).append(" attribute...\n"); 
-										count = compareInstances(values1.get(i), values2.get(i), sb, count, recursionDepth + 1, maxRecursionDepth, attributeNameFilter, checkReferrers);
-									}
+									return (List<GKInstance>) i.getAttributeValuesList(s);
 								}
-							}
-							else
-							{
-								// no point comparing/recursing if the lists don't even have the same size. Just write a message about that.
-								sb.append(indentString + "Count mismatch for multi-valued"+attributeQualifier+" attribute \"" + attrib.getName() + "\" Instance 1 (\""+inst1.toString()+"\") has " + values1.size() + " elements but Instance 2 (\""+inst2.toString()+"\") has " + values2.size() + " elements.\n");
-								count ++;
-							}
+								catch (Exception e)
+								{
+									e.printStackTrace();
+								}
+								return null;
+							} ;
 						}
-					}
-					// Deal with attributes that return "simple" things (Strings, numbers, etc..., arrays of Strings/numbers/etc...)
-					else
-					{	
-						List<Object> values1 = new ArrayList<Object>();
-						values1 = (List<Object>) getValuesFunction.apply(attrib.getName(), inst1);
-						
-						List<Object> values2 = new ArrayList<Object>();
-						values2 = (List<Object>) getValuesFunction.apply(attrib.getName(), inst2);
-						
-						if (values1 != null && values2 != null)
+						else
 						{
-							if (values1.size() == values2.size())
+							// In this case, the attribute was not in the "regular" attributes so it must be a referrer.
+							// The function that will need to be called is getReferrers()
+							attributeQualifier = " referrer";
+							getValuesFunction = (s, i) ->
 							{
-								for (int i = 0 ; i < values1.size() ; i++)
+								try
+								{
+									return (List<GKInstance>) i.getReferers(s);
+								}
+								catch (Exception e)
+								{
+									e.printStackTrace();
+								}
+								return null;
+							} ;
+						}
+	
+						// Deal with attributes that return GKInstance objects.
+						if (attrib.getType().equals(GKInstance.class) || attrib.getType().equals(Instance.class))
+						{
+							List<GKInstance> values1 = new ArrayList<GKInstance>();
+							values1 = (List<GKInstance>) getValuesFunction.apply(attrib.getName(), inst1);
+							
+							List<GKInstance> values2 = new ArrayList<GKInstance>();
+							values2 = (List<GKInstance>) getValuesFunction.apply(attrib.getName(), inst2);
+	
+							if (values1 != null && values2 != null)
+							{
+								// Make sure the lists are sorted so that you are always comparing objects in the same sequence: I don't think the database adaptor applies 
+								// any explicit order to Instances that don't have a rank/order attribute.
+								InstanceUtilities.sortInstances(values1);
+								InstanceUtilities.sortInstances(values2);
+								if (values1.size() == values2.size())
 								{
 									// compare each item in one list to the corresponding item in the other list - the MySQLAdaptor seems to preserve sequence of items in lists properly.
-									if (!values1.get(i).equals(values2.get(i)))
+									for (int i = 0 ; i < values1.size() ; i++)
 									{
-										sb.append(indentString + "Mismatch on"+attributeQualifier+" attribute \""+attrib.getName()+"\"\n"+indentString+"Instance 1 (\""+inst1.toString()+"\") has value:\t"+values1.get(i) + "\n"+indentString+"Instance 2 (\""+inst2.toString()+"\") has value:\t"+values2.get(i)).append("\n");
-										count++;
+										// Recurse, if max depth has not yet been reacehed.
+										if (recursionDepth < maxRecursionDepth)
+										{
+											sb.append(indentString).append(" Recursing on ").append(attrib.getName()).append(" attribute...\n"); 
+											count = compareInstances(values1.get(i), values2.get(i), sb, count, recursionDepth + 1, maxRecursionDepth, attributeNameFilter, checkReferrers);
+										}
 									}
 								}
+								else
+								{
+									// no point comparing/recursing if the lists don't even have the same size. Just write a message about that.
+									sb.append(indentString + "Count mismatch for multi-valued"+attributeQualifier+" attribute \"" + attrib.getName() + "\" Instance 1 (\""+inst1.toString()+"\") has " + values1.size() + " elements but Instance 2 (\""+inst2.toString()+"\") has " + values2.size() + " elements.\n");
+									count ++;
+								}
 							}
-							else
+						}
+						// Deal with attributes that return "simple" things (Strings, numbers, etc..., arrays of Strings/numbers/etc...)
+						else
+						{	
+							List<Object> values1 = new ArrayList<Object>();
+							values1 = (List<Object>) getValuesFunction.apply(attrib.getName(), inst1);
+							
+							List<Object> values2 = new ArrayList<Object>();
+							values2 = (List<Object>) getValuesFunction.apply(attrib.getName(), inst2);
+							
+							if (values1 != null && values2 != null)
 							{
-								// no point comparing if the lists don't even have the same size. Just write a message about that.
-								sb.append(indentString + "Count mismatch for multi-valued"+attributeQualifier+" attribute \"" + attrib.getName() + "\" Instance 1 (\""+inst1.toString()+"\") has " + values1.size() + " elements but Instance 2 (\""+inst2.toString()+"\") has " + values2.size() + " elements.\n");
-								count ++;
+								if (values1.size() == values2.size())
+								{
+									for (int i = 0 ; i < values1.size() ; i++)
+									{
+										// compare each item in one list to the corresponding item in the other list - the MySQLAdaptor seems to preserve sequence of items in lists properly.
+										if (!values1.get(i).equals(values2.get(i)))
+										{
+											sb.append(indentString + "Mismatch on"+attributeQualifier+" attribute \""+attrib.getName()+"\"\n"+indentString+"Instance 1 (\""+inst1.toString()+"\") has value:\t"+values1.get(i) + "\n"+indentString+"Instance 2 (\""+inst2.toString()+"\") has value:\t"+values2.get(i)).append("\n");
+											count++;
+										}
+									}
+								}
+								else
+								{
+									// no point comparing if the lists don't even have the same size. Just write a message about that.
+									sb.append(indentString + "Count mismatch for multi-valued"+attributeQualifier+" attribute \"" + attrib.getName() + "\" Instance 1 (\""+inst1.toString()+"\") has " + values1.size() + " elements but Instance 2 (\""+inst2.toString()+"\") has " + values2.size() + " elements.\n");
+									count ++;
+								}
 							}
 						}
 					}

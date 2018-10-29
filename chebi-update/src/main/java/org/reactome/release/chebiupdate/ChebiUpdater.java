@@ -114,23 +114,23 @@ public class ChebiUpdater
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> refMolecules = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "referenceDatabase", "=", chebiRefDBID);
 
-		// A map: key is the DB_ID of a ReferneceMolecule, value is the
-		// uk.ac.ebi.chebi.webapps.chebiWS.model.Entity from ChEBI.
-		Map<Long, Entity> entityMap = Collections.synchronizedMap(new HashMap<Long, Entity>());
-		// A list of the ReferenceMolecules where we could nto get info from ChEBI.
-		Map<GKInstance, String> failedEntitiesList = Collections.synchronizedMap(new HashMap<GKInstance, String>());
+		// A map of the ReferenceMolecules where we could not get info from ChEBI.
+		// GKInstances (molecules) map to the message about the failure.
+		Map<GKInstance, String> failedEntitiesMap = Collections.synchronizedMap(new HashMap<GKInstance, String>());
 
 		logger.info("{} ChEBI ReferenceMolecules to check...", refMolecules.size());
 
-		retrieveUpdatesFromChebi(refMolecules, entityMap, failedEntitiesList);
+		// A map: key is the DB_ID of a ReferneceMolecule, value is the
+		// uk.ac.ebi.chebi.webapps.chebiWS.model.Entity from ChEBI.
+		Map<Long, Entity> entityMap = retrieveUpdatesFromChebi(refMolecules, failedEntitiesMap);
 
 		logger.info("Number of entities we were able to retrieve information about: {}", entityMap.size());
-		logger.info("Number of entities we were NOT able to retrieve information about: {}", failedEntitiesList.size());
+		logger.info("Number of entities we were NOT able to retrieve information about: {}", failedEntitiesMap.size());
 
 		failedChebiLookupsLog.info("# DB_ID\tReferenceMolecule\tReason");
-		for (GKInstance molecule : failedEntitiesList.keySet())
+		for (GKInstance molecule : failedEntitiesMap.keySet())
 		{
-			failedChebiLookupsLog.info("{}\t{}\t{}", molecule.getDBID(), molecule.toString(), failedEntitiesList.get(molecule));
+			failedChebiLookupsLog.info("{}\t{}\t{}", molecule.getDBID(), molecule.toString(), failedEntitiesMap.get(molecule));
 		}
 		
 		// print headers for log files
@@ -494,13 +494,14 @@ public class ChebiUpdater
 	 * 
 	 * @param updator
 	 * @param refMolecules - a list of ReferenceMolecules. The Identifier of each of these molecules will be sent to ChEBI to get up-to-date information for that Identifier.
-	 * @param entityMap - a ReferenceMolecule DB_ID-to-ChEBI Entity map. Will be updated by this method.
 	 * @param failedEntitiesList - A list of ReferenceMolecules for which no information was returned by ChEBI. Will be updated by this method.
+	 * @return A ReferenceMolecule DB_ID-to-ChEBI Entity map.
 	 * @throws IOException 
 	 */
-	private void retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<Long, Entity> entityMap, Map<GKInstance, String> failedEntitiesList) throws IOException
+	private Map<Long, Entity> retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<GKInstance, String> failedEntitiesList) throws IOException
 	{
 		Map<String,List<String>> chebiCache = Collections.synchronizedMap(new HashMap<String, List<String>>());
+		Map<Long, Entity> entityMap = Collections.synchronizedMap(new HashMap<Long, Entity>());
 		if (this.useCache)
 		{
 			logger.info("useCache is TRUE - chebi-cache file will be read, and populated. Identifiers not in the cache will be queried from ChEBI.");
@@ -621,5 +622,6 @@ public class ChebiUpdater
 			}
 		});
 		bw.close();
+		return entityMap;
 	}
 }
