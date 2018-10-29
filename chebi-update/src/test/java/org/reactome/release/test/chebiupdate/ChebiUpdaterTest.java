@@ -200,7 +200,7 @@ public class ChebiUpdaterTest
 			when(refEnt2.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("TEST", "NAME2")));
 			when(refEnt2.getSchemClass()).thenReturn(simpleEntitySchemaClass);
 			when(refEnt3.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME-2", "ASDFQ@#$FASFASDF","NOPE")));
-			when(refEnt1.getSchemClass()).thenReturn(chemicalDrugSchemaClass);
+			when(refEnt3.getSchemClass()).thenReturn(chemicalDrugSchemaClass);
 			
 			when(refEnt1.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
 			when(refEnt2.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
