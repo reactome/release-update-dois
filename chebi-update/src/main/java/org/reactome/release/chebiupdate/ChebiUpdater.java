@@ -500,29 +500,8 @@ public class ChebiUpdater
 	 */
 	private Map<Long, Entity> retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<GKInstance, String> failedEntitiesList) throws IOException
 	{
-		Map<String,List<String>> chebiCache = Collections.synchronizedMap(new HashMap<String, List<String>>());
 		Map<Long, Entity> entityMap = Collections.synchronizedMap(new HashMap<Long, Entity>());
-		if (this.useCache)
-		{
-			logger.info("useCache is TRUE - chebi-cache file will be read, and populated. Identifiers not in the cache will be queried from ChEBI.");
-			// if the cache exists, load it.
-			if (Files.exists(Paths.get("chebi-cache")))
-			{
-				Files.readAllLines(Paths.get("chebi-cache")).parallelStream().forEach( line -> {
-					String[] parts = line.split("\t");
-					String oldChebiID = parts[0];
-					String newChebiID = parts[1];
-					String name = parts[2];
-					String formula = parts.length > 2 ? parts[3] : "";
-					chebiCache.put(oldChebiID, Arrays.asList(newChebiID, name, formula));
-				});
-			}
-			logger.debug("{} entries in the chebi-cache", chebiCache.size());
-		}
-		else
-		{
-			logger.info("useCache is FALSE - chebi-cache will NOT be read. ChEBI will be queried for ALL identifiers.");
-		}
+		final Map<String,List<String>> chebiCache = loadCacheFromFile();
 		FileWriter fileWriter = new FileWriter("chebi-cache", true);
 		// BufferedWriter is supposed to be thread-safe.
 		BufferedWriter bw = new BufferedWriter(fileWriter);
@@ -558,14 +537,9 @@ public class ChebiUpdater
 							}
 						}
 					}
-					else // ...Load data from the cache. Use the AccessibleEntity to set the formula.
+					else // ...Load data from the cache.
 					{
-						entity = new AccessibleEntity();
-						entity.setChebiId(chebiCache.get("CHEBI:"+identifier).get(0));
-						entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(1) );
-						DataItem formula = new DataItem();
-						formula.setData(chebiCache.get("CHEBI:"+identifier).get(2));
-						((AccessibleEntity)entity).setFormulae(Arrays.asList(formula));
+						entity = extractChEBIEntityFromCache(chebiCache, identifier);
 					}
 					// Add entity to map (if it's non-null)
 					if (entity != null)
@@ -623,5 +597,56 @@ public class ChebiUpdater
 		});
 		bw.close();
 		return entityMap;
+	}
+
+	/**
+	 * Returns the data from the cache file (if it exists). If it doesn't exit, then an empty map will be returned.
+	 * @return A mapping of ChEBI ID to a list with items in this order: ChEBI (might be different if ChEBI has changed identifiers), ChEBI Name, Formula.
+	 * @throws IOException
+	 */
+	private Map<String,List<String>> loadCacheFromFile() throws IOException
+	{
+		Map<String,List<String>> chebiCache = Collections.synchronizedMap(new HashMap<String, List<String>>());
+		if (this.useCache)
+		{
+			logger.info("useCache is TRUE - chebi-cache file will be read, and populated. Identifiers not in the cache will be queried from ChEBI.");
+			// if the cache exists, load it.
+			if (Files.exists(Paths.get("chebi-cache")))
+			{
+				Files.readAllLines(Paths.get("chebi-cache")).parallelStream().forEach( line -> {
+					String[] parts = line.split("\t");
+					String oldChebiID = parts[0];
+					String newChebiID = parts[1];
+					String name = parts[2];
+					String formula = parts.length > 2 ? parts[3] : "";
+					chebiCache.put(oldChebiID, Arrays.asList(newChebiID, name, formula));
+				});
+			}
+			logger.debug("{} entries in the chebi-cache", chebiCache.size());
+		}
+		else
+		{
+			logger.info("useCache is FALSE - chebi-cache will NOT be read. ChEBI will be queried for ALL identifiers.");
+		}
+		return chebiCache;
+	}
+
+	/**
+	 * Extract a ChEBI entity from the cache, based on the identifier.
+	 * @param chebiCache - The cache from a file.
+	 * @param identifier - The chebi Identifier.
+	 * @return A ChEBI Entity that will be built from the data in the cache. It will only have: an Identifier, ChEBI Name, Formula.
+	 */
+	private Entity extractChEBIEntityFromCache(Map<String, List<String>> chebiCache, String identifier)
+	{
+		Entity entity;
+		// Use the AccessibleEntity to set the formula.
+		entity = new AccessibleEntity();
+		entity.setChebiId(chebiCache.get("CHEBI:"+identifier).get(0));
+		entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(1) );
+		DataItem formula = new DataItem();
+		formula.setData(chebiCache.get("CHEBI:"+identifier).get(2));
+		((AccessibleEntity)entity).setFormulae(Arrays.asList(formula));
+		return entity;
 	}
 }
