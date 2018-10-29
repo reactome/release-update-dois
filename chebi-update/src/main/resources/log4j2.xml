@@ -1,22 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="info">
+	<Properties>
+		<Property name="baseDir">logs</Property>
+		<Property name="archiveDir">${baseDir}/archive/%d{yyyy-MM-dd}</Property>
+	</Properties>
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d{YYYY-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
 		</Console>
-		<RollingFile name="LogFile" fileName="logs/ChEBI_Update-${date:MM-dd-yyyy_HH.mm.ss}.log" filePattern="logs/ChEBI_Update-%d{MM-dd-yyyy_HH.mm.ss}.log">
+		<RollingFile name="LogFile" fileName="${baseDir}/ChEBI_Update.log" filePattern="${archiveDir}/ChEBI_Update-%d{yyyy-MM-dd_HH.mm.ss}.log.gz">
+			<PatternLayout pattern="%d{YYYY-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+		<RollingFile name="MoleculeNameChanges" fileName="${baseDir}/ChEBI_Update_MoleculeNameChanges.tsv" filePattern="${archiveDir}/ChEBI_Update_MoleculeNameChanges-%d{yyyy-MM-dd_HH.mm.ss}.tsv.gz">
 			<PatternLayout>
 				<Pattern>%msg%n</Pattern>
 			</PatternLayout>
-				<Policies>
-					<OnStartupTriggeringPolicy />
-				</Policies>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
 		</RollingFile>
+		<RollingFile name="MoleculeIdentifierChanges" fileName="${baseDir}/ChEBI_Update_MoleculeIdentifierChanges.tsv" filePattern="${archiveDir}/ChEBI_Update_MoleculeIdentifierChanges-%d{yyyy-MM-dd_HH.mm.ss}.tsv.gz">
+			<PatternLayout>
+				<Pattern>%msg%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+		<RollingFile name="ReferenceEntityChanges" fileName="${baseDir}/ChEBI_Update_ReferenceEntityNameUpdates.tsv" filePattern="${archiveDir}/ChEBI_Update_ReferenceEntityNameUpdates-%d{yyyy-MM-dd_HH.mm.ss}.tsv.gz">
+			<PatternLayout>
+				<Pattern>%msg%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+		<RollingFile name="DuplicateMolecules" fileName="${baseDir}/ChEBI_Update_DuplicateMoleculeIdentifiers.tsv" filePattern="${archiveDir}/ChEBI_Update_DuplicateMoleculeIdentifiers-%d{yyyy-MM-dd_HH.mm.ss}.tsv.gz">
+			<PatternLayout>
+				<Pattern>%msg%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+		<RollingFile name="FailedChEBIQueries" fileName="${baseDir}/ChEBI_Update_FailedChEBIQueries.tsv" filePattern="${archiveDir}/ChEBI_Update_FailedChEBIQueries-%d{yyyy-MM-dd_HH.mm.ss}.tsv.gz">
+			<PatternLayout>
+				<Pattern>%msg%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+		
 	</Appenders>
 	<Loggers>
-		<Root level="debug">
-			<AppenderRef ref="Console" level="debug"/>
-			<AppenderRef ref="LogFile" level="info"/>
+		<Root level="trace">
+			<AppenderRef ref="Console" level="info"/>
+			<AppenderRef ref="LogFile" level="trace"/>
 		</Root>
+		<Logger name="molNameChangeLog" level="info" additivity="false">
+			<AppenderRef ref="MoleculeNameChanges"/>
+		</Logger>
+		<Logger name="molIdentChangeLog" level="info" additivity="false">
+			<AppenderRef ref="MoleculeIdentifierChanges"/>
+		</Logger>
+		<Logger name="refEntChangeLog" level="info" additivity="false">
+			<AppenderRef ref="ReferenceEntityChanges"/>
+		</Logger>
+		<Logger name="duplicatesLog" level="info" additivity="false">
+			<AppenderRef ref="DuplicateMolecules"/>
+		</Logger>
+		<Logger name="failedChebiLookupsLog" level="info" additivity="false">
+			<AppenderRef ref="FailedChEBIQueries"/>
+		</Logger>
+
 	</Loggers>
 </Configuration>

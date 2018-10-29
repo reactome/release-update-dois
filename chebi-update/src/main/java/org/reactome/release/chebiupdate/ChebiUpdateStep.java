@@ -13,7 +13,8 @@ public class ChebiUpdateStep extends ReleaseStep
 		MySQLAdaptor adaptor = getMySQLAdaptorFromProperties(props);
 		this.loadTestModeFromProperties(props);
 		long personID = new Long(props.getProperty("person.id"));
-		ChebiUpdater chebiUpdater = new ChebiUpdater(adaptor, testMode, personID);
+		boolean useCache = Boolean.parseBoolean(props.getProperty("useCache", "false"));
+		ChebiUpdater chebiUpdater = new ChebiUpdater(adaptor, this.testMode, personID, useCache);
 		
 		logger.info("Pre-update duplicate check:");
 		chebiUpdater.checkForDuplicates();
