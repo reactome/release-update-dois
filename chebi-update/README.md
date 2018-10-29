@@ -33,7 +33,7 @@ This application needs to be able to connect to a Reactome relational database T
  - db.name - this is the name of the database that the application should connect to. _No default!_
  - db.port - this is the port number that the application should connect to. _Default:_ 3306
  - person.id - when the Molecules are updated, an instance edit will be created and they will be associated with the Person instance which this DB\_ID refers to. _No default!_
- - useCache - a cache of ChEBI identifier information can be built up and used as the input for later executions. This primary purpose of this is to speed up testing, so developers don't need to wait for real-time communication with ChEBI. The only time this should be used in production is when you are experiencing connectivity problems with ChEBI and you have a good, fresh cache to use. The cache format is a TSV with the following columns: ChEBI ID (including the "CHEBI:" prefix), ChEBI Name, ChEBI Formula. Namd and Forumal are optional. _Default_: false
+ - useCache - a cache of ChEBI identifier information can be built up and used as the input for later executions. The primary purpose of this is to speed up testing, so developers don't need to wait for real-time communication with ChEBI. The only time this should be used in production is when you are experiencing connectivity problems with ChEBI and you have a good, fresh cache to use. The cache format is a TSV with the following columns: ChEBI ID (including the "CHEBI:" prefix), ChEBI Name, ChEBI Formula. Name and Forumla are optional. _Default_: false
 
 Additionally, there is one non-connection related configuration option:
 
