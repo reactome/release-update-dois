@@ -35,6 +35,11 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.ChebiWebServiceFault_Exception;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.DataItem;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 
+/**
+ * Updates the ReferenceMolecules with new information from ChEBI.
+ * @author sshorser
+ *
+ */
 public class ChebiUpdater
 {
 	private static final Logger logger = LogManager.getLogger();
@@ -54,6 +59,13 @@ public class ChebiUpdater
 	private boolean useCache;
 	private Comparator<GKInstance> personComparator;
 	
+	/**
+	 * Create a ChebiUpdater
+	 * @param adaptor - The database adaptor
+	 * @param testMode - Set testMode to TRUE if you want to perform a dry-run. Set to FALSE if you actually want to commit to the database.
+	 * @param personID - The DB_ID of the Person whom the InstanceEdits will be associated with.
+	 * @param useCache - Set to TRUE to use the cache: If there's a file, load it. If there's no file, write one. If FALSE, the cache file will not be read and it will not be written.
+	 */
 	public ChebiUpdater(MySQLAdaptor adaptor, boolean testMode, long personID, boolean useCache)
 	{
 		this.adaptor = adaptor;
@@ -187,6 +199,9 @@ public class ChebiUpdater
 		reportReferenceEntityChanges();
 	}
 
+	/**
+	 * Generates the report for ReferenceEntity changes.
+	 */
 	private void reportReferenceEntityChanges()
 	{
 		refEntChangeLog.info("# DB_ID\tCreator\tAffected ReferenceEntity\tNew ChEBI Name\tUpdated list of all names");
