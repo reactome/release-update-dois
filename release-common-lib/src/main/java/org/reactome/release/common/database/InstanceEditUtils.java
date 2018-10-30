@@ -23,8 +23,9 @@ public class InstanceEditUtils
 	 *            uses <i>this</i> object, so it can be traced to the appropriate
 	 *            part of the program.
 	 * @return
+	 * @throws Exception 
 	 */
-	public static GKInstance createInstanceEdit(MySQLAdaptor adaptor, long personID, String creatorName)
+	public static GKInstance createInstanceEdit(MySQLAdaptor adaptor, long personID, String creatorName) throws Exception
 	{
 		GKInstance instanceEdit = null;
 		try
@@ -38,6 +39,7 @@ public class InstanceEditUtils
 			// logger.error("Exception caught while trying to create an InstanceEdit: {}",
 			// e.getMessage());
 			e.printStackTrace();
+			throw e;
 		}
 		return instanceEdit;
 	}
