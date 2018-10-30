@@ -39,6 +39,11 @@ public class GenerateInstance {
 		SchemaClass referenceDNAClass = dba.getSchema().getClassByName(reactionClass);
 		inferredInst = new GKInstance(referenceDNAClass);
 		inferredInst.setDbAdaptor(dba);
+		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.compartment) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
+			for (Object compartmentInst : instanceToBeInferred.getAttributeValuesList(ReactomeJavaConstants.compartment)) {
+				inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInst);
+			}
+		}
 		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.species) != null)
 		{
 			inferredInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
