@@ -41,7 +41,10 @@ public class GenerateInstance {
 		inferredInst.setDbAdaptor(dba);
 		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.compartment) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
 			for (Object compartmentInst : instanceToBeInferred.getAttributeValuesList(ReactomeJavaConstants.compartment)) {
-				inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInst);
+				GKInstance compartmentInstGK = (GKInstance) compartmentInst;
+				if (compartmentInstGK.getSchemClass().isa(ReactomeJavaConstants.compartment)) {
+					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInst);
+				}
 			}
 		}
 		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.species) != null)
@@ -73,10 +76,10 @@ public class GenerateInstance {
 			mockedIdenticals.put(cacheKey, mockedInst);
 		}
 		
-		if (GenerateInstance.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo))
-		{
-			instanceToBeMocked.addAttributeValue(ReactomeJavaConstants.inferredTo, mockedInst);
-		}
+		GenerateInstance.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo);
+
+		instanceToBeMocked.addAttributeValue(ReactomeJavaConstants.inferredTo, mockedInst);
+
 		dba.updateInstanceAttribute(instanceToBeMocked, ReactomeJavaConstants.inferredTo);
 		
 		return mockedInst;

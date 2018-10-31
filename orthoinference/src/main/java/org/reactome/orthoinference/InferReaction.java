@@ -3,8 +3,11 @@ package org.reactome.orthoinference;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -70,18 +73,23 @@ public class InferReaction {
 							{
 								return;
 							}
+							
+							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.releaseDate)) {
+								DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+								Date date = new Date();
+								infReactionInst.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
+							}
 							// Prevents the addition of redundant instances to the database
 							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
-							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom) && GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom))
+							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom))
 							{
+								GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom);
 								infReactionInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, reactionInst);
 								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.inferredFrom);
 							}
-							if (GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent))
-							{
+								GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent);
 								infReactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, reactionInst);
 								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.orthologousEvent);
-							}
 							reactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infReactionInst);
 							dba.updateInstanceAttribute(reactionInst, ReactomeJavaConstants.orthologousEvent);
 							inferredEvent.put(reactionInst, infReactionInst);

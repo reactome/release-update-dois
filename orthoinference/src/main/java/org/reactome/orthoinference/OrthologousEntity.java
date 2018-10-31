@@ -112,7 +112,8 @@ public class OrthologousEntity {
 					definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, ewasInst.getAttributeValue(ReactomeJavaConstants.compartment));
 				} else {
 					System.out.println("\tNot a compartment: " + compartmentInst);
-				}				
+				}
+				
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
 				
@@ -129,15 +130,11 @@ public class OrthologousEntity {
 
 				definedSetInst.addAttributeValue(ReactomeJavaConstants._displayName, definedSetName);
 
-				if (GenerateInstance.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom))
-				{
+				GenerateInstance.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom);
 					definedSetInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, ewasInst);
-				}
 				dba.updateInstanceAttribute(definedSetInst, ReactomeJavaConstants.inferredFrom);
-				if (GenerateInstance.addAttributeValueIfNeccesary(ewasInst, definedSetInst, ReactomeJavaConstants.inferredTo))
-				{
+				GenerateInstance.addAttributeValueIfNeccesary(ewasInst, definedSetInst, ReactomeJavaConstants.inferredTo);
 					ewasInst.addAttributeValue(ReactomeJavaConstants.inferredTo, definedSetInst);
-				}
 				dba.updateInstanceAttribute(ewasInst, ReactomeJavaConstants.inferredTo);
 				homolEWAS.put(ewasInst, definedSetInst);
 			} else if (infEWASInstances.size() == 1)
@@ -186,7 +183,7 @@ public class OrthologousEntity {
 			if (complexInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
 			{
 				for (Object componentInst : complexInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
-				{		
+				{	
 					infComponents.add(OrthologousEntity.createOrthoEntity((GKInstance) componentInst, true));
 				}
 				infComplexInst.addAttributeValue(ReactomeJavaConstants.hasComponent, infComponents);
@@ -211,15 +208,12 @@ public class OrthologousEntity {
 
 			if (infComplexInst.getDBID() != complexInst.getDBID())
 			{
-				if (GenerateInstance.addAttributeValueIfNeccesary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom))
-				{
+				GenerateInstance.addAttributeValueIfNeccesary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom);
+
 					infComplexInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, complexInst);
-				}
 				dba.updateInstanceAttribute(infComplexInst, ReactomeJavaConstants.inferredFrom);
-				if (GenerateInstance.addAttributeValueIfNeccesary(complexInst, infComplexInst, ReactomeJavaConstants.inferredTo))
-				{
+				GenerateInstance.addAttributeValueIfNeccesary(complexInst, infComplexInst, ReactomeJavaConstants.inferredTo);
 					complexInst.addAttributeValue(ReactomeJavaConstants.inferredTo, infComplexInst);
-				}
 				dba.updateInstanceAttribute(complexInst, ReactomeJavaConstants.inferredTo);
 			}
 			
@@ -349,15 +343,12 @@ public class OrthologousEntity {
 
 			if (infEntitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entitySetInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 			{
-				if (GenerateInstance.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom))
-				{
+				GenerateInstance.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom);
 					infEntitySetInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, entitySetInst);
-				}
+
 				dba.updateInstanceAttribute(infEntitySetInst, ReactomeJavaConstants.inferredFrom);
-				if (GenerateInstance.addAttributeValueIfNeccesary(entitySetInst, infEntitySetInst, ReactomeJavaConstants.inferredTo))
-				{
-					entitySetInst.addAttributeValue(ReactomeJavaConstants.inferredTo, infEntitySetInst);
-				}
+				GenerateInstance.addAttributeValueIfNeccesary(entitySetInst, infEntitySetInst, ReactomeJavaConstants.inferredTo);
+				entitySetInst.addAttributeValue(ReactomeJavaConstants.inferredTo, infEntitySetInst);
 				dba.updateInstanceAttribute(entitySetInst, ReactomeJavaConstants.inferredTo);
 			}
 			if (override)
@@ -383,7 +374,9 @@ public class OrthologousEntity {
 	{
 		complexSummationInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
 		complexSummationInst.setDbAdaptor(dba);
-		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.");
+		String complexSummationText = "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.";
+		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, complexSummationText);
+		complexSummationInst.addAttributeValue(ReactomeJavaConstants._displayName, complexSummationText);
 		complexSummationInst = GenerateInstance.checkForIdenticalInstances(complexSummationInst);
 	}
 	

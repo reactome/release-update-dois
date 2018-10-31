@@ -176,15 +176,12 @@ public class InferEWAS {
 						infEWAS = GenerateInstance.checkForIdenticalInstances(infEWAS);
 						ewasIdenticals.put(cacheKey, infEWAS);
 					}
-					if (GenerateInstance.addAttributeValueIfNeccesary(infEWAS, ewasInst, ReactomeJavaConstants.inferredFrom))
-					{
-						infEWAS.addAttributeValue(ReactomeJavaConstants.inferredFrom, ewasInst);
-					}
+					GenerateInstance.addAttributeValueIfNeccesary(infEWAS, ewasInst, ReactomeJavaConstants.inferredFrom);
+					infEWAS.addAttributeValue(ReactomeJavaConstants.inferredFrom, ewasInst);
 					dba.updateInstanceAttribute(infEWAS, ReactomeJavaConstants.inferredFrom);
-					if (GenerateInstance.addAttributeValueIfNeccesary(ewasInst, infEWAS, ReactomeJavaConstants.inferredTo))
-					{
-						ewasInst.addAttributeValue(ReactomeJavaConstants.inferredTo, infEWAS);
-					}
+					GenerateInstance.addAttributeValueIfNeccesary(ewasInst, infEWAS, ReactomeJavaConstants.inferredTo);
+					ewasInst.addAttributeValue(ReactomeJavaConstants.inferredTo, infEWAS);
+
 					dba.updateInstanceAttribute(ewasInst, ReactomeJavaConstants.inferredTo);
 					infEWASInstances.add((GKInstance) infEWAS);
 				}
@@ -280,7 +277,7 @@ public class InferEWAS {
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		enspDbInst = new GKInstance(referenceDb);
 		enspDbInst.setDbAdaptor(dba);
-//		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
+		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, enspSpeciesDb);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
@@ -294,7 +291,7 @@ public class InferEWAS {
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		ensgDbInst = new GKInstance(referenceDb);
 		ensgDbInst.setDbAdaptor(dba);
-//		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
