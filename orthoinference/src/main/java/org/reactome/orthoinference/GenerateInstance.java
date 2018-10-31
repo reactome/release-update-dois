@@ -36,14 +36,29 @@ public class GenerateInstance {
 	{
 		GKInstance inferredInst = null;
 		String reactionClass = instanceToBeInferred.getSchemClass().getName();
-		SchemaClass referenceDNAClass = dba.getSchema().getClassByName(reactionClass);
-		inferredInst = new GKInstance(referenceDNAClass);
+		SchemaClass instanceClass = dba.getSchema().getClassByName(reactionClass);
+		inferredInst = new GKInstance(instanceClass);
 		inferredInst.setDbAdaptor(dba);
 		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.compartment) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
 			for (Object compartmentInst : instanceToBeInferred.getAttributeValuesList(ReactomeJavaConstants.compartment)) {
 				GKInstance compartmentInstGK = (GKInstance) compartmentInst;
-				if (compartmentInstGK.getSchemClass().isa(ReactomeJavaConstants.compartment)) {
-					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInst);
+				if (compartmentInstGK.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
+					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInstGK);
+
+				} else {
+					SchemaClass compartmentClass = dba.getSchema().getClassByName(ReactomeJavaConstants.Compartment);
+					GKInstance newCompartmentInst = new GKInstance(compartmentClass);
+					newCompartmentInst.setDbAdaptor(dba);
+					Collection<GKSchemaAttribute> compartmentAttributes = compartmentClass.getAttributes();
+					for (GKSchemaAttribute compartmentAttribute : compartmentAttributes) {
+						if (!compartmentAttribute.getName().matches("DB_ID") && compartmentInstGK.getAttributeValue(compartmentAttribute.getName()) != null) {
+							for (Object attribute : compartmentInstGK.getAttributeValuesList(compartmentAttribute.getName())) {
+								newCompartmentInst.addAttributeValue(compartmentAttribute.getName(), attribute);
+							}
+						}
+					}
+					newCompartmentInst = checkForIdenticalInstances(newCompartmentInst);
+					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, newCompartmentInst);
 				}
 			}
 		}
@@ -77,9 +92,7 @@ public class GenerateInstance {
 		}
 		
 		GenerateInstance.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo);
-
 		instanceToBeMocked.addAttributeValue(ReactomeJavaConstants.inferredTo, mockedInst);
-
 		dba.updateInstanceAttribute(instanceToBeMocked, ReactomeJavaConstants.inferredTo);
 		
 		return mockedInst;

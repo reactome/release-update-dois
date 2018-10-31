@@ -62,7 +62,6 @@ public class InferEvents
 
 		SkipTests.getSkipList("normal_event_skip_list.txt");
 		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
-
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
 		JSONObject jsonObject = (JSONObject) obj;
@@ -263,8 +262,10 @@ public class InferEvents
 	{
 		GKInstance evidenceTypeInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.EvidenceType));
 		evidenceTypeInst.setDbAdaptor(dbAdaptor);
-		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "inferred by electronic annotation");
+		String evidenceTypeText = "inferred by electronic annotation";
+		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, evidenceTypeText);
 		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "IEA");
+		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants._displayName, evidenceTypeText);
 		evidenceTypeInst = GenerateInstance.checkForIdenticalInstances(evidenceTypeInst);
 		InferReaction.setEvidenceTypeInst(evidenceTypeInst);
 		UpdateHumanEvents.setEvidenceTypeInst(evidenceTypeInst);
