@@ -87,9 +87,9 @@ public class InferReaction {
 								infReactionInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, reactionInst);
 								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.inferredFrom);
 							}
-								GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent);
-								infReactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, reactionInst);
-								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.orthologousEvent);
+							GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent);
+							infReactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, reactionInst);
+							dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.orthologousEvent);
 							reactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infReactionInst);
 							dba.updateInstanceAttribute(reactionInst, ReactomeJavaConstants.orthologousEvent);
 							inferredEvent.put(reactionInst, infReactionInst);

@@ -18,13 +18,14 @@ import org.gk.schema.SchemaClass;
 public class OrthologousEntity {
 	
 	private static MySQLAdaptor dba;
+	private static GKInstance instanceEdit;
+	private static GKInstance complexSummationInst;
+	private static GKInstance speciesInst;
+	static GKInstance nullInst = null;
 	private static HashMap<GKInstance, GKInstance> orthologousEntity = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> homolEWAS = new HashMap<GKInstance,GKInstance>();
 	private static HashMap<GKInstance, GKInstance> complexPolymer = new HashMap<GKInstance, GKInstance>();
 	private static HashMap<GKInstance, GKInstance> inferredGSE = new HashMap<GKInstance, GKInstance>();
-	private static GKInstance complexSummationInst;
-	private static GKInstance speciesInst;
-	static GKInstance nullInst = null;
 	private static HashMap<String,GKInstance> definedSetIdenticals = new HashMap<String,GKInstance>();
 	private static HashMap<String,GKInstance> complexIdenticals = new HashMap<String,GKInstance>();
 	private static HashMap<String,GKInstance> entitySetIdenticals = new HashMap<String,GKInstance>();
@@ -87,6 +88,8 @@ public class OrthologousEntity {
 			} 
 			return orthologousEntity.get(entityInst);
 		} else {
+			// This used to have a conditional statement based on the returned value of the 'check_intracellular' function.
+			// That function doesn't exist anymore (only seemed to apply to the 'mtub' species, which hasn't been inferred for a while).
 			return entityInst;
 		}
 	}
@@ -105,6 +108,7 @@ public class OrthologousEntity {
 				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 				GKInstance definedSetInst = new GKInstance(definedSetClass);
 				definedSetInst.setDbAdaptor(dba);
+				definedSetInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
 				String definedSetName = "Homologues of " + ewasInst.getAttributeValue(ReactomeJavaConstants.name);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
 				
@@ -387,6 +391,7 @@ public class OrthologousEntity {
 	{
 		complexSummationInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
 		complexSummationInst.setDbAdaptor(dba);
+		complexSummationInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
 		String complexSummationText = "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.";
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, complexSummationText);
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants._displayName, complexSummationText);
@@ -402,5 +407,10 @@ public class OrthologousEntity {
 		definedSetIdenticals = new HashMap<String,GKInstance>();
 		complexIdenticals = new HashMap<String,GKInstance>();
 		entitySetIdenticals = new HashMap<String,GKInstance>();
+	}
+	
+	public static void setInstanceEdit(GKInstance instanceEditCopy) 
+	{
+		instanceEdit = instanceEditCopy;
 	}
 }

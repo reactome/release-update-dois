@@ -15,6 +15,7 @@ public class UpdateHumanEvents {
 	private static MySQLAdaptor dba;
 	private static GKInstance summationInst;
 	private static GKInstance evidenceTypeInst;
+	private static GKInstance instanceEdit;
 	private static ArrayList<GKInstance> updatedInferrableHumanEvents = new ArrayList<GKInstance>();
 	private static HashMap<GKInstance, GKInstance> inferredEvent = new HashMap<GKInstance,GKInstance>();
 	
@@ -69,10 +70,13 @@ public class UpdateHumanEvents {
 		}
 		
 		UpdateHumanEvents.inferPrecedingEvents();
-		
+		HashSet<Long> seenInstanceEdit = new HashSet<Long>();
 		for (GKInstance humanPathwayInst : updatedInferrableHumanEvents)
 		{
-			// TODO: This is for instance edits; %seen4
+			if (!seenInstanceEdit.contains(humanPathwayInst.getDBID())) {
+				humanPathwayInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+				seenInstanceEdit.add(humanPathwayInst.getDBID());
+			}
 		}
 	}
 	
@@ -175,5 +179,10 @@ public class UpdateHumanEvents {
 	{
 		updatedInferrableHumanEvents = new ArrayList<GKInstance>();
 		inferredEvent = new HashMap<GKInstance,GKInstance>();
+	}
+	
+	public static void setInstanceEdit(GKInstance instanceEditCopy) 
+	{
+		instanceEdit = instanceEditCopy;
 	}
 }

@@ -23,10 +23,12 @@ import java.util.Properties;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.GKSchemaAttribute;
 import org.gk.schema.SchemaClass;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.reactome.release.common.database.InstanceEditUtils;
 
 /**
  *
@@ -37,7 +39,8 @@ import org.json.simple.parser.JSONParser;
 public class InferEvents
 {
 	static MySQLAdaptor dbAdaptor = null;
-	private static GKInstance speciesInst = null;
+	private static GKInstance instanceEdit;
+	private static GKInstance speciesInst;
 	private static HashMap<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static ArrayList<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 
@@ -89,6 +92,7 @@ public class InferEvents
 			InferReaction.setInferredFilename(inferredFilename);
 
 			// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
+			InferEvents.setInstanceEdits();
 			try {
 				HashMap<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile(species, "hsap");
 				ProteinCount.setHomologueMappingFile(homologueMappings);
@@ -241,6 +245,7 @@ public class InferEvents
 		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
 		speciesInst = new GKInstance(referenceDb);
 		speciesInst.setDbAdaptor(dbAdaptor);
+		speciesInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
 		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
 		speciesInst = GenerateInstance.checkForIdenticalInstances(speciesInst);
 	}
@@ -249,6 +254,7 @@ public class InferEvents
 	{
 		GKInstance summationInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Summation));
 		summationInst.setDbAdaptor(dbAdaptor);
+		summationInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
 		String summationText = "This event has been computationally inferred from an event that has been demonstrated in another species.<p>The inference is based on the homology mapping in Ensembl Compara. Briefly, reactions for which all involved PhysicalEntities (in input, output and catalyst) have a mapped orthologue/paralogue (for complexes at least 75% of components must have a mapping) are inferred to the other species. High level events are also inferred for these events to allow for easier navigation.<p><a href='/electronic_inference_compara.html' target = 'NEW'>More details and caveats of the event inference in Reactome.</a> For details on the Ensembl Compara system see also: <a href='http://www.ensembl.org/info/docs/compara/homology_method.html' target='NEW'>Gene orthology/paralogy prediction method.</a>";
 		summationInst.addAttributeValue(ReactomeJavaConstants.text, summationText);
 		summationInst.addAttributeValue(ReactomeJavaConstants._displayName, summationText);
@@ -262,6 +268,7 @@ public class InferEvents
 	{
 		GKInstance evidenceTypeInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.EvidenceType));
 		evidenceTypeInst.setDbAdaptor(dbAdaptor);
+		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
 		String evidenceTypeText = "inferred by electronic annotation";
 		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, evidenceTypeText);
 		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "IEA");
@@ -269,5 +276,13 @@ public class InferEvents
 		evidenceTypeInst = GenerateInstance.checkForIdenticalInstances(evidenceTypeInst);
 		InferReaction.setEvidenceTypeInst(evidenceTypeInst);
 		UpdateHumanEvents.setEvidenceTypeInst(evidenceTypeInst);
+	}
+	
+	public static void setInstanceEdits() throws Exception {
+		instanceEdit = InstanceEditUtils.createInstanceEdit(dbAdaptor, 8948690, "org.reactome.orthoinference");
+		GenerateInstance.setInstanceEdit(instanceEdit);
+		OrthologousEntity.setInstanceEdit(instanceEdit);
+		InferEWAS.setInstanceEdit(instanceEdit);
+		UpdateHumanEvents.setInstanceEdit(instanceEdit);
 	}
 }
