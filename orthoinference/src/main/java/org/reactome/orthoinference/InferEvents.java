@@ -65,6 +65,7 @@ public class InferEvents
 
 		SkipTests.getSkipList("normal_event_skip_list.txt");
 		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
+
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
 		JSONObject jsonObject = (JSONObject) obj;
@@ -245,7 +246,7 @@ public class InferEvents
 		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
 		speciesInst = new GKInstance(referenceDb);
 		speciesInst.setDbAdaptor(dbAdaptor);
-		speciesInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		speciesInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
 		speciesInst = GenerateInstance.checkForIdenticalInstances(speciesInst);
 	}
@@ -254,7 +255,7 @@ public class InferEvents
 	{
 		GKInstance summationInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Summation));
 		summationInst.setDbAdaptor(dbAdaptor);
-		summationInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		summationInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		String summationText = "This event has been computationally inferred from an event that has been demonstrated in another species.<p>The inference is based on the homology mapping in Ensembl Compara. Briefly, reactions for which all involved PhysicalEntities (in input, output and catalyst) have a mapped orthologue/paralogue (for complexes at least 75% of components must have a mapping) are inferred to the other species. High level events are also inferred for these events to allow for easier navigation.<p><a href='/electronic_inference_compara.html' target = 'NEW'>More details and caveats of the event inference in Reactome.</a> For details on the Ensembl Compara system see also: <a href='http://www.ensembl.org/info/docs/compara/homology_method.html' target='NEW'>Gene orthology/paralogy prediction method.</a>";
 		summationInst.addAttributeValue(ReactomeJavaConstants.text, summationText);
 		summationInst.addAttributeValue(ReactomeJavaConstants._displayName, summationText);
@@ -268,7 +269,7 @@ public class InferEvents
 	{
 		GKInstance evidenceTypeInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.EvidenceType));
 		evidenceTypeInst.setDbAdaptor(dbAdaptor);
-		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		String evidenceTypeText = "inferred by electronic annotation";
 		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, evidenceTypeText);
 		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "IEA");

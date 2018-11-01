@@ -40,7 +40,7 @@ public class GenerateInstance {
 		SchemaClass instanceClass = dba.getSchema().getClassByName(reactionClass);
 		inferredInst = new GKInstance(instanceClass);
 		inferredInst.setDbAdaptor(dba);
-		inferredInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		inferredInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.compartment) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
 			for (Object compartmentInst : instanceToBeInferred.getAttributeValuesList(ReactomeJavaConstants.compartment)) {
 				GKInstance compartmentInstGK = (GKInstance) compartmentInst;
@@ -77,7 +77,7 @@ public class GenerateInstance {
 		SchemaClass geeClass = dba.getSchema().getClassByName(ReactomeJavaConstants.GenomeEncodedEntity);
 		GKInstance mockedInst = new GKInstance(geeClass);
 		mockedInst.setDbAdaptor(dba);
-		mockedInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		mockedInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		//TODO: check intracellular; CFII not congruent between Perl and Java
 		String mockedName = (String) instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.name);
 		mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);

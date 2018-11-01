@@ -108,7 +108,7 @@ public class OrthologousEntity {
 				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 				GKInstance definedSetInst = new GKInstance(definedSetClass);
 				definedSetInst.setDbAdaptor(dba);
-				definedSetInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+				definedSetInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 				String definedSetName = "Homologues of " + ewasInst.getAttributeValue(ReactomeJavaConstants.name);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
 				
@@ -391,7 +391,7 @@ public class OrthologousEntity {
 	{
 		complexSummationInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
 		complexSummationInst.setDbAdaptor(dba);
-		complexSummationInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		complexSummationInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		String complexSummationText = "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.";
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, complexSummationText);
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants._displayName, complexSummationText);

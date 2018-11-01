@@ -200,7 +200,7 @@ public class InferEWAS {
 			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDNASequence);
 			GKInstance referenceDNAInst = new GKInstance(referenceDNAClass);
 			referenceDNAInst.setDbAdaptor(dba);
-			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, ensgDbInst);
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
@@ -212,7 +212,7 @@ public class InferEWAS {
 				//TODO: Logic for alternate id --> alt_id (arabidopsis)
 				GKInstance alternateRefDNAInst = new GKInstance(referenceDNAClass);
 				alternateRefDNAInst.setDbAdaptor(dba);
-				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, alternateDbInst);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
@@ -280,7 +280,7 @@ public class InferEWAS {
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		enspDbInst = new GKInstance(referenceDb);
 		enspDbInst.setDbAdaptor(dba);
-		enspDbInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		enspDbInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.name, enspSpeciesDb);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
@@ -295,7 +295,7 @@ public class InferEWAS {
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		ensgDbInst = new GKInstance(referenceDb);
 		ensgDbInst.setDbAdaptor(dba);
-		ensgDbInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		ensgDbInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, "ENSEMBL"); // Commented out because the generic 'ENSEMBL' messes up the identical instance check
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.name, ensgSpeciesDb);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
@@ -309,7 +309,7 @@ public class InferEWAS {
 		SchemaClass alternateDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		alternateDbInst = new GKInstance(alternateDb);
 		alternateDbInst.setDbAdaptor(dba);
-		alternateDbInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.name, alternateDbName);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesAlternateDbUrl);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);

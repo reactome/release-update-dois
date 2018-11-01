@@ -74,15 +74,29 @@ public class UpdateHumanEvents {
 		for (GKInstance humanPathwayInst : updatedInferrableHumanEvents)
 		{
 			if (!seenInstanceEdit.contains(humanPathwayInst.getDBID())) {
-				humanPathwayInst.addAttributeValue(ReactomeJavaConstants.instanceEdit, instanceEdit);
-				seenInstanceEdit.add(humanPathwayInst.getDBID());
+				GKInstance createdInst = (GKInstance) humanPathwayInst.getAttributeValue(ReactomeJavaConstants.created);
+				if (createdInst == null || !createdInst.getDBID().toString().matches(instanceEdit.getDBID().toString())) {
+
+					boolean modifiedExists = false;
+					for (GKInstance modifiedInst : (Collection<GKInstance>) humanPathwayInst.getAttributeValuesList(ReactomeJavaConstants.modified)) {
+						if (modifiedInst.getDBID().toString().matches(instanceEdit.getDBID().toString())) {
+							modifiedExists = true;
+						}
+					}
+					if (!modifiedExists) {
+						humanPathwayInst.addAttributeValue(ReactomeJavaConstants.modified, instanceEdit);
+						dba.updateInstanceAttribute(humanPathwayInst, ReactomeJavaConstants.modified);
+					} else {
+						
+					}
+					seenInstanceEdit.add(humanPathwayInst.getDBID());
+				}
 			}
 		}
 	}
 	
 	public static void createHumanHierarchy(GKInstance inferrableInst) throws Exception
 	{
-//			System.out.println(inferabbleInst.getDBID());
 		ArrayList<GKInstance> hasEventReferrals = (ArrayList<GKInstance>) inferrableInst.getReferers(ReactomeJavaConstants.hasEvent);
 		if (hasEventReferrals != null && hasEventReferrals.size() > 0)
 		{
