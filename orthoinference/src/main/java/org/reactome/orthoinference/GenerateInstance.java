@@ -2,6 +2,7 @@ package org.reactome.orthoinference;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
@@ -94,8 +95,7 @@ public class GenerateInstance {
 			mockedIdenticals.put(cacheKey, mockedInst);
 		}
 		
-		GenerateInstance.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo);
-		instanceToBeMocked.addAttributeValue(ReactomeJavaConstants.inferredTo, mockedInst);
+		instanceToBeMocked = GenerateInstance.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo);
 		dba.updateInstanceAttribute(instanceToBeMocked, ReactomeJavaConstants.inferredTo);
 		
 		return mockedInst;
@@ -120,15 +120,27 @@ public class GenerateInstance {
 		}
 	}
 	// Checks if the instanceToCheck already contains the instanceToUse in the multi-value attribute
-	public static boolean addAttributeValueIfNeccesary(GKInstance instanceToCheck, GKInstance instanceToUse, String attribute) throws InvalidAttributeException, Exception
+	public static GKInstance addAttributeValueIfNeccesary(GKInstance inferredInstance, GKInstance originalInstance, String attribute) throws InvalidAttributeException, Exception
 	{
-		for (Object attributeInst : instanceToCheck.getAttributeValuesList(attribute))
-		{
-			if (attributeInst == instanceToUse) {
-				return true;
+		// Original version of this function had two checks: For 'multivalue attribute' and for 'instance-type object'. 
+		// Now we know the only attributes being passed through here are inferredTo, inferredFrom, orthologousEvent, and hasEvent, which are all multivalue attribute classes.
+		// We also know that it will always be a GKInstance passed through here (see arguments), so we are able to forgo both checks.
+		
+		Collection<GKInstance> attributeInstancesFromInferredInstance = inferredInstance.getAttributeValuesList(attribute);
+		HashSet<Long> dbIdsFromAttributeInstances = new HashSet<Long>();
+		for (GKInstance attributeInstance : attributeInstancesFromInferredInstance) {
+			dbIdsFromAttributeInstances.add(attributeInstance.getDBID());
+		}
+		boolean attributeExists = false;
+		for (Long attributeInstanceDbId : dbIdsFromAttributeInstances) {
+			if (attributeInstanceDbId == originalInstance.getDBID()) {
+				attributeExists = true;
 			}
 		}
-		return false;
+		if (!attributeExists) {
+			inferredInstance.addAttributeValue(attribute, originalInstance);
+		}
+		return inferredInstance;
 	}
 	
 	// Caching. This function goes through each defining attribute of the incoming instance and produces a string of the attribute values (DB ids if the attribute is an instance).

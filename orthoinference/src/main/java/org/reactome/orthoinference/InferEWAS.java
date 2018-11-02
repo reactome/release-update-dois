@@ -177,12 +177,9 @@ public class InferEWAS {
 						infEWAS = GenerateInstance.checkForIdenticalInstances(infEWAS);
 						ewasIdenticals.put(cacheKey, infEWAS);
 					}
-					GenerateInstance.addAttributeValueIfNeccesary(infEWAS, ewasInst, ReactomeJavaConstants.inferredFrom);
-					infEWAS.addAttributeValue(ReactomeJavaConstants.inferredFrom, ewasInst);
+					infEWAS = GenerateInstance.addAttributeValueIfNeccesary(infEWAS, ewasInst, ReactomeJavaConstants.inferredFrom);
 					dba.updateInstanceAttribute(infEWAS, ReactomeJavaConstants.inferredFrom);
-					GenerateInstance.addAttributeValueIfNeccesary(ewasInst, infEWAS, ReactomeJavaConstants.inferredTo);
-					ewasInst.addAttributeValue(ReactomeJavaConstants.inferredTo, infEWAS);
-
+					ewasInst = GenerateInstance.addAttributeValueIfNeccesary(ewasInst, infEWAS, ReactomeJavaConstants.inferredTo);
 					dba.updateInstanceAttribute(ewasInst, ReactomeJavaConstants.inferredTo);
 					infEWASInstances.add((GKInstance) infEWAS);
 				}

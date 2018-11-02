@@ -53,6 +53,7 @@ public class InferReaction {
 			// Total proteins are stored in reactionProteinCounts[0], inferrable proteins in [1], and the maximum number of homologues for any entity involved in index [2].
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
 			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
+
 			if (reactionProteinCounts.get(0) > 0) {
 				String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
 				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, and orthoinference is attempted.
@@ -62,6 +63,7 @@ public class InferReaction {
 				// Failure to successfully infer any of these attributes will end orthoinference for this reaction.
 				if (InferReaction.inferAttributes(reactionInst, infReactionInst, ReactomeJavaConstants.input))
 				{
+
 					if (InferReaction.inferAttributes(reactionInst, infReactionInst, ReactomeJavaConstants.output))
 					{
 						if (InferReaction.inferCatalyst(reactionInst, infReactionInst))
@@ -83,15 +85,16 @@ public class InferReaction {
 							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom))
 							{
-								GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom);
-								infReactionInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, reactionInst);
+								infReactionInst = GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom);
 								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.inferredFrom);
 							}
-							GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent);
-							infReactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, reactionInst);
+							
+							infReactionInst = GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent);
 							dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.orthologousEvent);
+							
 							reactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infReactionInst);
 							dba.updateInstanceAttribute(reactionInst, ReactomeJavaConstants.orthologousEvent);
+							
 							inferredEvent.put(reactionInst, infReactionInst);
 							// Regulations instances require the DB to contain the orthoinferred reaction
 							if (inferredRegulations.size() > 0)
@@ -108,6 +111,7 @@ public class InferReaction {
 							inferrableHumanEvents.add(reactionInst);
 							String inferredEvent = infReactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + infReactionInst.getDisplayName() + "\n";	
 							Files.write(Paths.get(inferredFilehandle), inferredEvent.getBytes(), StandardOpenOption.APPEND);
+//							System.out.println(reactionInst);
 						}
 					}
 					return;

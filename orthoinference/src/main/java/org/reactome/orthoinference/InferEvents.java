@@ -62,10 +62,9 @@ public class InferEvents
 		OrthologousEntity.setAdaptor(dbAdaptor);
 		InferEWAS.setAdaptor(dbAdaptor);
 		UpdateHumanEvents.setAdaptor(dbAdaptor);
-
 		SkipTests.getSkipList("normal_event_skip_list.txt");
+		
 		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
-
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
 		JSONObject jsonObject = (JSONObject) obj;
@@ -145,6 +144,7 @@ public class InferEvents
 			
 			if (!reactionInstances.isEmpty())
 			{
+				int count = 0;
 				for (Long dbid : dbids)
 				{
 					GKInstance reactionInst = reactionMap.get(dbid);

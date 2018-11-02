@@ -53,11 +53,13 @@ public class UpdateHumanEvents {
 						boolean updateNeeded = false;
 						for (GKInstance pathwayComponent : pathwayComponents) 
 						{
-							if (GenerateInstance.addAttributeValueIfNeccesary(inferredEvent.get(humanPathwayInst), pathwayComponent, ReactomeJavaConstants.hasEvent))
-							{
-								inferredEvent.get(humanPathwayInst).addAttributeValue(ReactomeJavaConstants.hasEvent, pathwayComponent);
+//							inferredEvent.get(humanPathwayInst) = GenerateInstance.addAttributeValueIfNeccesary(inferredEvent.get(humanPathwayInst), pathwayComponent, ReactomeJavaConstants.hasEvent);
+								GKInstance inferredHumanPathwayInst = inferredEvent.get(humanPathwayInst);
+								inferredHumanPathwayInst = GenerateInstance.addAttributeValueIfNeccesary(inferredHumanPathwayInst, pathwayComponent, ReactomeJavaConstants.hasEvent);
+								inferredEvent.remove(humanPathwayInst);
+								inferredEvent.put(humanPathwayInst, inferredHumanPathwayInst);
 								updateNeeded = true;
-							}
+							
 						}
 						if (updateNeeded)
 						{
@@ -86,8 +88,6 @@ public class UpdateHumanEvents {
 					if (!modifiedExists) {
 						humanPathwayInst.addAttributeValue(ReactomeJavaConstants.modified, instanceEdit);
 						dba.updateInstanceAttribute(humanPathwayInst, ReactomeJavaConstants.modified);
-					} else {
-						
 					}
 					seenInstanceEdit.add(humanPathwayInst.getDBID());
 				}
