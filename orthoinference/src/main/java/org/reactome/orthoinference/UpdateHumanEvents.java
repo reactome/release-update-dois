@@ -22,7 +22,6 @@ public class UpdateHumanEvents {
 	@SuppressWarnings("unchecked")
 	public static void updateHumanEvents(ArrayList<GKInstance> inferrableHumanEvents) throws Exception 
 	{
-		// TODO: Release date; %inferred_event
 		updatedInferrableHumanEvents.addAll(inferrableHumanEvents);
 		HashSet<Long> seenHumanHierarchy = new HashSet<Long>();
 		for (GKInstance inferrableInst : inferrableHumanEvents)

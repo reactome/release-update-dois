@@ -40,7 +40,6 @@ public class InferReaction {
 		}
 		if (inferredEvent.get(reactionInst) == null)
 		{
-			// TODO: Release date/instance edit;
 			// Creates inferred instance of reaction.
 			GKInstance infReactionInst = GenerateInstance.newInferredGKInstance(reactionInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
@@ -53,7 +52,6 @@ public class InferReaction {
 			// Total proteins are stored in reactionProteinCounts[0], inferrable proteins in [1], and the maximum number of homologues for any entity involved in index [2].
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
 			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
-
 			if (reactionProteinCounts.get(0) > 0) {
 				String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
 				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, and orthoinference is attempted.
@@ -63,7 +61,6 @@ public class InferReaction {
 				// Failure to successfully infer any of these attributes will end orthoinference for this reaction.
 				if (InferReaction.inferAttributes(reactionInst, infReactionInst, ReactomeJavaConstants.input))
 				{
-
 					if (InferReaction.inferAttributes(reactionInst, infReactionInst, ReactomeJavaConstants.output))
 					{
 						if (InferReaction.inferCatalyst(reactionInst, infReactionInst))
@@ -75,23 +72,22 @@ public class InferReaction {
 							{
 								return;
 							}
-							
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.releaseDate)) {
 								DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 								Date date = new Date();
 								infReactionInst.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
 							}
-							// Prevents the addition of redundant instances to the database
-							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
+							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
+							// add a new inferred instance, the storeInstance method is just called here. 
+//							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
+							dba.storeInstance(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom))
 							{
 								infReactionInst = GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom);
 								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.inferredFrom);
 							}
-							
 							infReactionInst = GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent);
 							dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.orthologousEvent);
-							
 							reactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infReactionInst);
 							dba.updateInstanceAttribute(reactionInst, ReactomeJavaConstants.orthologousEvent);
 							
@@ -140,7 +136,6 @@ public class InferReaction {
 	
 	// Function used to creat inferred catalysts associated with the current reaction instance.
 	// Infers all PhysicalEntity's associated with the reaction's 'catalystActivity' and 'activeUnit' attributes
-	// TODO: RegulatedBy; null catalyst instance check
 	@SuppressWarnings("unchecked")
 	public static boolean inferCatalyst(GKInstance reactionInst, GKInstance infReactionInst) throws InvalidAttributeException, Exception
 	{

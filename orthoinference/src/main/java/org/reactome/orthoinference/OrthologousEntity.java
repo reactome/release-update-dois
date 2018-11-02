@@ -190,7 +190,6 @@ public class OrthologousEntity {
 			
 			GKInstance infComplexInst = GenerateInstance.newInferredGKInstance(complexInst);
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummationInst);
-			//TODO: Remove brackets from name?
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.name, complexInst.getAttributeValue(ReactomeJavaConstants.name));
 			ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
 			// Inference handling is different depending on if it is a Complex or a Polymer. Complexes will infer all 'components' while Polymers will infer all 'repeatedUnits'.

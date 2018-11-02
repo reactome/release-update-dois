@@ -44,7 +44,6 @@ public class InferEvents
 	private static HashMap<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static ArrayList<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 
-	//TODO: instance edit initialization; GO_CellularComponent instance; Config_Species.pm; load_class_attribute_values_of_multiple_instances (complex/ewas)
 	@SuppressWarnings("unchecked")
 	public static void eventInferrer(Properties props, String pathToConfig, String pathToSpeciesConfig) throws Exception
 	{
@@ -144,7 +143,6 @@ public class InferEvents
 			
 			if (!reactionInstances.isEmpty())
 			{
-				int count = 0;
 				for (Long dbid : dbids)
 				{
 					GKInstance reactionInst = reactionMap.get(dbid);
@@ -190,7 +188,7 @@ public class InferEvents
 		UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
 		InferEvents.outputReport(species);
 		InferEvents.resetVariables();
-		System.gc();
+//		System.gc();
 		System.out.println("Finished orthoinference of " + speciesName + ".");
 		}
 	}
@@ -199,12 +197,10 @@ public class InferEvents
 	{
 		int[] counts = InferReaction.getCounts();
 		int percent = 100*counts[1]/counts[0];
-		//TODO: Count warnings; manual report
 		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_65.txt");
 		reportFile.close();
 		String results = "hsap to " + species + ":\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
 		Files.write(Paths.get("report_ortho_inference_test_reactome_65.txt"), results.getBytes(), StandardOpenOption.APPEND);
-		//TODO: manual human events handling
 	}
 
 	public static void resetVariables() {

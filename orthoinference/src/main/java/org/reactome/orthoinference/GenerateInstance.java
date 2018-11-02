@@ -34,7 +34,6 @@ public class GenerateInstance {
 	
 	// Creates new instance that will be inferred based on the incoming instances class		
 	public static GKInstance newInferredGKInstance(GKInstance instanceToBeInferred) throws Exception
-//		TODO: Instance Edits; Valid Attribute comparment/species; check_intracellular 
 	{
 		GKInstance inferredInst = null;
 		String reactionClass = instanceToBeInferred.getSchemClass().getName();
@@ -79,7 +78,7 @@ public class GenerateInstance {
 		GKInstance mockedInst = new GKInstance(geeClass);
 		mockedInst.setDbAdaptor(dba);
 		mockedInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
-		//TODO: check intracellular; CFII not congruent between Perl and Java
+		//TODO: CFII not congruent between Perl and Java
 		String mockedName = (String) instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.name);
 		mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);
 		mockedInst.addAttributeValue(ReactomeJavaConstants._displayName, "Ghost homologue of " + instanceToBeMocked.getAttributeValue(ReactomeJavaConstants._displayName));

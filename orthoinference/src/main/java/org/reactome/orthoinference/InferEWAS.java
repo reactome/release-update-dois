@@ -19,7 +19,7 @@ public class InferEWAS {
 
 	private static MySQLAdaptor dba;
 	static boolean refDb = false;
-	//TODO: Value of homologueMappings and ensgMappings differs; Remove static value when scaling up species total;
+	//TODO: Value of homologueMappings and ensgMappings differs (?? might not resolved)
 	private static GKInstance instanceEdit;
 	private static GKInstance ensgDbInst;
 	private static GKInstance enspDbInst;
@@ -78,7 +78,6 @@ public class InferEWAS {
 					
 					// Method for adding start/end coordinates. It is convoluted due to a quirk with assigning the name differently based on coordinate value. 
 					// The name of the entity needs to be at the front of the 'name' array if the coordinate is over 1, and rearranging arrays in Java for this was a bit tricky.
-					// TODO: Add reference coordinate fix
 					for (Object startCoordinate : ewasInst.getAttributeValuesList(ReactomeJavaConstants.startCoordinate))
 					{
 						infEWAS.addAttributeValue(ReactomeJavaConstants.startCoordinate, startCoordinate);
