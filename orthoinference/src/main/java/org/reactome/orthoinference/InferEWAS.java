@@ -19,6 +19,7 @@ public class InferEWAS {
 
 	private static MySQLAdaptor dba;
 	static boolean refDb = false;
+	private static String altRefDBId;
 	//TODO: Value of homologueMappings and ensgMappings differs (?? might not resolved)
 	private static GKInstance instanceEdit;
 	private static GKInstance ensgDbInst;
@@ -208,8 +209,12 @@ public class InferEWAS {
 				//TODO: Logic for alternate id --> alt_id (arabidopsis)
 				GKInstance alternateRefDNAInst = new GKInstance(referenceDNAClass);
 				alternateRefDNAInst.setDbAdaptor(dba);
+				String altDbIdentifier = (String) ensg;
+				if (altRefDBId != null) {
+					altDbIdentifier = altDbIdentifier.replaceAll(altRefDBId, "");
+				}
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
-				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, ensg);
+				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, altRefDBId);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, alternateDbInst);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants._displayName, alternateDbInst.getAttributeValue(ReactomeJavaConstants.name) + ":" + ensg);
@@ -311,6 +316,10 @@ public class InferEWAS {
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);
 		alternateDbInst = GenerateInstance.checkForIdenticalInstances(alternateDbInst);
 		refDb = true;
+	}
+	
+	public static void setAlternateDBId(String altRefDBIdCopy) {
+		altRefDBId = altRefDBIdCopy;
 	}
 	
 	public static void updateRefDb() 

@@ -64,6 +64,7 @@ public class InferEvents
 		SkipTests.getSkipList("normal_event_skip_list.txt");
 		
 		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
+
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
 		JSONObject jsonObject = (JSONObject) obj;
@@ -111,6 +112,11 @@ public class InferEvents
 				String altRefDbUrl = (String) altRefDb.get("url");
 				String altRefDbAccess = (String) altRefDb.get("access");
 				InferEWAS.createAlternateReferenceDBInst(speciesName, (String) altRefDbNames.get(0), altRefDbUrl, altRefDbAccess);
+				if (altRefDb.get("alt_id") != null) {
+					String altRefDbId = (String) altRefDb.get("alt_id");
+					InferEWAS.setAlternateDBId(altRefDbId);
+				}
+				
 			} else {
 				InferEWAS.updateRefDb();
 			}
