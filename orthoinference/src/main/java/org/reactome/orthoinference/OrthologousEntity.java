@@ -103,7 +103,7 @@ public class OrthologousEntity {
 			ArrayList<GKInstance> infEWASInstances = InferEWAS.ewasInferrer(ewasInst);
 			// If number of EWAS instances is greater than 1, then it is considered a DefinedSet. A new inferred instance with definedSet class is created.
 			if (infEWASInstances.size() > 1)
-			{
+			{	
 				SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 				GKInstance definedSetInst = new GKInstance(definedSetClass);
 				definedSetInst.setDbAdaptor(dba);
@@ -132,7 +132,8 @@ public class OrthologousEntity {
 				
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.hasMember, infEWASInstances);
-				
+				String displayName = (String) definedSetInst.getAttributeValue(ReactomeJavaConstants.name) + " [" +((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.compartment)).getDisplayName() + "]";
+				definedSetInst.setAttributeValue(ReactomeJavaConstants._displayName, displayName);
 				// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
 				String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) definedSetInst.getSchemClass(), definedSetInst);
 				if (definedSetIdenticals.get(cacheKey) != null)
@@ -143,8 +144,6 @@ public class OrthologousEntity {
 					definedSetIdenticals.put(cacheKey, definedSetInst);
 				}
 				// Name information needs to be updated after getting from cache
-
-				definedSetInst.addAttributeValue(ReactomeJavaConstants._displayName, definedSetName);
 
 				definedSetInst = GenerateInstance.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom);
 				dba.updateInstanceAttribute(definedSetInst, ReactomeJavaConstants.inferredFrom);
@@ -207,7 +206,7 @@ public class OrthologousEntity {
 				}
 				infComplexInst.addAttributeValue(ReactomeJavaConstants.repeatedUnit, infComponents);
 			}
-			infComplexInst.addAttributeValue(ReactomeJavaConstants._displayName, complexInst.getAttributeValue(ReactomeJavaConstants._displayName));
+			infComplexInst.setAttributeValue(ReactomeJavaConstants._displayName, complexInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			
 			// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
 			String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infComplexInst.getSchemClass(), infComplexInst);
@@ -294,7 +293,6 @@ public class OrthologousEntity {
 							candidatesList.add(infCandidate);
 						}
 					}
-
 					// Handling of CandidateSets
 					if (candidatesList.size() > 0)
 					{
@@ -338,7 +336,7 @@ public class OrthologousEntity {
 					// If it has more than 1 member (which is the logic that would theoretically go here, nothing happens here; all members are stored in this inferred instances 'HasMember' attribute.
 				}
 			}
-
+			infEntitySetInst.setAttributeValue(ReactomeJavaConstants._displayName, entitySetInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
 			String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infEntitySetInst.getSchemClass(), infEntitySetInst);
 			if (entitySetIdenticals.get(cacheKey) != null)
@@ -348,9 +346,6 @@ public class OrthologousEntity {
 				infEntitySetInst = GenerateInstance.checkForIdenticalInstances(infEntitySetInst);
 				entitySetIdenticals.put(cacheKey, infEntitySetInst);
 			}
-			// displayName information needs to be updated once it's been grabbed from the cache
-			infEntitySetInst.addAttributeValue(ReactomeJavaConstants._displayName, entitySetInst.getAttributeValue(ReactomeJavaConstants._displayName));
-
 			if (infEntitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entitySetInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 			{
 				infEntitySetInst = GenerateInstance.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom);
@@ -384,7 +379,7 @@ public class OrthologousEntity {
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		String complexSummationText = "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.";
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, complexSummationText);
-		complexSummationInst.addAttributeValue(ReactomeJavaConstants._displayName, complexSummationText);
+		complexSummationInst.setAttributeValue(ReactomeJavaConstants._displayName, complexSummationText);
 		complexSummationInst = GenerateInstance.checkForIdenticalInstances(complexSummationInst);
 	}
 	

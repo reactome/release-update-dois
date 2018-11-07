@@ -186,6 +186,7 @@ public class InferEvents
 						continue;
 					}
 					// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
+
 					InferReaction.reactionInferrer(reactionInst);
 				}
 			}
@@ -250,6 +251,7 @@ public class InferEvents
 		speciesInst.setDbAdaptor(dbAdaptor);
 		speciesInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
+		speciesInst.addAttributeValue(ReactomeJavaConstants._displayName, toSpeciesLong);
 		speciesInst = GenerateInstance.checkForIdenticalInstances(speciesInst);
 	}
 	// Create and set static Summation instance

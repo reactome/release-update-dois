@@ -1,5 +1,8 @@
 package org.reactome.orthoinference;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +24,8 @@ public class GenerateInstance {
 	private static GKInstance speciesInst;
 	private static GKInstance instanceEdit;
 	private static HashMap<String,GKInstance> mockedIdenticals = new HashMap<String,GKInstance>();
+	
+	private static String classFilename;
 
 	public static void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
@@ -101,6 +106,7 @@ public class GenerateInstance {
 	}
 	
 	// Checks that equivalent instances don't already exist in the DB, substituting if they do
+	
 	public static GKInstance checkForIdenticalInstances(GKInstance inferredInst) throws Exception
 	{
 		@SuppressWarnings("unchecked")
@@ -108,10 +114,9 @@ public class GenerateInstance {
 		if (identicalInstances != null) {
 			if (identicalInstances.size() == 1) {
 				return identicalInstances.iterator().next();
-			} else if (identicalInstances.size() > 1) {
-				return identicalInstances.iterator().next();
 			} else {
-			return inferredInst;
+				// In future, could iterate through array of returned values. For now, this mimics Perl by returning just the first instance in Collection.
+				return identicalInstances.iterator().next();
 			}
 		} else {
 			dba.storeInstance(inferredInst);
@@ -119,6 +124,7 @@ public class GenerateInstance {
 		}
 	}
 	// Checks if the instanceToCheck already contains the instanceToUse in the multi-value attribute
+	//TODO: Naming of incoming variables isn't entirely accurate.
 	public static GKInstance addAttributeValueIfNeccesary(GKInstance inferredInstance, GKInstance originalInstance, String attribute) throws InvalidAttributeException, Exception
 	{
 		// Original version of this function had two checks: For 'multivalue attribute' and for 'instance-type object'. 

@@ -30,6 +30,8 @@ public class InferReaction {
 	private static Integer inferredCount = 0;
 	private static ArrayList<GKInstance> inferrableHumanEvents = new ArrayList<GKInstance>();
 	
+	private static String classFilename;
+	
 	// Infers PhysicalEntity instances of input, output, catalyst activity, and regulations that are associated with incoming reactionInst.
 	public static void reactionInferrer(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
@@ -77,9 +79,8 @@ public class InferReaction {
 								Date date = new Date();
 								infReactionInst.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
 							}
-							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
+							// FetchIdenticalInstances mistakenly returns the instance being inferred. Since this step is meant to always
 							// add a new inferred instance, the storeInstance method is just called here. 
-//							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
 							dba.storeInstance(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom))
 							{
@@ -210,6 +211,7 @@ public class InferReaction {
 			GKInstance infRegulationInst = GenerateInstance.newInferredGKInstance(regulatedInst);
 			infRegulationInst.setDbAdaptor(dba);
 			infRegulationInst.addAttributeValue(ReactomeJavaConstants.regulator, infRegulatorInst);
+			infRegulationInst.addAttributeValue(ReactomeJavaConstants._displayName, regulatedInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			inferredRegulations.add(infRegulationInst);
 		}
 		return inferredRegulations;
