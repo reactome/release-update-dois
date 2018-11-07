@@ -115,7 +115,7 @@ public class GenerateInstance {
 			if (identicalInstances.size() == 1) {
 				return identicalInstances.iterator().next();
 			} else {
-				// In future, could iterate through array of returned values. For now, this mimics Perl by returning just the first instance in Collection.
+				// In future, could iterate through array of returned values. For now, this mimics Perl
 				return identicalInstances.iterator().next();
 			}
 		} else {
@@ -124,7 +124,7 @@ public class GenerateInstance {
 		}
 	}
 	// Checks if the instanceToCheck already contains the instanceToUse in the multi-value attribute
-	//TODO: Naming of incoming variables isn't entirely accurate.
+	//TODO: Naming of incoming variables isn't entirely correct
 	public static GKInstance addAttributeValueIfNeccesary(GKInstance inferredInstance, GKInstance originalInstance, String attribute) throws InvalidAttributeException, Exception
 	{
 		// Original version of this function had two checks: For 'multivalue attribute' and for 'instance-type object'. 

@@ -20,7 +20,6 @@ public class InferEWAS {
 	private static MySQLAdaptor dba;
 	static boolean refDb = false;
 	private static String altRefDBId;
-	//TODO: Value of homologueMappings and ensgMappings differs (?? might not resolved)
 	private static GKInstance instanceEdit;
 	private static GKInstance ensgDbInst;
 	private static GKInstance enspDbInst;
@@ -76,7 +75,7 @@ public class InferEWAS {
 					// Creating inferred EWAS
 					GKInstance infEWAS = GenerateInstance.newInferredGKInstance(ewasInst);
 					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);
-					// Method for adding start/end coordinates. It is convoluted due to a quirk with assigning the name differently based on coordinate value. 
+					// Method for adding start/end coordinates. It is convoluted due to a quirk with assigning the name differently based on coordinate value (see infer_events.pl lines 1190-1192). 
 					// The name of the entity needs to be at the front of the 'name' array if the coordinate is over 1, and rearranging arrays in Java for this was a bit tricky.
 					for (Object startCoordinate : ewasInst.getAttributeValuesList(ReactomeJavaConstants.startCoordinate))
 					{
@@ -108,7 +107,7 @@ public class InferEWAS {
 					String displayName = (String) infEWAS.getAttributeValue(ReactomeJavaConstants.name) + " [" +((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.compartment)).getDisplayName() + "]";
 					infEWAS.setAttributeValue(ReactomeJavaConstants._displayName, displayName);
 
-					// Infer residue modifications. This was another step where the naming of an EWAS can change.
+					// Infer residue modifications. This was another step where the name of an EWAS can change.
 					// For this, it is based on the existence of the string 'phospho' in the name of the psiMod attribute. 
 					// If true, 'phospho-' is prepended to the EWAS' name attribute.
 					ArrayList<GKInstance> infModifiedResidues = new ArrayList<GKInstance>();
@@ -141,7 +140,7 @@ public class InferEWAS {
 							// I've assumed this is incorrect for the rewrite -- Instances that modify the name attribute to prepend 'phospho-' retain their name array. (Justin Cook 2018)
 							infEWAS.addAttributeValue(ReactomeJavaConstants.name, nameValues); 
 							infEWAS.setAttributeValue(ReactomeJavaConstants._displayName, phosphoName);
-							// Ensures the 'phospho-' is only appended once.
+							// This flag ensures the 'phospho-' is only prepended once.
 							phosFlag = false;
 						}
 						for (GKInstance psiModInst : (Collection<GKInstance>) modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.psiMod))
@@ -228,6 +227,7 @@ public class InferEWAS {
 	}
 	
     // These are setup functions called at the beginning of the 'inferEvent' script 
+	
 	public static void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
 		InferEWAS.dba = dbAdaptor;

@@ -40,8 +40,10 @@ public class InferReaction {
 		{
 			return;
 		}
+		// HashMaps are used to prevent redundant inferences.
 		if (inferredEvent.get(reactionInst) == null)
 		{
+			///// The beginning of an inference process:
 			// Creates inferred instance of reaction.
 			GKInstance infReactionInst = GenerateInstance.newInferredGKInstance(reactionInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
@@ -50,13 +52,13 @@ public class InferReaction {
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants._displayName, reactionInst.getAttributeValue(ReactomeJavaConstants._displayName));
 
-			// Filter criteria that finds the total number of distinct proteins associated with an instance, as well as the number that can be inferred.
+			// This function finds the total number of distinct proteins associated with an instance, as well as the number that can be inferred.
 			// Total proteins are stored in reactionProteinCounts[0], inferrable proteins in [1], and the maximum number of homologues for any entity involved in index [2].
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
 			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
 			if (reactionProteinCounts.get(0) > 0) {
 				String eligibleEvent = reactionInst.getAttributeValue(ReactomeJavaConstants.DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
-				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, and orthoinference is attempted.
+				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, meaning orthoinference is continued.
 				eligibleCount++;
 				Files.write(Paths.get(eligibleFilehandle), eligibleEvent.getBytes(), StandardOpenOption.APPEND);
 				// Attempt to infer all PhysicalEntities associated with this reaction's Input, Output, CatalystActivity and RegulatedBy attributes.
@@ -79,7 +81,7 @@ public class InferReaction {
 								Date date = new Date();
 								infReactionInst.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
 							}
-							// FetchIdenticalInstances mistakenly returns the instance being inferred. Since this step is meant to always
+							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
 							// add a new inferred instance, the storeInstance method is just called here. 
 							dba.storeInstance(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom))
@@ -135,7 +137,7 @@ public class InferReaction {
 		return true;
 	}
 	
-	// Function used to creat inferred catalysts associated with the current reaction instance.
+	// Function used to create inferred catalysts associated with the current reaction instance.
 	// Infers all PhysicalEntity's associated with the reaction's 'catalystActivity' and 'activeUnit' attributes
 	@SuppressWarnings("unchecked")
 	public static boolean inferCatalyst(GKInstance reactionInst, GKInstance infReactionInst) throws InvalidAttributeException, Exception
@@ -178,6 +180,7 @@ public class InferReaction {
 	}
 	
 	@SuppressWarnings("unchecked")
+	// Function used to infer regulation instances. Logic existed for regulators that had CatalystActivity and Event instances, but they have never come up in the many times this has been run.
 	public static ArrayList<GKInstance> inferRegulation(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
 		ArrayList<GKInstance> inferredRegulations = new ArrayList<GKInstance>();

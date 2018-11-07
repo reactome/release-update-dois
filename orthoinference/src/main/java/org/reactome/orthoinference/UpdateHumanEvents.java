@@ -19,6 +19,7 @@ public class UpdateHumanEvents {
 	private static ArrayList<GKInstance> updatedInferrableHumanEvents = new ArrayList<GKInstance>();
 	private static HashMap<GKInstance, GKInstance> inferredEvent = new HashMap<GKInstance,GKInstance>();
 	
+	// This class populates species pathways with the instances that have been inferred. This was copied heavily from the Perl, so my explanations are a little sparse here.
 	@SuppressWarnings("unchecked")
 	public static void updateHumanEvents(ArrayList<GKInstance> inferrableHumanEvents) throws Exception 
 	{

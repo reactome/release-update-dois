@@ -26,7 +26,7 @@ public class SkipTests {
 		dba = dbAdaptor;
 	}
 	
-	// Skiplist was traditionally provided in a file, but since it's currently just 3 instances, I just hard-code them here.
+	// Skiplist was traditionally provided in a file, but since it's currently just 3 instances, I've just hard-coded them here.
 	public static void getSkipList(String skipListFilename) throws NumberFormatException, Exception
 	{
 		String[] pathwayIdsToSkip = {"162906","168254","977225"};
@@ -102,7 +102,7 @@ public class SkipTests {
 		return false;
 	}
 	
-	// Goes through all input/output/catalystActivity/regulatedBy attribute instances, and captures all species instances associates with them. Returns a collection of these instances.
+	// Goes through all input/output/catalystActivity/regulatedBy attribute instances, and captures all species associates with them. Returns a collection of species instances.
 	@SuppressWarnings("unchecked")
 	public static Collection<GKInstance> entitiesContainMultipleSpecies(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{

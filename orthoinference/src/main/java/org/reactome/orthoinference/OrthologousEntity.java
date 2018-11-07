@@ -30,15 +30,17 @@ public class OrthologousEntity {
 	private static HashMap<String,GKInstance> complexIdenticals = new HashMap<String,GKInstance>();
 	private static HashMap<String,GKInstance> entitySetIdenticals = new HashMap<String,GKInstance>();
 
-	// The heart of the OrthoInference process. This function takes PhysicalEntity (PE) instances and will infer those that are EWAS', Complexes/Polymers, or EntitySets.
-	// The function's arguments are an incoming PE instance and an override attribute. Instances that are comprised of PE's will often recursively call this createOrthoEntity function
-	// on constituent PE's with the override attribute set to 'true'. This ensures that these PE's are inferred, despite the fact that they might not pass some filter criteria.
-	// This is often handled using 'mock' instances (i.e. 'ghost instances' from Perl script), which allow a PE to be orthoinferred without having to commit it to the DB.
+/** The heart of the OrthoInference process. This function takes PhysicalEntity (PE) instances and will infer those that are EWAS', Complexes/Polymers, or EntitySets.
+	 The function's arguments are an incoming PE instance and an override attribute. Instances that are comprised of PE's will often recursively call this createOrthoEntity function
+	 on constituent PE's with the override attribute set to 'true'. This ensures that these PE's are inferred, despite the fact that they might not pass some filter criteria.
+	 This is often handled using 'mock' instances (i.e. 'ghost instances' from Perl script), which allow a PE to be inferred without having to commit a 'real' instance to the DB.
+*/
 	public static GKInstance createOrthoEntity(GKInstance entityInst, boolean override) throws InvalidAttributeException, Exception
 	{
 		GKInstance infEntity = null;
 		if (entityInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species))
 		{
+			// Cache check
 			if (orthologousEntity.get(entityInst) == null)
 			{
 				// Checks that a species attribute exists in either the current instance or in constituent instances.
@@ -58,7 +60,7 @@ public class OrthologousEntity {
 							return mockedInst;
 						}
 					}
-				// Infers Complex or Polymer instances -- Will recursively call createOrthoEntity with override 
+				// Infers Complex or Polymer instances -- Will recursively call createOrthoEntity with override on its constituent PEs
 				} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.Complex) || entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer))
 				{
 					infEntity = OrthologousEntity.createInfComplexPolymer(entityInst, override);
@@ -93,6 +95,7 @@ public class OrthologousEntity {
 			return entityInst;
 		}
 	}
+	
 	// Function that first tries to infer any EWAS' associated with the instance. For those that have more than 1, it's re-structured to a DefinedSet instance.
 	// If there is no EWAS instances inferred, it will either return null or, if override is set, return a mock instance. 
 	public static GKInstance createInfEWAS(GKInstance ewasInst, boolean override) throws InvalidAttributeException, Exception
@@ -143,8 +146,6 @@ public class OrthologousEntity {
 					definedSetInst = GenerateInstance.checkForIdenticalInstances(definedSetInst);
 					definedSetIdenticals.put(cacheKey, definedSetInst);
 				}
-				// Name information needs to be updated after getting from cache
-
 				definedSetInst = GenerateInstance.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom);
 				dba.updateInstanceAttribute(definedSetInst, ReactomeJavaConstants.inferredFrom);
 				ewasInst = GenerateInstance.addAttributeValueIfNeccesary(ewasInst, definedSetInst, ReactomeJavaConstants.inferredTo);
@@ -155,7 +156,7 @@ public class OrthologousEntity {
 				homolEWAS.put(ewasInst, infEWASInstances.get(0));
 			} else {
 				if (override) {
-				return GenerateInstance.newMockGKInstance(ewasInst);
+					return GenerateInstance.newMockGKInstance(ewasInst);
 				} else {
 					return nullInst;
 				}
@@ -238,7 +239,7 @@ public class OrthologousEntity {
 	// EntitySet inference function. This function will initially call createOrthoEntity on all 'members' before filtering by the type of EntitySet (Open, Candidate, or Defined Sets) and completing a specific inference.
 	// Important to note is that while there are multiple cases where createOrthoEntity is called (for members and candidates) in createInfEntitySet, the override functionality is not used here. 
 	// Presumably, this is because the instances aren't a constituent part of a single instance (as in Complexes), but rather are stand-alone ones that also happen to be included in a Set. 
-	// This means they should be subject  to the stringency of a typical instance, rather then using override to create mock instances that all an instance to be inferred more easily. TODO: Verify these statements.
+	// This means they should be subject  to the stringency of a typical instance, rather then using override to create mock instances that allow an instance to be inferred more easily. TODO: Verify these statements.
 	@SuppressWarnings("unchecked")
 	public static GKInstance createInfEntitySet(GKInstance entitySetInst, boolean override) throws InvalidAttributeException, Exception
 	{
@@ -333,7 +334,8 @@ public class OrthologousEntity {
 					} else if (membersList.size() == 1) {
 						infEntitySetInst = membersList.get(0);
 					}
-					// If it has more than 1 member (which is the logic that would theoretically go here, nothing happens here; all members are stored in this inferred instances 'HasMember' attribute.
+					// If it has more than 1 member (which is the logic that would theoretically go here), nothing happens; 
+					// All members are stored in this inferred instances 'hasMember' attribute near the beginning of this function.
 				}
 			}
 			infEntitySetInst.setAttributeValue(ReactomeJavaConstants._displayName, entitySetInst.getAttributeValue(ReactomeJavaConstants._displayName));

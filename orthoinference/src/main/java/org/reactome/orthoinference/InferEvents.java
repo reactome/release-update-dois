@@ -33,9 +33,16 @@ import org.reactome.release.common.database.InstanceEditUtils;
 /**
  *
  * @author jcook
+ * 
+ * The Java version of infer_events.pl -- The gist of this module is that it looks at all existing Human ReactionlikeEvent (RlE) instances (mostly Reactions and BlackBoxEvents) in the Test_Reactome database,
+ * and attempts to computationally infer them in each of Reactome's model organisms. Each RlE is broken down into its primary components (input, output, catalyst, and regulator), which are themselves broken
+ * into their PhysicalEntity subunits. The homology data used for the inference process currently comes from Ensembl Compara and is generated during the 'Orthopairs' step of the Reactome release process.
+ * After all inference attempts for each RlE has been completed in an organism, the pathways that contain the reactions are filled with these newly inferred ones. 
+ * 
  *
  */
 
+// To Reviewers: I recommend following the code sequentially, rather then looking at each class separately.
 public class InferEvents
 {
 	static MySQLAdaptor dbAdaptor = null;
@@ -47,6 +54,7 @@ public class InferEvents
 	@SuppressWarnings("unchecked")
 	public static void eventInferrer(Properties props, String pathToConfig, String pathToSpeciesConfig) throws Exception
 	{
+		// Set up DB adaptor using config.properties file
 		Object speciesToInferFromLong = "Homo sapiens";
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
@@ -55,14 +63,17 @@ public class InferEvents
 		int port = Integer.valueOf(props.getProperty("port"));
 		
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
+		// Statically store the adaptor variable in each class
 		InferReaction.setAdaptor(dbAdaptor);
 		SkipTests.setAdaptor(dbAdaptor);
 		GenerateInstance.setAdaptor(dbAdaptor);
 		OrthologousEntity.setAdaptor(dbAdaptor);
 		InferEWAS.setAdaptor(dbAdaptor);
 		UpdateHumanEvents.setAdaptor(dbAdaptor);
+		
 		SkipTests.getSkipList("normal_event_skip_list.txt");
 		
+		// For now an array of species names are used. I will likely change it so that the wrapper calls each organism individually during release.
 		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
 
 		JSONParser parser = new JSONParser();
@@ -70,6 +81,7 @@ public class InferEvents
 		JSONObject jsonObject = (JSONObject) obj;
 		for (String species : speciesList)
 		{
+			// Proper logging will be implemented before Release
 			JSONObject speciesObject = (JSONObject) jsonObject.get(species);
 			JSONArray speciesNames = (JSONArray) speciesObject.get("name");
 			String speciesName = (String) speciesNames.get(0);
@@ -116,7 +128,6 @@ public class InferEvents
 					String altRefDbId = (String) altRefDb.get("alt_id");
 					InferEWAS.setAlternateDBId(altRefDbId);
 				}
-				
 			} else {
 				InferEWAS.updateRefDb();
 			}
@@ -129,14 +140,14 @@ public class InferEvents
 			OrthologousEntity.setComplexSummationInst();
 
 /**
- *  Start of ReactionlikeEvent inference
+ *  Start of ReactionlikeEvent inference. Retrieves all human ReactionlikeEvents, and attempts to infer each for the species.
  */
-		// Gets DB instances of source species
+		// Gets DB instance of source species (human)
 		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
 		if (!sourceSpeciesInst.isEmpty())
 		{
 			String dbId = sourceSpeciesInst.iterator().next().getDBID().toString();
-			// Gets Reaction instances of source species
+			// Gets Reaction instances of source species (human)
 			Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
 
 			ArrayList<Long> dbids = new ArrayList<Long>();
@@ -145,6 +156,7 @@ public class InferEvents
 				dbids.add(reactionInst.getDBID());
 				reactionMap.put(reactionInst.getDBID(), reactionInst);
 			}
+			// For now sort the instances by DB ID so that it matches the Perl sequence
 			Collections.sort(dbids);
 			
 			if (!reactionInstances.isEmpty())
@@ -153,7 +165,7 @@ public class InferEvents
 				{
 					GKInstance reactionInst = reactionMap.get(dbid);
 					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute.
-					// Adds to manualHumanEvents array if it passes conditions.
+					// Adds to manualHumanEvents array if it passes conditions. This code block allows you to re-run the code without re-inferring instances.
 					ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
 					for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
 					{
@@ -186,7 +198,6 @@ public class InferEvents
 						continue;
 					}
 					// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
-
 					InferReaction.reactionInferrer(reactionInst);
 				}
 			}
@@ -204,12 +215,14 @@ public class InferEvents
 	{
 		int[] counts = InferReaction.getCounts();
 		int percent = 100*counts[1]/counts[0];
+		// TODO: Config out the file name
 		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_65.txt");
 		reportFile.close();
 		String results = "hsap to " + species + ":\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
 		Files.write(Paths.get("report_ortho_inference_test_reactome_65.txt"), results.getBytes(), StandardOpenOption.APPEND);
 	}
 
+	// Reduce memory usage after species inference complete
 	public static void resetVariables() {
 		InferReaction.resetVariables();
 		OrthologousEntity.resetVariables();

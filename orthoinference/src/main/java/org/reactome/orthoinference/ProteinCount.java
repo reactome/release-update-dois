@@ -21,11 +21,13 @@ public class ProteinCount {
 	{
 		homologueMappings = homologueMappingsCopy;
 	}
-	// This function is meant to emulate the count_distinct_proteins function found in infer_events.pl.
-	// A crucial note is that the Perl version seems to be depend on the order by which instance groups are taken from the DB. Often the DB IDs are ordered smallest to largest, but other times it is a consistent yet 'random' order.
-	// What that means is that every time the Perl version will pull the instances out in the exact same order, but there isn't a clear pattern (such as DB ID order) that is followed. Since this happens as well with the Java code,
-	// sometimes the protein counts will differ from the Perl protein counts. The vast majority of the time this isn't true, but this still suggests the protein count functionality should be re-written, for consistency's sake. 
-	// See the bottom of ProteinCount.checkCandidates for further elaboration. 
+	// This comment can be ignored during review. I sort everything now to mimic the Perl sequence.
+	/** This function is meant to emulate the count_distinct_proteins function found in infer_events.pl.
+	 A crucial note is that the Perl version seems to be depend on the order by which instance groups are taken from the DB. Often the DB IDs are ordered smallest to largest, but other times it is a consistent yet 'random' order.
+	 What that means is that every time the Perl version will pull the instances out in the exact same order, but there isn't a clear pattern (such as DB ID order) that is followed. Since this happens as well with the Java code,
+	 sometimes the protein counts will differ from the Perl protein counts. The vast majority of the time this isn't true, but this still suggests the protein count functionality should be re-written, for consistency's sake. 
+	 See the bottom of ProteinCount.checkCandidates for further elaboration. 
+	*/
 	public static List<Integer> countDistinctProteins (GKInstance instanceToBeInferred) throws InvalidAttributeException, Exception
 	{
 		// Perform an AttributeQueryRequest with specified input attributes (ReactionlikeEvent, CatalystActivity, Complex, Polymer, EWAS) and output attributes (ReferenceGeneProduct, EntitySet).
@@ -54,7 +56,7 @@ public class ProteinCount {
 		}
 		followedInstances = sortedInstances;
 		
-		// With the output instances saved in followedInstances, begin the protein count process, which is based on the homologue mappings files.
+		// With the output instances saved in followedInstances, begin the protein count process, which is based on the homologue mappings (orthopairs) files.
 		List<Integer> distinctProteinCounts = new ArrayList<Integer>();
 		int total = 0;
 		int inferrable = 0;
@@ -191,7 +193,7 @@ public class ProteinCount {
 							}
 						} 
 					}
-					// After going through logic for Complexes/Polymers, ReferenceGeneProduct, the total and inferabble values are incremented by their respective flag totals.
+					// After going through the logic for Complexes/Polymers, ReferenceGeneProduct, the total and inferabble values are incremented by their respective flag totals.
 					total += flag;
 					inferrable += flagInferred;
 				}
@@ -203,7 +205,8 @@ public class ProteinCount {
 		return distinctProteinCounts;
 	}
 	
-	// Function that determines protein counts of CandidateSets. Incoming arguments are the candidateSet of interest, as well as the output array from the first AttributeQueryRequest.
+	// Function that determines protein counts of CandidateSets. Incoming arguments are the candidateSet of interest, as well as the output array from the very first AttributeQueryRequest (AQR).
+	// This 'output array from the first AQR' is used to prevent redundant counts, such as if a Candidate instance has already undergone a protein count.
 	public static List<Integer> checkCandidates(GKInstance candidateSet, Collection<GKInstance> followedInstances) throws InvalidAttributeException, Exception
 	{
 		List<Integer> checkedCandidates = new ArrayList<Integer>();
@@ -276,7 +279,7 @@ public class ProteinCount {
 							candidateMax = candidateComplexCounts.get(2);
 						}
 					}
-					// ReferenceGeneProduct instances can only have an inferrable of 1
+					// ReferenceGeneProduct instances can only have an inferrable of 1 (So says the Perl version)
 				} else if (physicalEntity.getSchemClass().isa(ReactomeJavaConstants.ReferenceGeneProduct))
 				{
 					candidateTotal = 1;
