@@ -50,7 +50,7 @@ public class InferEWAS {
 					GKInstance infReferenceGeneProduct = null;
 					if (seenRGP.get(homologueId) == null)
 					{
-						infReferenceGeneProduct = GenerateInstance.newInferredGKInstance((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity));
+						infReferenceGeneProduct = InstanceUtilities.newInferredGKInstance((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity));
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.identifier, homologueId);
 						// Reference DB can differ between homologue mappings, but can be differentiated by the 'homologueSource' found in each mapping.
 						GKInstance referenceDb = null;
@@ -68,13 +68,13 @@ public class InferEWAS {
 						
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 						infReferenceGeneProduct.setAttributeValue(ReactomeJavaConstants._displayName, "UniProt:" + homologueId);
-						infReferenceGeneProduct = GenerateInstance.checkForIdenticalInstances(infReferenceGeneProduct);
+						infReferenceGeneProduct = InstanceUtilities.checkForIdenticalInstances(infReferenceGeneProduct);
 						seenRGP.put(homologueId, infReferenceGeneProduct);
 					} else {
 						infReferenceGeneProduct = seenRGP.get(homologueId);
 					}
 					// Creating inferred EWAS
-					GKInstance infEWAS = GenerateInstance.newInferredGKInstance(ewasInst);
+					GKInstance infEWAS = InstanceUtilities.newInferredGKInstance(ewasInst);
 					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);
 					// Method for adding start/end coordinates. It is convoluted due to a quirk with assigning the name differently based on coordinate value (see infer_events.pl lines 1190-1192). 
 					// The name of the entity needs to be at the front of the 'name' array if the coordinate is over 1, and rearranging arrays in Java for this was a bit tricky.
@@ -116,7 +116,7 @@ public class InferEWAS {
 					for (GKInstance modifiedResidue : (Collection<GKInstance>) ewasInst.getAttributeValuesList(ReactomeJavaConstants.hasModifiedResidue))
 					{
 						String infModifiedResidueDisplayName = "";
-						GKInstance infModifiedResidue = GenerateInstance.newInferredGKInstance(modifiedResidue);
+						GKInstance infModifiedResidue = InstanceUtilities.newInferredGKInstance(modifiedResidue);
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.referenceSequence, infReferenceGeneProduct);
 						infModifiedResidueDisplayName += infReferenceGeneProduct.getDisplayName();
 						for (Object coordinate : modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.coordinate))
@@ -162,35 +162,35 @@ public class InferEWAS {
 							infModifiedResidue.setAttributeValue(ReactomeJavaConstants._displayName, newDisplayName);
 							
 						} else {
-							if (infModifiedResidue.getSchemClass().isa("InterChainCrosslinkedResidue")) {
+							if (infModifiedResidue.getSchemClass().isa(ReactomeJavaConstants.InterChainCrosslinkedResidue)) {
 								infModifiedResidue.setDisplayName(infModifiedResidueDisplayName);
 							}
 						}
 						// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which slows things.
-						String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infModifiedResidue.getSchemClass(), infModifiedResidue);
+						String cacheKey = InstanceUtilities.getCacheKey((GKSchemaClass) infModifiedResidue.getSchemClass(), infModifiedResidue);
 						if (residueIdenticals.get(cacheKey) != null)
 						{
 							infModifiedResidue = residueIdenticals.get(cacheKey);
 						} else {
-							infModifiedResidue = GenerateInstance.checkForIdenticalInstances(infModifiedResidue);
+							infModifiedResidue = InstanceUtilities.checkForIdenticalInstances(infModifiedResidue);
 							residueIdenticals.put(cacheKey, infModifiedResidue);
 						}
 						infModifiedResidues.add((GKInstance) infModifiedResidue);
 					}
 					infEWAS.addAttributeValue(ReactomeJavaConstants.hasModifiedResidue, infModifiedResidues);
 					// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which slows things.
-					String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infEWAS.getSchemClass(), infEWAS);
+					String cacheKey = InstanceUtilities.getCacheKey((GKSchemaClass) infEWAS.getSchemClass(), infEWAS);
 					if (ewasIdenticals.get(cacheKey) != null)
 					{
 						infEWAS = ewasIdenticals.get(cacheKey);
 					} else {
-						infEWAS = GenerateInstance.checkForIdenticalInstances(infEWAS);
+						infEWAS = InstanceUtilities.checkForIdenticalInstances(infEWAS);
 						ewasIdenticals.put(cacheKey, infEWAS);
 					}
 
-					infEWAS = GenerateInstance.addAttributeValueIfNeccesary(infEWAS, ewasInst, ReactomeJavaConstants.inferredFrom);
+					infEWAS = InstanceUtilities.addAttributeValueIfNeccesary(infEWAS, ewasInst, ReactomeJavaConstants.inferredFrom);
 					dba.updateInstanceAttribute(infEWAS, ReactomeJavaConstants.inferredFrom);
-					ewasInst = GenerateInstance.addAttributeValueIfNeccesary(ewasInst, infEWAS, ReactomeJavaConstants.inferredTo);
+					ewasInst = InstanceUtilities.addAttributeValueIfNeccesary(ewasInst, infEWAS, ReactomeJavaConstants.inferredTo);
 					dba.updateInstanceAttribute(ewasInst, ReactomeJavaConstants.inferredTo);
 
 					infEWASInstances.add((GKInstance) infEWAS);
@@ -214,7 +214,7 @@ public class InferEWAS {
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, ensgDbInst);
 			referenceDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 			referenceDNAInst.setAttributeValue(ReactomeJavaConstants._displayName, "ENSEMBL:" + ensg);
-			referenceDNAInst = GenerateInstance.checkForIdenticalInstances(referenceDNAInst);
+			referenceDNAInst = InstanceUtilities.checkForIdenticalInstances(referenceDNAInst);
 			referenceDNAInstances.add(referenceDNAInst);
 			if (refDb)
 			{
@@ -229,7 +229,7 @@ public class InferEWAS {
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.referenceDatabase, alternateDbInst);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 				alternateRefDNAInst.setAttributeValue(ReactomeJavaConstants._displayName, alternateDbInst.getAttributeValue(ReactomeJavaConstants.name) + ":" + ensg);
-				alternateRefDNAInst = GenerateInstance.checkForIdenticalInstances(alternateRefDNAInst);
+				alternateRefDNAInst = InstanceUtilities.checkForIdenticalInstances(alternateRefDNAInst);
 				referenceDNAInstances.add(alternateRefDNAInst);
 			}
 		}
@@ -299,7 +299,7 @@ public class InferEWAS {
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
 		enspDbInst.setAttributeValue(ReactomeJavaConstants._displayName, "Ensembl");
-		enspDbInst = GenerateInstance.checkForIdenticalInstances(enspDbInst);
+		enspDbInst = InstanceUtilities.checkForIdenticalInstances(enspDbInst);
 	}
 	
 	// Creates instance pertaining to the species Ensembl Gene DB
@@ -315,7 +315,7 @@ public class InferEWAS {
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
 		ensgDbInst.setAttributeValue(ReactomeJavaConstants._displayName, "ENSEMBL");
-		ensgDbInst = GenerateInstance.checkForIdenticalInstances(ensgDbInst);
+		ensgDbInst = InstanceUtilities.checkForIdenticalInstances(ensgDbInst);
 	}
 	
 	// Create instance pertaining to any alternative reference DB for the species
@@ -329,7 +329,7 @@ public class InferEWAS {
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesAlternateDbUrl);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);
 		alternateDbInst.setAttributeValue(ReactomeJavaConstants._displayName, alternateDbName);
-		alternateDbInst = GenerateInstance.checkForIdenticalInstances(alternateDbInst);
+		alternateDbInst = InstanceUtilities.checkForIdenticalInstances(alternateDbInst);
 		refDb = true;
 	}
 	

@@ -18,7 +18,7 @@ import org.gk.schema.SchemaClass;
 
 
 // GenerateInstance is meant to act as a catch-all for functions that are instance-oriented, such as creating, mocking, or identical-checking.
-public class GenerateInstance {
+public class InstanceUtilities {
 	
 	private static MySQLAdaptor dba; 
 	private static GKInstance speciesInst;
@@ -91,18 +91,19 @@ public class GenerateInstance {
 		mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);
 		mockedInst.addAttributeValue(ReactomeJavaConstants._displayName, "Ghost homologue of " + instanceToBeMocked.getAttributeValue(ReactomeJavaConstants._displayName));
 		mockedInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+		mockedInst.addAttributeValue(ReactomeJavaConstants.compartment, instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.compartment));
 		
 		// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
-		String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) mockedInst.getSchemClass(), mockedInst);
+		String cacheKey = InstanceUtilities.getCacheKey((GKSchemaClass) mockedInst.getSchemClass(), mockedInst);
 		if (mockedIdenticals.get(cacheKey) != null)
 		{
 			mockedInst = mockedIdenticals.get(cacheKey);
 		} else {
-			mockedInst = GenerateInstance.checkForIdenticalInstances(mockedInst);
+			mockedInst = InstanceUtilities.checkForIdenticalInstances(mockedInst);
 			mockedIdenticals.put(cacheKey, mockedInst);
 		}
-		
-		instanceToBeMocked = GenerateInstance.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo);
+
+		instanceToBeMocked = InstanceUtilities.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo);
 		dba.updateInstanceAttribute(instanceToBeMocked, ReactomeJavaConstants.inferredTo);
 		
 		return mockedInst;

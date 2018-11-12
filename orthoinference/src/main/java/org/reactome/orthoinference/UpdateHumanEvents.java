@@ -1,7 +1,10 @@
 package org.reactome.orthoinference;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -33,6 +36,7 @@ public class UpdateHumanEvents {
 				seenHumanHierarchy.add(inferrableInst.getDBID());
 			}
 		}
+		//////
 		HashSet<Long> seenFilledPathway = new HashSet<Long>();
 		for (GKInstance humanPathwayInst : updatedInferrableHumanEvents)
 		{
@@ -41,6 +45,7 @@ public class UpdateHumanEvents {
 				if (humanPathwayInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.hasEvent))
 				{
 					ArrayList<GKInstance> pathwayComponents = new ArrayList<GKInstance>();
+					//TODO: Map array sizes
 					for (GKInstance pathwayComponent : (Collection<GKInstance>) humanPathwayInst.getAttributeValuesList(ReactomeJavaConstants.hasEvent))
 					{
 						if (inferredEvent.get(pathwayComponent) != null)
@@ -50,21 +55,15 @@ public class UpdateHumanEvents {
 					}
 					if (inferredEvent.get(humanPathwayInst).getSchemClass().isValidAttribute(ReactomeJavaConstants.hasEvent))
 					{
-						boolean updateNeeded = false;
 						for (GKInstance pathwayComponent : pathwayComponents) 
 						{
-//							inferredEvent.get(humanPathwayInst) = GenerateInstance.addAttributeValueIfNeccesary(inferredEvent.get(humanPathwayInst), pathwayComponent, ReactomeJavaConstants.hasEvent);
 								GKInstance inferredHumanPathwayInst = inferredEvent.get(humanPathwayInst);
-								inferredHumanPathwayInst = GenerateInstance.addAttributeValueIfNeccesary(inferredHumanPathwayInst, pathwayComponent, ReactomeJavaConstants.hasEvent);
+								inferredHumanPathwayInst = InstanceUtilities.addAttributeValueIfNeccesary(inferredHumanPathwayInst, pathwayComponent, ReactomeJavaConstants.hasEvent);
 								inferredEvent.remove(humanPathwayInst);
 								inferredEvent.put(humanPathwayInst, inferredHumanPathwayInst);
-								updateNeeded = true;
 							
 						}
-						if (updateNeeded)
-						{
-							dba.updateInstanceAttribute(inferredEvent.get(humanPathwayInst), ReactomeJavaConstants.hasEvent);
-						}
+						dba.updateInstanceAttribute(inferredEvent.get(humanPathwayInst), ReactomeJavaConstants.hasEvent);
 					}
 				}
 				seenFilledPathway.add(humanPathwayInst.getDBID());
@@ -104,9 +103,15 @@ public class UpdateHumanEvents {
 			{
 				if (inferredEvent.get(hasEventReferral) == null)
 				{
-					GKInstance infHasEventReferral = GenerateInstance.newInferredGKInstance(hasEventReferral);
+					//TODO: DisplayName?
+					GKInstance infHasEventReferral = InstanceUtilities.newInferredGKInstance(hasEventReferral);
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.name, hasEventReferral.getAttributeValuesList(ReactomeJavaConstants.name));
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
+					if (infHasEventReferral.getSchemClass().isValidAttribute(ReactomeJavaConstants.releaseDate)) {
+						DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+						Date date = new Date();
+						infHasEventReferral.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
+					}
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.inferredFrom, hasEventReferral);
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
 					for (GKInstance goBioProcessInst : (Collection<GKInstance>) hasEventReferral.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess))
@@ -120,15 +125,15 @@ public class UpdateHumanEvents {
 						System.out.println("REACTION");
 						System.exit(0);
 					}
-					
+					infHasEventReferral.setDisplayName(hasEventReferral.getDisplayName());
 					inferredEvent.put(hasEventReferral, infHasEventReferral);
 					dba.storeInstance(infHasEventReferral);
 					hasEventReferral.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infHasEventReferral);
 					dba.updateInstanceAttribute(hasEventReferral, ReactomeJavaConstants.orthologousEvent);
 					
 					updatedInferrableHumanEvents.add(hasEventReferral);
-					UpdateHumanEvents.createHumanHierarchy(hasEventReferral);
 				}
+				UpdateHumanEvents.createHumanHierarchy(hasEventReferral);
 			}
 		}
 	}
@@ -136,38 +141,42 @@ public class UpdateHumanEvents {
 	@SuppressWarnings("unchecked")
 	public static void inferPrecedingEvents() throws InvalidAttributeException, Exception
 	{
-		//TODO: %seen_event
+		HashSet<GKInstance> seenPrecedingEvent = new HashSet<GKInstance>();
 		for (GKInstance inferrableEvent : updatedInferrableHumanEvents)
 		{
-			if (inferrableEvent.getAttributeValue(ReactomeJavaConstants.precedingEvent)!= null)
+			if (!seenPrecedingEvent.contains(inferrableEvent)) 
 			{
-				ArrayList<GKInstance> precedingEventInstances = new ArrayList<GKInstance>();
-				for (GKInstance precedingEvent : (Collection<GKInstance>) inferrableEvent.getAttributeValuesList(ReactomeJavaConstants.precedingEvent))
+				if (inferrableEvent.getAttributeValue(ReactomeJavaConstants.precedingEvent)!= null)
 				{
-					if (inferredEvent.get(precedingEvent) != null)
+					ArrayList<GKInstance> precedingEventInstances = new ArrayList<GKInstance>();
+					for (GKInstance precedingEvent : (Collection<GKInstance>) inferrableEvent.getAttributeValuesList(ReactomeJavaConstants.precedingEvent))
 					{
-						precedingEventInstances.add(inferredEvent.get(precedingEvent));
+						if (inferredEvent.get(precedingEvent) != null)
+						{
+							precedingEventInstances.add(inferredEvent.get(precedingEvent));
+						}
+					}
+					
+					HashSet<String> seen = new HashSet<String>();
+					for (GKInstance precedingEvent : (Collection<GKInstance>) inferredEvent.get(inferrableEvent).getAttributeValuesList(ReactomeJavaConstants.precedingEvent))
+					{
+						seen.add(precedingEvent.getDBID().toString());
+					}
+					ArrayList<GKInstance> updatedPrecedingEventInstances = new ArrayList<GKInstance>();
+					for (GKInstance precedingEvent : precedingEventInstances)
+					{
+						if (!seen.contains(precedingEvent.getDBID().toString()))
+						{
+							updatedPrecedingEventInstances.add(precedingEvent);
+						}
+					}
+					if (updatedPrecedingEventInstances != null && updatedPrecedingEventInstances.size() > 0)
+					{
+						inferredEvent.get(inferrableEvent).addAttributeValue(ReactomeJavaConstants.precedingEvent, updatedPrecedingEventInstances);
+						dba.updateInstanceAttribute(inferredEvent.get(inferrableEvent), ReactomeJavaConstants.precedingEvent);
 					}
 				}
-				
-				HashSet<String> seen = new HashSet<String>();
-				for (GKInstance precedingEvent : (Collection<GKInstance>) inferredEvent.get(inferrableEvent).getAttributeValuesList(ReactomeJavaConstants.precedingEvent))
-				{
-					seen.add(precedingEvent.getDBID().toString());
-				}
-				ArrayList<GKInstance> updatedPrecedingEventInstances = new ArrayList<GKInstance>();
-				for (GKInstance precedingEvent : precedingEventInstances)
-				{
-					if (!seen.contains(precedingEvent.getDBID().toString()))
-					{
-						updatedPrecedingEventInstances.add(precedingEvent);
-					}
-				}
-				if (updatedPrecedingEventInstances != null && updatedPrecedingEventInstances.size() > 0)
-				{
-					inferredEvent.get(inferrableEvent).addAttributeValue(ReactomeJavaConstants.precedingEvent, updatedPrecedingEventInstances);
-					dba.updateInstanceAttribute(inferredEvent.get(inferrableEvent), ReactomeJavaConstants.precedingEvent);
-				}
+				seenPrecedingEvent.add(inferrableEvent);
 			}
 		}
 	}

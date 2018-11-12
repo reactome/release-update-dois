@@ -56,7 +56,7 @@ public class OrthologousEntity {
 					} else {
 						if (override)
 						{
-							GKInstance mockedInst = GenerateInstance.newMockGKInstance(entityInst);						
+							GKInstance mockedInst = InstanceUtilities.newMockGKInstance(entityInst);						
 							return mockedInst;
 						}
 					}
@@ -129,7 +129,7 @@ public class OrthologousEntity {
 							}
 						}
 					}
-					newCompartmentInst = GenerateInstance.checkForIdenticalInstances(newCompartmentInst);
+					newCompartmentInst = InstanceUtilities.checkForIdenticalInstances(newCompartmentInst);
 					definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, newCompartmentInst);
 				}
 				
@@ -138,17 +138,17 @@ public class OrthologousEntity {
 				String displayName = (String) definedSetInst.getAttributeValue(ReactomeJavaConstants.name) + " [" +((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.compartment)).getDisplayName() + "]";
 				definedSetInst.setAttributeValue(ReactomeJavaConstants._displayName, displayName);
 				// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
-				String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) definedSetInst.getSchemClass(), definedSetInst);
+				String cacheKey = InstanceUtilities.getCacheKey((GKSchemaClass) definedSetInst.getSchemClass(), definedSetInst);
 				if (definedSetIdenticals.get(cacheKey) != null)
 				{
 					definedSetInst = definedSetIdenticals.get(cacheKey);
 				} else {
-					definedSetInst = GenerateInstance.checkForIdenticalInstances(definedSetInst);
+					definedSetInst = InstanceUtilities.checkForIdenticalInstances(definedSetInst);
 					definedSetIdenticals.put(cacheKey, definedSetInst);
 				}
-				definedSetInst = GenerateInstance.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom);
+				definedSetInst = InstanceUtilities.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom);
 				dba.updateInstanceAttribute(definedSetInst, ReactomeJavaConstants.inferredFrom);
-				ewasInst = GenerateInstance.addAttributeValueIfNeccesary(ewasInst, definedSetInst, ReactomeJavaConstants.inferredTo);
+				ewasInst = InstanceUtilities.addAttributeValueIfNeccesary(ewasInst, definedSetInst, ReactomeJavaConstants.inferredTo);
 				dba.updateInstanceAttribute(ewasInst, ReactomeJavaConstants.inferredTo);
 				homolEWAS.put(ewasInst, definedSetInst);
 			} else if (infEWASInstances.size() == 1)
@@ -156,7 +156,7 @@ public class OrthologousEntity {
 				homolEWAS.put(ewasInst, infEWASInstances.get(0));
 			} else {
 				if (override) {
-					return GenerateInstance.newMockGKInstance(ewasInst);
+					return InstanceUtilities.newMockGKInstance(ewasInst);
 				} else {
 					return nullInst;
 				}
@@ -188,7 +188,7 @@ public class OrthologousEntity {
 				}
 			}
 			
-			GKInstance infComplexInst = GenerateInstance.newInferredGKInstance(complexInst);
+			GKInstance infComplexInst = InstanceUtilities.newInferredGKInstance(complexInst);
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.summation, complexSummationInst);
 			infComplexInst.addAttributeValue(ReactomeJavaConstants.name, complexInst.getAttributeValue(ReactomeJavaConstants.name));
 			ArrayList<GKInstance> infComponents = new ArrayList<GKInstance>();
@@ -210,20 +210,20 @@ public class OrthologousEntity {
 			infComplexInst.setAttributeValue(ReactomeJavaConstants._displayName, complexInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			
 			// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
-			String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infComplexInst.getSchemClass(), infComplexInst);
+			String cacheKey = InstanceUtilities.getCacheKey((GKSchemaClass) infComplexInst.getSchemClass(), infComplexInst);
 			if (complexIdenticals.get(cacheKey) != null)
 			{
 				infComplexInst = complexIdenticals.get(cacheKey);
 			} else {
-				infComplexInst = GenerateInstance.checkForIdenticalInstances(infComplexInst);
+				infComplexInst = InstanceUtilities.checkForIdenticalInstances(infComplexInst);
 				complexIdenticals.put(cacheKey, infComplexInst);
 			}
 
 			if (infComplexInst.getDBID() != complexInst.getDBID())
 			{
-				infComplexInst = GenerateInstance.addAttributeValueIfNeccesary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom);
+				infComplexInst = InstanceUtilities.addAttributeValueIfNeccesary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom);
 				dba.updateInstanceAttribute(infComplexInst, ReactomeJavaConstants.inferredFrom);
-				complexInst = GenerateInstance.addAttributeValueIfNeccesary(complexInst, infComplexInst, ReactomeJavaConstants.inferredTo);
+				complexInst = InstanceUtilities.addAttributeValueIfNeccesary(complexInst, infComplexInst, ReactomeJavaConstants.inferredTo);
 				dba.updateInstanceAttribute(complexInst, ReactomeJavaConstants.inferredTo);
 			}
 			
@@ -258,7 +258,7 @@ public class OrthologousEntity {
 				}
 			}
 			// Begin inference of EntitySet
-			GKInstance infEntitySetInst = GenerateInstance.newInferredGKInstance(entitySetInst);
+			GKInstance infEntitySetInst = InstanceUtilities.newInferredGKInstance(entitySetInst);
 			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.name, entitySetInst.getAttributeValuesList(ReactomeJavaConstants.name));
 			infEntitySetInst.addAttributeValue(ReactomeJavaConstants.hasMember, membersList);
 			// Begin specific inference process for each type of DefinedSet entity.
@@ -315,7 +315,7 @@ public class OrthologousEntity {
 						} else {
 							if (override)
 							{
-								infEntitySetInst = GenerateInstance.newMockGKInstance(entitySetInst);
+								infEntitySetInst = InstanceUtilities.newMockGKInstance(entitySetInst);
 							} else {
 								return nullInst;
 							}
@@ -327,7 +327,7 @@ public class OrthologousEntity {
 					{
 						if (override)
 						{
-							return GenerateInstance.newMockGKInstance(entitySetInst);
+							return InstanceUtilities.newMockGKInstance(entitySetInst);
 						} else {
 							return nullInst;
 						}
@@ -340,19 +340,19 @@ public class OrthologousEntity {
 			}
 			infEntitySetInst.setAttributeValue(ReactomeJavaConstants._displayName, entitySetInst.getAttributeValue(ReactomeJavaConstants._displayName));
 			// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
-			String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infEntitySetInst.getSchemClass(), infEntitySetInst);
+			String cacheKey = InstanceUtilities.getCacheKey((GKSchemaClass) infEntitySetInst.getSchemClass(), infEntitySetInst);
 			if (entitySetIdenticals.get(cacheKey) != null)
 			{
 				infEntitySetInst = entitySetIdenticals.get(cacheKey);
 			} else {
-				infEntitySetInst = GenerateInstance.checkForIdenticalInstances(infEntitySetInst);
+				infEntitySetInst = InstanceUtilities.checkForIdenticalInstances(infEntitySetInst);
 				entitySetIdenticals.put(cacheKey, infEntitySetInst);
 			}
 			if (infEntitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entitySetInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 			{
-				infEntitySetInst = GenerateInstance.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom);
+				infEntitySetInst = InstanceUtilities.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom);
 				dba.updateInstanceAttribute(infEntitySetInst, ReactomeJavaConstants.inferredFrom);
-				entitySetInst = GenerateInstance.addAttributeValueIfNeccesary(entitySetInst, infEntitySetInst, ReactomeJavaConstants.inferredTo);
+				entitySetInst = InstanceUtilities.addAttributeValueIfNeccesary(entitySetInst, infEntitySetInst, ReactomeJavaConstants.inferredTo);
 				dba.updateInstanceAttribute(entitySetInst, ReactomeJavaConstants.inferredTo);
 			}
 			if (override)
@@ -382,7 +382,7 @@ public class OrthologousEntity {
 		String complexSummationText = "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.";
 		complexSummationInst.addAttributeValue(ReactomeJavaConstants.text, complexSummationText);
 		complexSummationInst.setAttributeValue(ReactomeJavaConstants._displayName, complexSummationText);
-		complexSummationInst = GenerateInstance.checkForIdenticalInstances(complexSummationInst);
+		complexSummationInst = InstanceUtilities.checkForIdenticalInstances(complexSummationInst);
 	}
 	
 	public static void resetVariables()

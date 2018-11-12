@@ -45,7 +45,7 @@ public class InferReaction {
 		{
 			///// The beginning of an inference process:
 			// Creates inferred instance of reaction.
-			GKInstance infReactionInst = GenerateInstance.newInferredGKInstance(reactionInst);
+			GKInstance infReactionInst = InstanceUtilities.newInferredGKInstance(reactionInst);
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.name, reactionInst.getAttributeValuesList(ReactomeJavaConstants.name));
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.goBiologicalProcess, reactionInst.getAttributeValue(ReactomeJavaConstants.goBiologicalProcess));
 			infReactionInst.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
@@ -82,15 +82,15 @@ public class InferReaction {
 								infReactionInst.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
 							}
 							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
-							// add a new inferred instance, the storeInstance method is just called here. 
+							// add a new inferred instance, the storeInstance method is just called here. 							
 //							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
 							dba.storeInstance(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom))
 							{
-								infReactionInst = GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom);
+								infReactionInst = InstanceUtilities.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.inferredFrom);
 								dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.inferredFrom);
 							}
-							infReactionInst = GenerateInstance.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent);
+							infReactionInst = InstanceUtilities.addAttributeValueIfNeccesary(infReactionInst, reactionInst, ReactomeJavaConstants.orthologousEvent);
 							dba.updateInstanceAttribute(infReactionInst, ReactomeJavaConstants.orthologousEvent);
 							reactionInst.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infReactionInst);
 							dba.updateInstanceAttribute(reactionInst, ReactomeJavaConstants.orthologousEvent);
@@ -101,7 +101,7 @@ public class InferReaction {
 							{
 								for (GKInstance infRegulation : inferredRegulations)
 								{
-									infRegulation = GenerateInstance.checkForIdenticalInstances(infRegulation);
+									infRegulation = InstanceUtilities.checkForIdenticalInstances(infRegulation);
 									infReactionInst.addAttributeValue("regulatedBy", infRegulation);
 									dba.updateInstanceAttribute(infReactionInst, "regulatedBy");
 								}
@@ -147,7 +147,7 @@ public class InferReaction {
 		{
 			if (inferredCatalyst.get(catalystInst) == null)
 			{
-				GKInstance infCatalystInst = GenerateInstance.newInferredGKInstance(catalystInst);
+				GKInstance infCatalystInst = InstanceUtilities.newInferredGKInstance(catalystInst);
 				infCatalystInst.setDbAdaptor(dba);
 				infCatalystInst.addAttributeValue(ReactomeJavaConstants.activity, catalystInst.getAttributeValue(ReactomeJavaConstants.activity));
 				if (catalystInst.getAttributeValuesList(ReactomeJavaConstants.physicalEntity) != null)
@@ -172,7 +172,7 @@ public class InferReaction {
 				}
 				infCatalystInst.addAttributeValue(ReactomeJavaConstants.activeUnit, activeUnits);
 				infCatalystInst.addAttributeValue(ReactomeJavaConstants._displayName, catalystInst.getAttributeValue(ReactomeJavaConstants._displayName));
-				infCatalystInst = GenerateInstance.checkForIdenticalInstances(infCatalystInst);
+				infCatalystInst = InstanceUtilities.checkForIdenticalInstances(infCatalystInst);
 				inferredCatalyst.put(catalystInst, infCatalystInst);
 				infReactionInst.addAttributeValue(ReactomeJavaConstants.catalystActivity, infCatalystInst);
 			} 
@@ -212,7 +212,7 @@ public class InferReaction {
 					continue;
 				}
 			}
-			GKInstance infRegulationInst = GenerateInstance.newInferredGKInstance(regulatedInst);
+			GKInstance infRegulationInst = InstanceUtilities.newInferredGKInstance(regulatedInst);
 			infRegulationInst.setDbAdaptor(dba);
 			infRegulationInst.addAttributeValue(ReactomeJavaConstants.regulator, infRegulatorInst);
 			infRegulationInst.addAttributeValue(ReactomeJavaConstants._displayName, regulatedInst.getAttributeValue(ReactomeJavaConstants._displayName));
