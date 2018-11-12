@@ -83,6 +83,7 @@ public class InferReaction {
 							}
 							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
 							// add a new inferred instance, the storeInstance method is just called here. 
+//							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
 							dba.storeInstance(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom))
 							{

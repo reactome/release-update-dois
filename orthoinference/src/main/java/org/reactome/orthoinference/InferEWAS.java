@@ -46,6 +46,7 @@ public class InferEWAS {
 					String[] splitHomologue = homologue.toString().split(":");
 					String homologueSource = splitHomologue[0];
 					String homologueId = splitHomologue[1];
+					
 					GKInstance infReferenceGeneProduct = null;
 					if (seenRGP.get(homologueId) == null)
 					{
@@ -114,8 +115,10 @@ public class InferEWAS {
 					boolean phosFlag = true;
 					for (GKInstance modifiedResidue : (Collection<GKInstance>) ewasInst.getAttributeValuesList(ReactomeJavaConstants.hasModifiedResidue))
 					{
+						String infModifiedResidueDisplayName = "";
 						GKInstance infModifiedResidue = GenerateInstance.newInferredGKInstance(modifiedResidue);
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.referenceSequence, infReferenceGeneProduct);
+						infModifiedResidueDisplayName += infReferenceGeneProduct.getDisplayName();
 						for (Object coordinate : modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.coordinate))
 						{
 							infModifiedResidue.addAttributeValue(ReactomeJavaConstants.coordinate, coordinate);
@@ -126,6 +129,7 @@ public class InferEWAS {
 							{
 								infModifiedResidue.addAttributeValue(ReactomeJavaConstants.modification, modified);
 							}	
+							infModifiedResidueDisplayName += " " + ((GKInstance) infModifiedResidue.getAttributeValue(ReactomeJavaConstants.modification)).getDisplayName();
 						}
 						// Update name depending on the presence of 'phospho' in the Psimod's name attribute
 						GKInstance psiMod = (GKInstance) modifiedResidue.getAttributeValue(ReactomeJavaConstants.psiMod);
@@ -139,7 +143,8 @@ public class InferEWAS {
 							// This would mean attributes without the 'phospho- ' addition would retain their array of names, while attributes containing 'phospho-' would only contain a single name attribute. 
 							// I've assumed this is incorrect for the rewrite -- Instances that modify the name attribute to prepend 'phospho-' retain their name array. (Justin Cook 2018)
 							infEWAS.addAttributeValue(ReactomeJavaConstants.name, nameValues); 
-							infEWAS.setAttributeValue(ReactomeJavaConstants._displayName, phosphoName);
+							String phosphoDisplayName = phosphoName + " [" +((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.compartment)).getDisplayName() + "]";
+							infEWAS.setAttributeValue(ReactomeJavaConstants._displayName, phosphoDisplayName);
 							// This flag ensures the 'phospho-' is only prepended once.
 							phosFlag = false;
 						}
@@ -147,8 +152,20 @@ public class InferEWAS {
 						{
 							infModifiedResidue.addAttributeValue(ReactomeJavaConstants.psiMod, psiModInst);
 						}
+						infModifiedResidueDisplayName += " " + ((GKInstance) infModifiedResidue.getAttributeValue(ReactomeJavaConstants.psiMod)).getDisplayName();
 						infModifiedResidue.setAttributeValue(ReactomeJavaConstants._displayName, modifiedResidue.getAttributeValue(ReactomeJavaConstants._displayName));
-						
+						// Update name to reflect that coordinate values are taken from humans. This takes place after cache retrieval, since the name from DB won't contain updated name.
+						if (modifiedResidue.getAttributeValue(ReactomeJavaConstants.coordinate) != null)
+						{
+							// TODO: Abstract this out so that its 'in fromSpecies' if code ever wants to infer from a different species than Humans.
+							String newDisplayName = modifiedResidue.getAttributeValue(ReactomeJavaConstants._displayName).toString() + " (in Homo sapiens)";
+							infModifiedResidue.setAttributeValue(ReactomeJavaConstants._displayName, newDisplayName);
+							
+						} else {
+							if (infModifiedResidue.getSchemClass().isa("InterChainCrosslinkedResidue")) {
+								infModifiedResidue.setDisplayName(infModifiedResidueDisplayName);
+							}
+						}
 						// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which slows things.
 						String cacheKey = GenerateInstance.getCacheKey((GKSchemaClass) infModifiedResidue.getSchemClass(), infModifiedResidue);
 						if (residueIdenticals.get(cacheKey) != null)
@@ -157,13 +174,6 @@ public class InferEWAS {
 						} else {
 							infModifiedResidue = GenerateInstance.checkForIdenticalInstances(infModifiedResidue);
 							residueIdenticals.put(cacheKey, infModifiedResidue);
-						}
-						// Update name to reflect that coordinate values are taken from humans. This takes place after cache retrieval, since the name from DB won't contain updated name.
-						if (modifiedResidue.getAttributeValue(ReactomeJavaConstants.coordinate) != null)
-						{
-							// TODO: Abstract this out so that its 'in fromSpecies' if code ever wants to infer from a different species than Humans.
-							String newDisplayName = modifiedResidue.getAttributeValue(ReactomeJavaConstants._displayName).toString() + " (in Homo sapiens)";
-							infModifiedResidue.setAttributeValue(ReactomeJavaConstants._displayName, newDisplayName);
 						}
 						infModifiedResidues.add((GKInstance) infModifiedResidue);
 					}

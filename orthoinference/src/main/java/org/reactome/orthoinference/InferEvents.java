@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
 import org.gk.model.GKInstance;
@@ -55,7 +56,7 @@ public class InferEvents
 	public static void eventInferrer(Properties props, String pathToConfig, String pathToSpeciesConfig) throws Exception
 	{
 		// Set up DB adaptor using config.properties file
-		Object speciesToInferFromLong = "Homo sapiens";
+		String speciesToInferFromLong = "Homo sapiens";
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
 		String database = props.getProperty("database");
@@ -74,7 +75,7 @@ public class InferEvents
 		SkipTests.getSkipList("normal_event_skip_list.txt");
 		
 		// For now an array of species names are used. I will likely change it so that the wrapper calls each organism individually during release.
-		ArrayList<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
+		List<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
 
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
@@ -198,7 +199,7 @@ public class InferEvents
 						continue;
 					}
 					// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
-					InferReaction.reactionInferrer(reactionInst);
+						InferReaction.reactionInferrer(reactionInst);
 				}
 			}
 		}

@@ -42,6 +42,9 @@ public class GenerateInstance {
 	{
 		GKInstance inferredInst = null;
 		String reactionClass = instanceToBeInferred.getSchemClass().getName();
+		if (reactionClass.matches(ReactomeJavaConstants.ReferenceIsoform)) {
+			reactionClass = ReactomeJavaConstants.ReferenceGeneProduct;
+		}
 		SchemaClass instanceClass = dba.getSchema().getClassByName(reactionClass);
 		inferredInst = new GKInstance(instanceClass);
 		inferredInst.setDbAdaptor(dba);
