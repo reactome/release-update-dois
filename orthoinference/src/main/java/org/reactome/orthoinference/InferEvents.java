@@ -53,7 +53,7 @@ public class InferEvents
 	private static ArrayList<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 
 	@SuppressWarnings("unchecked")
-	public static void eventInferrer(Properties props, String pathToConfig, String pathToSpeciesConfig) throws Exception
+	public static void eventInferrer(Properties props, String pathToConfig, String pathToSpeciesConfig, String species) throws Exception
 	{
 		// Set up DB adaptor using config.properties file
 		String speciesToInferFromLong = "Homo sapiens";
@@ -73,15 +73,14 @@ public class InferEvents
 		UpdateHumanEvents.setAdaptor(dbAdaptor);
 		
 		SkipTests.getSkipList("normal_event_skip_list.txt");
-		
 		// For now an array of species names are used. I will likely change it so that the wrapper calls each organism individually during release.
-		List<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
+//		List<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
 
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
 		JSONObject jsonObject = (JSONObject) obj;
-		for (String species : speciesList)
-		{
+//		for (String species : speciesList)
+//		{
 			// Proper logging will be implemented before Release
 			JSONObject speciesObject = (JSONObject) jsonObject.get(species);
 			JSONArray speciesNames = (JSONArray) speciesObject.get("name");
@@ -103,6 +102,12 @@ public class InferEvents
 			inferredFile.close();
 			InferReaction.setEligibleFilename(eligibleFilename);
 			InferReaction.setInferredFilename(inferredFilename);
+			
+			String classFilename = "classes_" + species + ".txt";
+			PrintWriter classFile = new PrintWriter(classFilename);
+			classFile.close();
+			InstanceUtilities.setClassFilename(classFilename);
+			InferReaction.setClassFilename(classFilename);
 
 			// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
 			InferEvents.setInstanceEdits();
@@ -113,7 +118,7 @@ public class InferEvents
 				homologueMappings = new HashMap<String,String[]>();
 			} catch (FileNotFoundException e) {
 				System.out.println("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
-				continue;
+//				continue;
 			}
 			InferEWAS.readENSGMappingFile(species);
 			InferEWAS.createUniprotDbInst();
@@ -199,6 +204,7 @@ public class InferEvents
 						continue;
 					}
 					// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
+					System.out.println("\t" + reactionInst);
 					InferReaction.reactionInferrer(reactionInst);
 				}
 			}
@@ -209,7 +215,7 @@ public class InferEvents
 		InferEvents.resetVariables();
 //		System.gc();
 		System.out.println("Finished orthoinference of " + speciesName + ".");
-		}
+//		}
 	}
 
 	public static void outputReport(String species) throws IOException
@@ -217,8 +223,8 @@ public class InferEvents
 		int[] counts = InferReaction.getCounts();
 		int percent = 100*counts[1]/counts[0];
 		// TODO: Config out the file name
-		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_65.txt");
-		reportFile.close();
+//		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_65.txt");
+//		reportFile.close();
 		String results = "hsap to " + species + ":\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
 		Files.write(Paths.get("report_ortho_inference_test_reactome_65.txt"), results.getBytes(), StandardOpenOption.APPEND);
 	}

@@ -82,8 +82,12 @@ public class InferReaction {
 								infReactionInst.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
 							}
 							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
-							// add a new inferred instance, the storeInstance method is just called here. 							
+							// add a new inferred instance, the storeInstance method is just called here. 
+							
+							
 //							infReactionInst = GenerateInstance.checkForIdenticalInstances(infReactionInst);
+							String classInfo = "[" + infReactionInst.getSchemClass().getName() + "] ~ " + infReactionInst.getDisplayName() + "\n";
+							Files.write(Paths.get(classFilename), classInfo.getBytes(), StandardOpenOption.APPEND);
 							dba.storeInstance(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.inferredFrom))
 							{
@@ -269,5 +273,9 @@ public class InferReaction {
 		eligibleCount = 0;
 		inferredCount = 0;
 		inferrableHumanEvents = new ArrayList<GKInstance>();
+	}
+	
+	public static void setClassFilename(String filename) {
+		classFilename = filename;
 	}
 }

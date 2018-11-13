@@ -128,8 +128,10 @@ public class InferEWAS {
 							for (GKInstance modified : (Collection<GKInstance>) modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.modification))
 							{
 								infModifiedResidue.addAttributeValue(ReactomeJavaConstants.modification, modified);
-							}	
-							infModifiedResidueDisplayName += " " + ((GKInstance) infModifiedResidue.getAttributeValue(ReactomeJavaConstants.modification)).getDisplayName();
+							}
+							if (infModifiedResidue.getAttributeValue("modification") != null) {
+								infModifiedResidueDisplayName += " " + ((GKInstance) infModifiedResidue.getAttributeValue(ReactomeJavaConstants.modification)).getDisplayName();
+							}
 						}
 						// Update name depending on the presence of 'phospho' in the Psimod's name attribute
 						GKInstance psiMod = (GKInstance) modifiedResidue.getAttributeValue(ReactomeJavaConstants.psiMod);
@@ -152,7 +154,9 @@ public class InferEWAS {
 						{
 							infModifiedResidue.addAttributeValue(ReactomeJavaConstants.psiMod, psiModInst);
 						}
-						infModifiedResidueDisplayName += " " + ((GKInstance) infModifiedResidue.getAttributeValue(ReactomeJavaConstants.psiMod)).getDisplayName();
+						if (infModifiedResidue.getAttributeValue(ReactomeJavaConstants.psiMod) != null) {
+							infModifiedResidueDisplayName += " " + ((GKInstance) infModifiedResidue.getAttributeValue(ReactomeJavaConstants.psiMod)).getDisplayName();
+						}
 						infModifiedResidue.setAttributeValue(ReactomeJavaConstants._displayName, modifiedResidue.getAttributeValue(ReactomeJavaConstants._displayName));
 						// Update name to reflect that coordinate values are taken from humans. This takes place after cache retrieval, since the name from DB won't contain updated name.
 						if (modifiedResidue.getAttributeValue(ReactomeJavaConstants.coordinate) != null)

@@ -12,15 +12,15 @@ public class Main {
 		String pathToConfig = "src/main/resources/config.properties";
 		String pathToSpeciesConfig = "src/main/resources/Species.json";
 		
-		if (args.length > 0 && !args[0].equals(""))
-		{
-			pathToConfig = args[0];
-		}
+//		if (args.length > 0 && !args[0].equals(""))
+//		{
+//			pathToConfig = args[0];
+//		}
 		
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
-		
-		InferEvents.eventInferrer(props, pathToConfig, pathToSpeciesConfig);
+		String speciesCode = args[0];
+		InferEvents.eventInferrer(props, pathToConfig, pathToSpeciesConfig, speciesCode);
 	}
 
 }

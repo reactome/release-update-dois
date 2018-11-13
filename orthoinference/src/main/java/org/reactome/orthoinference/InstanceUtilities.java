@@ -123,6 +123,8 @@ public class InstanceUtilities {
 				return identicalInstances.iterator().next();
 			}
 		} else {
+			String classInfo = "[" + inferredInst.getSchemClass().getName() + "] ~ " + inferredInst.getDisplayName() + "\n";
+			Files.write(Paths.get(classFilename), classInfo.getBytes(), StandardOpenOption.APPEND);
 			dba.storeInstance(inferredInst);
 			return inferredInst;
 		}
@@ -200,5 +202,9 @@ public class InstanceUtilities {
 	public static void setInstanceEdit(GKInstance instanceEditCopy) 
 	{
 		instanceEdit = instanceEditCopy;
+	}
+	
+	public static void setClassFilename(String filename) {
+		classFilename = filename;
 	}
 }
