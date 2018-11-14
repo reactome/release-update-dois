@@ -90,6 +90,7 @@ public class InstanceUtilities {
 		String mockedName = (String) instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.name);
 		mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);
 		mockedInst.addAttributeValue(ReactomeJavaConstants._displayName, "Ghost homologue of " + instanceToBeMocked.getAttributeValue(ReactomeJavaConstants._displayName));
+		mockedInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, instanceToBeMocked);
 		mockedInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
 		mockedInst.addAttributeValue(ReactomeJavaConstants.compartment, instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.compartment));
 		
