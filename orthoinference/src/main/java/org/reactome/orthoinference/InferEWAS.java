@@ -170,6 +170,20 @@ public class InferEWAS {
 								infModifiedResidue.setDisplayName(infModifiedResidueDisplayName);
 							}
 						}
+						// Database-checker gave errors related to missing 'secondReferenceSequence' and 'equivalentTo' attributes in InterChainCrosslinkedResidues
+						// This was because they were never populated. This block is the fix.
+						if (infModifiedResidue.getSchemClass().isa(ReactomeJavaConstants.InterChainCrosslinkedResidue)) {
+							if (modifiedResidue.getAttributeValue(ReactomeJavaConstants.secondReferenceSequence) != null) {
+								for (Object secondRefSequence : modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.secondReferenceSequence)) {
+									infModifiedResidue.addAttributeValue(ReactomeJavaConstants.secondReferenceSequence, secondRefSequence);
+								}
+							}
+							if (modifiedResidue.getAttributeValue("equivalentTo") != null) {
+								for (Object equivalentToInst : modifiedResidue.getAttributeValuesList("equivalentTo")) {
+									infModifiedResidue.addAttributeValue("equivalentTo", equivalentToInst);
+								}
+							}
+						}
 						// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which slows things.
 						String cacheKey = InstanceUtilities.getCacheKey((GKSchemaClass) infModifiedResidue.getSchemClass(), infModifiedResidue);
 						if (residueIdenticals.get(cacheKey) != null)

@@ -102,12 +102,6 @@ public class InferEvents
 			inferredFile.close();
 			InferReaction.setEligibleFilename(eligibleFilename);
 			InferReaction.setInferredFilename(inferredFilename);
-			
-			String classFilename = "classes_" + species + ".txt";
-			PrintWriter classFile = new PrintWriter(classFilename);
-			classFile.close();
-			InstanceUtilities.setClassFilename(classFilename);
-			InferReaction.setClassFilename(classFilename);
 
 			// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
 			InferEvents.setInstanceEdits();
@@ -205,7 +199,11 @@ public class InferEvents
 					}
 					// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
 					System.out.println("\t" + reactionInst);
-					InferReaction.reactionInferrer(reactionInst);
+					try {
+						InferReaction.reactionInferrer(reactionInst);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -213,7 +211,7 @@ public class InferEvents
 		UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
 		InferEvents.outputReport(species);
 		InferEvents.resetVariables();
-//		System.gc();
+		System.gc();
 		System.out.println("Finished orthoinference of " + speciesName + ".");
 //		}
 	}
@@ -223,10 +221,10 @@ public class InferEvents
 		int[] counts = InferReaction.getCounts();
 		int percent = 100*counts[1]/counts[0];
 		// TODO: Config out the file name
-//		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_65.txt");
-//		reportFile.close();
-		String results = "hsap to " + species + ":\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)";
-		Files.write(Paths.get("report_ortho_inference_test_reactome_65.txt"), results.getBytes(), StandardOpenOption.APPEND);
+		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_67.txt");
+		reportFile.close();
+		String results = "hsap to " + species + ":\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)\n";
+		Files.write(Paths.get("report_ortho_inference_test_reactome_67.txt"), results.getBytes(), StandardOpenOption.APPEND);
 	}
 
 	// Reduce memory usage after species inference complete

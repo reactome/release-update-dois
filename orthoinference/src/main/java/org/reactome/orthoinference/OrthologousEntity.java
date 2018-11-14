@@ -310,6 +310,29 @@ public class OrthologousEntity {
 								definedSetInst.setDbAdaptor(dba);
 								definedSetInst.setAttributeValue(ReactomeJavaConstants.name, infEntitySetInst.getAttributeValuesList(ReactomeJavaConstants.name));
 								definedSetInst.setAttributeValue(ReactomeJavaConstants.hasMember, membersList);
+								//TODO: CompartmentUtils
+								if (entitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.compartment) && entitySetInst.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
+									for (Object compartmentInst : entitySetInst.getAttributeValuesList(ReactomeJavaConstants.compartment)) {
+										GKInstance compartmentInstGK = (GKInstance) compartmentInst;
+										if (compartmentInstGK.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
+											definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInstGK);
+										} else {
+											SchemaClass compartmentClass = dba.getSchema().getClassByName(ReactomeJavaConstants.Compartment);
+											GKInstance newCompartmentInst = new GKInstance(compartmentClass);
+											newCompartmentInst.setDbAdaptor(dba);
+											Collection<GKSchemaAttribute> compartmentAttributes = compartmentClass.getAttributes();
+											for (GKSchemaAttribute compartmentAttribute : compartmentAttributes) {
+												if (!compartmentAttribute.getName().matches("DB_ID") && compartmentInstGK.getAttributeValue(compartmentAttribute.getName()) != null) {
+													for (Object attribute : compartmentInstGK.getAttributeValuesList(compartmentAttribute.getName())) {
+														newCompartmentInst.addAttributeValue(compartmentAttribute.getName(), attribute);
+													}
+												}
+											}
+											newCompartmentInst = InstanceUtilities.checkForIdenticalInstances(newCompartmentInst);
+											definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, newCompartmentInst);
+										}
+									}
+								}
 								infEntitySetInst = definedSetInst;
 							}
 						} else {
