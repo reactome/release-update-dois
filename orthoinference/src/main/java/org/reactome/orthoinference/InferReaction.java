@@ -77,9 +77,7 @@ public class InferReaction {
 								return;
 							}
 							if (infReactionInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.releaseDate)) {
-								DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-								Date date = new Date();
-								infReactionInst.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
+								infReactionInst.addAttributeValue(ReactomeJavaConstants.releaseDate, "2018-12-13");
 							}
 							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
 							// add a new inferred instance, the storeInstance method is just called here. 

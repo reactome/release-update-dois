@@ -108,9 +108,7 @@ public class UpdateHumanEvents {
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.name, hasEventReferral.getAttributeValuesList(ReactomeJavaConstants.name));
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
 					if (infHasEventReferral.getSchemClass().isValidAttribute(ReactomeJavaConstants.releaseDate)) {
-						DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-						Date date = new Date();
-						infHasEventReferral.addAttributeValue(ReactomeJavaConstants.releaseDate, dateFormat.format(date));
+						infHasEventReferral.addAttributeValue(ReactomeJavaConstants.releaseDate, "2018-12-13");
 					}
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.inferredFrom, hasEventReferral);
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
