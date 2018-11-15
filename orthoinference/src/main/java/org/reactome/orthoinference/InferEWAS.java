@@ -317,7 +317,8 @@ public class InferEWAS {
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		enspDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnspAccessUrl);
 		enspDbInst.setAttributeValue(ReactomeJavaConstants._displayName, "Ensembl");
-		enspDbInst = InstanceUtilities.checkForIdenticalInstances(enspDbInst);
+//		enspDbInst = InstanceUtilities.checkForIdenticalInstances(enspDbInst);
+		dba.storeInstance(enspDbInst);
 	}
 	
 	// Creates instance pertaining to the species Ensembl Gene DB
@@ -333,7 +334,8 @@ public class InferEWAS {
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesReferenceDbUrl);
 		ensgDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesEnsgAccessUrl);
 		ensgDbInst.setAttributeValue(ReactomeJavaConstants._displayName, "ENSEMBL");
-		ensgDbInst = InstanceUtilities.checkForIdenticalInstances(ensgDbInst);
+//		ensgDbInst = InstanceUtilities.checkForIdenticalInstances(ensgDbInst);
+		dba.storeInstance(ensgDbInst);
 	}
 	
 	// Create instance pertaining to any alternative reference DB for the species

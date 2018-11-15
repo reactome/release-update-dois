@@ -117,6 +117,20 @@ public class InstanceUtilities {
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
 		if (identicalInstances != null) {
+			
+			// FetchIdenticalInstances function doesn't work with OpenSets in Java -- likely something related to the 'Defining Attributes' not being specific enough.
+			// This block handles the first time an inferred OpenSet comes through, and then the caching (getCacheKey) should handle the rest.
+			if (((GKSchemaClass) inferredInst.getSchemClass()).isa(ReactomeJavaConstants.OpenSet)) {
+				for (GKInstance openSetInst : identicalInstances) {
+					GKInstance openSetSpecies = (GKInstance) openSetInst.getAttributeValue("species");
+					if (openSetSpecies.getDisplayName() == speciesInst.getDisplayName()) {
+						return openSetInst;
+					}
+				}
+				dba.storeInstance(inferredInst);
+				return inferredInst;
+			}
+			
 			if (identicalInstances.size() == 1) {
 				return identicalInstances.iterator().next();
 			} else {
