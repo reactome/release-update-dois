@@ -46,7 +46,7 @@ public class Main {
 			releaseDir.mkdir();
 		}
 		//Begin download directory
-//		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
+		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
 		Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig);
 		GSEAOutput.execute(dbAdaptor, releaseNumber);
 		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir);
