@@ -50,7 +50,7 @@ public class Main {
 		GSEAOutput.execute(dbAdaptor, releaseNumber);
 		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir);
 		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
-//		CreateReleaseTarball.execute(releaseNumber);
+		CreateReleaseTarball.execute(releaseNumber);
 		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
 		MapOldStableIds.execute(username, password, host, releaseNumber);
 		
