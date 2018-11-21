@@ -20,6 +20,7 @@ public class Main {
 		
 		logger.info("Beginning Download Directory step");
 		String pathToConfig = "src/main/resources/config.properties";
+		String pathToSpeciesConfig = "src/main/resources/Species.json";
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
 		//TODO: Check stable identifiers db exists
@@ -45,12 +46,12 @@ public class Main {
 			releaseDir.mkdir();
 		}
 		//Begin download directory
-		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
-		Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber);
+//		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
+		Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig);
 		GSEAOutput.execute(dbAdaptor, releaseNumber);
 		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir);
 		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
-		CreateReleaseTarball.execute(releaseNumber);
+		CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
 		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
 		MapOldStableIds.execute(username, password, host, releaseNumber);
 		

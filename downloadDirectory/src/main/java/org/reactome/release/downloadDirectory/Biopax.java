@@ -8,6 +8,9 @@ import org.biopax.validator.api.ValidatorUtils;
 import org.biopax.validator.api.beans.Validation;
 import org.biopax.validator.impl.IdentifierImpl;
 import org.jdom.*;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.reactome.biopax.SpeciesAllPathwaysConverter;
 import org.reactome.biopax.SpeciesAllPathwaysLevel3Converter;
 import org.springframework.context.ApplicationContext;
@@ -17,11 +20,14 @@ import org.springframework.core.io.Resource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -37,32 +43,41 @@ public class Biopax {
 
   static {
    logger.info("Running BioPAX");
+   logger.info("Preparing BioPAX validation rules...");
     // Biopax validation requires loading of bio ontologies, which takes a few minutes
     ctx = new ClassPathXmlApplicationContext(new String[]{
       "META-INF/spring/appContext-validator.xml",
       "META-INF/spring/appContext-loadTimeWeaving.xml"
     });
     validator = (Validator) ctx.getBean("validator");
+    logger.info("Finished preparing BioPAX validation rules");
   }
   
-  public static void execute(String username, String password, String host, String port, String database, String releaseNumber) throws Exception {
+  public static void execute(String username, String password, String host, String port, String database, String releaseNumber, String pathToSpeciesConfig) throws Exception {
 	  	releaseNumber = releaseNumber.replace("/", "");
 	  	String biopaxDir = releaseNumber + "_biopax";
         File biopaxDirFile = new File(biopaxDir);
         if (!biopaxDirFile.exists()) {
         	biopaxDirFile.mkdir();
         }
+        
+        JSONParser parser = new JSONParser();
+        JSONObject speciesFile = (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig));
+        Set<String> speciesKeys = speciesFile.keySet();
         // First, generate owl files. This particular step requires a local maven installation of the PathwayExchange jar
 		for (int i = 0; i < 2; i++) {
 			int biopaxLevel = i + 2;
-			if (i == 0) {
-				logger.info("Generating BioPAX2 Species owl Files...");
-				SpeciesAllPathwaysConverter converter = new SpeciesAllPathwaysConverter();
-				converter.doDump(new String[]{host, database, username, password, port, biopaxDir});
-			} else {
-				logger.info("Generating BioPAX3 Species owl Files...");
-				SpeciesAllPathwaysLevel3Converter level3converter = new SpeciesAllPathwaysLevel3Converter();
-				level3converter.doDump(new String[]{host, database, username, password, port, biopaxDir});
+			for (String speciesKey : speciesKeys) {
+				String speciesName = (String) ((JSONArray) ((JSONObject) speciesFile.get(speciesKey)).get("name")).get(0);
+				if (i == 0) {
+					logger.info("Generating BioPAX2 " + speciesName + " owl file...");
+					SpeciesAllPathwaysConverter converter = new SpeciesAllPathwaysConverter();
+					converter.doDump(new String[]{host, database, username, password, port, biopaxDir, speciesName});
+				} else {
+					logger.info("Generating BioPAX3 " + speciesName + " owl file...");
+					SpeciesAllPathwaysLevel3Converter level3converter = new SpeciesAllPathwaysLevel3Converter();
+					level3converter.doDump(new String[]{host, database, username, password, port, biopaxDir, speciesName});
+				}
 			}
 			
 			// Rename files, replacing whitespace with underscores

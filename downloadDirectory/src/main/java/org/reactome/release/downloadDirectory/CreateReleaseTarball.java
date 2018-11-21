@@ -18,11 +18,11 @@ public class CreateReleaseTarball {
 	private static final Logger logger = LogManager.getLogger();
 	public static boolean runPerl = true;
 	
-	public static void execute(String releaseNumber) throws IOException, InterruptedException {
+	public static void execute(String releaseNumber, String releaseDownloadDir) throws IOException, InterruptedException {
 		logger.info("Running CreateReleaseTarball");
 		
 		if (runPerl) {
-			String tarballCommand = "perl make_release_tarball.pl " + releaseNumber;
+			String tarballCommand = "perl " + releaseDownloadDir + "/make_release_tarball.pl " + releaseNumber;
 			Process runPerlTarballCommand = Runtime.getRuntime().exec(tarballCommand);
 			runPerlTarballCommand.waitFor();
 		} else {
