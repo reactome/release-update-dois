@@ -126,7 +126,11 @@ public class UpdateHumanEvents {
 					infHasEventReferral.setDisplayName(hasEventReferral.getDisplayName());
 					inferredEvent.put(hasEventReferral, infHasEventReferral);
 					dba.storeInstance(infHasEventReferral);
-					hasEventReferral.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infHasEventReferral);
+					
+					// This was replaced with addAttributeValueIfNecessary due to a bug where a Pathway instance's 'OrthologousEvent' attribute was being replaced,
+					// instead of being added to the existing array when  the script was executed from a jar (rather than from Eclipse) (Justin Cook 2018)
+//					hasEventReferral.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infHasEventReferral);
+					hasEventReferral = InstanceUtilities.addAttributeValueIfNeccesary(hasEventReferral, infHasEventReferral, ReactomeJavaConstants.orthologousEvent);
 					dba.updateInstanceAttribute(hasEventReferral, ReactomeJavaConstants.orthologousEvent);
 					
 					updatedInferrableHumanEvents.add(hasEventReferral);
