@@ -40,8 +40,7 @@ public class OrthologousEventsFix {
 		// Set up DB adaptor using config.properties file
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
-//		String database = props.getProperty("database");
-		String database = "3unfixed_test_reactome_67";
+		String database = props.getProperty("database");
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
