@@ -25,7 +25,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>org.reactome.release.updateDOIs.UpdateDOIs</mainClass>
+              <mainClass>org.reactome.release.updateDOIs.Main</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
