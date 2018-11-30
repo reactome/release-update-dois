@@ -49,8 +49,8 @@ public class UpdateDOIs {
 		try 
 		{
 			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
-//			 doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
-			doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "1912408|3232118|3232142|4085377|4090294|4655427|4755510|8985947|9013694|9034015");
+			 doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+//			doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "DB_ID", "REGEXP", "1912408|3232118|3232142|4085377|4090294|4655427|4755510|8985947|9013694|9034015");
 			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
 			{
