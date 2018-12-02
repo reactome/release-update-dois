@@ -142,7 +142,7 @@ public class UpdateDOIs {
 			while ((sCurrentLine = br.readLine()) != null) 
 			{
 				HashMap<String, String> doiAttributes = new HashMap<String,String>();
-				String[] commaSplit = sCurrentLine.split(",");
+				String[] commaSplit = sCurrentLine.split(",", 2);
 				String reactomeDoi = commaSplit[0];
 				String displayName = commaSplit[1];
 				int lastPeriodIndex = commaSplit[0].lastIndexOf(".");
