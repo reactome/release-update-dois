@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.Properties;
 
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.persistence.TransactionsNotSupportedException;
 
 /**
  * This function iterates through all instances, and checks if it has been changed since the previous release.
@@ -19,15 +20,10 @@ import org.gk.persistence.MySQLAdaptor;
  */
 public class Main 
 {
-	private static Connection connect = null;
-	private static Statement statement = null;
-	private PreparedStatement preparedStatement = null;
-	private static ResultSet resultSet = null;
 
-	
-    public static void main( String[] args ) throws SQLException, FileNotFoundException, IOException
+    public static void main( String[] args ) throws Exception
     {
-       DatabaseUtils.archiveUsedDatabases("test_slice_67", "gk_central");
+//       DatabaseUtils.archiveUsedDatabases("test_slice_67", "gk_central");
        
        String pathToConfig = "src/main/resources/config.properties";
        
@@ -47,5 +43,7 @@ public class Main
        String gkCentralHost = props.getProperty("gkCentralHost");
        
        MySQLAdaptor dbaGkCentral = new MySQLAdaptor(gkCentralHost, gkCentralDatabase, gkCentralUsername, gkCentralPassword, port);
+       
+       UpdateStableIds.stableIdUpdater(dbaSlice, dbaGkCentral);
 ;    }
 }
