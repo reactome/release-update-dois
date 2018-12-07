@@ -25,6 +25,11 @@
 	  <artifactId>reactome-base</artifactId>
 	  <version>1.2.15</version>
 	</dependency>
+	<dependency>
+	  <groupId>org.reactome.release</groupId>
+   	  <artifactId>release-common-lib</artifactId>
+	  <version>1.0.2</version>
+	</dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

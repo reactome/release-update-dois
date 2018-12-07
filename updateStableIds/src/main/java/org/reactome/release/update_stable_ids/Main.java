@@ -33,17 +33,21 @@ public class Main
        
        String sliceUsername = props.getProperty("sliceUsername");
        String slicePassword = props.getProperty("slicePassword");
-       String sliceDatabase = props.getProperty("sliceDatabase");
        String sliceHost = props.getProperty("sliceHost");	   
+       String sliceDatabase = props.getProperty("sliceDatabase");
        MySQLAdaptor dbaSlice = new MySQLAdaptor(sliceHost, sliceDatabase, sliceUsername, slicePassword, port);
+       
+       String prevSliceDatabase = props.getProperty("prevSliceDatabase");
+       MySQLAdaptor dbaPrevSlice = new MySQLAdaptor(sliceHost, prevSliceDatabase, sliceUsername, slicePassword, port);
        
        String gkCentralUsername = props.getProperty("gkCentralUsername");
        String gkCentralPassword = props.getProperty("gkCentralPassword");
-       String gkCentralDatabase = props.getProperty("gkCentralDatabase");
        String gkCentralHost = props.getProperty("gkCentralHost");
+       String gkCentralDatabase = props.getProperty("gkCentralDatabase");
        
        MySQLAdaptor dbaGkCentral = new MySQLAdaptor(gkCentralHost, gkCentralDatabase, gkCentralUsername, gkCentralPassword, port);
        
-       UpdateStableIds.stableIdUpdater(dbaSlice, dbaGkCentral);
+       Long personId = Long.parseLong(props.getProperty("personInstanceId"));
+       UpdateStableIds.stableIdUpdater(dbaSlice, dbaPrevSlice, dbaGkCentral, personId);
 ;    }
 }
