@@ -24,8 +24,9 @@ public class UpdateStableIds {
 	public static void stableIdUpdater(MySQLAdaptor dbaSlice, MySQLAdaptor dbaPrevSlice, MySQLAdaptor dbaGkCentral, Long personId) throws Exception {
 		
 		// Instance Edits for test_slice and gk_central
-		GKInstance sliceIE = InstanceEditUtils.createInstanceEdit(dbaSlice, personId, "org.reactome.release.update_stable_ids");
-		GKInstance gkCentralIE = InstanceEditUtils.createInstanceEdit(dbaGkCentral, personId, "org.reactome.release.update_stable_ids");
+		String creatorName = "org.reactome.release.update_stable_ids";
+		GKInstance sliceIE = InstanceEditUtils.createInstanceEdit(dbaSlice, personId, creatorName);
+		GKInstance gkCentralIE = InstanceEditUtils.createInstanceEdit(dbaGkCentral, personId, creatorName);
 
 		// At time of writing (December 2018), test_slice is a non-transactional database. This check has been put in place as a safety net in case that changes.
 		if (dbaSlice.supportsTransactions()) {
@@ -34,9 +35,7 @@ public class UpdateStableIds {
 		dbaGkCentral.startTransaction();
 		
 		//TODO:Should legacy regulation instances be updated?
-		//TODO:Ensure that re-run handling is implemented
-		//TODO:Logging
-		//TODO:Comments
+		//TODO:Ensure that re-run handling is implemented (backing up DB)
 		
 		// These two Lists were originally used to determine what classes' instances should be updated.
 		// Since all 'accepted' classes turned out to encompass all PhysicalEntity and Event classes, and all
@@ -78,6 +77,7 @@ public class UpdateStableIds {
 				}
 				
 				// Instances that have been updated already during the current release will have their 'releaseStatus' attribute equal to 'UPDATED'.
+				// This will make sure that StableIDs are only updated once per release.
 				if (isUpdated(sliceInstance, prevSliceInstance, dbaPrevSlice)) {
 					String releaseStatusString = (String) sliceInstance.getAttributeValue(releaseStatus);
 					String updated = "UPDATED";
@@ -115,7 +115,7 @@ public class UpdateStableIds {
 	}
 	
 	// Checks via the 'releaseStatus', 'revised', and 'reviewed' attributes if this instance has been updated since last release.
-	// Also goes through any child 'hasEvent' instances and checks as well.
+	// Also goes through any child 'hasEvent' instances and recursively checks as well.
 	private static boolean isUpdated(GKInstance sliceInstance, GKInstance prevSliceInstance, MySQLAdaptor dbaPrevSlice) throws InvalidAttributeException, Exception {
 		
 		if (sliceInstance.getSchemClass().isa(Event)) {

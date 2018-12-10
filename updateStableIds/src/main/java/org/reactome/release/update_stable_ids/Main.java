@@ -23,10 +23,14 @@ public class Main
 
     public static void main( String[] args ) throws Exception
     {
+    	// This utility was meant to serve the same function as 'restore_database.pl'. 
+    	// For now, we don't want the Java to do the DB archiving, so this won't be used. 
 //       DatabaseUtils.archiveUsedDatabases("test_slice_67", "gk_central");
        
        String pathToConfig = "src/main/resources/config.properties";
        
+       //Sets up the various DB Adaptors needed. This includes the current and previous test_slice versions on the release server, 
+       //as well as gk_central on the curation server.
        Properties props = new Properties();
        props.load(new FileInputStream(pathToConfig));
        int port = Integer.valueOf(props.getProperty("port"));
