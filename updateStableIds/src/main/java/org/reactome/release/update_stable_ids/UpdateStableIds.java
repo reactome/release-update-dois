@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 
@@ -21,8 +23,11 @@ import org.reactome.release.common.database.InstanceEditUtils;
 
 public class UpdateStableIds {
 
+	private static final Logger logger = LogManager.getLogger();
+	
 	public static void stableIdUpdater(MySQLAdaptor dbaSlice, MySQLAdaptor dbaPrevSlice, MySQLAdaptor dbaGkCentral, Long personId) throws Exception {
 		
+		logger.info("Generating InstanceEdits for " + dbaSlice.getDBName() + " and " + dbaGkCentral.getDBName());
 		// Instance Edits for test_slice and gk_central
 		String creatorName = "org.reactome.release.update_stable_ids";
 		GKInstance sliceIE = InstanceEditUtils.createInstanceEdit(dbaSlice, personId, creatorName);
@@ -44,15 +49,18 @@ public class UpdateStableIds {
 //		List<String> excludedClassesWithStableIdentifiers = Arrays.asList("PositiveGeneExpressionRegulation","PositiveRegulation","NegativeRegulation","Requirement","NegativeGeneExpressionRegulation");
 //		ResultSet classesWithStableIdentifiers = dbaGkCentral.executeQuery("SELECT DISTINCT _class FROM DatabaseObject WHERE StableIdentifier IS NOT NULL", null);		
 
+		logger.info("Fetching all Event and PhysicalEntity instances");
 		// Get all Event and PhysicalEntity instances and combine them into one large List
 		Collection<GKInstance> eventInstances = dbaSlice.fetchInstancesByClass(Event);
 		Collection<GKInstance> physicalEntityInstances = dbaSlice.fetchInstancesByClass(PhysicalEntity);
 		List<GKInstance> sliceInstances = new ArrayList<GKInstance>();
 		sliceInstances.addAll(eventInstances);
 		sliceInstances.addAll(physicalEntityInstances);
-//		
+		
+		int incrementCount = 0;
+		logger.info("Total instances to check: " + sliceInstances.size());
 		for (GKInstance sliceInstance : sliceInstances) {
-			
+			logger.info("Checking " + sliceInstance);
 			GKInstance gkCentralInstance = (GKInstance) dbaGkCentral.fetchInstance(sliceInstance.getDBID());
 			GKInstance prevSliceInstance = (GKInstance) dbaPrevSlice.fetchInstance(sliceInstance.getDBID());
 			// Check if instance is new and that it exists on gkCentral (they could be deleted)
@@ -64,31 +72,36 @@ public class UpdateStableIds {
 				if (sliceInstanceModified.size() > prevSliceInstanceModified.size()) {
 					// Make sure StableIdentifier instance exists
 					if (sliceInstance.getAttributeValue(stableIdentifier) != null && gkCentralInstance.getAttributeValue(stableIdentifier) != null) {
+						logger.info("\tIncrementing " + sliceInstance.getAttributeValue(stableIdentifier));
 						incrementStableIdentifier(sliceInstance, dbaSlice, sliceIE);
 						incrementStableIdentifier(gkCentralInstance, dbaGkCentral, gkCentralIE);
-						System.out.println("Stable Id updated: " + sliceInstance.getAttributeValue(stableIdentifier));
+						incrementCount++;
 					}
 				} else {
 					if (sliceInstanceModified.size() == prevSliceInstanceModified.size()) {
 //						System.out.println("No change between releases");
 					} else {
-						System.out.println("Unexpected: Number of 'Modified' instances in [" + sliceInstance.getDBID() + "] is fewer than in previous release");
+						logger.warn("Unexpected: Number of 'Modified' instances in [" + sliceInstance.getDBID() + "] is fewer than in previous release");
 					}
 				}
 				
 				// Instances that have been updated already during the current release will have their 'releaseStatus' attribute equal to 'UPDATED'.
 				// This will make sure that StableIDs are only updated once per release.
-				if (isUpdated(sliceInstance, prevSliceInstance, dbaPrevSlice)) {
-					String releaseStatusString = (String) sliceInstance.getAttributeValue(releaseStatus);
-					String updated = "UPDATED";
-					if (releaseStatus != updated) {
-						sliceInstance.addAttributeValue(releaseStatus, updated);
-						sliceInstance.addAttributeValue(modified, sliceIE);
-						dbaSlice.updateInstanceAttribute(sliceInstance, releaseStatus);
-						dbaSlice.updateInstanceAttribute(sliceInstance, modified);
-					} else {
-						System.out.println("StableIdentifer has already been updated during this release");
+				try {
+					if (isUpdated(sliceInstance, prevSliceInstance, dbaPrevSlice)) {
+						String releaseStatusString = (String) sliceInstance.getAttributeValue(releaseStatus);
+						String updated = "UPDATED";
+						if (releaseStatus != updated) {
+							sliceInstance.addAttributeValue(releaseStatus, updated);
+							sliceInstance.addAttributeValue(modified, sliceIE);
+							dbaSlice.updateInstanceAttribute(sliceInstance, releaseStatus);
+							dbaSlice.updateInstanceAttribute(sliceInstance, modified);
+						} else {
+							logger.info("StableIdentifer has already been updated during this release");
+						}
 					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}
@@ -96,7 +109,9 @@ public class UpdateStableIds {
 		if (dbaSlice.supportsTransactions()) {
 			dbaSlice.commit();
 		}
-		dbaGkCentral.commit();		
+		logger.info("Commiting all changes in " + dbaGkCentral.getDBName());
+		dbaGkCentral.commit();
+		logger.info(incrementCount + " Stable Identifiers were updated");
 	}
 
 	// Increments the identifierVersion attribute and updates the StableIdentifier displayName accordingly.
@@ -140,8 +155,12 @@ public class UpdateStableIds {
 				Collection<GKInstance> eventInstances = sliceInstance.getAttributeValuesList(hasEvent);
 				for (GKInstance eventInst : eventInstances) {
 					GKInstance prevEventInst = dbaPrevSlice.fetchInstance(eventInst.getDBID());
-					if (prevEventInst != null && isUpdated(eventInst, prevEventInst, dbaPrevSlice)) {
-						return true;
+					try {
+						if (prevEventInst != null && isUpdated(eventInst, prevEventInst, dbaPrevSlice)) {
+							return true;
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 				}
 			}		

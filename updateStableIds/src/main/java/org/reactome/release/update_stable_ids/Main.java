@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.persistence.TransactionsNotSupportedException;
 
@@ -20,9 +22,11 @@ import org.gk.persistence.TransactionsNotSupportedException;
  */
 public class Main 
 {
-
+	private static final Logger logger = LogManager.getLogger();
+	
     public static void main( String[] args ) throws Exception
     {
+    	logger.info("Beginning UpdateStableIds step...");
     	// This utility was meant to serve the same function as 'restore_database.pl'. 
     	// For now, we don't want the Java to do the DB archiving, so this won't be used. 
 //       DatabaseUtils.archiveUsedDatabases("test_slice_67", "gk_central");
@@ -34,6 +38,10 @@ public class Main
        Properties props = new Properties();
        props.load(new FileInputStream(pathToConfig));
        int port = Integer.valueOf(props.getProperty("port"));
+       int releaseNumber = Integer.valueOf(props.getProperty("releaseNumber"));
+       int prevReleaseNumber = releaseNumber - 1;
+       
+       logger.info("Creating DB adaptors for test_slice_" + releaseNumber + ", test_slice_" + prevReleaseNumber + "_snapshot and gk_central");
        
        String sliceUsername = props.getProperty("sliceUsername");
        String slicePassword = props.getProperty("slicePassword");
@@ -53,5 +61,6 @@ public class Main
        
        Long personId = Long.parseLong(props.getProperty("personInstanceId"));
        UpdateStableIds.stableIdUpdater(dbaSlice, dbaPrevSlice, dbaGkCentral, personId);
+       logger.info("Finished UpdateStableIds step");
 ;    }
 }
