@@ -1,19 +1,11 @@
 package org.reactome.release.update_stable_ids;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
-import org.gk.persistence.TransactionsNotSupportedException;
 
 /**
  * This function iterates through all instances, and checks if it has been changed since the previous release.
@@ -27,9 +19,6 @@ public class Main
     public static void main( String[] args ) throws Exception
     {
     	logger.info("Beginning UpdateStableIds step...");
-    	// This utility was meant to serve the same function as 'restore_database.pl'. 
-    	// For now, we don't want the Java to do the DB archiving, so this won't be used. 
-//       DatabaseUtils.archiveUsedDatabases("test_slice_67", "gk_central");
        
        String pathToConfig = "src/main/resources/config.properties";
        
