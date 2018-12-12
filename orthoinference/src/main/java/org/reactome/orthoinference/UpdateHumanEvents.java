@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
@@ -16,15 +18,16 @@ import org.gk.schema.InvalidAttributeException;
 public class UpdateHumanEvents {
 	
 	private static MySQLAdaptor dba;
+	private static String dateOfRelease = "";
 	private static GKInstance summationInst;
 	private static GKInstance evidenceTypeInst;
 	private static GKInstance instanceEdit;
-	private static ArrayList<GKInstance> updatedInferrableHumanEvents = new ArrayList<GKInstance>();
-	private static HashMap<GKInstance, GKInstance> inferredEvent = new HashMap<GKInstance,GKInstance>();
+	private static List<GKInstance> updatedInferrableHumanEvents = new ArrayList<GKInstance>();
+	private static Map<GKInstance, GKInstance> inferredEvent = new HashMap<GKInstance,GKInstance>();
 	
 	// This class populates species pathways with the instances that have been inferred. This was copied heavily from the Perl, so my explanations are a little sparse here.
 	@SuppressWarnings("unchecked")
-	public static void updateHumanEvents(ArrayList<GKInstance> inferrableHumanEvents) throws Exception 
+	public static void updateHumanEvents(List<GKInstance> inferrableHumanEvents) throws Exception 
 	{
 		updatedInferrableHumanEvents.addAll(inferrableHumanEvents);
 		HashSet<Long> seenHumanHierarchy = new HashSet<Long>();
@@ -108,7 +111,7 @@ public class UpdateHumanEvents {
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.name, hasEventReferral.getAttributeValuesList(ReactomeJavaConstants.name));
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.summation, summationInst);
 					if (infHasEventReferral.getSchemClass().isValidAttribute(ReactomeJavaConstants.releaseDate)) {
-						infHasEventReferral.addAttributeValue(ReactomeJavaConstants.releaseDate, "2018-12-13");
+						infHasEventReferral.addAttributeValue(ReactomeJavaConstants.releaseDate, dateOfRelease);
 					}
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.inferredFrom, hasEventReferral);
 					infHasEventReferral.addAttributeValue(ReactomeJavaConstants.evidenceType, evidenceTypeInst);
@@ -187,6 +190,11 @@ public class UpdateHumanEvents {
 	{
 		dba = dbAdaptor;
 	}
+	
+	public static void setReleaseDate(String dateOfReleaseCopy) {
+		dateOfRelease = dateOfReleaseCopy;
+	}
+	
 	public static void setSummationInstance(GKInstance summationInstCopy) throws Exception
 	{
 		summationInst = summationInstCopy;
@@ -195,7 +203,7 @@ public class UpdateHumanEvents {
 	{
 		evidenceTypeInst = evidenceTypeInstCopy;
 	}
-	public static void setInferredEvent(HashMap<GKInstance,GKInstance> inferredEventCopy) throws Exception
+	public static void setInferredEvent(Map<GKInstance,GKInstance> inferredEventCopy) throws Exception
 	{
 		inferredEvent = inferredEventCopy;
 	}

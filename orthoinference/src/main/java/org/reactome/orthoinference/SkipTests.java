@@ -61,7 +61,7 @@ public class SkipTests {
 		fr.close();
 	}
 	// Skip orthoinference of this instance if:
-	public static boolean skipInstance(GKInstance reactionInst) throws NumberFormatException, Exception
+	public static boolean checkIfInstanceShouldBeSkipped(GKInstance reactionInst) throws NumberFormatException, Exception
 	{
 		// it is found in skiplist array
 		boolean inSkipList = skipList.contains(reactionInst.getDBID().toString());

@@ -48,13 +48,15 @@ public class InferEvents
 	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static List<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 
-//	@SuppressWarnings("unchecked")
 	@SuppressWarnings("unchecked")
 	public static void eventInferrer(Properties props, String pathToConfig, String species) throws Exception
 	{
 		releaseVersion = props.getProperty("releaseNumber");
 		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
 		String pathToSpeciesConfig = props.getProperty("pathToSpeciesConfig");
+		String dateOfRelease = props.getProperty("dateOfRelease");
+		int personId = Integer.valueOf(props.getProperty("personId"));
+		setReleaseDates(dateOfRelease);
 		
 		// Set up DB adaptor using config.properties file
 		String username = props.getProperty("username");
@@ -93,10 +95,10 @@ public class InferEvents
 		InferReaction.setInferredFilename(inferredFilename);
 
 		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
-		setInstanceEdits();
+		setInstanceEdits(personId);
 		
 		try {
-			Map<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile(species, "hsap", pathToOrthopairs);
+			Map<String,String[]> homologueMappings = readHomologueMappingFile(species, "hsap", pathToOrthopairs);
 			ProteinCount.setHomologueMappingFile(homologueMappings);
 			InferEWAS.setHomologueMappingFile(homologueMappings);
 		} catch (FileNotFoundException e) {
@@ -179,8 +181,16 @@ public class InferEvents
 		System.out.println("Finished orthoinference of " + speciesName + ".");
 	}
 
+	private static void setReleaseDates(String dateOfRelease) 
+	{
+		InferReaction.setReleaseDate(dateOfRelease);
+		UpdateHumanEvents.setReleaseDate(dateOfRelease);
+	
+	}
+
 	@SuppressWarnings("unchecked")
-	private static List<GKInstance> checkIfPreviouslyInferred(GKInstance reactionInst, String attribute, List<GKInstance> previouslyInferredInstances) throws InvalidAttributeException, Exception {
+	private static List<GKInstance> checkIfPreviouslyInferred(GKInstance reactionInst, String attribute, List<GKInstance> previouslyInferredInstances) throws InvalidAttributeException, Exception 
+	{
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
 			GKInstance reactionSpeciesInst = (GKInstance) attributeInst.getAttributeValue(species);
@@ -190,7 +200,7 @@ public class InferEvents
 			}
 		}
 		return previouslyInferredInstances;
-}
+	}
 
 	private static void outputReport(String species) throws IOException
 	{
@@ -206,7 +216,8 @@ public class InferEvents
 	}
 	
 	// Statically store the adaptor variable in each class
-	private static void setDbAdaptors(MySQLAdaptor dbAdaptor2) {
+	private static void setDbAdaptors(MySQLAdaptor dbAdaptor2) 
+	{
 		InferReaction.setAdaptor(dbAdaptor);
 		SkipTests.setAdaptor(dbAdaptor);
 		InstanceUtilities.setAdaptor(dbAdaptor);
@@ -281,8 +292,9 @@ public class InferEvents
 		UpdateHumanEvents.setEvidenceTypeInstance(evidenceTypeInst);
 	}
 	
-	private static void setInstanceEdits() throws Exception {
-		instanceEditInst = InstanceEditUtils.createInstanceEdit(dbAdaptor, 8948690, "org.reactome.orthoinference");
+	private static void setInstanceEdits(int personId) throws Exception 
+	{
+		instanceEditInst = InstanceEditUtils.createInstanceEdit(dbAdaptor, personId, "org.reactome.orthoinference");
 		InstanceUtilities.setInstanceEdit(instanceEditInst);
 		OrthologousEntity.setInstanceEdit(instanceEditInst);
 		InferEWAS.setInstanceEdit(instanceEditInst);
@@ -290,7 +302,8 @@ public class InferEvents
 	}
 	
 	// Reduce memory usage after species inference complete
-	private static void resetVariables() {
+	private static void resetVariables() 
+	{
 		InferReaction.resetVariables();
 		OrthologousEntity.resetVariables();
 		InferEWAS.resetVariables();
