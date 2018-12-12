@@ -10,16 +10,22 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		
 		String pathToConfig = "src/main/resources/config.properties";
-		String pathToSpeciesConfig = "src/main/resources/Species.json";
 		
-//		if (args.length > 0 && !args[0].equals(""))
-//		{
-//			pathToConfig = args[0];
-//		}
+		String speciesCode = "";
+		if (args.length > 0 && args[0].matches("config.properties"))
+		{
+			pathToConfig = args[0];
+			speciesCode = args[1];
+		} else if (args.length == 1 && args[0].length() == 4){
+			speciesCode = args[0];
+		} else {
+			System.out.println("Please include a 4-letter species code as the first argument (eg: mmus)");
+		}
 		
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
-		String speciesCode = args[0];
+		
+		String pathToSpeciesConfig = props.getProperty("pathToSpeciesConfig");
 		InferEvents.eventInferrer(props, pathToConfig, pathToSpeciesConfig, speciesCode);
 	}
 
