@@ -32,11 +32,6 @@ public class InstanceUtilities {
 		dba = dbAdaptor;
 	}
 	
-	public static void setSpeciesInst(GKInstance speciesInstCopy)
-	{
-		speciesInst = speciesInstCopy;
-	}
-	
 	// Creates new instance that will be inferred based on the incoming instances class		
 	public static GKInstance newInferredGKInstance(GKInstance instanceToBeInferred) throws Exception
 	{
@@ -205,6 +200,11 @@ public class InstanceUtilities {
 			}
 		}
 		return key;
+	}
+	
+	public static void setSpeciesInstance(GKInstance speciesInstCopy)
+	{
+		speciesInst = speciesInstCopy;
 	}
 	
 	public static void resetVariables()

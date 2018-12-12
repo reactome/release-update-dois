@@ -187,11 +187,11 @@ public class UpdateHumanEvents {
 	{
 		dba = dbAdaptor;
 	}
-	public static void setSummationInst(GKInstance summationInstCopy) throws Exception
+	public static void setSummationInstance(GKInstance summationInstCopy) throws Exception
 	{
 		summationInst = summationInstCopy;
 	}
-	public static void setEvidenceTypeInst(GKInstance evidenceTypeInstCopy) throws Exception
+	public static void setEvidenceTypeInstance(GKInstance evidenceTypeInstCopy) throws Exception
 	{
 		evidenceTypeInst = evidenceTypeInstCopy;
 	}

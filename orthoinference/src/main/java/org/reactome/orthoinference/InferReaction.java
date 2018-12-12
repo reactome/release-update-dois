@@ -233,12 +233,12 @@ public class InferReaction {
 		inferredFilehandle = inferredFilename;
 	}
 	
-	public static void setEvidenceTypeInst(GKInstance evidenceTypeInstCopy) throws Exception
+	public static void setEvidenceTypeInstance(GKInstance evidenceTypeInstCopy) throws Exception
 	{
 		evidenceTypeInst = evidenceTypeInstCopy;
 	}
 	
-	public static void setSummationInst(GKInstance summationInstCopy) throws Exception
+	public static void setSummationInstance(GKInstance summationInstCopy) throws Exception
 	{
 		summationInst = summationInstCopy;
 	}
@@ -252,11 +252,15 @@ public class InferReaction {
 	{
 		return inferredEvent;
 	}
-	// Returns total number of eligible and inferred reactions
-	public static int[] getCounts()
+
+	public static int getEligibleCount()
 	{
-		int[] counts = {eligibleCount, inferredCount};
-		return counts;
+		return eligibleCount;
+	}
+	
+	public static int getInferredCount()
+	{
+		return inferredCount;
 	}
 	
 	public static void resetVariables() 

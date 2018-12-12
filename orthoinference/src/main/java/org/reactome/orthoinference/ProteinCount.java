@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.gk.model.ClassAttributeFollowingInstruction;
 import org.gk.model.GKInstance;
@@ -15,9 +16,9 @@ import org.gk.schema.InvalidAttributeException;
 
 public class ProteinCount {
 	
-	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
+	private static Map<String, String[]> homologueMappings = new HashMap<String,String[]>();
 	
-	public static void setHomologueMappingFile(HashMap<String, String[]> homologueMappingsCopy) throws IOException
+	public static void setHomologueMappingFile(Map<String, String[]> homologueMappingsCopy) throws IOException
 	{
 		homologueMappings = homologueMappingsCopy;
 	}

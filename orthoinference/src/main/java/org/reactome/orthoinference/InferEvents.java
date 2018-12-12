@@ -1,30 +1,26 @@
 package org.reactome.orthoinference;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.gk.model.GKInstance;
-import org.gk.model.ReactomeJavaConstants;
+import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
-import org.gk.schema.GKSchemaAttribute;
+import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.SchemaClass;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -43,20 +39,24 @@ import org.reactome.release.common.database.InstanceEditUtils;
  *
  */
 
-// To Reviewers: I recommend following the code sequentially, rather then looking at each class separately.
 public class InferEvents
 {
 	static MySQLAdaptor dbAdaptor = null;
-	private static GKInstance instanceEdit;
+	private static String releaseVersion = "";
+	private static GKInstance instanceEditInst;
 	private static GKInstance speciesInst;
-	private static HashMap<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
-	private static ArrayList<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
+	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
+	private static List<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 
+//	@SuppressWarnings("unchecked")
 	@SuppressWarnings("unchecked")
-	public static void eventInferrer(Properties props, String pathToConfig, String pathToSpeciesConfig, String species) throws Exception
+	public static void eventInferrer(Properties props, String pathToConfig, String species) throws Exception
 	{
+		releaseVersion = props.getProperty("releaseNumber");
+		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
+		String pathToSpeciesConfig = props.getProperty("pathToSpeciesConfig");
+		
 		// Set up DB adaptor using config.properties file
-		String speciesToInferFromLong = "Homo sapiens";
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
 		String database = props.getProperty("database");
@@ -64,7 +64,149 @@ public class InferEvents
 		int port = Integer.valueOf(props.getProperty("port"));
 		
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
-		// Statically store the adaptor variable in each class
+		setDbAdaptors(dbAdaptor);
+		
+		SkipTests.getSkipList("normal_event_skip_list.txt");
+		
+		JSONParser parser = new JSONParser();
+		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
+		JSONObject jsonObject = (JSONObject) obj;
+
+		// Parse Species information (found in Species.json config file)
+		JSONObject speciesObject = (JSONObject) jsonObject.get(species);
+		JSONArray speciesNames = (JSONArray) speciesObject.get("name");
+		String speciesName = (String) speciesNames.get(0);
+		System.out.println("Beginning orthoinference of " + speciesName + ".");
+		JSONObject refDb = (JSONObject) speciesObject.get("refdb");
+		String refDbUrl = (String) refDb.get("url");
+		String refDbProteinUrl = (String) refDb.get("access");
+		String refDbGeneUrl = (String) refDb.get("ensg_access");
+		
+		// Creates two files that a) list reactions that are eligible for inference and b) those that are successfully inferred
+		String eligibleFilename = "eligible_" + species	+ "_75.txt";
+		String inferredFilename = "inferred_" + species + "_75.txt";
+		File eligibleFile = new File(eligibleFilename);
+		eligibleFile.createNewFile();
+		File inferredFile = new File(inferredFilename);
+		inferredFile.createNewFile();
+		InferReaction.setEligibleFilename(eligibleFilename);
+		InferReaction.setInferredFilename(inferredFilename);
+
+		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
+		setInstanceEdits();
+		
+		try {
+			Map<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile(species, "hsap", pathToOrthopairs);
+			ProteinCount.setHomologueMappingFile(homologueMappings);
+			InferEWAS.setHomologueMappingFile(homologueMappings);
+		} catch (FileNotFoundException e) {
+			System.out.println("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
+		}
+		InferEWAS.readENSGMappingFile(species);
+		InferEWAS.createUniprotDbInstance();
+		InferEWAS.createEnsemblProteinDbInstance(speciesName, refDbUrl, refDbProteinUrl);
+		InferEWAS.createEnsemblGeneDBInstance(speciesName, refDbUrl, refDbGeneUrl);
+		
+		JSONObject altRefDbJSON = (JSONObject) speciesObject.get("alt_refdb");
+		if (altRefDbJSON != null)
+		{
+			//TODO: Simplify this block
+			InferEWAS.createAlternateReferenceDBInstance(speciesName, altRefDbJSON);
+		} else {
+			InferEWAS.updateRefDb();
+		}
+		createAndSetSpeciesInstance(speciesName);
+		setSummationInstance();
+		setEvidenceTypeInstance();
+		OrthologousEntity.setComplexSummationInstance();
+
+/**
+ *  Start of ReactionlikeEvent inference. Retrieves all human ReactionlikeEvents, and attempts to infer each for the species.
+ */
+		// Gets DB instance of source species (human)
+		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", "Homo sapiens");
+		if (sourceSpeciesInst.isEmpty())
+		{
+			System.out.println("Could not find Species instance for Homo sapiens");
+			return;
+		}
+		String humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID().toString();
+		// Gets Reaction instances of source species (human)
+		Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", humanInstanceDbId);
+
+		List<Long> dbids = new ArrayList<Long>();
+		Map<Long, GKInstance> reactionMap = new HashMap<Long, GKInstance>();
+		for (GKInstance reactionInst : reactionInstances) {
+			dbids.add(reactionInst.getDBID());
+			reactionMap.put(reactionInst.getDBID(), reactionInst);
+		}
+		// For now sort the instances by DB ID so that it matches the Perl sequence
+		Collections.sort(dbids);
+		
+		for (Long dbid : dbids)
+		{
+			GKInstance reactionInst = reactionMap.get(dbid);
+			// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesn't have a Disease attribute.
+			// Adds to manualHumanEvents array if it passes conditions. This code block allows you to re-run the code without re-inferring instances.
+			List<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
+			previouslyInferredInstances = checkIfPreviouslyInferred(reactionInst, orthologousEvent, previouslyInferredInstances);
+			previouslyInferredInstances = checkIfPreviouslyInferred(reactionInst, inferredFrom, previouslyInferredInstances);
+			if (previouslyInferredInstances.size() > 0)
+			{
+				GKInstance prevInfInst = previouslyInferredInstances.get(0);
+				if (prevInfInst.getAttributeValue(disease) == null)
+				{
+					manualEventToNonHumanSource.put(reactionInst, prevInfInst);
+					manualHumanEvents.add(reactionInst);
+				} else {
+					System.out.println("Skipping building of hierarchy around pre-existing disease reaction " + prevInfInst);
+				}
+				continue;
+			}
+			// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
+			System.out.println("\t" + reactionInst);
+			try {
+				InferReaction.reactionInferrer(reactionInst);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
+		UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
+		outputReport(species);
+		resetVariables();
+		System.gc();
+		System.out.println("Finished orthoinference of " + speciesName + ".");
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<GKInstance> checkIfPreviouslyInferred(GKInstance reactionInst, String attribute, List<GKInstance> previouslyInferredInstances) throws InvalidAttributeException, Exception {
+		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
+		{
+			GKInstance reactionSpeciesInst = (GKInstance) attributeInst.getAttributeValue(species);
+			if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && attributeInst.getAttributeValue(isChimeric) == null)
+			{
+				previouslyInferredInstances.add(attributeInst);
+			}
+		}
+		return previouslyInferredInstances;
+}
+
+	private static void outputReport(String species) throws IOException
+	{
+		int eligibleCount = InferReaction.getEligibleCount();
+		int inferredCount = InferReaction.getInferredCount();
+		int percentInferred = 100*inferredCount/eligibleCount;
+		// Create file if it doesn't exist
+		String reportFilename = "report_ortho_inference_test_reactome_" + releaseVersion + ".txt";
+		File reportFile = new File(reportFilename);
+		reportFile.createNewFile();
+		String results = "hsap to " + species + ":\t" + inferredCount + " out of " + eligibleCount + " eligible reactions (" + percentInferred + "%)\n";
+		Files.write(Paths.get(reportFilename), results.getBytes(), StandardOpenOption.APPEND);
+	}
+	
+	// Statically store the adaptor variable in each class
+	private static void setDbAdaptors(MySQLAdaptor dbAdaptor2) {
 		InferReaction.setAdaptor(dbAdaptor);
 		SkipTests.setAdaptor(dbAdaptor);
 		InstanceUtilities.setAdaptor(dbAdaptor);
@@ -72,183 +214,18 @@ public class InferEvents
 		InferEWAS.setAdaptor(dbAdaptor);
 		UpdateHumanEvents.setAdaptor(dbAdaptor);
 		
-		SkipTests.getSkipList("normal_event_skip_list.txt");
-		// For now an array of species names are used. I will likely change it so that the wrapper calls each organism individually during release.
-//		List<String> speciesList = new ArrayList<String>(Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat"));
-
-		JSONParser parser = new JSONParser();
-		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
-		JSONObject jsonObject = (JSONObject) obj;
-//		for (String species : speciesList)
-//		{
-			// Proper logging will be implemented before Release
-			JSONObject speciesObject = (JSONObject) jsonObject.get(species);
-			JSONArray speciesNames = (JSONArray) speciesObject.get("name");
-			String speciesName = (String) speciesNames.get(0);
-			System.out.println("Beginning orthoinference of " + speciesName + ".");
-			JSONObject refDb = (JSONObject) speciesObject.get("refdb");
-			String refDbUrl = (String) refDb.get("url");
-			String refDbProteinUrl = (String) refDb.get("access");
-			String refDbGeneUrl = (String) refDb.get("ensg_access");
-
-			JSONObject altRefDb = (JSONObject) speciesObject.get("alt_refdb");
-
-			// Creates two files that a) list reactions that are eligible for inference and b) those that are successfully inferred
-			String eligibleFilename = "eligible_" + species	+ "_75.txt";
-			String inferredFilename = "inferred_" + species + "_75.txt";
-			PrintWriter eligibleFile = new PrintWriter(eligibleFilename);
-			PrintWriter inferredFile = new PrintWriter(inferredFilename);
-			eligibleFile.close();
-			inferredFile.close();
-			InferReaction.setEligibleFilename(eligibleFilename);
-			InferReaction.setInferredFilename(inferredFilename);
-
-			// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
-			InferEvents.setInstanceEdits();
-			try {
-				HashMap<String,String[]> homologueMappings = InferEvents.readHomologueMappingFile(species, "hsap");
-				ProteinCount.setHomologueMappingFile(homologueMappings);
-				InferEWAS.setHomologueMappingFile(homologueMappings);
-				homologueMappings = new HashMap<String,String[]>();
-			} catch (FileNotFoundException e) {
-				System.out.println("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
-//				continue;
-			}
-			InferEWAS.readENSGMappingFile(species);
-			InferEWAS.createUniprotDbInst();
-			InferEWAS.createEnsemblProteinDbInst(speciesName, refDbUrl, refDbProteinUrl);
-			InferEWAS.createEnsemblGeneDBInst(speciesName, refDbUrl, refDbGeneUrl);
-			if (altRefDb != null)
-			{
-				JSONArray altRefDbNames = (JSONArray) altRefDb.get("dbname");
-				String altRefDbUrl = (String) altRefDb.get("url");
-				String altRefDbAccess = (String) altRefDb.get("access");
-				InferEWAS.createAlternateReferenceDBInst(speciesName, (String) altRefDbNames.get(0), altRefDbUrl, altRefDbAccess);
-				if (altRefDb.get("alt_id") != null) {
-					String altRefDbId = (String) altRefDb.get("alt_id");
-					InferEWAS.setAlternateDBId(altRefDbId);
-				}
-			} else {
-				InferEWAS.updateRefDb();
-			}
-			InferEvents.createSpeciesInst(speciesName);
-			OrthologousEntity.setSpeciesInst(speciesInst);
-			InferEWAS.setSpeciesInst(speciesInst);
-			InstanceUtilities.setSpeciesInst(speciesInst);
-			InferEvents.setSummationInst();
-			InferEvents.setEvidenceTypeInst();
-			OrthologousEntity.setComplexSummationInst();
-
-/**
- *  Start of ReactionlikeEvent inference. Retrieves all human ReactionlikeEvents, and attempts to infer each for the species.
- */
-		// Gets DB instance of source species (human)
-		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", speciesToInferFromLong);
-		if (!sourceSpeciesInst.isEmpty())
-		{
-			String dbId = sourceSpeciesInst.iterator().next().getDBID().toString();
-			// Gets Reaction instances of source species (human)
-			Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", dbId);
-
-			ArrayList<Long> dbids = new ArrayList<Long>();
-			HashMap<Long, GKInstance> reactionMap = new HashMap<Long, GKInstance>();
-			for (GKInstance reactionInst : reactionInstances) {
-				dbids.add(reactionInst.getDBID());
-				reactionMap.put(reactionInst.getDBID(), reactionInst);
-			}
-			// For now sort the instances by DB ID so that it matches the Perl sequence
-			Collections.sort(dbids);
-			
-			if (!reactionInstances.isEmpty())
-			{
-				for (Long dbid : dbids)
-				{
-					GKInstance reactionInst = reactionMap.get(dbid);
-					// Check if the current Reaction already exists for this species, that it is a valid instance (passes some filters), and that it doesnt have a Disease attribute.
-					// Adds to manualHumanEvents array if it passes conditions. This code block allows you to re-run the code without re-inferring instances.
-					ArrayList<GKInstance> previouslyInferredInstances = new ArrayList<GKInstance>();
-					for (GKInstance orthoEventInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent))
-					{
-						GKInstance reactionSpeciesInst = (GKInstance) orthoEventInst.getAttributeValue(ReactomeJavaConstants.species);
-						if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && orthoEventInst.getAttributeValue(ReactomeJavaConstants.isChimeric) == null)
-						{
-							previouslyInferredInstances.add(orthoEventInst);
-							
-						}
-					}
-					for (GKInstance inferredFromInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(ReactomeJavaConstants.inferredFrom))
-					{
-						GKInstance reactionSpeciesInst = (GKInstance) inferredFromInst.getAttributeValue(ReactomeJavaConstants.species);
-						if (reactionSpeciesInst.getDBID() == speciesInst.getDBID() && inferredFromInst.getAttributeValue(ReactomeJavaConstants.isChimeric) == null)
-						{
-							previouslyInferredInstances.add(inferredFromInst);
-						}
-					}
-					if (previouslyInferredInstances.size() > 0)
-					{
-						GKInstance prevInfInst = previouslyInferredInstances.get(0);
-						if (prevInfInst.getAttributeValue(ReactomeJavaConstants.disease) == null)
-						{
-							manualEventToNonHumanSource.put(reactionInst, prevInfInst);
-							manualHumanEvents.add(reactionInst);
-						} else {
-							System.out.println("Skipping building of hierarchy around pre-existing disease reaction " + prevInfInst);
-						}
-						
-						continue;
-					}
-					// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
-					System.out.println("\t" + reactionInst);
-					try {
-						InferReaction.reactionInferrer(reactionInst);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-		UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
-		UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
-		InferEvents.outputReport(species);
-		InferEvents.resetVariables();
-		System.gc();
-		System.out.println("Finished orthoinference of " + speciesName + ".");
-//		}
-	}
-
-	public static void outputReport(String species) throws IOException
-	{
-		int[] counts = InferReaction.getCounts();
-		int percent = 100*counts[1]/counts[0];
-		// TODO: Config out the file name
-		PrintWriter reportFile = new PrintWriter("report_ortho_inference_test_reactome_67.txt");
-		reportFile.close();
-		String results = "hsap to " + species + ":\t" + counts[1] + " out of " + counts[0] + " eligible reactions (" + percent + "%)\n";
-		Files.write(Paths.get("report_ortho_inference_test_reactome_67.txt"), results.getBytes(), StandardOpenOption.APPEND);
-	}
-
-	// Reduce memory usage after species inference complete
-	public static void resetVariables() {
-		InferReaction.resetVariables();
-		OrthologousEntity.resetVariables();
-		InferEWAS.resetVariables();
-		ProteinCount.resetVariables();
-		InstanceUtilities.resetVariables();
-		UpdateHumanEvents.resetVariables();
-		manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
-		manualHumanEvents = new ArrayList<GKInstance>();
 	}
 
 	// Read the species-specific orthopair 'mapping' file, and create a HashMap with the contents
-	public static HashMap<String, String[]> readHomologueMappingFile(String toSpecies, String fromSpecies) throws IOException
+	private static Map<String, String[]> readHomologueMappingFile(String toSpecies, String fromSpecies, String pathToOrthopairs) throws IOException
 	{
-		String mappingFileName = fromSpecies + "_" + toSpecies + "_mapping.txt";
-		String mappingFilePath = "src/main/resources/orthopairs/" + mappingFileName;
-		FileReader fr = new FileReader(mappingFilePath);
+		String orthopairsFileName = fromSpecies + "_" + toSpecies + "_mapping.txt";
+		String orthopairsFilePath = pathToOrthopairs + orthopairsFileName;
+		FileReader fr = new FileReader(orthopairsFilePath);
 		BufferedReader br = new BufferedReader(fr);
 
+		Map<String, String[]> homologueMappings = new HashMap<String,String[]>();
 		String currentLine;
-		HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
 		while ((currentLine = br.readLine()) != null)
 		{
 			String[] tabSplit = currentLine.split("\t");
@@ -262,50 +239,65 @@ public class InferEvents
 	}
 
 	// Find the instance specific to this species
-	public static void createSpeciesInst(String toSpeciesLong) throws Exception
+	private static void createAndSetSpeciesInstance(String toSpeciesLong) throws Exception
 	{
-		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Species);
+		SchemaClass referenceDb = dbAdaptor.getSchema().getClassByName(Species);
 		speciesInst = new GKInstance(referenceDb);
 		speciesInst.setDbAdaptor(dbAdaptor);
-		speciesInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
-		speciesInst.addAttributeValue(ReactomeJavaConstants.name, toSpeciesLong);
-		speciesInst.addAttributeValue(ReactomeJavaConstants._displayName, toSpeciesLong);
+		speciesInst.addAttributeValue(created, instanceEditInst);
+		speciesInst.addAttributeValue(name, toSpeciesLong);
+		speciesInst.addAttributeValue(_displayName, toSpeciesLong);
 		speciesInst = InstanceUtilities.checkForIdenticalInstances(speciesInst);
+		OrthologousEntity.setSpeciesInstance(speciesInst);
+		InferEWAS.setSpeciesInstance(speciesInst);
+		InstanceUtilities.setSpeciesInstance(speciesInst);
 	}
 	// Create and set static Summation instance
-	public static void setSummationInst() throws Exception
+	private static void setSummationInstance() throws Exception
 	{
-		GKInstance summationInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.Summation));
+		GKInstance summationInst = new GKInstance(dbAdaptor.getSchema().getClassByName(Summation));
 		summationInst.setDbAdaptor(dbAdaptor);
-		summationInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
+		summationInst.addAttributeValue(created, instanceEditInst);
 		String summationText = "This event has been computationally inferred from an event that has been demonstrated in another species.<p>The inference is based on the homology mapping in Ensembl Compara. Briefly, reactions for which all involved PhysicalEntities (in input, output and catalyst) have a mapped orthologue/paralogue (for complexes at least 75% of components must have a mapping) are inferred to the other species. High level events are also inferred for these events to allow for easier navigation.<p><a href='/electronic_inference_compara.html' target = 'NEW'>More details and caveats of the event inference in Reactome.</a> For details on the Ensembl Compara system see also: <a href='http://www.ensembl.org/info/docs/compara/homology_method.html' target='NEW'>Gene orthology/paralogy prediction method.</a>";
-		summationInst.addAttributeValue(ReactomeJavaConstants.text, summationText);
-		summationInst.addAttributeValue(ReactomeJavaConstants._displayName, summationText);
+		summationInst.addAttributeValue(text, summationText);
+		summationInst.addAttributeValue(_displayName, summationText);
 		summationInst = InstanceUtilities.checkForIdenticalInstances(summationInst);
 		
-		InferReaction.setSummationInst(summationInst);
-		UpdateHumanEvents.setSummationInst(summationInst);
+		InferReaction.setSummationInstance(summationInst);
+		UpdateHumanEvents.setSummationInstance(summationInst);
 	}
 	// Create and set static EvidenceType instance
-	public static void setEvidenceTypeInst() throws Exception
+	private static void setEvidenceTypeInstance() throws Exception
 	{
-		GKInstance evidenceTypeInst = new GKInstance(dbAdaptor.getSchema().getClassByName(ReactomeJavaConstants.EvidenceType));
+		GKInstance evidenceTypeInst = new GKInstance(dbAdaptor.getSchema().getClassByName(EvidenceType));
 		evidenceTypeInst.setDbAdaptor(dbAdaptor);
-		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
+		evidenceTypeInst.addAttributeValue(created, instanceEditInst);
 		String evidenceTypeText = "inferred by electronic annotation";
-		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, evidenceTypeText);
-		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants.name, "IEA");
-		evidenceTypeInst.addAttributeValue(ReactomeJavaConstants._displayName, evidenceTypeText);
+		evidenceTypeInst.addAttributeValue(name, evidenceTypeText);
+		evidenceTypeInst.addAttributeValue(name, "IEA");
+		evidenceTypeInst.addAttributeValue(_displayName, evidenceTypeText);
 		evidenceTypeInst = InstanceUtilities.checkForIdenticalInstances(evidenceTypeInst);
-		InferReaction.setEvidenceTypeInst(evidenceTypeInst);
-		UpdateHumanEvents.setEvidenceTypeInst(evidenceTypeInst);
+		InferReaction.setEvidenceTypeInstance(evidenceTypeInst);
+		UpdateHumanEvents.setEvidenceTypeInstance(evidenceTypeInst);
 	}
 	
-	public static void setInstanceEdits() throws Exception {
-		instanceEdit = InstanceEditUtils.createInstanceEdit(dbAdaptor, 8948690, "org.reactome.orthoinference");
-		InstanceUtilities.setInstanceEdit(instanceEdit);
-		OrthologousEntity.setInstanceEdit(instanceEdit);
-		InferEWAS.setInstanceEdit(instanceEdit);
-		UpdateHumanEvents.setInstanceEdit(instanceEdit);
+	private static void setInstanceEdits() throws Exception {
+		instanceEditInst = InstanceEditUtils.createInstanceEdit(dbAdaptor, 8948690, "org.reactome.orthoinference");
+		InstanceUtilities.setInstanceEdit(instanceEditInst);
+		OrthologousEntity.setInstanceEdit(instanceEditInst);
+		InferEWAS.setInstanceEdit(instanceEditInst);
+		UpdateHumanEvents.setInstanceEdit(instanceEditInst);
+	}
+	
+	// Reduce memory usage after species inference complete
+	private static void resetVariables() {
+		InferReaction.resetVariables();
+		OrthologousEntity.resetVariables();
+		InferEWAS.resetVariables();
+		ProteinCount.resetVariables();
+		InstanceUtilities.resetVariables();
+		UpdateHumanEvents.resetVariables();
+		manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
+		manualHumanEvents = new ArrayList<GKInstance>();
 	}
 }

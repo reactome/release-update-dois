@@ -393,11 +393,11 @@ public class OrthologousEntity {
 	}
 	
 	// Sets the species instance for inferEWAS to use
-	public static void setSpeciesInst(GKInstance speciesInstCopy)
+	public static void setSpeciesInstance(GKInstance speciesInstCopy)
 	{
 		speciesInst = speciesInstCopy;
 	}
-	public static void setComplexSummationInst() throws Exception
+	public static void setComplexSummationInstance() throws Exception
 	{
 		complexSummationInst = new GKInstance(dba.getSchema().getClassByName(ReactomeJavaConstants.Summation));
 		complexSummationInst.setDbAdaptor(dba);

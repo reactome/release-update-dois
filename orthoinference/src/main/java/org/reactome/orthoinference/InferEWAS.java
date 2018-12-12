@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
@@ -14,19 +15,21 @@ import org.gk.schema.GKSchemaClass;
 import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 public class InferEWAS {
 
 	private static MySQLAdaptor dba;
-	static boolean refDb = false;
-	private static String altRefDBId;
+	static boolean altRefDb = false;
+	private static String altRefDbId;
 	private static GKInstance instanceEdit;
 	private static GKInstance ensgDbInst;
 	private static GKInstance enspDbInst;
 	private static GKInstance alternateDbInst;
 	private static GKInstance uniprotDbInst;
 	private static GKInstance speciesInst;
-	private static HashMap<String, String[]> homologueMappings = new HashMap<String,String[]>();
+	private static Map<String, String[]> homologueMappings = new HashMap<String,String[]>();
 	private static HashMap<String, ArrayList<String>> ensgMappings = new HashMap<String,ArrayList<String>>();
 	private static HashMap<String, GKInstance> seenRGP = new HashMap<String,GKInstance>();
 	private static HashMap<String,GKInstance> ewasIdenticals = new HashMap<String,GKInstance>();
@@ -234,13 +237,13 @@ public class InferEWAS {
 			referenceDNAInst.setAttributeValue(ReactomeJavaConstants._displayName, "ENSEMBL:" + ensg);
 			referenceDNAInst = InstanceUtilities.checkForIdenticalInstances(referenceDNAInst);
 			referenceDNAInstances.add(referenceDNAInst);
-			if (refDb)
+			if (altRefDb)
 			{
 				GKInstance alternateRefDNAInst = new GKInstance(referenceDNAClass);
 				alternateRefDNAInst.setDbAdaptor(dba);
 				String altDbIdentifier = (String) ensg;
-				if (altRefDBId != null) {
-					altDbIdentifier = altDbIdentifier.replaceAll(altRefDBId, "");
+				if (altRefDbId != null) {
+					altDbIdentifier = altDbIdentifier.replaceAll(altRefDbId, "");
 				}
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 				alternateRefDNAInst.addAttributeValue(ReactomeJavaConstants.identifier, altDbIdentifier);
@@ -261,7 +264,7 @@ public class InferEWAS {
 		InferEWAS.dba = dbAdaptor;
 	}
 	// Sets the HashMap of species-specific homologue-identifier mappings
-	public static void setHomologueMappingFile(HashMap<String, String[]> homologueMappingsCopy) throws IOException
+	public static void setHomologueMappingFile(Map<String, String[]> homologueMappingsCopy) throws IOException
 	{
 		homologueMappings = homologueMappingsCopy;
 	}
@@ -298,14 +301,14 @@ public class InferEWAS {
 	
 	// Fetches Uniprot DB instance
 	@SuppressWarnings("unchecked")
-	public static void createUniprotDbInst() throws Exception
+	public static void createUniprotDbInstance() throws Exception
 	{
 		 Collection<GKInstance> uniprotDbInstances = (Collection<GKInstance>) dba.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "UniProt");
 		 uniprotDbInst = uniprotDbInstances.iterator().next();
 	}
 	
 	// Creates instance pertaining to the species Ensembl Protein DB
-	public static void createEnsemblProteinDbInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static void createEnsemblProteinDbInstance(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		String enspSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_PROTEIN";
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
@@ -322,7 +325,7 @@ public class InferEWAS {
 	}
 	
 	// Creates instance pertaining to the species Ensembl Gene DB
-	public static void createEnsemblGeneDBInst(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static void createEnsemblGeneDBInstance(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_GENE";
 		SchemaClass referenceDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
@@ -339,31 +342,30 @@ public class InferEWAS {
 	}
 	
 	// Create instance pertaining to any alternative reference DB for the species
-	public static void createAlternateReferenceDBInst(String toSpeciesLong, String alternateDbName, String toSpeciesAlternateDbUrl, String toSpeciesAlternateAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static void createAlternateReferenceDBInstance(String toSpeciesLong, JSONObject altRefDbJSON) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		SchemaClass alternateDb = dba.getSchema().getClassByName(ReactomeJavaConstants.ReferenceDatabase);
 		alternateDbInst = new GKInstance(alternateDb);
 		alternateDbInst.setDbAdaptor(dba);
 		alternateDbInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
-		alternateDbInst.addAttributeValue(ReactomeJavaConstants.name, alternateDbName);
-		alternateDbInst.addAttributeValue(ReactomeJavaConstants.url, toSpeciesAlternateDbUrl);
-		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, toSpeciesAlternateAccessUrl);
-		alternateDbInst.setAttributeValue(ReactomeJavaConstants._displayName, alternateDbName);
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.name, ((JSONArray) altRefDbJSON.get("dbname")).get(0));
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.url, altRefDbJSON.get("url"));
+		alternateDbInst.addAttributeValue(ReactomeJavaConstants.accessUrl, altRefDbJSON.get("access"));
+		alternateDbInst.setAttributeValue(ReactomeJavaConstants._displayName, ((JSONArray) altRefDbJSON.get("dbname")).get(0));
 		alternateDbInst = InstanceUtilities.checkForIdenticalInstances(alternateDbInst);
-		refDb = true;
-	}
-	
-	public static void setAlternateDBId(String altRefDBIdCopy) {
-		altRefDBId = altRefDBIdCopy;
+		if (altRefDbJSON.get("alt_id") != null) {
+			altRefDbId = (String) altRefDbJSON.get("alt_id");
+		}
+		altRefDb = true;
 	}
 	
 	public static void updateRefDb() 
 	{
-		refDb = false;
+		altRefDb = false;
 	}
 	
 	// Sets the species instance for inferEWAS to use
-	public static void setSpeciesInst(GKInstance speciesInstCopy)
+	public static void setSpeciesInstance(GKInstance speciesInstCopy)
 	{
 		speciesInst = speciesInstCopy;
 	}
