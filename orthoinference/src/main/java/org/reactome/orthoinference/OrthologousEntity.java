@@ -114,22 +114,11 @@ public class OrthologousEntity {
 				String definedSetName = "Homologues of " + ewasInst.getAttributeValue(ReactomeJavaConstants.name);
 				definedSetInst.addAttributeValue(ReactomeJavaConstants.name, definedSetName);
 				
-				GKInstance compartmentInstGK = (GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.compartment);
-				if (compartmentInstGK.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
+				GKInstance compartmentInstGk = (GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.compartment);
+				if (compartmentInstGk.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
 					definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, ewasInst.getAttributeValue(ReactomeJavaConstants.compartment));
 				} else {
-					SchemaClass compartmentClass = dba.getSchema().getClassByName(ReactomeJavaConstants.Compartment);
-					GKInstance newCompartmentInst = new GKInstance(compartmentClass);
-					newCompartmentInst.setDbAdaptor(dba);
-					Collection<GKSchemaAttribute> compartmentAttributes = compartmentClass.getAttributes();
-					for (GKSchemaAttribute compartmentAttribute : compartmentAttributes) {
-						if (!compartmentAttribute.getName().matches("DB_ID") && compartmentInstGK.getAttributeValue(compartmentAttribute.getName()) != null) {
-							for (Object attribute : compartmentInstGK.getAttributeValuesList(compartmentAttribute.getName())) {
-								newCompartmentInst.addAttributeValue(compartmentAttribute.getName(), attribute);
-							}
-						}
-					}
-					newCompartmentInst = InstanceUtilities.checkForIdenticalInstances(newCompartmentInst);
+					GKInstance newCompartmentInst = InstanceUtilities.newCompartmentInstance(compartmentInstGk);
 					definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, newCompartmentInst);
 				}
 				
@@ -310,25 +299,13 @@ public class OrthologousEntity {
 								definedSetInst.setDbAdaptor(dba);
 								definedSetInst.setAttributeValue(ReactomeJavaConstants.name, infEntitySetInst.getAttributeValuesList(ReactomeJavaConstants.name));
 								definedSetInst.setAttributeValue(ReactomeJavaConstants.hasMember, membersList);
-								//TODO: CompartmentUtils
 								if (entitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.compartment) && entitySetInst.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
 									for (Object compartmentInst : entitySetInst.getAttributeValuesList(ReactomeJavaConstants.compartment)) {
-										GKInstance compartmentInstGK = (GKInstance) compartmentInst;
-										if (compartmentInstGK.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
-											definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInstGK);
+										GKInstance compartmentInstGk = (GKInstance) compartmentInst;
+										if (compartmentInstGk.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
+											definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInstGk);
 										} else {
-											SchemaClass compartmentClass = dba.getSchema().getClassByName(ReactomeJavaConstants.Compartment);
-											GKInstance newCompartmentInst = new GKInstance(compartmentClass);
-											newCompartmentInst.setDbAdaptor(dba);
-											Collection<GKSchemaAttribute> compartmentAttributes = compartmentClass.getAttributes();
-											for (GKSchemaAttribute compartmentAttribute : compartmentAttributes) {
-												if (!compartmentAttribute.getName().matches("DB_ID") && compartmentInstGK.getAttributeValue(compartmentAttribute.getName()) != null) {
-													for (Object attribute : compartmentInstGK.getAttributeValuesList(compartmentAttribute.getName())) {
-														newCompartmentInst.addAttributeValue(compartmentAttribute.getName(), attribute);
-													}
-												}
-											}
-											newCompartmentInst = InstanceUtilities.checkForIdenticalInstances(newCompartmentInst);
+											GKInstance newCompartmentInst = InstanceUtilities.newCompartmentInstance(compartmentInstGk);
 											definedSetInst.addAttributeValue(ReactomeJavaConstants.compartment, newCompartmentInst);
 										}
 									}

@@ -1,11 +1,9 @@
 package org.reactome.orthoinference;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
@@ -23,10 +21,8 @@ public class InstanceUtilities {
 	private static MySQLAdaptor dba; 
 	private static GKInstance speciesInst;
 	private static GKInstance instanceEdit;
-	private static HashMap<String,GKInstance> mockedIdenticals = new HashMap<String,GKInstance>();
+	private static Map<String,GKInstance> mockedIdenticals = new HashMap<String,GKInstance>();
 	
-	private static String classFilename;
-
 	public static void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
 		dba = dbAdaptor;
@@ -46,23 +42,12 @@ public class InstanceUtilities {
 		inferredInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
 		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.compartment) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
 			for (Object compartmentInst : instanceToBeInferred.getAttributeValuesList(ReactomeJavaConstants.compartment)) {
-				GKInstance compartmentInstGK = (GKInstance) compartmentInst;
-				if (compartmentInstGK.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
-					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInstGK);
+				GKInstance compartmentInstGk = (GKInstance) compartmentInst;
+				if (compartmentInstGk.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
+					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInstGk);
 
 				} else {
-					SchemaClass compartmentClass = dba.getSchema().getClassByName(ReactomeJavaConstants.Compartment);
-					GKInstance newCompartmentInst = new GKInstance(compartmentClass);
-					newCompartmentInst.setDbAdaptor(dba);
-					Collection<GKSchemaAttribute> compartmentAttributes = compartmentClass.getAttributes();
-					for (GKSchemaAttribute compartmentAttribute : compartmentAttributes) {
-						if (!compartmentAttribute.getName().matches("DB_ID") && compartmentInstGK.getAttributeValue(compartmentAttribute.getName()) != null) {
-							for (Object attribute : compartmentInstGK.getAttributeValuesList(compartmentAttribute.getName())) {
-								newCompartmentInst.addAttributeValue(compartmentAttribute.getName(), attribute);
-							}
-						}
-					}
-					newCompartmentInst = checkForIdenticalInstances(newCompartmentInst);
+					GKInstance newCompartmentInst = newCompartmentInstance(compartmentInstGk);
 					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, newCompartmentInst);
 				}
 			}
@@ -74,6 +59,25 @@ public class InstanceUtilities {
 		return inferredInst;
 	}
 	
+	// Some 'Compartment' instances were actually 'GO_CellularComponent' instances. This meant that the instances that
+	// were pulled from the original instance's Compartment attribute could not be added to the new instance, due to them being
+	// a GO_CellularComponent. This function is the workaround, producing a Compartment instance that contains all the same attribute values.
+	public static GKInstance newCompartmentInstance(GKInstance compartmentInstGk) throws InvalidAttributeException, InvalidAttributeValueException, Exception {
+		SchemaClass compartmentClass = dba.getSchema().getClassByName(ReactomeJavaConstants.Compartment);
+		GKInstance newCompartmentInst = new GKInstance(compartmentClass);
+		newCompartmentInst.setDbAdaptor(dba);
+		Collection<GKSchemaAttribute> compartmentAttributes = compartmentClass.getAttributes();
+		for (GKSchemaAttribute compartmentAttribute : compartmentAttributes) {
+			if (!compartmentAttribute.getName().matches("DB_ID") && compartmentInstGk.getAttributeValue(compartmentAttribute.getName()) != null) {
+				for (Object attribute : compartmentInstGk.getAttributeValuesList(compartmentAttribute.getName())) {
+					newCompartmentInst.addAttributeValue(compartmentAttribute.getName(), attribute);
+				}
+			}
+		}
+		newCompartmentInst = checkForIdenticalInstances(newCompartmentInst);
+		return newCompartmentInst;
+	}
+
 	// create_ghost equivalent; Returns a mock homologue that is needed in cases of unsuccessful inference
 	public static GKInstance newMockGKInstance(GKInstance instanceToBeMocked) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
