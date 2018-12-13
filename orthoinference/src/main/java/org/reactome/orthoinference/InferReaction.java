@@ -53,7 +53,8 @@ public class InferReaction {
 			// Total proteins are stored in reactionProteinCounts[0], inferrable proteins in [1], and the maximum number of homologues for any entity involved in index [2].
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
 			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
-			if (reactionProteinCounts.get(0) > 0) 
+			int reactionTotalProteinCounts = reactionProteinCounts.get(0);
+			if (reactionTotalProteinCounts > 0) 
 			{
 				String eligibleEventName = reactionInst.getAttributeValue(DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
 				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, meaning inference is continued.
