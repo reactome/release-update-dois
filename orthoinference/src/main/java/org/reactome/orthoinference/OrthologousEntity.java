@@ -135,9 +135,9 @@ public class OrthologousEntity {
 					definedSetInst = InstanceUtilities.checkForIdenticalInstances(definedSetInst);
 					definedSetIdenticals.put(cacheKey, definedSetInst);
 				}
-				definedSetInst = InstanceUtilities.addAttributeValueIfNeccesary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom);
+				definedSetInst = InstanceUtilities.addAttributeValueIfNecessary(definedSetInst, ewasInst, ReactomeJavaConstants.inferredFrom);
 				dba.updateInstanceAttribute(definedSetInst, ReactomeJavaConstants.inferredFrom);
-				ewasInst = InstanceUtilities.addAttributeValueIfNeccesary(ewasInst, definedSetInst, ReactomeJavaConstants.inferredTo);
+				ewasInst = InstanceUtilities.addAttributeValueIfNecessary(ewasInst, definedSetInst, ReactomeJavaConstants.inferredTo);
 				dba.updateInstanceAttribute(ewasInst, ReactomeJavaConstants.inferredTo);
 				homolEWAS.put(ewasInst, definedSetInst);
 			} else if (infEWASInstances.size() == 1)
@@ -210,9 +210,9 @@ public class OrthologousEntity {
 
 			if (infComplexInst.getDBID() != complexInst.getDBID())
 			{
-				infComplexInst = InstanceUtilities.addAttributeValueIfNeccesary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom);
+				infComplexInst = InstanceUtilities.addAttributeValueIfNecessary(infComplexInst, complexInst, ReactomeJavaConstants.inferredFrom);
 				dba.updateInstanceAttribute(infComplexInst, ReactomeJavaConstants.inferredFrom);
-				complexInst = InstanceUtilities.addAttributeValueIfNeccesary(complexInst, infComplexInst, ReactomeJavaConstants.inferredTo);
+				complexInst = InstanceUtilities.addAttributeValueIfNecessary(complexInst, infComplexInst, ReactomeJavaConstants.inferredTo);
 				dba.updateInstanceAttribute(complexInst, ReactomeJavaConstants.inferredTo);
 			}
 			
@@ -294,6 +294,7 @@ public class OrthologousEntity {
 							{
 								infEntitySetInst = membersList.get(0);
 							} else {
+								// TODO: Add Species and Created attributes
 								SchemaClass definedSetClass = dba.getSchema().getClassByName(ReactomeJavaConstants.DefinedSet);
 								GKInstance definedSetInst = new GKInstance(definedSetClass);
 								definedSetInst.setDbAdaptor(dba);
@@ -350,9 +351,9 @@ public class OrthologousEntity {
 			}
 			if (infEntitySetInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entitySetInst.getAttributeValue(ReactomeJavaConstants.species) != null)
 			{
-				infEntitySetInst = InstanceUtilities.addAttributeValueIfNeccesary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom);
+				infEntitySetInst = InstanceUtilities.addAttributeValueIfNecessary(infEntitySetInst, entitySetInst, ReactomeJavaConstants.inferredFrom);
 				dba.updateInstanceAttribute(infEntitySetInst, ReactomeJavaConstants.inferredFrom);
-				entitySetInst = InstanceUtilities.addAttributeValueIfNeccesary(entitySetInst, infEntitySetInst, ReactomeJavaConstants.inferredTo);
+				entitySetInst = InstanceUtilities.addAttributeValueIfNecessary(entitySetInst, infEntitySetInst, ReactomeJavaConstants.inferredTo);
 				dba.updateInstanceAttribute(entitySetInst, ReactomeJavaConstants.inferredTo);
 			}
 			if (override)

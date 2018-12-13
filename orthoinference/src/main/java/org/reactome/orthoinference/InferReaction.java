@@ -83,10 +83,10 @@ public class InferReaction {
 							dba.storeInstance(infReactionInst);
 							if (infReactionInst.getSchemClass().isValidAttribute(inferredFrom))
 							{
-								infReactionInst = InstanceUtilities.addAttributeValueIfNeccesary(infReactionInst, reactionInst, inferredFrom);
+								infReactionInst = InstanceUtilities.addAttributeValueIfNecessary(infReactionInst, reactionInst, inferredFrom);
 								dba.updateInstanceAttribute(infReactionInst, inferredFrom);
 							}
-							infReactionInst = InstanceUtilities.addAttributeValueIfNeccesary(infReactionInst, reactionInst, orthologousEvent);
+							infReactionInst = InstanceUtilities.addAttributeValueIfNecessary(infReactionInst, reactionInst, orthologousEvent);
 							dba.updateInstanceAttribute(infReactionInst, orthologousEvent);
 							reactionInst.addAttributeValue(orthologousEvent, infReactionInst);
 							dba.updateInstanceAttribute(reactionInst, orthologousEvent);

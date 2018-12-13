@@ -4,9 +4,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.gk.model.GKInstance;
-import org.gk.model.ReactomeJavaConstants;
+import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.GKSchemaAttribute;
 import org.gk.schema.GKSchemaClass;
@@ -20,41 +21,39 @@ public class InstanceUtilities {
 	
 	private static MySQLAdaptor dba; 
 	private static GKInstance speciesInst;
-	private static GKInstance instanceEdit;
+	private static GKInstance instanceEditInst;
 	private static Map<String,GKInstance> mockedIdenticals = new HashMap<String,GKInstance>();
-	
-	public static void setAdaptor(MySQLAdaptor dbAdaptor)
-	{
-		dba = dbAdaptor;
-	}
 	
 	// Creates new instance that will be inferred based on the incoming instances class		
 	public static GKInstance newInferredGKInstance(GKInstance instanceToBeInferred) throws Exception
 	{
 		GKInstance inferredInst = null;
 		String reactionClass = instanceToBeInferred.getSchemClass().getName();
-		if (reactionClass.matches(ReactomeJavaConstants.ReferenceIsoform)) {
-			reactionClass = ReactomeJavaConstants.ReferenceGeneProduct;
+		if (reactionClass.matches(ReferenceIsoform)) 
+		{
+			reactionClass = ReferenceGeneProduct;
 		}
 		SchemaClass instanceClass = dba.getSchema().getClassByName(reactionClass);
 		inferredInst = new GKInstance(instanceClass);
 		inferredInst.setDbAdaptor(dba);
-		inferredInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
-		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.compartment) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
-			for (Object compartmentInst : instanceToBeInferred.getAttributeValuesList(ReactomeJavaConstants.compartment)) {
+		inferredInst.addAttributeValue(created, instanceEditInst);
+		if (instanceToBeInferred.getSchemClass().isValidAttribute(compartment) && instanceToBeInferred.getAttributeValue(compartment) != null) 
+		{
+			for (Object compartmentInst : instanceToBeInferred.getAttributeValuesList(compartment)) 
+			{
 				GKInstance compartmentInstGk = (GKInstance) compartmentInst;
-				if (compartmentInstGk.getSchemClass().isa(ReactomeJavaConstants.Compartment)) {
-					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, compartmentInstGk);
-
+				if (compartmentInstGk.getSchemClass().isa(Compartment)) 
+				{
+					inferredInst.addAttributeValue(compartment, compartmentInstGk);
 				} else {
 					GKInstance newCompartmentInst = newCompartmentInstance(compartmentInstGk);
-					inferredInst.addAttributeValue(ReactomeJavaConstants.compartment, newCompartmentInst);
+					inferredInst.addAttributeValue(compartment, newCompartmentInst);
 				}
 			}
 		}
-		if (instanceToBeInferred.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && instanceToBeInferred.getAttributeValue(ReactomeJavaConstants.species) != null)
+		if (instanceToBeInferred.getSchemClass().isValidAttribute(species) && instanceToBeInferred.getAttributeValue(species) != null)
 		{
-			inferredInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
+			inferredInst.addAttributeValue(species, speciesInst);
 		}
 		return inferredInst;
 	}
@@ -62,14 +61,20 @@ public class InstanceUtilities {
 	// Some 'Compartment' instances were actually 'GO_CellularComponent' instances. This meant that the instances that
 	// were pulled from the original instance's Compartment attribute could not be added to the new instance, due to them being
 	// a GO_CellularComponent. This function is the workaround, producing a Compartment instance that contains all the same attribute values.
-	public static GKInstance newCompartmentInstance(GKInstance compartmentInstGk) throws InvalidAttributeException, InvalidAttributeValueException, Exception {
-		SchemaClass compartmentClass = dba.getSchema().getClassByName(ReactomeJavaConstants.Compartment);
+	@SuppressWarnings("unchecked")
+	public static GKInstance newCompartmentInstance(GKInstance compartmentInstGk) throws InvalidAttributeException, InvalidAttributeValueException, Exception 
+	{
+		System.out.println(compartmentInstGk + " is a " + compartmentInstGk.getSchemClass() + " instead of a Compartment -- creating new Compartment instance");
+		SchemaClass compartmentClass = dba.getSchema().getClassByName(Compartment);
 		GKInstance newCompartmentInst = new GKInstance(compartmentClass);
 		newCompartmentInst.setDbAdaptor(dba);
 		Collection<GKSchemaAttribute> compartmentAttributes = compartmentClass.getAttributes();
-		for (GKSchemaAttribute compartmentAttribute : compartmentAttributes) {
-			if (!compartmentAttribute.getName().matches("DB_ID") && compartmentInstGk.getAttributeValue(compartmentAttribute.getName()) != null) {
-				for (Object attribute : compartmentInstGk.getAttributeValuesList(compartmentAttribute.getName())) {
+		for (GKSchemaAttribute compartmentAttribute : compartmentAttributes) 
+		{
+			if (!compartmentAttribute.getName().matches("DB_ID") && compartmentInstGk.getAttributeValue(compartmentAttribute.getName()) != null) 
+			{
+				for (Object attribute : compartmentInstGk.getAttributeValuesList(compartmentAttribute.getName())) 
+				{
 					newCompartmentInst.addAttributeValue(compartmentAttribute.getName(), attribute);
 				}
 			}
@@ -78,62 +83,48 @@ public class InstanceUtilities {
 		return newCompartmentInst;
 	}
 
-	// create_ghost equivalent; Returns a mock homologue that is needed in cases of unsuccessful inference
+	// Equivalent to create_ghost from Perl; Returns a mock homologue that is needed in cases where an inference is rejected, but the
+	// component isn't essential for the inference to be completed.
 	public static GKInstance newMockGKInstance(GKInstance instanceToBeMocked) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
-		SchemaClass geeClass = dba.getSchema().getClassByName(ReactomeJavaConstants.GenomeEncodedEntity);
-		GKInstance mockedInst = new GKInstance(geeClass);
+		SchemaClass genomeEncodedEntityClass = dba.getSchema().getClassByName(GenomeEncodedEntity);
+		GKInstance mockedInst = new GKInstance(genomeEncodedEntityClass);
 		mockedInst.setDbAdaptor(dba);
-		mockedInst.addAttributeValue(ReactomeJavaConstants.created, instanceEdit);
-		//TODO: CFII not congruent between Perl and Java
-		String mockedName = (String) instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.name);
-		mockedInst.addAttributeValue(ReactomeJavaConstants.name, "Ghost homologue of " + mockedName);
-		mockedInst.addAttributeValue(ReactomeJavaConstants._displayName, "Ghost homologue of " + instanceToBeMocked.getAttributeValue(ReactomeJavaConstants._displayName));
-		mockedInst.addAttributeValue(ReactomeJavaConstants.inferredFrom, instanceToBeMocked);
-		mockedInst.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
-		mockedInst.addAttributeValue(ReactomeJavaConstants.compartment, instanceToBeMocked.getAttributeValue(ReactomeJavaConstants.compartment));
+		mockedInst.addAttributeValue(created, instanceEditInst);
+		String mockedInstName = (String) instanceToBeMocked.getAttributeValue(name);
+		mockedInst.addAttributeValue(name, "Ghost homologue of " + mockedInstName);
+		mockedInst.addAttributeValue(_displayName, "Ghost homologue of " + instanceToBeMocked.getAttributeValue(_displayName));
+		mockedInst.addAttributeValue(inferredFrom, instanceToBeMocked);
+		mockedInst.addAttributeValue(species, speciesInst);
+		mockedInst.addAttributeValue(compartment, instanceToBeMocked.getAttributeValue(compartment));
 		
 		// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which is slow.
-		String cacheKey = InstanceUtilities.getCacheKey((GKSchemaClass) mockedInst.getSchemClass(), mockedInst);
+		String cacheKey = getCacheKey((GKSchemaClass) mockedInst.getSchemClass(), mockedInst);
 		if (mockedIdenticals.get(cacheKey) != null)
 		{
 			mockedInst = mockedIdenticals.get(cacheKey);
 		} else {
-			mockedInst = InstanceUtilities.checkForIdenticalInstances(mockedInst);
+			mockedInst = checkForIdenticalInstances(mockedInst);
 			mockedIdenticals.put(cacheKey, mockedInst);
 		}
-
-		instanceToBeMocked = InstanceUtilities.addAttributeValueIfNeccesary(instanceToBeMocked, mockedInst, ReactomeJavaConstants.inferredTo);
-		dba.updateInstanceAttribute(instanceToBeMocked, ReactomeJavaConstants.inferredTo);
+		instanceToBeMocked = addAttributeValueIfNecessary(instanceToBeMocked, mockedInst, inferredTo);
+		dba.updateInstanceAttribute(instanceToBeMocked, inferredTo);
 		
 		return mockedInst;
 	}
 	
 	// Checks that equivalent instances don't already exist in the DB, substituting if they do
-	
 	public static GKInstance checkForIdenticalInstances(GKInstance inferredInst) throws Exception
 	{
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
-		if (identicalInstances != null) {
-			
-			// FetchIdenticalInstances function doesn't work with OpenSets in Java -- likely something related to the 'Defining Attributes' not being specific enough.
-			// This block handles the first time an inferred OpenSet comes through, and then the caching (getCacheKey) should handle the rest.
-			if (((GKSchemaClass) inferredInst.getSchemClass()).isa(ReactomeJavaConstants.OpenSet)) {
-				for (GKInstance openSetInst : identicalInstances) {
-					GKInstance openSetSpecies = (GKInstance) openSetInst.getAttributeValue("species");
-					if (openSetSpecies.getDisplayName() == speciesInst.getDisplayName()) {
-						return openSetInst;
-					}
-				}
-				dba.storeInstance(inferredInst);
-				return inferredInst;
-			}
-			
-			if (identicalInstances.size() == 1) {
+		if (identicalInstances != null) 
+		{			
+			if (identicalInstances.size() == 1) 
+			{
 				return identicalInstances.iterator().next();
 			} else {
-				// In future, could iterate through array of returned values. For now, this mimics Perl
+				// TODO: In future, could iterate through array of returned values and pull the 'most identical'. For now, this mimics Perl.
 				return identicalInstances.iterator().next();
 			}
 		} else {
@@ -142,41 +133,44 @@ public class InstanceUtilities {
 		}
 	}
 	// Checks if the instanceToCheck already contains the instanceToUse in the multi-value attribute
-	//TODO: Naming of incoming variables isn't entirely correct
-	public static GKInstance addAttributeValueIfNeccesary(GKInstance inferredInstance, GKInstance originalInstance, String attribute) throws InvalidAttributeException, Exception
+	//TODO: Naming of incoming variables isn't entirely correct -- Not always an inferredInstance first and the original instance second
+	@SuppressWarnings("unchecked")
+	public static GKInstance addAttributeValueIfNecessary(GKInstance instanceToBeCheckedForExistingAttribute, GKInstance instanceContainingAttributeToBeChecked, String attribute) throws InvalidAttributeException, Exception
 	{
 		// Original version of this function had two checks: For 'multivalue attribute' and for 'instance-type object'. 
 		// Now we know the only attributes being passed through here are inferredTo, inferredFrom, orthologousEvent, and hasEvent, which are all multivalue attribute classes.
-		// We also know that it will always be a GKInstance passed through here (see arguments), so we are able to forgo both checks.
-		
-		Collection<GKInstance> attributeInstancesFromInferredInstance = inferredInstance.getAttributeValuesList(attribute);
-		HashSet<Long> dbIdsFromAttributeInstances = new HashSet<Long>();
-		for (GKInstance attributeInstance : attributeInstancesFromInferredInstance) {
+		// We also know that it will always be a GKInstance passed through here (see arguments), so we are able to forego both checks.
+		Collection<GKInstance> attributeInstancesFromInferredInstance = instanceToBeCheckedForExistingAttribute.getAttributeValuesList(attribute);
+		Set<Long> dbIdsFromAttributeInstances = new HashSet<Long>();
+		for (GKInstance attributeInstance : attributeInstancesFromInferredInstance) 
+		{
 			dbIdsFromAttributeInstances.add(attributeInstance.getDBID());
 		}
 		boolean attributeExists = false;
-		for (Long attributeInstanceDbId : dbIdsFromAttributeInstances) {
-			if (attributeInstanceDbId == originalInstance.getDBID()) {
+		for (Long attributeInstanceDbId : dbIdsFromAttributeInstances) 
+		{
+			if (attributeInstanceDbId == instanceContainingAttributeToBeChecked.getDBID()) {
 				attributeExists = true;
 			}
 		}
-		if (!attributeExists) {
-			inferredInstance.addAttributeValue(attribute, originalInstance);
+		if (!attributeExists) 
+		{
+			instanceToBeCheckedForExistingAttribute.addAttributeValue(attribute, instanceContainingAttributeToBeChecked);
 		}
-		return inferredInstance;
+		return instanceToBeCheckedForExistingAttribute;
 	}
 	
-	// Caching. This function goes through each defining attribute of the incoming instance and produces a string of the attribute values (DB ids if the attribute is an instance).
+	// Caching. This function goes through each defining attribute of the incoming instance and produces a string of the attribute values (DB IDs if the attribute is an instance).
 	// This allows for identical instances held in memory to be used before trying to use fetchIdenticalInstances, which is expensive. 
 	@SuppressWarnings("unchecked")
-	public static String getCacheKey(GKSchemaClass instClass, GKInstance infInst) throws InvalidAttributeException, Exception
+	public static String getCacheKey(GKSchemaClass instanceClass, GKInstance inferredInst) throws InvalidAttributeException, Exception
 	{
 		String key = "";
-		for (GKSchemaAttribute definingAttr : (Collection<GKSchemaAttribute>) instClass.getDefiningAttributes())
+		for (GKSchemaAttribute definingAttr : (Collection<GKSchemaAttribute>) instanceClass.getDefiningAttributes())
 		{
 			if (definingAttr.isMultiple()) 
 			{
-				Collection<Object> multiValueAttributes = infInst.getAttributeValuesList(definingAttr.getName());
+				Collection<Object> multiValueAttributes = inferredInst.getAttributeValuesList(definingAttr.getName());
 				if (multiValueAttributes.size() > 0)
 				{
 					for (Object attribute : multiValueAttributes)
@@ -193,11 +187,12 @@ public class InstanceUtilities {
 					key += "null";
 				}
 			} else {
-				if (definingAttr.isInstanceTypeAttribute() && infInst.getAttributeValue(definingAttr.getName()) != null)
+				if (definingAttr.isInstanceTypeAttribute() && inferredInst.getAttributeValue(definingAttr.getName()) != null)
 				{
-					key += ((GKInstance) infInst.getAttributeValue(definingAttr.getName())).getDBID().toString();
-				} else if (infInst.getAttributeValue(definingAttr.getName()) != null) {
-					key += infInst.getAttributeValue(definingAttr.getName().toString());
+					key += ((GKInstance) inferredInst.getAttributeValue(definingAttr.getName())).getDBID().toString();
+				} else if (inferredInst.getAttributeValue(definingAttr.getName()) != null) 
+				{
+					key += inferredInst.getAttributeValue(definingAttr.getName().toString());
 				} else {
 					key += "null";
 				}
@@ -206,9 +201,19 @@ public class InstanceUtilities {
 		return key;
 	}
 	
+	public static void setAdaptor(MySQLAdaptor dbAdaptor)
+	{
+		dba = dbAdaptor;
+	}
+	
 	public static void setSpeciesInstance(GKInstance speciesInstCopy)
 	{
 		speciesInst = speciesInstCopy;
+	}
+	
+	public static void setInstanceEdit(GKInstance instanceEditCopy) 
+	{
+		instanceEditInst = instanceEditCopy;
 	}
 	
 	public static void resetVariables()
@@ -216,8 +221,5 @@ public class InstanceUtilities {
 		mockedIdenticals = new HashMap<String,GKInstance>();
 	}
 	
-	public static void setInstanceEdit(GKInstance instanceEditCopy) 
-	{
-		instanceEdit = instanceEditCopy;
-	}
+
 }

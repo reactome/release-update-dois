@@ -61,7 +61,7 @@ public class UpdateHumanEvents {
 						for (GKInstance pathwayComponent : pathwayComponents) 
 						{
 								GKInstance inferredHumanPathwayInst = inferredEvent.get(humanPathwayInst);
-								inferredHumanPathwayInst = InstanceUtilities.addAttributeValueIfNeccesary(inferredHumanPathwayInst, pathwayComponent, ReactomeJavaConstants.hasEvent);
+								inferredHumanPathwayInst = InstanceUtilities.addAttributeValueIfNecessary(inferredHumanPathwayInst, pathwayComponent, ReactomeJavaConstants.hasEvent);
 								inferredEvent.remove(humanPathwayInst);
 								inferredEvent.put(humanPathwayInst, inferredHumanPathwayInst);
 							
@@ -133,7 +133,7 @@ public class UpdateHumanEvents {
 					// This was replaced with addAttributeValueIfNecessary due to a bug where a Pathway instance's 'OrthologousEvent' attribute was being replaced,
 					// instead of being added to the existing array when  the script was executed from a jar (rather than from Eclipse) (Justin Cook 2018)
 //					hasEventReferral.addAttributeValue(ReactomeJavaConstants.orthologousEvent, infHasEventReferral);
-					hasEventReferral = InstanceUtilities.addAttributeValueIfNeccesary(hasEventReferral, infHasEventReferral, ReactomeJavaConstants.orthologousEvent);
+					hasEventReferral = InstanceUtilities.addAttributeValueIfNecessary(hasEventReferral, infHasEventReferral, ReactomeJavaConstants.orthologousEvent);
 					dba.updateInstanceAttribute(hasEventReferral, ReactomeJavaConstants.orthologousEvent);
 					
 					updatedInferrableHumanEvents.add(hasEventReferral);
