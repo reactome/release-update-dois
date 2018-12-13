@@ -7,24 +7,20 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.gk.model.ClassAttributeFollowingInstruction;
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
-import org.gk.model.ReactomeJavaConstants;
+import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
 
 public class SkipTests {
 	
 	private static MySQLAdaptor dba;
-//	private static ArrayList<String> skipList = new ArrayList<String>();
-	static HashSet<String> skipList = new HashSet<String>();
-	
-	public static void setAdaptor(MySQLAdaptor dbAdaptor)
-	{
-		dba = dbAdaptor;
-	}
+	static Set<String> skipList = new HashSet<String>();
 	
 	// Skiplist was traditionally provided in a file, but since it's currently just 3 instances, I've just hard-coded them here.
 	public static void getSkipList(String skipListFilename) throws NumberFormatException, Exception
@@ -37,18 +33,18 @@ public class SkipTests {
 			{
 				// Finds all ReactionLikeEvents associated with the skiplists Pathway and hasEvent attributes, and adds them to skiplist.
 				List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
-				classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Pathway, new String[]{ReactomeJavaConstants.hasEvent}, new String[]{}));
-				String[] outClasses = new String[] {ReactomeJavaConstants.ReactionlikeEvent};
+				classesToFollow.add(new ClassAttributeFollowingInstruction(Pathway, new String[]{hasEvent}, new String[]{}));
+				String[] outClasses = new String[] {ReactionlikeEvent};
 				@SuppressWarnings("unchecked")
 				Collection<GKInstance> followedInstances = InstanceUtilities.followInstanceAttributes(pathwayInst, classesToFollow, outClasses);
 				
-				for (GKInstance entity : followedInstances)
+				for (GKInstance entityInst : followedInstances)
 				{
-					skipList.add(entity.getDBID().toString());
+					skipList.add(entityInst.getDBID().toString());
 				}
 			}
 		}
-		// Generates new skiplist file 
+		// Generates skiplist
 		String skipListFilePath = "src/main/resources/" + skipListFilename; 
 		FileReader fr = new FileReader(skipListFilePath);
 		BufferedReader br = new BufferedReader(fr);
@@ -64,16 +60,14 @@ public class SkipTests {
 	public static boolean checkIfInstanceShouldBeSkipped(GKInstance reactionInst) throws NumberFormatException, Exception
 	{
 		// it is found in skiplist array
-		boolean inSkipList = skipList.contains(reactionInst.getDBID().toString());
-		if (inSkipList)
+		if (skipList.contains(reactionInst.getDBID().toString()))
 		{
 			return true;
 		}
 		// it is chimeric
-		if (reactionInst.getAttributeValue(ReactomeJavaConstants.isChimeric) != null)
+		if (reactionInst.getAttributeValue(isChimeric) != null)
 		{
-			boolean isChimeric = (boolean) reactionInst.getAttributeValue(ReactomeJavaConstants.isChimeric);
-			if (isChimeric)
+			if ((boolean) reactionInst.getAttributeValue(isChimeric))
 			{
 				return true;
 			}
@@ -84,17 +78,17 @@ public class SkipTests {
 			return true;
 		}
 		// it is a disease reaction
-		if (reactionInst.getAttributeValue(ReactomeJavaConstants.disease) != null)
+		if (reactionInst.getAttributeValue(disease) != null)
 		{
 			return true;
 		}
 		// it is manually inferred
-		if (reactionInst.getAttributeValue(ReactomeJavaConstants.inferredFrom) != null)
+		if (reactionInst.getAttributeValue(inferredFrom) != null)
 		{
 			return true;
 		}
 		// it contains multiple species
-		Collection<GKInstance> speciesInstances = (Collection<GKInstance>) SkipTests.entitiesContainMultipleSpecies(reactionInst);
+		Collection<GKInstance> speciesInstances = (Collection<GKInstance>) entitiesContainMultipleSpecies(reactionInst);
 		if (speciesInstances.size() > 1)
 		{
 			return true;
@@ -104,59 +98,56 @@ public class SkipTests {
 	
 	// Goes through all input/output/catalystActivity/regulatedBy attribute instances, and captures all species associates with them. Returns a collection of species instances.
 	@SuppressWarnings("unchecked")
-	public static Collection<GKInstance> entitiesContainMultipleSpecies(GKInstance reactionInst) throws InvalidAttributeException, Exception
+	private static Collection<GKInstance> entitiesContainMultipleSpecies(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
-		ArrayList<GKInstance> physicalEntities = new ArrayList<GKInstance>();
-		physicalEntities.addAll(reactionInst.getAttributeValuesList(ReactomeJavaConstants.input));
-		physicalEntities.addAll(reactionInst.getAttributeValuesList(ReactomeJavaConstants.output));
-		for (Object physicalEntityObj : reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity))
+		List<GKInstance> physicalEntityInstances = new ArrayList<GKInstance>();
+		physicalEntityInstances.addAll(reactionInst.getAttributeValuesList(input));
+		physicalEntityInstances.addAll(reactionInst.getAttributeValuesList(output));
+		for (GKInstance catalystActivityInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(catalystActivity))
 		{
-			GKInstance physicalEntity = (GKInstance) physicalEntityObj;
-			physicalEntities.addAll(physicalEntity.getAttributeValuesList(ReactomeJavaConstants.physicalEntity));
+			physicalEntityInstances.addAll(catalystActivityInst.getAttributeValuesList(physicalEntity));
 		}
-		ArrayList<GKInstance> regulatedEntities = (ArrayList<GKInstance>) reactionInst.getAttributeValuesList("regulatedBy");
+		List<GKInstance> regulatedByInstances = (ArrayList<GKInstance>) reactionInst.getAttributeValuesList("regulatedBy");
 
-		if (regulatedEntities != null) 
+		if (regulatedByInstances != null) 
 		{
-			for (GKInstance regulatedEntity : regulatedEntities)
+			for (GKInstance regulatedByInst : regulatedByInstances)
 			{
-				for (Object regulatorObj : regulatedEntity.getAttributeValuesList(ReactomeJavaConstants.regulator))
+				for (GKInstance regulatorInst : (Collection<GKInstance>) regulatedByInst.getAttributeValuesList(regulator))
 				{
-					GKInstance regulator = (GKInstance) regulatorObj;
-					if (regulator.getSchemClass().isa(ReactomeJavaConstants.PhysicalEntity))
+					if (regulatorInst.getSchemClass().isa(PhysicalEntity))
 					{
-						physicalEntities.add(regulator);
+						physicalEntityInstances.add(regulatorInst);
 					}
 				}
 			}
 		}
-		HashMap<String, GKInstance> physicalEntityHash = new HashMap<String, GKInstance>();
+		Map<String, GKInstance> physicalEntityHash = new HashMap<String, GKInstance>();
 		// Remove duplicates using HashMap
-		for (GKInstance physicalEntity : physicalEntities)
+		for (GKInstance physicalEntityInst : physicalEntityInstances)
 		{
-			physicalEntityHash.put(physicalEntity.getDBID().toString(), physicalEntity);
+			physicalEntityHash.put(physicalEntityInst.getDBID().toString(), physicalEntityInst);
 		}
-		HashMap<String, GKInstance> physicalEntitiesFinal = new HashMap<String, GKInstance>();
-		for (GKInstance physicalEntity : physicalEntityHash.values())
+		Map<String, GKInstance> physicalEntitiesFinal = new HashMap<String, GKInstance>();
+		for (GKInstance physicalEntityInst : physicalEntityHash.values())
 		{
-			physicalEntitiesFinal.put(physicalEntity.getDBID().toString(), physicalEntity);
-			Collection<GKInstance> subComponents = SkipTests.recursePhysicalEntityComponents(physicalEntity);
-			if (subComponents != null)
+			physicalEntitiesFinal.put(physicalEntityInst.getDBID().toString(), physicalEntityInst);
+			Collection<GKInstance> allConstituentInstances = recursePhysicalEntityConstituentInstances(physicalEntityInst);
+			if (allConstituentInstances != null)
 			{
-				for (GKInstance subComponent : subComponents)
+				for (GKInstance constituentInst : allConstituentInstances)
 				{
-					physicalEntitiesFinal.put(subComponent.getDBID().toString(), subComponent);
+					physicalEntitiesFinal.put(constituentInst.getDBID().toString(), constituentInst);
 				}
 			}
 		}
-		HashMap<String, GKInstance> speciesHash = new HashMap<String, GKInstance>();
-		for (GKInstance physicalEntity : physicalEntitiesFinal.values())
+		Map<String, GKInstance> speciesHash = new HashMap<String, GKInstance>();
+		for (GKInstance physicalEntityInst : physicalEntitiesFinal.values())
 		{
-			if (physicalEntity.getSchemClass().isValidAttribute(ReactomeJavaConstants.species))
+			if (physicalEntityInst.getSchemClass().isValidAttribute(species))
 			{
-				for (Object speciesObj : physicalEntity.getAttributeValuesList(ReactomeJavaConstants.species))
+				for (GKInstance speciesInst : (Collection<GKInstance>) physicalEntityInst.getAttributeValuesList(species))
 				{
-					GKInstance speciesInst = (GKInstance) speciesObj;
 					speciesHash.put(speciesInst.getDBID().toString(), speciesInst);
 				}
 			}
@@ -165,55 +156,59 @@ public class SkipTests {
 	}
 	
 	// Looks at referrals of the constituent instances for the species attribute as well
-	public static Collection<GKInstance> recursePhysicalEntityComponents(GKInstance physicalEntity) throws InvalidAttributeException, Exception
+	// The term 'constituent' is used as a catch-all for instances under the hasMember/hasComponent/repeatedUnit attributes
+	@SuppressWarnings("unchecked")
+	private static Collection<GKInstance> recursePhysicalEntityConstituentInstances(GKInstance physicalEntity) throws InvalidAttributeException, Exception
 	{
-		HashMap<String, GKInstance> subComponents = new HashMap<String, GKInstance>();
-		if (physicalEntity.getSchemClass().isValidAttribute(ReactomeJavaConstants.hasMember))
+		Map<String, GKInstance> constituentInstances = new HashMap<String, GKInstance>();
+		if (physicalEntity.getSchemClass().isValidAttribute(hasMember))
 		{
-			for (Object subComponentObj : physicalEntity.getAttributeValuesList(ReactomeJavaConstants.hasMember))
+			for (GKInstance memberInst : (Collection<GKInstance>) physicalEntity.getAttributeValuesList(hasMember))
 			{
-				GKInstance subComponent = (GKInstance) subComponentObj;
-				subComponents.put(subComponent.getDBID().toString(), subComponent);
+				constituentInstances.put(memberInst.getDBID().toString(), memberInst);
 			}
 		}
-		if (physicalEntity.getSchemClass().isValidAttribute(ReactomeJavaConstants.hasComponent))
+		if (physicalEntity.getSchemClass().isValidAttribute(hasComponent))
 		{
-			for (Object subComponentObj : physicalEntity.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
+			for (GKInstance componentInst : (Collection<GKInstance>) physicalEntity.getAttributeValuesList(hasComponent))
 			{
-				GKInstance subComponent = (GKInstance) subComponentObj;
-				subComponents.put(subComponent.getDBID().toString(), subComponent);
+				constituentInstances.put(componentInst.getDBID().toString(), componentInst);
 			}
 		}
-		if (physicalEntity.getSchemClass().isValidAttribute(ReactomeJavaConstants.repeatedUnit))
+		if (physicalEntity.getSchemClass().isValidAttribute(repeatedUnit))
 		{
-			for (Object subComponentObj : physicalEntity.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
+			for (GKInstance repeatedUnitInst : (Collection<GKInstance>) physicalEntity.getAttributeValuesList(repeatedUnit))
 			{
-				GKInstance subComponent = (GKInstance) subComponentObj;
-				subComponents.put(subComponent.getDBID().toString(), subComponent);
+				constituentInstances.put(repeatedUnitInst.getDBID().toString(), repeatedUnitInst);
 			}
 		}
-		if (subComponents.size() > 0)
+		if (constituentInstances.size() > 0)
 		{
-			HashMap<String, GKInstance> subComponentsFinal = new HashMap<String, GKInstance>();
-			for (GKInstance subComponent : subComponents.values())
+			Map<String, GKInstance> finalConstituentInstancesMap = new HashMap<String, GKInstance>();
+			for (GKInstance constituentInst : constituentInstances.values())
 			{	
-				subComponentsFinal.put(subComponent.getDBID().toString(), subComponent);
-				if (subComponent.getSchemClass().isa(ReactomeJavaConstants.EntitySet) || subComponent.getSchemClass().isa(ReactomeJavaConstants.Complex) || subComponent.getSchemClass().isa(ReactomeJavaConstants.Polymer))
+				finalConstituentInstancesMap.put(constituentInst.getDBID().toString(), constituentInst);
+				if (constituentInst.getSchemClass().isa(EntitySet) || constituentInst.getSchemClass().isa(Complex) || constituentInst.getSchemClass().isa(Polymer))
 				{
-					Collection<GKInstance> subSubComponents = SkipTests.recursePhysicalEntityComponents(subComponent);
-					if (subSubComponents != null)
+					Collection<GKInstance> recursedConstituentInstances = recursePhysicalEntityConstituentInstances(constituentInst);
+					if (recursedConstituentInstances != null)
 					{
-						for (GKInstance subSubComponent : subSubComponents)
+						for (GKInstance recursedConstituentInst : recursedConstituentInstances)
 						{
-							subComponentsFinal.put(subSubComponent.getDBID().toString(), subSubComponent);
+							finalConstituentInstancesMap.put(recursedConstituentInst.getDBID().toString(), recursedConstituentInst);
 						}
 					}
 				} else {
 					continue;
 				}
 			}
-			return subComponentsFinal.values();
+			return finalConstituentInstancesMap.values();
 		}
 		return null;
+	}
+	
+	public static void setAdaptor(MySQLAdaptor dbAdaptor)
+	{
+		dba = dbAdaptor;
 	}
 }
