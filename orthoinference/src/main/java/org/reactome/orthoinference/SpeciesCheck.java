@@ -1,7 +1,9 @@
 package org.reactome.orthoinference;
 
+import java.util.Collection;
+
 import org.gk.model.GKInstance;
-import org.gk.model.ReactomeJavaConstants;
+import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.schema.InvalidAttributeException;
 
 public class SpeciesCheck {
@@ -9,52 +11,53 @@ public class SpeciesCheck {
 	// Determines if there is a species attribute in any constituent instances of entityInst.
 	// Unless its an 'OtherEntity' (which will return false), the function will check the instance or iterate on it's
 	// sub-instances until it finds an existing 'species' attribute, or else it will return false.
+	@SuppressWarnings("unchecked")
 	public static boolean hasSpecies(GKInstance entityInst) throws InvalidAttributeException, Exception
 	{
-		if (entityInst.getSchemClass().isa(ReactomeJavaConstants.OtherEntity))
+		if (entityInst.getSchemClass().isa(OtherEntity))
 		{
 			return false;
-		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet)) // || entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer) || entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet))
+		} else if (entityInst.getSchemClass().isa(EntitySet)) // || entityInst.getSchemClass().isa(Polymer) || entityInst.getSchemClass().isa(EntitySet))
 		{
-			for (Object member : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasMember))
+			for (GKInstance memberInst : (Collection<GKInstance>) entityInst.getAttributeValuesList(hasMember))
 			{
-				if (SpeciesCheck.hasSpecies((GKInstance) member))
+				if (hasSpecies(memberInst))
 				{
 					return true;
 				}
 			}
-			if (entityInst.getSchemClass().isa(ReactomeJavaConstants.CandidateSet)) {
-				for (Object candidate : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasCandidate))
+			if (entityInst.getSchemClass().isa(CandidateSet)) {
+				for (GKInstance candidateInst : (Collection<GKInstance>) entityInst.getAttributeValuesList(hasCandidate))
 				{
-					if (SpeciesCheck.hasSpecies((GKInstance) candidate))
+					if (hasSpecies(candidateInst))
 					{
 						return true;
 					}
 				}
 			}
 			return false;
-		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.Complex))
+		} else if (entityInst.getSchemClass().isa(Complex))
 		{
-			for (Object component : entityInst.getAttributeValuesList(ReactomeJavaConstants.hasComponent))
+			for (GKInstance componentInst : (Collection<GKInstance>) entityInst.getAttributeValuesList(hasComponent))
 			{
-				if (SpeciesCheck.hasSpecies((GKInstance) component))
+				if (hasSpecies(componentInst))
 				{
 					return true;
 				}
 			}
 			return false;
-		} else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer))
+		} else if (entityInst.getSchemClass().isa(Polymer))
 		{
-			for (Object monomer : entityInst.getAttributeValuesList(ReactomeJavaConstants.repeatedUnit))
+			for (GKInstance repeatedUnitInst : (Collection<GKInstance>) entityInst.getAttributeValuesList(repeatedUnit))
 			{
-				if (SpeciesCheck.hasSpecies((GKInstance) monomer))
+				if (hasSpecies(repeatedUnitInst))
 				{
 					return true;
 				}
 			}
 			return false;
 		} else {
-			if (entityInst.getSchemClass().isValidAttribute(ReactomeJavaConstants.species) && entityInst.getAttributeValue(ReactomeJavaConstants.species) != null)
+			if (entityInst.getSchemClass().isValidAttribute(species) && entityInst.getAttributeValue(species) != null)
 			{
 				return true;
 			} else {
