@@ -14,7 +14,7 @@ import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
 
-public class OrthologousEntity {
+public class OrthologousEntityGenerator {
 	
 	private static MySQLAdaptor dba;
 	private static GKInstance instanceEditInst;
@@ -43,7 +43,7 @@ public class OrthologousEntity {
 			if (orthologousEntityIdenticals.get(entityInst) == null)
 			{
 				// Checks that a species attribute exists in either the current instance or in constituent instances.
-				if (!SpeciesCheck.hasSpecies(entityInst))
+				if (!SpeciesCheckUtility.hasSpecies(entityInst))
 				{
 					infEntityInst = entityInst;
 				// Will either infer an EWAS or return a mock GEE instance if needed (i.e. if override is currently 'True')
@@ -103,7 +103,7 @@ public class OrthologousEntity {
 		if (homolEWASIdenticals.get(ewasInst) == null)
 		{
 			// Attempt to infer the EWAS 
-			ArrayList<GKInstance> infEWASInstances = InferEWAS.ewasInferrer(ewasInst);
+			ArrayList<GKInstance> infEWASInstances = EWASInferrer.ewasInferrer(ewasInst);
 			// If number of EWAS instances is greater than 1, then it is considered a DefinedSet. A new inferred instance with definedSet class is created.
 			if (infEWASInstances.size() > 1)
 			{	
@@ -160,7 +160,7 @@ public class OrthologousEntity {
 	{
 		if (complexPolymerIdenticals.get(complexInst) == null)
 		{
-			List<Integer> complexProteinCounts = ProteinCount.countDistinctProteins(complexInst);
+			List<Integer> complexProteinCounts = ProteinCountUtility.countDistinctProteins(complexInst);
 			int complexTotalProteinCounts = complexProteinCounts.get(0);
 			int complexInferrableProteinCounts = complexProteinCounts.get(1);
 //			int complexMax = complexProteinCounts.get(2); // Doesn't get used, since MaxHomologue isn't a valid attribute anymore.
@@ -253,7 +253,7 @@ public class OrthologousEntity {
 			infEntitySetInst.addAttributeValue(name, entitySetInst.getAttributeValuesList(name));
 			infEntitySetInst.addAttributeValue(hasMember, membersList);
 			// Begin specific inference process for each type of DefinedSet entity.
-			List<Integer> entitySetProteinCounts = ProteinCount.countDistinctProteins(entitySetInst);
+			List<Integer> entitySetProteinCounts = ProteinCountUtility.countDistinctProteins(entitySetInst);
 			int entitySetTotalCount = entitySetProteinCounts.get(0);
 			int entitySetInferrableCount = entitySetProteinCounts.get(1);
 //				int entitySetMax = entitySetProteinCounts.get(2);  // Doesn't get used, since MaxHomologue isn't a valid attribute anymore

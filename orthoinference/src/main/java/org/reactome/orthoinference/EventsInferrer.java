@@ -39,7 +39,7 @@ import org.reactome.release.common.database.InstanceEditUtils;
  *
  */
 
-public class InferEvents
+public class EventsInferrer
 {
 	static MySQLAdaptor dbAdaptor = null;
 	private static String releaseVersion = "";
@@ -68,7 +68,7 @@ public class InferEvents
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		setDbAdaptors(dbAdaptor);
 		
-		SkipTests.getSkipList("normal_event_skip_list.txt");
+		SkipInstanceChecker.getSkipList("normal_event_skip_list.txt");
 		
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(new FileReader(pathToSpeciesConfig));
@@ -91,36 +91,36 @@ public class InferEvents
 		eligibleFile.createNewFile();
 		File inferredFile = new File(inferredFilename);
 		inferredFile.createNewFile();
-		InferReaction.setEligibleFilename(eligibleFilename);
-		InferReaction.setInferredFilename(inferredFilename);
+		ReactionInferrer.setEligibleFilename(eligibleFilename);
+		ReactionInferrer.setInferredFilename(inferredFilename);
 
 		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
 		setInstanceEdits(personId);
 		
 		try {
 			Map<String,String[]> homologueMappings = readHomologueMappingFile(species, "hsap", pathToOrthopairs);
-			ProteinCount.setHomologueMappingFile(homologueMappings);
-			InferEWAS.setHomologueMappingFile(homologueMappings);
+			ProteinCountUtility.setHomologueMappingFile(homologueMappings);
+			EWASInferrer.setHomologueMappingFile(homologueMappings);
 		} catch (FileNotFoundException e) {
 			System.out.println("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
 		}
-		InferEWAS.readENSGMappingFile(species);
-		InferEWAS.createUniprotDbInstance();
-		InferEWAS.createEnsemblProteinDbInstance(speciesName, refDbUrl, refDbProteinUrl);
-		InferEWAS.createEnsemblGeneDBInstance(speciesName, refDbUrl, refDbGeneUrl);
+		EWASInferrer.readENSGMappingFile(species);
+		EWASInferrer.createUniprotDbInstance();
+		EWASInferrer.createEnsemblProteinDbInstance(speciesName, refDbUrl, refDbProteinUrl);
+		EWASInferrer.createEnsemblGeneDBInstance(speciesName, refDbUrl, refDbGeneUrl);
 		
 		JSONObject altRefDbJSON = (JSONObject) speciesObject.get("alt_refdb");
 		if (altRefDbJSON != null)
 		{
 			//TODO: Simplify this block
-			InferEWAS.createAlternateReferenceDBInstance(speciesName, altRefDbJSON);
+			EWASInferrer.createAlternateReferenceDBInstance(speciesName, altRefDbJSON);
 		} else {
-			InferEWAS.updateRefDb();
+			EWASInferrer.updateRefDb();
 		}
 		createAndSetSpeciesInstance(speciesName);
 		setSummationInstance();
 		setEvidenceTypeInstance();
-		OrthologousEntity.setComplexSummationInstance();
+		OrthologousEntityGenerator.setComplexSummationInstance();
 
 /**
  *  Start of ReactionlikeEvent inference. Retrieves all human ReactionlikeEvents, and attempts to infer each for the species.
@@ -168,13 +168,13 @@ public class InferEvents
 			// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
 			System.out.println("\t" + reactionInst);
 			try {
-				InferReaction.reactionInferrer(reactionInst);
+				ReactionInferrer.reactionInferrer(reactionInst);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		UpdateHumanEvents.setInferredEvent(InferReaction.getInferredEvent());
-		UpdateHumanEvents.updateHumanEvents(InferReaction.getInferrableHumanEvents());
+		HumanEventsUpdater.setInferredEvent(ReactionInferrer.getInferredEvent());
+		HumanEventsUpdater.updateHumanEvents(ReactionInferrer.getInferrableHumanEvents());
 		outputReport(species);
 		resetVariables();
 		System.gc();
@@ -183,8 +183,8 @@ public class InferEvents
 
 	private static void setReleaseDates(String dateOfRelease) 
 	{
-		InferReaction.setReleaseDate(dateOfRelease);
-		UpdateHumanEvents.setReleaseDate(dateOfRelease);
+		ReactionInferrer.setReleaseDate(dateOfRelease);
+		HumanEventsUpdater.setReleaseDate(dateOfRelease);
 	
 	}
 
@@ -204,8 +204,8 @@ public class InferEvents
 
 	private static void outputReport(String species) throws IOException
 	{
-		int eligibleCount = InferReaction.getEligibleCount();
-		int inferredCount = InferReaction.getInferredCount();
+		int eligibleCount = ReactionInferrer.getEligibleCount();
+		int inferredCount = ReactionInferrer.getInferredCount();
 		float percentInferred = (float) 100*inferredCount/eligibleCount;
 		// Create file if it doesn't exist
 		String reportFilename = "report_ortho_inference_test_reactome_" + releaseVersion + ".txt";
@@ -218,12 +218,12 @@ public class InferEvents
 	// Statically store the adaptor variable in each class
 	private static void setDbAdaptors(MySQLAdaptor dbAdaptor2) 
 	{
-		InferReaction.setAdaptor(dbAdaptor);
-		SkipTests.setAdaptor(dbAdaptor);
+		ReactionInferrer.setAdaptor(dbAdaptor);
+		SkipInstanceChecker.setAdaptor(dbAdaptor);
 		InstanceUtilities.setAdaptor(dbAdaptor);
-		OrthologousEntity.setAdaptor(dbAdaptor);
-		InferEWAS.setAdaptor(dbAdaptor);
-		UpdateHumanEvents.setAdaptor(dbAdaptor);
+		OrthologousEntityGenerator.setAdaptor(dbAdaptor);
+		EWASInferrer.setAdaptor(dbAdaptor);
+		HumanEventsUpdater.setAdaptor(dbAdaptor);
 		
 	}
 
@@ -259,8 +259,8 @@ public class InferEvents
 		speciesInst.addAttributeValue(name, toSpeciesLong);
 		speciesInst.addAttributeValue(_displayName, toSpeciesLong);
 		speciesInst = InstanceUtilities.checkForIdenticalInstances(speciesInst);
-		OrthologousEntity.setSpeciesInstance(speciesInst);
-		InferEWAS.setSpeciesInstance(speciesInst);
+		OrthologousEntityGenerator.setSpeciesInstance(speciesInst);
+		EWASInferrer.setSpeciesInstance(speciesInst);
 		InstanceUtilities.setSpeciesInstance(speciesInst);
 	}
 	// Create and set static Summation instance
@@ -274,8 +274,8 @@ public class InferEvents
 		summationInst.addAttributeValue(_displayName, summationText);
 		summationInst = InstanceUtilities.checkForIdenticalInstances(summationInst);
 		
-		InferReaction.setSummationInstance(summationInst);
-		UpdateHumanEvents.setSummationInstance(summationInst);
+		ReactionInferrer.setSummationInstance(summationInst);
+		HumanEventsUpdater.setSummationInstance(summationInst);
 	}
 	// Create and set static EvidenceType instance
 	private static void setEvidenceTypeInstance() throws Exception
@@ -288,28 +288,28 @@ public class InferEvents
 		evidenceTypeInst.addAttributeValue(name, "IEA");
 		evidenceTypeInst.addAttributeValue(_displayName, evidenceTypeText);
 		evidenceTypeInst = InstanceUtilities.checkForIdenticalInstances(evidenceTypeInst);
-		InferReaction.setEvidenceTypeInstance(evidenceTypeInst);
-		UpdateHumanEvents.setEvidenceTypeInstance(evidenceTypeInst);
+		ReactionInferrer.setEvidenceTypeInstance(evidenceTypeInst);
+		HumanEventsUpdater.setEvidenceTypeInstance(evidenceTypeInst);
 	}
 	
 	private static void setInstanceEdits(int personId) throws Exception 
 	{
 		instanceEditInst = InstanceEditUtils.createInstanceEdit(dbAdaptor, personId, "org.reactome.orthoinference");
 		InstanceUtilities.setInstanceEdit(instanceEditInst);
-		OrthologousEntity.setInstanceEdit(instanceEditInst);
-		InferEWAS.setInstanceEdit(instanceEditInst);
-		UpdateHumanEvents.setInstanceEdit(instanceEditInst);
+		OrthologousEntityGenerator.setInstanceEdit(instanceEditInst);
+		EWASInferrer.setInstanceEdit(instanceEditInst);
+		HumanEventsUpdater.setInstanceEdit(instanceEditInst);
 	}
 	
 	// Reduce memory usage after species inference complete
 	private static void resetVariables() 
 	{
-		InferReaction.resetVariables();
-		OrthologousEntity.resetVariables();
-		InferEWAS.resetVariables();
-		ProteinCount.resetVariables();
+		ReactionInferrer.resetVariables();
+		OrthologousEntityGenerator.resetVariables();
+		EWASInferrer.resetVariables();
+		ProteinCountUtility.resetVariables();
 		InstanceUtilities.resetVariables();
-		UpdateHumanEvents.resetVariables();
+		HumanEventsUpdater.resetVariables();
 		manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 		manualHumanEvents = new ArrayList<GKInstance>();
 	}

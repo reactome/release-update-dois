@@ -14,7 +14,7 @@ import org.gk.model.InstanceUtilities;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.schema.InvalidAttributeException;
 
-public class ProteinCount {
+public class ProteinCountUtility {
 	
 	private static Map<String, String[]> homologueMappings = new HashMap<String,String[]>();
 	

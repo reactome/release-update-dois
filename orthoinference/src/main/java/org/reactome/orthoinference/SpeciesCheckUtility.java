@@ -6,7 +6,7 @@ import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.schema.InvalidAttributeException;
 
-public class SpeciesCheck {
+public class SpeciesCheckUtility {
 
 	// Determines if there is a species attribute in any constituent instances of entityInst.
 	// Unless its an 'OtherEntity' (which will return false), the function will check the instance or iterate on it's

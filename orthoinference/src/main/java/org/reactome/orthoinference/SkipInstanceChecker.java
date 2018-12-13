@@ -17,7 +17,7 @@ import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
 
-public class SkipTests {
+public class SkipInstanceChecker {
 	
 	private static MySQLAdaptor dba;
 	static Set<String> skipList = new HashSet<String>();

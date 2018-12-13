@@ -13,7 +13,7 @@ import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
 
-public class UpdateHumanEvents {
+public class HumanEventsUpdater {
 	
 	private static MySQLAdaptor dba;
 	private static String dateOfRelease = "";

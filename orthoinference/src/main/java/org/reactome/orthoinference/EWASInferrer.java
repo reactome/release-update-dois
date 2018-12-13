@@ -18,7 +18,7 @@ import org.gk.schema.SchemaClass;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-public class InferEWAS {
+public class EWASInferrer {
 
 	private static MySQLAdaptor dba;
 	static boolean altRefDb = false;
@@ -66,7 +66,7 @@ public class InferEWAS {
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceDatabase,  referenceDb);
 						
 						//// Creates ReferenceDNASequence instance from ReferenceEntity
-						ArrayList<GKInstance> inferredReferenceDNAInstances = InferEWAS.createReferenceDNASequence(homologueId);
+						ArrayList<GKInstance> inferredReferenceDNAInstances = EWASInferrer.createReferenceDNASequence(homologueId);
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.referenceGene, inferredReferenceDNAInstances);
 						
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.species, speciesInst);
@@ -261,7 +261,7 @@ public class InferEWAS {
 	
 	public static void setAdaptor(MySQLAdaptor dbAdaptor)
 	{
-		InferEWAS.dba = dbAdaptor;
+		EWASInferrer.dba = dbAdaptor;
 	}
 	// Sets the HashMap of species-specific homologue-identifier mappings
 	public static void setHomologueMappingFile(Map<String, String[]> homologueMappingsCopy) throws IOException

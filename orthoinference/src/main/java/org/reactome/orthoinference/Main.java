@@ -18,12 +18,12 @@ public class Main {
 			speciesCode = args[0];
 		} else {
 			System.out.println("Please include a 4-letter species code as the first argument (eg: mmus)");
-			System.exit(0);
+//			System.exit(0);
 		}
 		
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
-		InferEvents.eventInferrer(props, pathToConfig, speciesCode);
+		EventsInferrer.eventInferrer(props, pathToConfig, speciesCode);
 	}
 
 }

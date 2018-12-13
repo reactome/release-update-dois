@@ -14,7 +14,7 @@ import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
 
-public class InferReaction {
+public class ReactionInferrer {
 
 	private static MySQLAdaptor dba;
 	private static String dateOfRelease = "";
@@ -33,7 +33,7 @@ public class InferReaction {
 	{
 		// Checks if an instance's inference should be skipped, based on a variety of factors such as a manual skip list, if it's chimeric, etc. 
 		// TODO: Log return reason
-		if (SkipTests.checkIfInstanceShouldBeSkipped(reactionInst))
+		if (SkipInstanceChecker.checkIfInstanceShouldBeSkipped(reactionInst))
 		{
 			return;
 		}
@@ -52,7 +52,7 @@ public class InferReaction {
 			// This function finds the total number of distinct proteins associated with an instance, as well as the number that can be inferred.
 			// Total proteins are stored in reactionProteinCounts[0], inferrable proteins in [1], and the maximum number of homologues for any entity involved in index [2].
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
-			List<Integer> reactionProteinCounts = ProteinCount.countDistinctProteins(reactionInst);
+			List<Integer> reactionProteinCounts = ProteinCountUtility.countDistinctProteins(reactionInst);
 			int reactionTotalProteinCounts = reactionProteinCounts.get(0);
 			if (reactionTotalProteinCounts > 0) 
 			{
@@ -125,7 +125,7 @@ public class InferReaction {
 		List<GKInstance> infAttributeInstances = new ArrayList<GKInstance>();
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
 		{
-			GKInstance infAttributeInst = OrthologousEntity.createOrthoEntity(attributeInst, false);
+			GKInstance infAttributeInst = OrthologousEntityGenerator.createOrthoEntity(attributeInst, false);
 			if (infAttributeInst == null)
 			{
 				return false;
@@ -150,7 +150,7 @@ public class InferReaction {
 				infCatalystInst.addAttributeValue(activity, catalystInst.getAttributeValue(activity));
 				if (catalystInst.getAttributeValuesList(physicalEntity) != null)
 				{
-					GKInstance infCatalystPEInst = OrthologousEntity.createOrthoEntity((GKInstance) catalystInst.getAttributeValue(physicalEntity), false);
+					GKInstance infCatalystPEInst = OrthologousEntityGenerator.createOrthoEntity((GKInstance) catalystInst.getAttributeValue(physicalEntity), false);
 					if (infCatalystPEInst != null) 
 					{
 						infCatalystInst.addAttributeValue(physicalEntity, infCatalystPEInst);
@@ -162,7 +162,7 @@ public class InferReaction {
 				List<GKInstance> activeUnits = new ArrayList<GKInstance>();
 				for (GKInstance activeUnitInst : (Collection<GKInstance>) catalystInst.getAttributeValuesList(activeUnit))
 				{
-					GKInstance infActiveUnitInst = OrthologousEntity.createOrthoEntity(activeUnitInst, false);
+					GKInstance infActiveUnitInst = OrthologousEntityGenerator.createOrthoEntity(activeUnitInst, false);
 					if (infActiveUnitInst != null)
 					{
 						activeUnits.add(infActiveUnitInst);
@@ -189,7 +189,7 @@ public class InferReaction {
 			GKInstance infRegulatorInst = null;
 			if (regulatorInst.getSchemClass().isa(PhysicalEntity))
 			{
-				infRegulatorInst = OrthologousEntity.createOrthoEntity(regulatorInst, false);
+				infRegulatorInst = OrthologousEntityGenerator.createOrthoEntity(regulatorInst, false);
 			} else if (regulatorInst.getSchemClass().isa(CatalystActivity))
 			{
 				System.out.println(regulatorInst + " is a CatalystActivity, which is unexpected -- refer to infer_events.pl");
