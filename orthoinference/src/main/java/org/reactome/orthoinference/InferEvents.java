@@ -206,12 +206,12 @@ public class InferEvents
 	{
 		int eligibleCount = InferReaction.getEligibleCount();
 		int inferredCount = InferReaction.getInferredCount();
-		int percentInferred = 100*inferredCount/eligibleCount;
+		float percentInferred = (float) 100*inferredCount/eligibleCount;
 		// Create file if it doesn't exist
 		String reportFilename = "report_ortho_inference_test_reactome_" + releaseVersion + ".txt";
 		File reportFile = new File(reportFilename);
 		reportFile.createNewFile();
-		String results = "hsap to " + species + ":\t" + inferredCount + " out of " + eligibleCount + " eligible reactions (" + percentInferred + "%)\n";
+		String results = "hsap to " + species + ":\t" + inferredCount + " out of " + eligibleCount + " eligible reactions (" + String.format("%.2f", percentInferred) + "%)\n";
 		Files.write(Paths.get(reportFilename), results.getBytes(), StandardOpenOption.APPEND);
 	}
 	
