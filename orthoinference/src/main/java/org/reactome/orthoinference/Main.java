@@ -17,14 +17,13 @@ public class Main {
 		} else if (args.length == 1 && args[0].length() == 4){
 			speciesCode = args[0];
 		} else {
-			System.out.println("Please include a 4-letter species code as the first or second argument (eg: mmus)");
+			System.out.println("Please include a 4-letter species code as the first argument (eg: mmus)");
 			System.exit(0);
 		}
 		
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
 		InferEvents.eventInferrer(props, pathToConfig, speciesCode);
-		
 	}
 
 }
