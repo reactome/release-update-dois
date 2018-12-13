@@ -192,12 +192,10 @@ public class InferReaction {
 				infRegulatorInst = OrthologousEntity.createOrthoEntity(regulatorInst, false);
 			} else if (regulatorInst.getSchemClass().isa(CatalystActivity))
 			{
-				System.out.println("Regulation instance is a CatalystActivity, which is unexpected");
-				System.exit(0);
+				System.out.println(regulatorInst + " is a CatalystActivity, which is unexpected -- refer to infer_events.pl");
 			} else if (regulatorInst.getSchemClass().isa(Event))
 			{
-				System.out.println("Regulation instance is an Event, which is unexpected");
-				System.exit(0);
+				System.out.println(regulatorInst + " is an Event, which is unexpected -- refer to infer_events.pl");
 			}
 			if (infRegulatorInst == null) 
 			{
