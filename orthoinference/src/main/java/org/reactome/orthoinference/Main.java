@@ -1,8 +1,6 @@
 package org.reactome.orthoinference;
 
 import java.io.FileInputStream;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -25,16 +23,12 @@ public class Main {
 			speciesCode = args[0];
 		} else {
 			logger.warn("Please include a 4-letter species code as the first argument (eg: mmus)");
-//			System.exit(0);
+			System.exit(0);
 		}
 		
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
-//        List<String> speciesCodes = Arrays.asList("pfal", "spom", "scer", "ddis", "cele", "sscr", "btau", "cfam", "mmus", "rnor", "ggal", "tgut", "xtro", "drer", "dmel", "atha", "osat");
-		List<String> speciesCodes = Arrays.asList("spom");
-		for (String speciesCode1 : speciesCodes) {
-                EventsInferrer.inferEvents(props, pathToConfig, speciesCode1);
-        }
+        EventsInferrer.inferEvents(props, pathToConfig, speciesCode);
 	}
 
 }
