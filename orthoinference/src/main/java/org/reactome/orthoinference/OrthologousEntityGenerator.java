@@ -43,7 +43,7 @@ public class OrthologousEntityGenerator {
 			if (orthologousEntityIdenticals.get(entityInst) == null)
 			{
 				// Checks that a species attribute exists in either the current instance or in constituent instances.
-				if (!SpeciesCheckUtility.hasSpecies(entityInst))
+				if (!SpeciesCheckUtility.checkForSpeciesAttribute(entityInst))
 				{
 					infEntityInst = entityInst;
 				// Will either infer an EWAS or return a mock GEE instance if needed (i.e. if override is currently 'True')
@@ -56,7 +56,7 @@ public class OrthologousEntityGenerator {
 					} else {
 						if (override)
 						{
-							GKInstance mockedInst = InstanceUtilities.newMockGKInstance(entityInst);						
+							GKInstance mockedInst = InstanceUtilities.createMockGKInstance(entityInst);						
 							return mockedInst;
 						}
 					}
@@ -103,7 +103,7 @@ public class OrthologousEntityGenerator {
 		if (homolEWASIdenticals.get(ewasInst) == null)
 		{
 			// Attempt to infer the EWAS 
-			ArrayList<GKInstance> infEWASInstances = EWASInferrer.ewasInferrer(ewasInst);
+			ArrayList<GKInstance> infEWASInstances = EWASInferrer.inferEWAS(ewasInst);
 			// If number of EWAS instances is greater than 1, then it is considered a DefinedSet. A new inferred instance with definedSet class is created.
 			if (infEWASInstances.size() > 1)
 			{	
@@ -118,7 +118,7 @@ public class OrthologousEntityGenerator {
 				if (compartmentInstGk.getSchemClass().isa(Compartment)) {
 					infDefinedSetInst.addAttributeValue(compartment, ewasInst.getAttributeValue(compartment));
 				} else {
-					GKInstance newCompartmentInst = InstanceUtilities.newCompartmentInstance(compartmentInstGk);
+					GKInstance newCompartmentInst = InstanceUtilities.createCompartmentInstance(compartmentInstGk);
 					infDefinedSetInst.addAttributeValue(compartment, newCompartmentInst);
 				}
 				
@@ -146,7 +146,7 @@ public class OrthologousEntityGenerator {
 			} else {
 				if (override) 
 				{
-					return InstanceUtilities.newMockGKInstance(ewasInst);
+					return InstanceUtilities.createMockGKInstance(ewasInst);
 				} else {
 					return nullInst;
 				}
@@ -160,7 +160,7 @@ public class OrthologousEntityGenerator {
 	{
 		if (complexPolymerIdenticals.get(complexInst) == null)
 		{
-			List<Integer> complexProteinCounts = ProteinCountUtility.countDistinctProteins(complexInst);
+			List<Integer> complexProteinCounts = ProteinCountUtility.getDistinctProteinCounts(complexInst);
 			int complexTotalProteinCounts = complexProteinCounts.get(0);
 			int complexInferrableProteinCounts = complexProteinCounts.get(1);
 //			int complexMax = complexProteinCounts.get(2); // Doesn't get used, since MaxHomologue isn't a valid attribute anymore.
@@ -179,7 +179,7 @@ public class OrthologousEntityGenerator {
 				}
 			}
 			
-			GKInstance infComplexInst = InstanceUtilities.newInferredGKInstance(complexInst);
+			GKInstance infComplexInst = InstanceUtilities.createNewInferredGKInstance(complexInst);
 			infComplexInst.addAttributeValue(summation, complexSummationInst);
 			infComplexInst.addAttributeValue(name, complexInst.getAttributeValue(name));
 			ArrayList<GKInstance> infComponentInstances = new ArrayList<GKInstance>();
@@ -249,11 +249,11 @@ public class OrthologousEntityGenerator {
 				}
 			}
 			// Begin inference of EntitySet
-			GKInstance infEntitySetInst = InstanceUtilities.newInferredGKInstance(entitySetInst);
+			GKInstance infEntitySetInst = InstanceUtilities.createNewInferredGKInstance(entitySetInst);
 			infEntitySetInst.addAttributeValue(name, entitySetInst.getAttributeValuesList(name));
 			infEntitySetInst.addAttributeValue(hasMember, membersList);
 			// Begin specific inference process for each type of DefinedSet entity.
-			List<Integer> entitySetProteinCounts = ProteinCountUtility.countDistinctProteins(entitySetInst);
+			List<Integer> entitySetProteinCounts = ProteinCountUtility.getDistinctProteinCounts(entitySetInst);
 			int entitySetTotalCount = entitySetProteinCounts.get(0);
 			int entitySetInferrableCount = entitySetProteinCounts.get(1);
 //				int entitySetMax = entitySetProteinCounts.get(2);  // Doesn't get used, since MaxHomologue isn't a valid attribute anymore
@@ -303,7 +303,7 @@ public class OrthologousEntityGenerator {
 									{
 										infDefinedSetInst.addAttributeValue(compartment, compartmentInstGk);
 									} else {
-										GKInstance newCompartmentInst = InstanceUtilities.newCompartmentInstance(compartmentInstGk);
+										GKInstance newCompartmentInst = InstanceUtilities.createCompartmentInstance(compartmentInstGk);
 										infDefinedSetInst.addAttributeValue(compartment, newCompartmentInst);
 									}
 								}
@@ -314,7 +314,7 @@ public class OrthologousEntityGenerator {
 					} else {
 						if (override)
 						{
-							infEntitySetInst = InstanceUtilities.newMockGKInstance(entitySetInst);
+							infEntitySetInst = InstanceUtilities.createMockGKInstance(entitySetInst);
 						} else {
 							return nullInst;
 						}
@@ -326,7 +326,7 @@ public class OrthologousEntityGenerator {
 				{
 					if (override)
 					{
-						return InstanceUtilities.newMockGKInstance(entitySetInst);
+						return InstanceUtilities.createMockGKInstance(entitySetInst);
 					} else {
 						return nullInst;
 					}

@@ -29,7 +29,7 @@ public class ReactionInferrer {
 	private static List<GKInstance> inferrableHumanEvents = new ArrayList<GKInstance>();
 	
 	// Infers PhysicalEntity instances of input, output, catalyst activity, and regulations that are associated with incoming reactionInst.
-	public static void reactionInferrer(GKInstance reactionInst) throws InvalidAttributeException, Exception
+	public static void inferReaction(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
 		// Checks if an instance's inference should be skipped, based on a variety of factors such as a manual skip list, if it's chimeric, etc. 
 		// TODO: Log return reason
@@ -42,7 +42,7 @@ public class ReactionInferrer {
 		{
 			///// The beginning of an inference process:
 			// Creates inferred instance of reaction.
-			GKInstance infReactionInst = InstanceUtilities.newInferredGKInstance(reactionInst);
+			GKInstance infReactionInst = InstanceUtilities.createNewInferredGKInstance(reactionInst);
 			infReactionInst.addAttributeValue(name, reactionInst.getAttributeValuesList(name));
 			infReactionInst.addAttributeValue(goBiologicalProcess, reactionInst.getAttributeValue(goBiologicalProcess));
 			infReactionInst.addAttributeValue(summation, summationInst);
@@ -52,7 +52,7 @@ public class ReactionInferrer {
 			// This function finds the total number of distinct proteins associated with an instance, as well as the number that can be inferred.
 			// Total proteins are stored in reactionProteinCounts[0], inferrable proteins in [1], and the maximum number of homologues for any entity involved in index [2].
 			// Reactions with no proteins/EWAS (Total = 0) are not inferred.
-			List<Integer> reactionProteinCounts = ProteinCountUtility.countDistinctProteins(reactionInst);
+			List<Integer> reactionProteinCounts = ProteinCountUtility.getDistinctProteinCounts(reactionInst);
 			int reactionTotalProteinCounts = reactionProteinCounts.get(0);
 			if (reactionTotalProteinCounts > 0) 
 			{
@@ -62,15 +62,15 @@ public class ReactionInferrer {
 				Files.write(Paths.get(eligibleFilehandle), eligibleEventName.getBytes(), StandardOpenOption.APPEND);
 				// Attempt to infer all PhysicalEntities associated with this reaction's Input, Output, CatalystActivity and RegulatedBy attributes.
 				// Failure to successfully infer any of these attributes will end inference for this reaction.
-				if (inferAttributes(reactionInst, infReactionInst, input))
+				if (inferReactionInputsOrOutputs(reactionInst, infReactionInst, input))
 				{
-					if (inferAttributes(reactionInst, infReactionInst, output))
+					if (inferReactionInputsOrOutputs(reactionInst, infReactionInst, output))
 					{
-						if (inferCatalysts(reactionInst, infReactionInst))
+						if (inferReactionCatalysts(reactionInst, infReactionInst))
 						{
 							// Many reactions are not regulated at all, meaning inference is attempted but will not end the process if there is nothing to infer. 
 							// The inference process will end though if inferRegulations returns an invalid value.
-							List<GKInstance> inferredRegulations = inferRegulations(reactionInst);
+							List<GKInstance> inferredRegulations = inferReactionRegulations(reactionInst);
 							if (inferredRegulations.size() == 1 && inferredRegulations.get(0) == null)
 							{
 								return;
@@ -120,7 +120,7 @@ public class ReactionInferrer {
 	
 	// Function used to create inferred PhysicalEntities contained in the 'input' or 'output' attributes of the current reaction instance.
 	@SuppressWarnings("unchecked")
-	private static boolean inferAttributes(GKInstance reactionInst, GKInstance infReactionInst, String attribute) throws InvalidAttributeException, Exception
+	private static boolean inferReactionInputsOrOutputs(GKInstance reactionInst, GKInstance infReactionInst, String attribute) throws InvalidAttributeException, Exception
 	{
 		List<GKInstance> infAttributeInstances = new ArrayList<GKInstance>();
 		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
@@ -139,13 +139,13 @@ public class ReactionInferrer {
 	// Function used to create inferred catalysts associated with the current reaction instance.
 	// Infers all PhysicalEntity's associated with the reaction's 'catalystActivity' and 'activeUnit' attributes
 	@SuppressWarnings("unchecked")
-	private static boolean inferCatalysts(GKInstance reactionInst, GKInstance infReactionInst) throws InvalidAttributeException, Exception
+	private static boolean inferReactionCatalysts(GKInstance reactionInst, GKInstance infReactionInst) throws InvalidAttributeException, Exception
 	{
 		for (GKInstance catalystInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(catalystActivity))
 		{
 			if (inferredCatalyst.get(catalystInst) == null)
 			{
-				GKInstance infCatalystInst = InstanceUtilities.newInferredGKInstance(catalystInst);
+				GKInstance infCatalystInst = InstanceUtilities.createNewInferredGKInstance(catalystInst);
 				infCatalystInst.setDbAdaptor(dba);
 				infCatalystInst.addAttributeValue(activity, catalystInst.getAttributeValue(activity));
 				if (catalystInst.getAttributeValuesList(physicalEntity) != null)
@@ -180,7 +180,7 @@ public class ReactionInferrer {
 	
 	@SuppressWarnings("unchecked")
 	// Function used to infer regulation instances. Logic existed for regulators that had CatalystActivity and Event instances, but they have never come up in the many times this has been run.
-	private static List<GKInstance> inferRegulations(GKInstance reactionInst) throws InvalidAttributeException, Exception
+	private static List<GKInstance> inferReactionRegulations(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
 		List<GKInstance> inferredRegulations = new ArrayList<GKInstance>();
 		for (GKInstance regulatedInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList("regulatedBy"))
@@ -209,7 +209,7 @@ public class ReactionInferrer {
 					continue;
 				}
 			}
-			GKInstance infRegulationInst = InstanceUtilities.newInferredGKInstance(regulatedInst);
+			GKInstance infRegulationInst = InstanceUtilities.createNewInferredGKInstance(regulatedInst);
 			infRegulationInst.setDbAdaptor(dba);
 			infRegulationInst.addAttributeValue(regulator, infRegulatorInst);
 			infRegulationInst.addAttributeValue(_displayName, regulatedInst.getAttributeValue(_displayName));

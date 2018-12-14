@@ -109,7 +109,7 @@ public class HumanEventsUpdater {
 			{
 				if (inferredEventIdenticals.get(hasEventReferralInst) == null)
 				{
-					GKInstance infHasEventReferralInst = InstanceUtilities.newInferredGKInstance(hasEventReferralInst);
+					GKInstance infHasEventReferralInst = InstanceUtilities.createNewInferredGKInstance(hasEventReferralInst);
 					infHasEventReferralInst.addAttributeValue(name, hasEventReferralInst.getAttributeValuesList(name));
 					infHasEventReferralInst.addAttributeValue(summation, summationInst);
 					if (infHasEventReferralInst.getSchemClass().isValidAttribute(releaseDate)) 

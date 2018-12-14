@@ -49,7 +49,7 @@ public class EventsInferrer
 	private static List<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 
 	@SuppressWarnings("unchecked")
-	public static void eventInferrer(Properties props, String pathToConfig, String species) throws Exception
+	public static void inferEvents(Properties props, String pathToConfig, String species) throws Exception
 	{
 		releaseVersion = props.getProperty("releaseNumber");
 		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
@@ -168,7 +168,7 @@ public class EventsInferrer
 			// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
 			System.out.println("\t" + reactionInst);
 			try {
-				ReactionInferrer.reactionInferrer(reactionInst);
+				ReactionInferrer.inferReaction(reactionInst);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

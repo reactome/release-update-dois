@@ -37,7 +37,7 @@ public class EWASInferrer {
 
     // Creates an array of inferred EWAS instances from the homologue mappings file (hsap_species_mapping.txt).
 	@SuppressWarnings("unchecked")
-	public static ArrayList<GKInstance> ewasInferrer(GKInstance ewasInst) throws InvalidAttributeException, Exception
+	public static ArrayList<GKInstance> inferEWAS(GKInstance ewasInst) throws InvalidAttributeException, Exception
 	{
 		ArrayList<GKInstance> infEWASInstances = new ArrayList<GKInstance>();
 		String referenceEntityId = ((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
@@ -53,7 +53,7 @@ public class EWASInferrer {
 					GKInstance infReferenceGeneProduct = null;
 					if (seenRGP.get(homologueId) == null)
 					{
-						infReferenceGeneProduct = InstanceUtilities.newInferredGKInstance((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity));
+						infReferenceGeneProduct = InstanceUtilities.createNewInferredGKInstance((GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity));
 						infReferenceGeneProduct.addAttributeValue(ReactomeJavaConstants.identifier, homologueId);
 						// Reference DB can differ between homologue mappings, but can be differentiated by the 'homologueSource' found in each mapping.
 						GKInstance referenceDb = null;
@@ -77,7 +77,7 @@ public class EWASInferrer {
 						infReferenceGeneProduct = seenRGP.get(homologueId);
 					}
 					// Creating inferred EWAS
-					GKInstance infEWAS = InstanceUtilities.newInferredGKInstance(ewasInst);
+					GKInstance infEWAS = InstanceUtilities.createNewInferredGKInstance(ewasInst);
 					infEWAS.addAttributeValue(ReactomeJavaConstants.referenceEntity, infReferenceGeneProduct);
 					// Method for adding start/end coordinates. It is convoluted due to a quirk with assigning the name differently based on coordinate value (see infer_events.pl lines 1190-1192). 
 					// The name of the entity needs to be at the front of the 'name' array if the coordinate is over 1, and rearranging arrays in Java for this was a bit tricky.
@@ -119,7 +119,7 @@ public class EWASInferrer {
 					for (GKInstance modifiedResidue : (Collection<GKInstance>) ewasInst.getAttributeValuesList(ReactomeJavaConstants.hasModifiedResidue))
 					{
 						String infModifiedResidueDisplayName = "";
-						GKInstance infModifiedResidue = InstanceUtilities.newInferredGKInstance(modifiedResidue);
+						GKInstance infModifiedResidue = InstanceUtilities.createNewInferredGKInstance(modifiedResidue);
 						infModifiedResidue.addAttributeValue(ReactomeJavaConstants.referenceSequence, infReferenceGeneProduct);
 						infModifiedResidueDisplayName += infReferenceGeneProduct.getDisplayName();
 						for (Object coordinate : modifiedResidue.getAttributeValuesList(ReactomeJavaConstants.coordinate))

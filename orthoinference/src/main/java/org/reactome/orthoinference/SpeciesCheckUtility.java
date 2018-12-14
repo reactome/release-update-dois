@@ -12,7 +12,7 @@ public class SpeciesCheckUtility {
 	// Unless its an 'OtherEntity' (which will return false), the function will check the instance or iterate on it's
 	// sub-instances until it finds an existing 'species' attribute, or else it will return false.
 	@SuppressWarnings("unchecked")
-	public static boolean hasSpecies(GKInstance entityInst) throws InvalidAttributeException, Exception
+	public static boolean checkForSpeciesAttribute(GKInstance entityInst) throws InvalidAttributeException, Exception
 	{
 		if (entityInst.getSchemClass().isa(OtherEntity))
 		{
@@ -21,7 +21,7 @@ public class SpeciesCheckUtility {
 		{
 			for (GKInstance memberInst : (Collection<GKInstance>) entityInst.getAttributeValuesList(hasMember))
 			{
-				if (hasSpecies(memberInst))
+				if (checkForSpeciesAttribute(memberInst))
 				{
 					return true;
 				}
@@ -29,7 +29,7 @@ public class SpeciesCheckUtility {
 			if (entityInst.getSchemClass().isa(CandidateSet)) {
 				for (GKInstance candidateInst : (Collection<GKInstance>) entityInst.getAttributeValuesList(hasCandidate))
 				{
-					if (hasSpecies(candidateInst))
+					if (checkForSpeciesAttribute(candidateInst))
 					{
 						return true;
 					}
@@ -40,7 +40,7 @@ public class SpeciesCheckUtility {
 		{
 			for (GKInstance componentInst : (Collection<GKInstance>) entityInst.getAttributeValuesList(hasComponent))
 			{
-				if (hasSpecies(componentInst))
+				if (checkForSpeciesAttribute(componentInst))
 				{
 					return true;
 				}
@@ -50,7 +50,7 @@ public class SpeciesCheckUtility {
 		{
 			for (GKInstance repeatedUnitInst : (Collection<GKInstance>) entityInst.getAttributeValuesList(repeatedUnit))
 			{
-				if (hasSpecies(repeatedUnitInst))
+				if (checkForSpeciesAttribute(repeatedUnitInst))
 				{
 					return true;
 				}

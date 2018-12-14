@@ -25,7 +25,7 @@ public class InstanceUtilities {
 	private static Map<String,GKInstance> mockedIdenticals = new HashMap<String,GKInstance>();
 	
 	// Creates new instance that will be inferred based on the incoming instances class		
-	public static GKInstance newInferredGKInstance(GKInstance instanceToBeInferred) throws Exception
+	public static GKInstance createNewInferredGKInstance(GKInstance instanceToBeInferred) throws Exception
 	{
 		GKInstance inferredInst = null;
 		String reactionClass = instanceToBeInferred.getSchemClass().getName();
@@ -46,7 +46,7 @@ public class InstanceUtilities {
 				{
 					inferredInst.addAttributeValue(compartment, compartmentInstGk);
 				} else {
-					GKInstance newCompartmentInst = newCompartmentInstance(compartmentInstGk);
+					GKInstance newCompartmentInst = createCompartmentInstance(compartmentInstGk);
 					inferredInst.addAttributeValue(compartment, newCompartmentInst);
 				}
 			}
@@ -62,7 +62,7 @@ public class InstanceUtilities {
 	// were pulled from the original instance's Compartment attribute could not be added to the new instance, due to them being
 	// a GO_CellularComponent. This function is the workaround, producing a Compartment instance that contains all the same attribute values.
 	@SuppressWarnings("unchecked")
-	public static GKInstance newCompartmentInstance(GKInstance compartmentInstGk) throws InvalidAttributeException, InvalidAttributeValueException, Exception 
+	public static GKInstance createCompartmentInstance(GKInstance compartmentInstGk) throws InvalidAttributeException, InvalidAttributeValueException, Exception 
 	{
 		System.out.println(compartmentInstGk + " is a " + compartmentInstGk.getSchemClass() + " instead of a Compartment -- creating new Compartment instance");
 		SchemaClass compartmentClass = dba.getSchema().getClassByName(Compartment);
@@ -85,7 +85,7 @@ public class InstanceUtilities {
 
 	// Equivalent to create_ghost from Perl; Returns a mock homologue that is needed in cases where an inference is rejected, but the
 	// component isn't essential for the inference to be completed.
-	public static GKInstance newMockGKInstance(GKInstance instanceToBeMocked) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static GKInstance createMockGKInstance(GKInstance instanceToBeMocked) throws InvalidAttributeException, InvalidAttributeValueException, Exception
 	{
 		SchemaClass genomeEncodedEntityClass = dba.getSchema().getClassByName(GenomeEncodedEntity);
 		GKInstance mockedInst = new GKInstance(genomeEncodedEntityClass);

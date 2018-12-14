@@ -26,7 +26,7 @@ public class ProteinCountUtility {
 	 See the bottom of ProteinCount.checkCandidates for further elaboration. 
 	*/
 	
-	public static List<Integer> countDistinctProteins (GKInstance instanceToBeInferred) throws InvalidAttributeException, Exception
+	public static List<Integer> getDistinctProteinCounts (GKInstance instanceToBeInferred) throws InvalidAttributeException, Exception
 	{
 		// Perform an AttributeQueryRequest with specified input attributes (ReactionlikeEvent, CatalystActivity, Complex, Polymer, EWAS) and output attributes (ReferenceGeneProduct, EntitySet).
 		List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
@@ -114,7 +114,7 @@ public class ProteinCountUtility {
 				if (entitySetsFollowedInstances.size() == 0 && entityInst.getSchemClass().isa(CandidateSet))
 				{	
 					// Protein counts are incremented depending on the number and types of candidates
-					List<Integer> checkedCandidateInstances = checkCandidates(entityInst, sortedFollowedInstances);
+					List<Integer> checkedCandidateInstances = getCandidateProteinCounts(entityInst, sortedFollowedInstances);
 					if (checkedCandidateInstances.size() > 0) 
 					{
 						total += checkedCandidateInstances.get(0);
@@ -157,7 +157,7 @@ public class ProteinCountUtility {
 					{
 						if (physicalEntityInst.getSchemClass().isa(Complex) || physicalEntityInst.getSchemClass().isa(Polymer))
 						{
-							List<Integer> complexProteinCounts = countDistinctProteins(physicalEntityInst);
+							List<Integer> complexProteinCounts = getDistinctProteinCounts(physicalEntityInst);
 							if (complexProteinCounts != null)
 							{
 								int subTotal = complexProteinCounts.get(0);
@@ -208,7 +208,7 @@ public class ProteinCountUtility {
 	}
 	// Function that determines protein counts of CandidateSets. Incoming arguments are the candidateSet of interest, as well as the output array from the very first AttributeQueryRequest (AQR).
 	// This 'output array from the first AQR' is used to prevent redundant counts, such as if a Candidate instance has already undergone a protein count.
-	private static List<Integer> checkCandidates(GKInstance candidateSetInst, Collection<GKInstance> sortedFollowedInstances) throws InvalidAttributeException, Exception
+	private static List<Integer> getCandidateProteinCounts(GKInstance candidateSetInst, Collection<GKInstance> sortedFollowedInstances) throws InvalidAttributeException, Exception
 	{
 		List<Integer> checkedCandidateCounts = new ArrayList<Integer>();
 		if (candidateSetInst.getAttributeValue(hasCandidate) != null)
@@ -260,7 +260,7 @@ public class ProteinCountUtility {
 			{
 				if (physicalEntityInst.getSchemClass().isa(Complex) || physicalEntityInst.getSchemClass().isa(Polymer))
 				{
-					List<Integer> candidateComplexCounts = countDistinctProteins(physicalEntityInst);
+					List<Integer> candidateComplexCounts = getDistinctProteinCounts(physicalEntityInst);
 					if (candidateComplexCounts.size() > 0)
 					{
 						if (candidateComplexCounts.get(0) > 0 && candidateComplexCounts.get(1) == 0)

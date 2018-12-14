@@ -88,7 +88,7 @@ public class SkipInstanceChecker {
 			return true;
 		}
 		// it contains multiple species
-		Collection<GKInstance> speciesInstances = (Collection<GKInstance>) entitiesContainMultipleSpecies(reactionInst);
+		Collection<GKInstance> speciesInstances = (Collection<GKInstance>) checkIfEntitiesContainMultipleSpecies(reactionInst);
 		if (speciesInstances.size() > 1)
 		{
 			return true;
@@ -98,7 +98,7 @@ public class SkipInstanceChecker {
 	
 	// Goes through all input/output/catalystActivity/regulatedBy attribute instances, and captures all species associates with them. Returns a collection of species instances.
 	@SuppressWarnings("unchecked")
-	private static Collection<GKInstance> entitiesContainMultipleSpecies(GKInstance reactionInst) throws InvalidAttributeException, Exception
+	private static Collection<GKInstance> checkIfEntitiesContainMultipleSpecies(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
 		List<GKInstance> physicalEntityInstances = new ArrayList<GKInstance>();
 		physicalEntityInstances.addAll(reactionInst.getAttributeValuesList(input));
