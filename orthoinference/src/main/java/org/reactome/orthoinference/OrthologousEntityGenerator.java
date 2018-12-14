@@ -103,7 +103,7 @@ public class OrthologousEntityGenerator {
 		if (homolEWASIdenticals.get(ewasInst) == null)
 		{
 			// Attempt to infer the EWAS 
-			ArrayList<GKInstance> infEWASInstances = EWASInferrer.inferEWAS(ewasInst);
+			List<GKInstance> infEWASInstances = EWASInferrer.inferEWAS(ewasInst);
 			// If number of EWAS instances is greater than 1, then it is considered a DefinedSet. A new inferred instance with definedSet class is created.
 			if (infEWASInstances.size() > 1)
 			{	

@@ -105,17 +105,16 @@ public class EventsInferrer
 			System.out.println("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
 		}
 		EWASInferrer.readENSGMappingFile(species);
-		EWASInferrer.createUniprotDbInstance();
+		EWASInferrer.fetchAndSetUniprotDbInstance();
 		EWASInferrer.createEnsemblProteinDbInstance(speciesName, refDbUrl, refDbProteinUrl);
 		EWASInferrer.createEnsemblGeneDBInstance(speciesName, refDbUrl, refDbGeneUrl);
 		
 		JSONObject altRefDbJSON = (JSONObject) speciesObject.get("alt_refdb");
 		if (altRefDbJSON != null)
 		{
-			//TODO: Simplify this block
 			EWASInferrer.createAlternateReferenceDBInstance(speciesName, altRefDbJSON);
 		} else {
-			EWASInferrer.updateRefDb();
+			EWASInferrer.setAltRefDbToFalse();
 		}
 		createAndSetSpeciesInstance(speciesName);
 		setSummationInstance();
