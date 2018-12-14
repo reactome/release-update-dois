@@ -91,9 +91,9 @@ public class EWASInferrer {
 					{
 						infEWASInst.addAttributeValue(endCoordinate, endCoord);
 					}
-					int startCoord = (int) infEWASInst.getAttributeValue(startCoordinate);
-					int endCoord = (int) infEWASInst.getAttributeValue(endCoordinate);
-					if (startCoord > 1 || endCoord > 1) 
+//					int startCoord = (int) infEWASInst.getAttributeValue(startCoordinate);
+//					int endCoord = (int) infEWASInst.getAttributeValue(endCoordinate);
+					if (infEWASInst.getAttributeValue(startCoordinate) != null && (int) infEWASInst.getAttributeValue(startCoordinate) > 1 || infEWASInst.getAttributeValue(endCoordinate) != null && (int) infEWASInst.getAttributeValue(endCoordinate) > 1) 
 					{
 						List<String> infEWASInstNames = (ArrayList<String>) ((GKInstance) ewasInst).getAttributeValuesList(name);
 						infEWASInst.addAttributeValue(name, infEWASInstNames.get(0));
@@ -277,10 +277,10 @@ public class EWASInferrer {
 	}
 	
 	// Read the species-specific ENSG gene-protein mappings, and create a Hashmap with the contents
-	public static void readENSGMappingFile(String toSpecies) throws IOException
+	public static void readENSGMappingFile(String toSpecies, String pathToOrthopairs) throws IOException
 	{
 		String mappingFileName = toSpecies + "_gene_protein_mapping.txt";
-		String mappingFilePath = "src/main=/resources/orthopairs/" + mappingFileName;
+		String mappingFilePath = pathToOrthopairs + mappingFileName;
 		FileReader fr = new FileReader(mappingFilePath);
 		BufferedReader br = new BufferedReader(fr);
 

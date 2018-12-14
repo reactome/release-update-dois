@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.ClassAttributeFollowingInstruction;
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
@@ -19,6 +21,7 @@ import org.gk.schema.InvalidAttributeException;
 
 public class SkipInstanceChecker {
 	
+	private static final Logger logger = LogManager.getLogger();
 	private static MySQLAdaptor dba;
 	static Set<String> skipList = new HashSet<String>();
 	
@@ -62,6 +65,7 @@ public class SkipInstanceChecker {
 		// it is found in skiplist array
 		if (skipList.contains(reactionInst.getDBID().toString()))
 		{
+			logger.info(reactionInst + " is in skipList -- skipping");
 			return true;
 		}
 		// it is chimeric
@@ -69,28 +73,33 @@ public class SkipInstanceChecker {
 		{
 			if ((boolean) reactionInst.getAttributeValue(isChimeric))
 			{
+				logger.info(reactionInst + " is chimeric -- skipping");
 				return true;
 			}
 		}
 		// it has related species
 		if (reactionInst.getAttributeValue("relatedSpecies") != null)
 		{
+			logger.info(reactionInst + " has related species -- skipping");
 			return true;
 		}
 		// it is a disease reaction
 		if (reactionInst.getAttributeValue(disease) != null)
 		{
+			logger.info(reactionInst + " is a disease reaction -- skipping");
 			return true;
 		}
 		// it is manually inferred
 		if (reactionInst.getAttributeValue(inferredFrom) != null)
 		{
+			logger.info(reactionInst + " is manually inferred -- skipping");
 			return true;
 		}
 		// it contains multiple species
 		Collection<GKInstance> speciesInstances = (Collection<GKInstance>) checkIfEntitiesContainMultipleSpecies(reactionInst);
 		if (speciesInstances.size() > 1)
 		{
+			logger.info(reactionInst + " has multiple species -- skipping");
 			return true;
 		}
 		return false;

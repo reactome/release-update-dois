@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
@@ -19,6 +21,7 @@ import org.gk.schema.SchemaClass;
 // GenerateInstance is meant to act as a catch-all for functions that are instance-oriented, such as creating, mocking, or identical-checking.
 public class InstanceUtilities {
 	
+	private static final Logger logger = LogManager.getLogger();
 	private static MySQLAdaptor dba; 
 	private static GKInstance speciesInst;
 	private static GKInstance instanceEditInst;
@@ -64,7 +67,7 @@ public class InstanceUtilities {
 	@SuppressWarnings("unchecked")
 	public static GKInstance createCompartmentInstance(GKInstance compartmentInstGk) throws InvalidAttributeException, InvalidAttributeValueException, Exception 
 	{
-		System.out.println(compartmentInstGk + " is a " + compartmentInstGk.getSchemClass() + " instead of a Compartment -- creating new Compartment instance");
+		logger.warn(compartmentInstGk + " is a " + compartmentInstGk.getSchemClass() + " instead of a Compartment -- creating new Compartment instance");
 		SchemaClass compartmentClass = dba.getSchema().getClassByName(Compartment);
 		GKInstance newCompartmentInst = new GKInstance(compartmentClass);
 		newCompartmentInst.setDbAdaptor(dba);
@@ -120,6 +123,7 @@ public class InstanceUtilities {
 		Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
 		if (identicalInstances != null) 
 		{			
+			logger.info("\tIdentical instances found -- returning " + identicalInstances.iterator().next());
 			if (identicalInstances.size() == 1) 
 			{
 				return identicalInstances.iterator().next();
@@ -129,6 +133,7 @@ public class InstanceUtilities {
 			}
 		} else {
 			dba.storeInstance(inferredInst);
+			logger.info("\tNo identical instance found -- inserting " + inferredInst);
 			return inferredInst;
 		}
 	}

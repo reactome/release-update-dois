@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
@@ -15,6 +17,7 @@ import org.gk.schema.InvalidAttributeException;
 
 public class HumanEventsUpdater {
 	
+	private static final Logger logger = LogManager.getLogger();
 	private static MySQLAdaptor dba;
 	private static String dateOfRelease = "";
 	private static GKInstance summationInst;
@@ -29,8 +32,10 @@ public class HumanEventsUpdater {
 	{
 		updatedInferrableHumanEvents.addAll(inferrableHumanEvents);
 		Set<Long> seenHumanHierarchy = new HashSet<Long>();
+		logger.info("Creating hierarchy structures for inferred Pathways");
 		for (GKInstance inferrableInst : inferrableHumanEvents)
 		{
+			logger.info("\t creating hierarchy structure for " + inferrableInst);
 			if (!seenHumanHierarchy.contains(inferrableInst.getDBID()))
 			{
 				createHumanHierarchy(inferrableInst);
@@ -63,12 +68,15 @@ public class HumanEventsUpdater {
 								inferredEventIdenticals.put(humanPathwayInst, inferredHumanPathwayInst);
 						}
 						dba.updateInstanceAttribute(inferredEventIdenticals.get(humanPathwayInst), hasEvent);
+					} else {
+						logger.info("\t" + humanPathwayInst + " and " + inferredEventIdenticals.get(humanPathwayInst) + " have different classes (likely connected via manual inference");
 					}
 				}
 				seenFilledPathway.add(humanPathwayInst.getDBID());
 			}
 		}
 		
+		logger.info("Inferring preceding events in inferred Pathways");
 		inferPrecedingEvents();
 		
 		Set<Long> seenInstanceEditInst = new HashSet<Long>();
@@ -126,7 +134,7 @@ public class HumanEventsUpdater {
 					
 					if (hasEventReferralInst.getSchemClass().isa(ReactionlikeEvent))
 					{
-						System.out.println(hasEventReferralInst + " is a ReactionLikeEvent, which is unexpected -- refer to infer_events.pl");
+						logger.warn(hasEventReferralInst + " is a ReactionLikeEvent, which is unexpected -- refer to infer_events.pl");
 					}
 					infHasEventReferralInst.setDisplayName(hasEventReferralInst.getDisplayName());
 					inferredEventIdenticals.put(hasEventReferralInst, infHasEventReferralInst);

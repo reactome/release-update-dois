@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
@@ -16,6 +18,7 @@ import org.gk.schema.InvalidAttributeException;
 
 public class ReactionInferrer {
 
+	private static final Logger logger = LogManager.getLogger();
 	private static MySQLAdaptor dba;
 	private static String dateOfRelease = "";
 	private static String eligibleFilehandle;
@@ -32,11 +35,12 @@ public class ReactionInferrer {
 	public static void inferReaction(GKInstance reactionInst) throws InvalidAttributeException, Exception
 	{
 		// Checks if an instance's inference should be skipped, based on a variety of factors such as a manual skip list, if it's chimeric, etc. 
-		// TODO: Log return reason
+		logger.info("\tChecking if instance should be skipped...");
 		if (SkipInstanceChecker.checkIfInstanceShouldBeSkipped(reactionInst))
 		{
 			return;
 		}
+		logger.info("\tInstance eligible for inference");
 		// HashMaps are used to prevent redundant inferences.
 		if (inferredEvent.get(reactionInst) == null)
 		{
@@ -62,17 +66,22 @@ public class ReactionInferrer {
 				Files.write(Paths.get(eligibleFilehandle), eligibleEventName.getBytes(), StandardOpenOption.APPEND);
 				// Attempt to infer all PhysicalEntities associated with this reaction's Input, Output, CatalystActivity and RegulatedBy attributes.
 				// Failure to successfully infer any of these attributes will end inference for this reaction.
+				logger.info("Inferring inputs...");
 				if (inferReactionInputsOrOutputs(reactionInst, infReactionInst, input))
 				{
+					logger.info("Inferring outputs...");
 					if (inferReactionInputsOrOutputs(reactionInst, infReactionInst, output))
 					{
+						logger.info("Inferring catalysts...");
 						if (inferReactionCatalysts(reactionInst, infReactionInst))
 						{
 							// Many reactions are not regulated at all, meaning inference is attempted but will not end the process if there is nothing to infer. 
 							// The inference process will end though if inferRegulations returns an invalid value.
+							logger.info("Inferring regulations...");
 							List<GKInstance> inferredRegulations = inferReactionRegulations(reactionInst);
 							if (inferredRegulations.size() == 1 && inferredRegulations.get(0) == null)
 							{
+								logger.info("\tRegulation is a 'Requirement' and regulation inference was unsuccessful -- terminating inference");
 								return;
 							}
 							if (infReactionInst.getSchemClass().isValidAttribute(releaseDate)) 
@@ -82,6 +91,7 @@ public class ReactionInferrer {
 							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
 							// add a new inferred instance, the storeInstance method is just called here. 
 							dba.storeInstance(infReactionInst);
+							logger.info("\tInference complete -- " + infReactionInst + " inserted");
 							if (infReactionInst.getSchemClass().isValidAttribute(inferredFrom))
 							{
 								infReactionInst = InstanceUtilities.addAttributeValueIfNecessary(infReactionInst, reactionInst, inferredFrom);
@@ -97,6 +107,7 @@ public class ReactionInferrer {
 							// Regulations instances require the DB to contain the inferred ReactionlikeEvent, so Regulations inference happens post-inference
 							if (inferredRegulations.size() > 0)
 							{
+								logger.info("\t" + inferredRegulations.size() + " regulators inferred");
 								for (GKInstance infRegulation : inferredRegulations)
 								{
 									infRegulation = InstanceUtilities.checkForIdenticalInstances(infRegulation);
@@ -109,12 +120,18 @@ public class ReactionInferrer {
 							inferrableHumanEvents.add(reactionInst);
 							String inferredEvent = infReactionInst.getAttributeValue(DB_ID).toString() + "\t" + infReactionInst.getDisplayName() + "\n";	
 							Files.write(Paths.get(inferredFilehandle), inferredEvent.getBytes(), StandardOpenOption.APPEND);
-//							System.out.println(reactionInst);
+						} else {
+							logger.info("\tCatalyst inference unsuccessful -- terminating inference");
 						}
+					} else {
+						logger.info("\tOutput inference unsuccessful -- terminating inference");
 					}
-					return;
+				} else {
+					logger.info("\tInput inference unsuccessful -- terminating inference");
 				}
-			} 
+			} else {
+				logger.info("\tNo distinct proteins found in instance -- terminating inference");
+			}
 		}
 	}
 	
@@ -192,10 +209,10 @@ public class ReactionInferrer {
 				infRegulatorInst = OrthologousEntityGenerator.createOrthoEntity(regulatorInst, false);
 			} else if (regulatorInst.getSchemClass().isa(CatalystActivity))
 			{
-				System.out.println(regulatorInst + " is a CatalystActivity, which is unexpected -- refer to infer_events.pl");
+				logger.warn(regulatorInst + " is a CatalystActivity, which is unexpected -- refer to infer_events.pl");
 			} else if (regulatorInst.getSchemClass().isa(Event))
 			{
-				System.out.println(regulatorInst + " is an Event, which is unexpected -- refer to infer_events.pl");
+				logger.warn(regulatorInst + " is an Event, which is unexpected -- refer to infer_events.pl");
 			}
 			if (infRegulatorInst == null) 
 			{

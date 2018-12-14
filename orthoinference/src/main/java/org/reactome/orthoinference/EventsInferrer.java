@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
@@ -41,6 +43,7 @@ import org.reactome.release.common.database.InstanceEditUtils;
 
 public class EventsInferrer
 {
+	private static final Logger logger = LogManager.getLogger();
 	static MySQLAdaptor dbAdaptor = null;
 	private static String releaseVersion = "";
 	private static GKInstance instanceEditInst;
@@ -50,14 +53,8 @@ public class EventsInferrer
 
 	@SuppressWarnings("unchecked")
 	public static void inferEvents(Properties props, String pathToConfig, String species) throws Exception
-	{
-		releaseVersion = props.getProperty("releaseNumber");
-		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
-		String pathToSpeciesConfig = props.getProperty("pathToSpeciesConfig");
-		String dateOfRelease = props.getProperty("dateOfRelease");
-		int personId = Integer.valueOf(props.getProperty("personId"));
-		setReleaseDates(dateOfRelease);
-		
+	{	
+		logger.info("Preparing DB Adaptor and setting project variables");
 		// Set up DB adaptor using config.properties file
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
@@ -67,6 +64,13 @@ public class EventsInferrer
 		
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		setDbAdaptors(dbAdaptor);
+		
+		releaseVersion = props.getProperty("releaseNumber");
+		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
+		String pathToSpeciesConfig = props.getProperty("pathToSpeciesConfig");
+		String dateOfRelease = props.getProperty("dateOfRelease");
+		int personId = Integer.valueOf(props.getProperty("personId"));
+		setReleaseDates(dateOfRelease);
 		
 		SkipInstanceChecker.getSkipList("normal_event_skip_list.txt");
 		
@@ -78,7 +82,7 @@ public class EventsInferrer
 		JSONObject speciesObject = (JSONObject) jsonObject.get(species);
 		JSONArray speciesNames = (JSONArray) speciesObject.get("name");
 		String speciesName = (String) speciesNames.get(0);
-		System.out.println("Beginning orthoinference of " + speciesName + ".");
+		logger.info("Beginning orthoinference of " + speciesName + ".");
 		JSONObject refDb = (JSONObject) speciesObject.get("refdb");
 		String refDbUrl = (String) refDb.get("url");
 		String refDbProteinUrl = (String) refDb.get("access");
@@ -96,15 +100,16 @@ public class EventsInferrer
 
 		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
 		setInstanceEdits(personId);
-		
+		logger.info("Reading in Orthopairs files");
 		try {
 			Map<String,String[]> homologueMappings = readHomologueMappingFile(species, "hsap", pathToOrthopairs);
 			ProteinCountUtility.setHomologueMappingFile(homologueMappings);
 			EWASInferrer.setHomologueMappingFile(homologueMappings);
 		} catch (FileNotFoundException e) {
-			System.out.println("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
+			logger.warn("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
+			return;
 		}
-		EWASInferrer.readENSGMappingFile(species);
+		EWASInferrer.readENSGMappingFile(species, pathToOrthopairs);
 		EWASInferrer.fetchAndSetUniprotDbInstance();
 		EWASInferrer.createEnsemblProteinDbInstance(speciesName, refDbUrl, refDbProteinUrl);
 		EWASInferrer.createEnsemblGeneDBInstance(speciesName, refDbUrl, refDbGeneUrl);
@@ -112,6 +117,7 @@ public class EventsInferrer
 		JSONObject altRefDbJSON = (JSONObject) speciesObject.get("alt_refdb");
 		if (altRefDbJSON != null)
 		{
+			logger.info("Alternate DB exists for " + speciesName);
 			EWASInferrer.createAlternateReferenceDBInstance(speciesName, altRefDbJSON);
 		} else {
 			EWASInferrer.setAltRefDbToFalse();
@@ -128,7 +134,7 @@ public class EventsInferrer
 		Collection<GKInstance> sourceSpeciesInst = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("Species", "name", "=", "Homo sapiens");
 		if (sourceSpeciesInst.isEmpty())
 		{
-			System.out.println("Could not find Species instance for Homo sapiens");
+			logger.info("Could not find Species instance for Homo sapiens");
 			return;
 		}
 		String humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID().toString();
@@ -160,13 +166,15 @@ public class EventsInferrer
 					manualEventToNonHumanSource.put(reactionInst, prevInfInst);
 					manualHumanEvents.add(reactionInst);
 				} else {
-					System.out.println("Skipping building of hierarchy around pre-existing disease reaction " + prevInfInst);
+					logger.info("Skipping building of hierarchy around pre-existing disease reaction " + prevInfInst);
 				}
+				logger.info(reactionInst + " has already been inferred for this species");
 				continue;
 			}
 			// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
-			System.out.println("\t" + reactionInst);
+			
 			try {
+				logger.info("Attempting to infer " + reactionInst);
 				ReactionInferrer.inferReaction(reactionInst);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -177,7 +185,7 @@ public class EventsInferrer
 		outputReport(species);
 		resetVariables();
 		System.gc();
-		System.out.println("Finished orthoinference of " + speciesName + ".");
+		logger.info("Finished orthoinference of " + speciesName + ".");
 	}
 
 	private static void setReleaseDates(String dateOfRelease) 
@@ -208,6 +216,7 @@ public class EventsInferrer
 		float percentInferred = (float) 100*inferredCount/eligibleCount;
 		// Create file if it doesn't exist
 		String reportFilename = "report_ortho_inference_test_reactome_" + releaseVersion + ".txt";
+		logger.info("Updating " + reportFilename);
 		File reportFile = new File(reportFilename);
 		reportFile.createNewFile();
 		String results = "hsap to " + species + ":\t" + inferredCount + " out of " + eligibleCount + " eligible reactions (" + String.format("%.2f", percentInferred) + "%)\n";
@@ -258,6 +267,7 @@ public class EventsInferrer
 		speciesInst.addAttributeValue(name, toSpeciesLong);
 		speciesInst.addAttributeValue(_displayName, toSpeciesLong);
 		speciesInst = InstanceUtilities.checkForIdenticalInstances(speciesInst);
+		logger.info("Species instance is " + speciesInst);
 		OrthologousEntityGenerator.setSpeciesInstance(speciesInst);
 		EWASInferrer.setSpeciesInstance(speciesInst);
 		InstanceUtilities.setSpeciesInstance(speciesInst);
