@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 //import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.reactome.release.updateDOIs.findNewDOIsAndUpdate;
+import org.reactome.release.updateDOIs.UpdateDOIs;
 
 //@PrepareForTest({UpdateDOIs.class})
 public class TestUpdateDOIs {
@@ -34,9 +34,8 @@ public class TestUpdateDOIs {
 	@Test
 	public void testfindNewDOIsAndUpdate() throws Exception 
 	{
-		findNewDOIsAndUpdate check = new findNewDOIsAndUpdate();
-		check.setTestReactomeAdaptor(mockAdaptor);
-		check.setGkCentralAdaptor(mockAdaptor);
+		UpdateDOIs check = new UpdateDOIs();
+		check.setAdaptors(mockAdaptor, mockAdaptor);
 		
 		GKInstance inst1 = PowerMockito.mock(GKInstance.class);
 		
@@ -50,28 +49,26 @@ public class TestUpdateDOIs {
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180")).thenReturn(testResults);
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "DB_ID", "=", "67890")).thenReturn(testResults);
 		
-		check.findNewDOIsAndUpdate(12345L);
+		check.findAndUpdateDOIs(12345L, 67890L, "reportPath");
     }
 	
 	@Test
 	public void testfindNewDOIsAndUpdateEmptyList() throws Exception 
 	{
-		findNewDOIsAndUpdate check = new findNewDOIsAndUpdate();
-		check.setTestReactomeAdaptor(mockAdaptor);
-		check.setGkCentralAdaptor(mockAdaptor);
+		UpdateDOIs check = new UpdateDOIs();
+		check.setAdaptors(mockAdaptor, mockAdaptor);
 		
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180")).thenReturn(new ArrayList<GKInstance>());
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "DB_ID", "=", "67890")).thenReturn(new ArrayList<GKInstance>());
 		
-		check.findNewDOIsAndUpdate(12345L);
+		check.findAndUpdateDOIs(12345L, 67890L, "reportPath");
 	}
 	
 	@Test
 	public void testfindNewDOIsAndUpdateDeepEmptyList() throws Exception 
 	{
-		findNewDOIsAndUpdate check = new findNewDOIsAndUpdate();
-		check.setTestReactomeAdaptor(mockAdaptor);
-		check.setGkCentralAdaptor(mockAdaptor);
+		UpdateDOIs check = new UpdateDOIs();
+		check.setAdaptors(mockAdaptor, mockAdaptor);
 		
 		GKInstance inst1 = PowerMockito.mock(GKInstance.class);
 		Collection<GKInstance> testResults = Arrays.asList(inst1);
@@ -83,6 +80,6 @@ public class TestUpdateDOIs {
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180")).thenReturn(testResults);
 		Mockito.when(mockAdaptor.fetchInstanceByAttribute("Pathway", "DB_ID", "=", "67890")).thenReturn(new ArrayList<GKInstance>());
 		
-		check.findNewDOIsAndUpdate(12345L);
+		check.findAndUpdateDOIs(12345L, 67890L, "reportPath");
 	}
 }
