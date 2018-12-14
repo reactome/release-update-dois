@@ -1,4 +1,4 @@
-package org.reactome.orthoinference;
+package org.reactome.datafix;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
