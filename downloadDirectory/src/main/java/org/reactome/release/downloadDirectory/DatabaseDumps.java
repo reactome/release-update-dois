@@ -20,7 +20,7 @@ public class DatabaseDumps {
 	public static void execute(MySQLAdaptor dba, String releaseNumber, String username, String password, String host, int port, String testReactomeDatabase) throws IOException, InterruptedException {
 		// Take mysqldumps of 'stable_identifiers' and 'test_reactome_##' and compress them using gzip.
 		
-		//TODO: The gzipped and non-gzipped files might be getting moved 
+		//TODO: Refactor
 		
 		logger.info("Generating DatabaseDumps");
 		// Create databases folder that will hold the DB dumps

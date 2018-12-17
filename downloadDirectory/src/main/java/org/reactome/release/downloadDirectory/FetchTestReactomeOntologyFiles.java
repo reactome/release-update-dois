@@ -23,6 +23,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
+/**
+ * 
+ * @author jcook
+ *		Explanation of this module:
+		We are taking from value of the 'ontology' attribute from test_reactome_XX.Ontology. This returns a blob that can be divided into 3 sections: pprj, pont, and pins.
+		Unfortunately, the blob isn't cleanly divided into 3 sections, as between sections 1 and 2 there are some extra content not needed.
+		The content of the pprj file appears first. We take all content from the blob until the string 'pprj_file_content' appears. This signifies the end of that file.
+		Next, we iterate through the lines of the blob until a second dateTime string appears  (signifying the start of the pont file) and subsequently 
+		add all content until the string 'pont_file_content' appears, signifying the end of the pont file.
+		Finally, the rest of the blob pertains to the 'pins' file, so the remaining content is appended to the pins file.
+ */
+
 public class FetchTestReactomeOntologyFiles {
 	private static final Logger logger = LogManager.getLogger();
 	private static Connection connect = null;
@@ -38,42 +50,40 @@ public class FetchTestReactomeOntologyFiles {
 		resultSet = statement.executeQuery("SELECT ontology FROM Ontology");
 		// The returned value is a single blob composed of binary and text. The three files produced by this step (pprj, pins, pont) are found within this blob.
 		// A handful of regexes and conditional statements are used to handle this data and output the 3 files. 
-		
-		PrintWriter pprjWriter = new PrintWriter("reactome_data_model.pprj");
-		PrintWriter pontWriter = new PrintWriter("reactome_data_model.pont");
-		PrintWriter pinsWriter = new PrintWriter("reactome_data_model.pins");
+		String pprjFilename = "reactome_data_model.pprj";
+		String pontFilename = "reactome_data_model.pont";
+		String pinsFilename = "reactome_data_model.pins";
+		PrintWriter pprjWriter = new PrintWriter(pprjFilename);
+		PrintWriter pontWriter = new PrintWriter(pontFilename);
+		PrintWriter pinsWriter = new PrintWriter(pinsFilename);
 		
 		while (resultSet.next()) {
 			
 			Blob blob = resultSet.getBlob("ontology");
-			InputStream is = blob.getBinaryStream();
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			BufferedReader br = new BufferedReader(new InputStreamReader(blob.getBinaryStream()));
 
-			String dateTime = "";
 			int dateTimeCounter = 0;
 			boolean pprjSwitch = true;
 			boolean pontSwitch = false;
 			String str;
-			logger.info("Generating reactome_data_model.pprj, reactome_data_model.pont, and reactome_data_model.pins files...");
+			logger.info("Generating " + pprjFilename + ", " + pontFilename + ", and " + pinsFilename);
 			while ((str = br.readLine()) != null) {
 				
 				String[] splitLine = str.split(";");
-				if (splitLine.length > 1) {
-					// A very specific regex for matching a datetime string -- Could probably be matched to a specific format that looks cleaner
-					if (splitLine[1].matches("( [A-Z][a-z]{2}){2} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3} [0-9]{4}")) {
-						dateTime = ";" + splitLine[1] + "\n";
-						dateTimeCounter++;
-						if (pprjSwitch) {
-							Files.write(Paths.get("reactome_data_model.pprj"), dateTime.getBytes(), StandardOpenOption.APPEND);
-						}
-						if (dateTimeCounter == 2) {
-							Files.write(Paths.get("reactome_data_model.pont"), dateTime.getBytes(), StandardOpenOption.APPEND);
-						}
-						if (dateTimeCounter == 3) {
-							Files.write(Paths.get("reactome_data_model.pins"), dateTime.getBytes(), StandardOpenOption.APPEND);
-						}
-						continue;
+				// A very specific regex for matching a datetime string -- Could probably be matched to a specific format that looks cleaner
+				if (splitLine.length > 1 && splitLine[1].matches("( [A-Z][a-z]{2}){2} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3} [0-9]{4}")) {
+					String dateTime = ";" + splitLine[1] + "\n";
+					dateTimeCounter++;
+					if (pprjSwitch) {
+						Files.write(Paths.get(pprjFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
 					}
+					if (dateTimeCounter == 2) {
+						Files.write(Paths.get(pontFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
+					}
+					if (dateTimeCounter == 3) {
+						Files.write(Paths.get(pinsFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
+					}
+					continue;
 				}
 				str += "\n";
 				
@@ -84,12 +94,12 @@ public class FetchTestReactomeOntologyFiles {
 						pprjSwitch = false;
 					}
 					if (str.contains(".pont")) {
-						str = str.replaceAll("[a-zA-Z0-9]+.pont", "reactome_data_model.pont");
+						str = str.replaceAll("[a-zA-Z0-9]+.pont", pontFilename);
 					}
 					if (str.contains(".pins")) {
-						str = str.replaceAll("[a-zA-Z0-9]+.pins", "reactome_data_model.pins");
+						str = str.replaceAll("[a-zA-Z0-9]+.pins", pinsFilename);
 					}
-					Files.write(Paths.get("reactome_data_model.pprj"), str.getBytes(), StandardOpenOption.APPEND);
+					Files.write(Paths.get(pprjFilename), str.getBytes(), StandardOpenOption.APPEND);
 				}
 				
 				// Generate pont file
@@ -102,7 +112,7 @@ public class FetchTestReactomeOntologyFiles {
 						str = asciiSplit[0] + ")))\n";
 						pontSwitch = false;
 					}
-					Files.write(Paths.get("reactome_data_model.pont"), str.getBytes(), StandardOpenOption.APPEND);
+					Files.write(Paths.get(pontFilename), str.getBytes(), StandardOpenOption.APPEND);
 				}
 				
 				// Generate pins file
@@ -110,7 +120,7 @@ public class FetchTestReactomeOntologyFiles {
 					if (str.contains("pins_file_stub")) {
 						str = "\n";
 					}
-					Files.write(Paths.get("reactome_data_model.pins"), str.getBytes(), StandardOpenOption.APPEND);
+					Files.write(Paths.get(pinsFilename), str.getBytes(), StandardOpenOption.APPEND);
 				}
 			}
 		}
@@ -118,9 +128,9 @@ public class FetchTestReactomeOntologyFiles {
 		pontWriter.close();
 		pinsWriter.close();
 		String outpathName = releaseNumber + "/reactome_data_model.";
-		Files.move(Paths.get("reactome_data_model.pprj"), Paths.get(outpathName + "pprj"), StandardCopyOption.REPLACE_EXISTING); 
-		Files.move(Paths.get("reactome_data_model.pont"), Paths.get(outpathName + "pont"), StandardCopyOption.REPLACE_EXISTING); 
-		Files.move(Paths.get("reactome_data_model.pins"), Paths.get(outpathName + "pins"), StandardCopyOption.REPLACE_EXISTING); 
+		Files.move(Paths.get(pprjFilename), Paths.get(outpathName + "pprj"), StandardCopyOption.REPLACE_EXISTING); 
+		Files.move(Paths.get(pontFilename), Paths.get(outpathName + "pont"), StandardCopyOption.REPLACE_EXISTING); 
+		Files.move(Paths.get(pinsFilename), Paths.get(outpathName + "pins"), StandardCopyOption.REPLACE_EXISTING); 
 		
 		logger.info("Finished FetchTestReactomeOntologyFiles");
 	}
