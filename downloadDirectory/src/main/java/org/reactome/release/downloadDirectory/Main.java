@@ -80,7 +80,7 @@ public class Main {
 			// This step runs BioPAX level 2 and BioPAX level 3 for Reactome's data using the Pathway-Exchange functinos
 			// Outputs: biopax2.zip and biopax2_validator.zip, and biopax.zip and biopax_validator.zip (for level 3)
 			// These zip files should contain a number of 'owl' files (BioPAX files) and 'xml' validation files
-//			Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig, stepsToRun.contains("BioPAX2"), stepsToRun.contains("BioPAX3"));
+			Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig, stepsToRun.contains("BioPAX2"), stepsToRun.contains("BioPAX3"));
 		}
 		if (stepsToRun.contains("GSEAOutput")) 
 		{
@@ -92,7 +92,7 @@ public class Main {
 		{
 			// This step currently calls the Perl scripts that generate the ReactomeBookPDF and ReactomeBookRTF
 			//Outputs: TheReactomeBook.pdf.zip, TheReactomeBook.rtf.zip
-//			ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir, stepsToRun.contains("ReactomeBookPDF"), stepsToRun.contains("ReactomeBookRTF"));
+			ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir, stepsToRun.contains("ReactomeBookPDF"), stepsToRun.contains("ReactomeBookRTF"));
 		}
 		if (stepsToRun.contains("FetchTestReactomeOntologyFiles")) 
 		{
@@ -104,7 +104,7 @@ public class Main {
 		{
 			// This step clones the Release repo from github, and generates an archive tarball from it and other files on the release server. Currently just runs make_release_tarball.pl.
 			// Output: reactome.tar.gz 
-//			CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
+			CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
 		}
 		if (stepsToRun.contains("PathwaySummationMappingFile")) 
 		{
