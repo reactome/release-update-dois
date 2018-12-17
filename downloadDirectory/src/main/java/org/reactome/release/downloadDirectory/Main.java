@@ -1,10 +1,14 @@
 package org.reactome.release.downloadDirectory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
@@ -20,9 +24,9 @@ public class Main {
 		
 		logger.info("Beginning Download Directory step");
 		String pathToConfig = "src/main/resources/config.properties";
-		String pathToSpeciesConfig = "src/main/resources/Species.json";
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
+		
 		//TODO: Check stable identifiers db exists
 		//TODO: Describe each functions outputs in documentation
 		//TODO: File existence check and size check
@@ -45,23 +49,59 @@ public class Main {
 		if (!releaseDir.exists()) {
 			releaseDir.mkdir();
 		}
+		
+		String pathToSpeciesConfig = props.getProperty("speciesConfigPath");
+		
+		// Determine which steps will be run via stepsToRun.config file
+		String pathToStepConfig = props.getProperty("stepsToRunConfigPath");
+		FileReader fr = new FileReader(pathToStepConfig);
+		BufferedReader br = new BufferedReader(fr);
+		List<String> stepsToRun = new ArrayList<String>();
+		String line;
+		while ((line = br.readLine()) != null) {
+			if (!line.startsWith("#")) {
+				stepsToRun.add(line);
+			}
+		}
+		br.close();
+		
 		//Begin download directory
-		DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
-		Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig);
-		GSEAOutput.execute(dbAdaptor, releaseNumber);
-		ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir);
-		FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
-		CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
-		PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
-		MapOldStableIds.execute(username, password, host, releaseNumber);
-		
+		if (stepsToRun.contains("DatabaseDumps")) {
+			DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
+		}
+		if (stepsToRun.contains("BioPAX2") || stepsToRun.contains("BioPAX3")) {
+			Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig, stepsToRun.contains("BioPAX2"), stepsToRun.contains("BioPAX3"));
+		}
+		if (stepsToRun.contains("GSEAOutput")) {
+			GSEAOutput.execute(dbAdaptor, releaseNumber);
+		}
+		if (stepsToRun.contains("ReactomeBookPDF") || stepsToRun.contains("ReactomeBookRTF")) {
+			ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir, stepsToRun.contains("ReactomeBookPDF"), stepsToRun.contains("ReactomeBookRTF"));
+		}
+		if (stepsToRun.contains("FetchTestReactomeOntologyFiles")) {
+			FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
+		}
+		if (stepsToRun.contains("CreateReleaseTarball")) {
+			CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
+		}
+		if (stepsToRun.contains("PathwaySummationMappingFile")) {
+			PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
+		}
+		if (stepsToRun.contains("MapOldStableIds")) {
+			MapOldStableIds.execute(username, password, host, releaseNumber);
+		}
 		// These file copy commands now use absolute paths instead of relative ones
-		logger.info("Copying gene_association.reactome to release directory");
-		Files.copy(Paths.get(releaseDirAbsolute + "goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
-		logger.info("Copying models2pathways.tsv to release directory");
-		Files.copy(Paths.get(releaseDirAbsolute + "biomodels/models2pathways.tsv"), Paths.get(releaseNumber + "models2pathways.tsv"), StandardCopyOption.REPLACE_EXISTING);
-		
-		CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
+		if (stepsToRun.contains("gene_association.reactome")) {
+			logger.info("Copying gene_association.reactome to release directory");
+			Files.copy(Paths.get(releaseDirAbsolute + "goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
+		}
+		if (stepsToRun.contains("models2pathways.tsv")) {
+			logger.info("Copying models2pathways.tsv to release directory");
+			Files.copy(Paths.get(releaseDirAbsolute + "biomodels/models2pathways.tsv"), Paths.get(releaseNumber + "models2pathways.tsv"), StandardCopyOption.REPLACE_EXISTING);
+		}
+		if (stepsToRun.contains("CreateReactome2BioSystems")) {
+			CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
+		}
 		// Move files to downloadDirectory release folder
 		logger.info("Moving all generated files to " + releaseDownloadDirWithNumber);
 		File folder = new File(releaseNumber);

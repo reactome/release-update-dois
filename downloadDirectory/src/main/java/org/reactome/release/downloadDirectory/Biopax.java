@@ -19,6 +19,7 @@ import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -53,7 +54,7 @@ public class Biopax {
     logger.info("Finished preparing BioPAX validation rules");
   }
   
-  public static void execute(String username, String password, String host, String port, String database, String releaseNumber, String pathToSpeciesConfig) throws Exception {
+  public static void execute(String username, String password, String host, String port, String database, String releaseNumber, String pathToSpeciesConfig, boolean runBioPAX2, boolean runBioPAX3) throws Exception {
 	  	releaseNumber = releaseNumber.replace("/", "");
 	  	String biopaxDir = releaseNumber + "_biopax";
         File biopaxDirFile = new File(biopaxDir);
@@ -69,73 +70,75 @@ public class Biopax {
 			int biopaxLevel = i + 2;
 			for (String speciesKey : speciesKeys) {
 				String speciesName = (String) ((JSONArray) ((JSONObject) speciesFile.get(speciesKey)).get("name")).get(0);
-				if (i == 0) {
+				if (biopaxLevel == 2 && runBioPAX2) {
 					logger.info("Generating BioPAX2 " + speciesName + " owl file...");
 					SpeciesAllPathwaysConverter converter = new SpeciesAllPathwaysConverter();
 					converter.doDump(new String[]{host, database, username, password, port, biopaxDir, speciesName});
-				} else {
+					validateBioPAX(biopaxDir, biopaxLevel, releaseNumber);
+					String outpathBiopax2 = releaseNumber + "/biopax2.zip";
+					Files.move(Paths.get("biopax2.zip"), Paths.get(outpathBiopax2), StandardCopyOption.REPLACE_EXISTING);
+					FileUtils.deleteDirectory(new File(biopaxDir));
+				} else if (biopaxLevel == 3 && runBioPAX3) {
 					logger.info("Generating BioPAX3 " + speciesName + " owl file...");
 					SpeciesAllPathwaysLevel3Converter level3converter = new SpeciesAllPathwaysLevel3Converter();
 					level3converter.doDump(new String[]{host, database, username, password, port, biopaxDir, speciesName});
+					String outpathBiopax3 = releaseNumber + "/biopax.zip";
+					Files.move(Paths.get("biopax.zip"), Paths.get(outpathBiopax3), StandardCopyOption.REPLACE_EXISTING); 
+					FileUtils.deleteDirectory(new File(biopaxDir));
 				}
 			}
-			
-			// Rename files, replacing whitespace with underscores
-		    Files.newDirectoryStream(Paths.get(biopaxDir),
-		    	      path -> path.toString().endsWith(".owl"))
-		    	      .forEach(f -> {
-		    	          String spath = f.toFile().getPath();
-		    	          spath = spath.replaceAll(" +", "_");
-		    	          File formattedFile = new File(spath);
-		    	          f.toFile().renameTo(formattedFile);
-		    	      });
-		    // Validate each owl file in the biopax output directory produced by PathwaysConverter
-		    logger.info("Validating owl files...");
-			runBiopaxValidation(biopaxDir);
+		}	
+  	}
+	private static void validateBioPAX(String biopaxDir, int biopaxLevel, String releaseNumber) throws Exception {
+		// Rename files, replacing whitespace with underscores
+	    Files.newDirectoryStream(Paths.get(biopaxDir),
+	    	      path -> path.toString().endsWith(".owl"))
+	    	      .forEach(f -> {
+	    	          String spath = f.toFile().getPath();
+	    	          spath = spath.replaceAll(" +", "_");
+	    	          File formattedFile = new File(spath);
+	    	          f.toFile().renameTo(formattedFile);
+	    	      });
+	    // Validate each owl file in the biopax output directory produced by PathwaysConverter
+	    logger.info("Validating owl files...");
+		runBiopaxValidation(biopaxDir);
 
-			// Compress all Biopax and validation files into individual zip files
-			logger.info("Zipping BioPAX" + biopaxLevel + " files...");
-			FileOutputStream biopaxOutputStream;
-			FileOutputStream validatorOutputStream;
-			if (i == 0) {
-				biopaxOutputStream = new FileOutputStream("biopax2.zip");
-				validatorOutputStream = new FileOutputStream("biopax2_validator.zip");
-			} else {
-				biopaxOutputStream = new FileOutputStream("biopax.zip");
-				validatorOutputStream = new FileOutputStream("biopax_validator.zip");
-			}
-			ZipOutputStream biopaxZipStream = new ZipOutputStream(biopaxOutputStream);
-			ZipOutputStream validatorZipStream = new ZipOutputStream(validatorOutputStream);
-		    Files.newDirectoryStream(Paths.get(biopaxDir),
-    	      path -> (path.toString().endsWith(".xml") || path.toString().endsWith(".owl")))
-    	      .forEach(f -> {
-    	          String spath = f.toFile().getPath();
-    	          File file = new File(spath);
-	        	  try {
-	    	          if (spath.endsWith(".owl")) {
-	    	        	writeToZipFile(file, biopaxZipStream);
-	    	          } else if (spath.endsWith(".xml")) {
-						writeToZipFile(file, validatorZipStream);
-	    	          }
-				  } catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				  }
-    	      });
-		    biopaxZipStream.close();
-		    validatorZipStream.close();
-		    
-		    logger.info("Finished BioPAX");
+		// Compress all Biopax and validation files into individual zip files
+		logger.info("Zipping BioPAX" + biopaxLevel + " files...");
+		FileOutputStream biopaxOutputStream = null;
+		FileOutputStream validatorOutputStream = null;
+		if (biopaxLevel == 2) {
+			biopaxOutputStream = new FileOutputStream("biopax2.zip");
+			validatorOutputStream = new FileOutputStream("biopax2_validator.zip");
+		} else if (biopaxLevel == 3) {
+			biopaxOutputStream = new FileOutputStream("biopax.zip");
+			validatorOutputStream = new FileOutputStream("biopax_validator.zip");
 		}
-		String outpathBiopax2 = releaseNumber + "/biopax2.zip";
-		String outpathBiopax3 = releaseNumber + "/biopax.zip";
-		Files.move(Paths.get("biopax2.zip"), Paths.get(outpathBiopax2), StandardCopyOption.REPLACE_EXISTING); 
-		Files.move(Paths.get("biopax.zip"), Paths.get(outpathBiopax3), StandardCopyOption.REPLACE_EXISTING); 
 		
-		FileUtils.deleteDirectory(new File(biopaxDir));
-		
-  }
-	//Function for compressing Biopax and validation files
+		ZipOutputStream biopaxZipStream = new ZipOutputStream(biopaxOutputStream);
+		ZipOutputStream validatorZipStream = new ZipOutputStream(validatorOutputStream);
+	    Files.newDirectoryStream(Paths.get(biopaxDir),
+	      path -> (path.toString().endsWith(".xml") || path.toString().endsWith(".owl")))
+	      .forEach(f -> {
+	          String spath = f.toFile().getPath();
+	          File file = new File(spath);
+        	  try {
+    	          if (spath.endsWith(".owl")) {
+    	        	writeToZipFile(file, biopaxZipStream);
+    	          } else if (spath.endsWith(".xml")) {
+					writeToZipFile(file, validatorZipStream);
+    	          }
+			  } catch (IOException e) {
+				e.printStackTrace();
+			  }
+	      });
+	    biopaxZipStream.close();
+	    validatorZipStream.close();
+	    
+	    logger.info("Finished BioPAX");
+	
+}
+//Function for compressing Biopax and validation files
   public static void writeToZipFile(File file, ZipOutputStream zipOutputStream) throws IOException {
 		
 	FileInputStream zipInputStream = new FileInputStream(file);
