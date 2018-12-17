@@ -17,11 +17,12 @@ public class CreateReactome2BioSystems {
 		
 		logger.info("Running CreateReactome2BioSystems...");
 		// The last argument, 'BioSystems', specifies the output directory of the ReactomeToBioSystems.zip file. 
-		// The script removes all files within the directory, so only change the output directory to an empty or non-existent one
-		ReactomeToBioSystemsConverter.main(new String[] {host, database, username, password, Integer.toString(port), "BioSystems" });
-		String outpathName = releaseNumber + "/ReactomeToBioSystems.zip";
-		Files.move(Paths.get("BioSystems/ReactomeToBioSystems.zip"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
-		FileUtils.deleteDirectory(new File("BioSystems"));
+		// The script removes all files within the named directory, so only change the output directory to an empty or non-existent one
+		String bioSystemsDirectory = "BioSystems";
+		ReactomeToBioSystemsConverter.main(new String[] {host, database, username, password, Integer.toString(port), bioSystemsDirectory});
+		String bioSystemsoutFileName = releaseNumber + "/ReactomeToBioSystems.zip";
+		Files.move(Paths.get( bioSystemsDirectory + "/ReactomeToBioSystems.zip"), Paths.get(bioSystemsoutFileName), StandardCopyOption.REPLACE_EXISTING); 
+		FileUtils.deleteDirectory(new File(bioSystemsDirectory));
 		logger.info("Finished CreateReactome2BioSystems");
 	}
 }
