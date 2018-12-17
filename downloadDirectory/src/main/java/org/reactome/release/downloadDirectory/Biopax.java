@@ -125,8 +125,23 @@ public class Biopax {
 		logger.info("Zipping BioPAX" + biopaxLevel + " files...");
 		ZipOutputStream biopaxZipStream = getBiopaxZipStream(biopaxLevel);
 		ZipOutputStream validatorZipStream = getValidatorZipStream(biopaxLevel);
-	    biopaxZipStream.close();
-	    validatorZipStream.close();
+		Files.newDirectoryStream(Paths.get(biopaxDir),
+			      path -> (path.toString().endsWith(".xml") || path.toString().endsWith(".owl")))
+			      .forEach(f -> {
+			          String spath = f.toFile().getPath();
+			          File file = new File(spath);
+		        	  try {
+		    	          if (spath.endsWith(".owl")) {
+		    	        	writeToZipFile(file, biopaxZipStream);
+		    	          } else if (spath.endsWith(".xml")) {
+							writeToZipFile(file, validatorZipStream);
+		    	          }
+					  } catch (IOException e) {
+						e.printStackTrace();
+					  }
+			      });
+			    biopaxZipStream.close();
+		validatorZipStream.close();
 	    
 	    logger.info("Finished BioPAX");
 	}
@@ -143,6 +158,21 @@ public class Biopax {
 	private static ZipOutputStream getZipOutputStream(String fileName) throws FileNotFoundException {
 		return new ZipOutputStream(new FileOutputStream(fileName));
 	}
+	
+	//Function for compressing Biopax and validation files
+	  public static void writeToZipFile(File file, ZipOutputStream zipOutputStream) throws IOException {
+			
+		FileInputStream zipInputStream = new FileInputStream(file);
+		ZipEntry zipEntry = new ZipEntry(file.getName().toString());
+		zipOutputStream.putNextEntry(zipEntry);
+		byte[] bytes = new byte[1024];
+		int length = 0;
+		while ((length = zipInputStream.read(bytes)) >= 0) {
+			zipOutputStream.write(bytes, 0, length);
+		}
+		zipOutputStream.closeEntry();
+		zipInputStream.close();
+	  }
   
   // This function runs each file in the biopax output directory through the biopax validator
   public static void runBiopaxValidation(String directory) throws Exception {
