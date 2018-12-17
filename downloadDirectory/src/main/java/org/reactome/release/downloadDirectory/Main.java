@@ -46,7 +46,8 @@ public class Main {
 		String releaseDownloadDirWithNumber = releaseDownloadDir + releaseNumber;
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		File releaseDir = new File(releaseNumber);
-		if (!releaseDir.exists()) {
+		if (!releaseDir.exists()) 
+		{
 			releaseDir.mkdir();
 		}
 		
@@ -58,63 +59,78 @@ public class Main {
 		BufferedReader br = new BufferedReader(fr);
 		List<String> stepsToRun = new ArrayList<String>();
 		String line;
-		while ((line = br.readLine()) != null) {
-			if (!line.startsWith("#")) {
+		while ((line = br.readLine()) != null) 
+		{
+			if (!line.startsWith("#")) 
+			{
 				stepsToRun.add(line);
 			}
 		}
 		br.close();
 		
 		//Begin download directory
-		if (stepsToRun.contains("DatabaseDumps")) {
+		if (stepsToRun.contains("DatabaseDumps")) 
+		{
 			DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
 		}
-		if (stepsToRun.contains("BioPAX2") || stepsToRun.contains("BioPAX3")) {
+		if (stepsToRun.contains("BioPAX2") || stepsToRun.contains("BioPAX3")) 
+		{
 			Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig, stepsToRun.contains("BioPAX2"), stepsToRun.contains("BioPAX3"));
 		}
-		if (stepsToRun.contains("GSEAOutput")) {
+		if (stepsToRun.contains("GSEAOutput")) 
+		{
 			GSEAOutput.execute(dbAdaptor, releaseNumber);
 		}
-		if (stepsToRun.contains("ReactomeBookPDF") || stepsToRun.contains("ReactomeBookRTF")) {
+		if (stepsToRun.contains("ReactomeBookPDF") || stepsToRun.contains("ReactomeBookRTF")) 
+		{
 			ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir, stepsToRun.contains("ReactomeBookPDF"), stepsToRun.contains("ReactomeBookRTF"));
 		}
-		if (stepsToRun.contains("FetchTestReactomeOntologyFiles")) {
+		if (stepsToRun.contains("FetchTestReactomeOntologyFiles")) 
+		{
 			FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
 		}
-		if (stepsToRun.contains("CreateReleaseTarball")) {
+		if (stepsToRun.contains("CreateReleaseTarball")) 
+		{
 			CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
 		}
-		if (stepsToRun.contains("PathwaySummationMappingFile")) {
+		if (stepsToRun.contains("PathwaySummationMappingFile")) 
+		{
 			PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
 		}
-		if (stepsToRun.contains("MapOldStableIds")) {
+		if (stepsToRun.contains("MapOldStableIds")) 
+		{
 			MapOldStableIds.execute(username, password, host, releaseNumber);
 		}
 		// These file copy commands now use absolute paths instead of relative ones
-		if (stepsToRun.contains("gene_association.reactome")) {
+		if (stepsToRun.contains("gene_association.reactome")) 
+		{
 			logger.info("Copying gene_association.reactome to release directory");
 			Files.copy(Paths.get(releaseDirAbsolute + "goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
 		}
-		if (stepsToRun.contains("models2pathways.tsv")) {
+		if (stepsToRun.contains("models2pathways.tsv"))
+		{
 			logger.info("Copying models2pathways.tsv to release directory");
 			Files.copy(Paths.get(releaseDirAbsolute + "biomodels/models2pathways.tsv"), Paths.get(releaseNumber + "models2pathways.tsv"), StandardCopyOption.REPLACE_EXISTING);
 		}
-		if (stepsToRun.contains("CreateReactome2BioSystems")) {
+		if (stepsToRun.contains("CreateReactome2BioSystems")) 
+		{
 			CreateReactome2BioSystems.execute(host, database, username, password, port, releaseNumber);
 		}
 		// Move files to downloadDirectory release folder
 		logger.info("Moving all generated files to " + releaseDownloadDirWithNumber);
 		File folder = new File(releaseNumber);
 		File[] releaseFiles = folder.listFiles();
-		for (int i = 0; i < releaseFiles.length; i++) {
+		for (int i = 0; i < releaseFiles.length; i++) 
+		{
 			System.out.println(releaseFiles[i]);
-			if (releaseFiles[i].isDirectory() && releaseFiles[i].getName().equalsIgnoreCase("databases")) {
+			if (releaseFiles[i].isDirectory() && releaseFiles[i].getName().equalsIgnoreCase("databases")) 
+			{
 				FileUtils.deleteDirectory(new File(releaseDownloadDirWithNumber + "/databases"));
 			}
 			
 			Files.move(Paths.get(releaseFiles[i].toString()), Paths.get(releaseDownloadDirWithNumber + "/" + releaseFiles[i].getName()), StandardCopyOption.REPLACE_EXISTING); 
 		}
-		
+		releaseNumber.replace("/", "");
 		logger.info("Finished DownloadDirectory for release " + releaseNumber);
 	}
 }
