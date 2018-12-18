@@ -23,7 +23,7 @@ public class GSEAOutput {
 	private static final String outFilename = "ReactomePathways.gmt";
 	
 	public static void execute(MySQLAdaptor dba, String releaseNumber) throws Exception {
-		logger.info("Running GSEAOutput...");
+		logger.info("Running GSEAOutput step");
 		
 		// Generate the ReactomePathways.gmt file
 		ReactomeToMsigDBExport exporter = new ReactomeToMsigDBExport();

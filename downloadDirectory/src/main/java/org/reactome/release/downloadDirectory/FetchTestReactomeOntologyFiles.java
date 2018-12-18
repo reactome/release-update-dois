@@ -43,7 +43,7 @@ public class FetchTestReactomeOntologyFiles {
 	private static ResultSet resultSet = null;
 	
 	public static void execute(MySQLAdaptor dba, String username, String password, String host, String database, String releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
-		logger.info("Running FetchTestReactomeOntologyFiles...");
+		logger.info("Running FetchTestReactomeOntologyFiles step");
 		Class.forName("com.mysql.jdbc.Driver");
 		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?" + "user=" + username + "&password=" + password);
 		statement = connect.createStatement();

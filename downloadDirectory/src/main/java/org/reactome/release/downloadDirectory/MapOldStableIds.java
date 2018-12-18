@@ -28,7 +28,7 @@ public class MapOldStableIds {
 		Statement statement = null;
 		ResultSet resultSet = null;
 		
-		logger.info("Running MapOldStableIds");
+		logger.info("Running MapOldStableIds step");
 		// Need to use mysql driver to access stable_identifiers db
 		logger.info("Connecting to stable_identifers db...");
 		Class.forName("com.mysql.jdbc.Driver");

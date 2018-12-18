@@ -42,7 +42,7 @@ public class Biopax {
 
   // BioPAX validation requires loading of bio ontologies, which takes a few minutes before starting the BioPAX process
   static {
-   logger.info("Running BioPAX");
+   logger.info("Running BioPAX step");
    logger.info("Preparing BioPAX validation rules...");
     ctx = new ClassPathXmlApplicationContext(new String[]{
       "META-INF/spring/appContext-validator.xml",

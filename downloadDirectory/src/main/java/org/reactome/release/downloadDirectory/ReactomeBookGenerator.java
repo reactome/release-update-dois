@@ -9,13 +9,12 @@ import java.nio.file.StandardCopyOption;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.gk.persistence.MySQLAdaptor;
 
 public class ReactomeBookGenerator {
 	private static final Logger logger = LogManager.getLogger();
 	
 	static public void execute(String username, String password, String host, int port, String database, String releaseNumber, String releaseDir, boolean runPDF, boolean runRTF) throws IOException, InterruptedException {
-		logger.info("Generating Reactome Books");
+		logger.info("Running Reactome Book steps");
 		String pdfBookCommand = "perl " + releaseDir + "/genbook_pdf.pl -depth 100 -db " + database + " -host " + host + " -user " + username + " -pass " + password + " -port " + port + " -stdout -react_rep 2";
 		String rtfBookCommand = "perl " + releaseDir + "/genbook_rtf.pl -depth 100 -db " + database + " -host " + host + " -user " + username + " -pass " + password + " -port " + port + " -split -react_rep 2";
 		

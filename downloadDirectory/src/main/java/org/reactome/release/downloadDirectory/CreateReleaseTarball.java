@@ -19,7 +19,7 @@ public class CreateReleaseTarball {
 	public static boolean runPerl = true;
 	
 	public static void execute(String releaseNumber, String releaseDownloadDir) throws IOException, InterruptedException {
-		logger.info("Running CreateReleaseTarball");
+		logger.info("Running CreateReleaseTarball step");
 		
 		if (runPerl) {
 			String tarballCommand = "perl " + releaseDownloadDir + "/make_release_tarball.pl " + releaseNumber;

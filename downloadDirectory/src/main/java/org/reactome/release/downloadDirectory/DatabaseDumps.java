@@ -22,7 +22,7 @@ public class DatabaseDumps {
 		
 		//TODO: Refactor
 		
-		logger.info("Generating DatabaseDumps");
+		logger.info("Running DatabaseDumps step");
 		// Create databases folder that will hold the DB dumps
 		File databaseDir = new File(releaseNumber + "/databases");
 		if (!databaseDir.exists()) {

@@ -15,7 +15,7 @@ public class CreateReactome2BioSystems {
 	private static final Logger logger = LogManager.getLogger();
 	public static void execute(String host, String database, String username, String password, int port, String releaseNumber) throws IOException {
 		
-		logger.info("Running CreateReactome2BioSystems...");
+		logger.info("Running CreateReactome2BioSystems step");
 		// The last argument, 'BioSystems', specifies the output directory of the ReactomeToBioSystems.zip file. 
 		// The script removes all files within the named directory, so only change the output directory to an empty or non-existent one
 		String bioSystemsDirectory = "BioSystems";
