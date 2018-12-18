@@ -1,9 +1,7 @@
 package org.reactome.release.downloadDirectory;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -11,10 +9,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
@@ -22,11 +20,12 @@ import org.reactome.gsea.ReactomeToMsigDBExport;
 
 public class GSEAOutput {
 	private static final Logger logger = LogManager.getLogger();
+	private static final String outFilename = "ReactomePathways.gmt";
 	
 	public static void execute(MySQLAdaptor dba, String releaseNumber) throws Exception {
 		logger.info("Running GSEAOutput...");
-		String outFilename = "ReactomePathways.gmt";
 		
+		// Generate the ReactomePathways.gmt file
 		ReactomeToMsigDBExport exporter = new ReactomeToMsigDBExport();
 		exporter.setIsForGMT(true);
 		exporter.setDBA(dba);
@@ -35,16 +34,18 @@ public class GSEAOutput {
 		logger.info("Updating ReactomePathways.gmt with 'Reactome Pathway' column...");
 		// Initial output file needs to be updated so that the third column contains 'Reactome Pathway' 
 		try {
-			FileReader fr = new FileReader(outFilename);
-			BufferedReader br = new BufferedReader(fr);
+			BufferedReader br = new BufferedReader(new FileReader(outFilename));
 			StringBuffer inputBuffer = new StringBuffer();
 			
 			String line;
-			while ((line = br.readLine()) != null) {
+			while ((line = br.readLine()) != null) 
+			{
 				String[] tabSplit = line.split("\t");
-				ArrayList<String> updatedLine = new ArrayList<String>();
-				for (int i=0; i < tabSplit.length; i++) {
-					if (i == 2) {
+				List<String> updatedLine = new ArrayList<String>();
+				for (int i=0; i < tabSplit.length; i++)
+				{
+					if (i == 2)
+					{
 						updatedLine.add("Reactome Pathway");
 					}
 					updatedLine.add(tabSplit[i]);
@@ -62,7 +63,7 @@ public class GSEAOutput {
 		}
 		
 		logger.info("Zipping ReactomePathways.gmt...");
-		// Zip the output and then remove it
+		// Zip the output and then remove original file
 		try {
 			FileOutputStream fos = new FileOutputStream(outFilename + ".zip");
 			ZipOutputStream zos = new ZipOutputStream(fos);
@@ -73,7 +74,8 @@ public class GSEAOutput {
 			byte[] bytes = new byte[1024];
 			int length;
 			
-			while ((length = inputStream.read(bytes)) > 0) {
+			while ((length = inputStream.read(bytes)) > 0) 
+			{
 				zos.write(bytes, 0, length);
 			}
 			

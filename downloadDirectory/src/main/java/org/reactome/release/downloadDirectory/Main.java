@@ -28,11 +28,10 @@ public class Main {
 		props.load(new FileInputStream(pathToConfig));
 		
 		//TODO: Check stable identifiers db exists
-		//TODO: Describe each functions outputs in documentation
 		//TODO: File existence check and size check
-		//TODO: Configurable runs
 		//TODO: Parallelize executions
 		//TODO: Integration with Perl wrapper
+		//TODO: Error handling
 		
 		//Set up DB adaptor
 		String username = props.getProperty("username");
