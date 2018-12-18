@@ -54,7 +54,6 @@ public class Biopax {
   
   // Once BioPAX validation rules have loaded, the actual BioPAX process can start
   public static void execute(String username, String password, String host, String port, String database, String releaseNumber, String pathToSpeciesConfig, boolean runBioPAX2, boolean runBioPAX3) throws Exception {
-	  	releaseNumber = releaseNumber.replace("/", "");
 	  	// Temporary location where BioPAX files are stored
 	  	String biopaxDir = releaseNumber + "_biopax";
         File biopaxDirFile = new File(biopaxDir);

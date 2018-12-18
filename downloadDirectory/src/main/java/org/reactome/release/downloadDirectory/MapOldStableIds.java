@@ -13,6 +13,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +50,8 @@ public class MapOldStableIds {
 			{
 				dbIdToStableIds.get(dbId).add(stableId);
 			} else {
-				dbIdToStableIds.put(dbId, (ArrayList<String>) Collections.singletonList(stableId));
+				ArrayList<String> stableIds = new ArrayList<String>(Arrays.asList(stableId));
+				dbIdToStableIds.put(dbId, stableIds);
 				dbIds.add(dbId);
 			}
 		}
