@@ -87,7 +87,7 @@ Once all scripts in the previous step have been run (including <a href="https://
 
 Next, we want to make sure that newly-populated test_reactome database can be imported to the graphDb in neo4j and that it reports acceptable graph QA numbers. <b>It is recommended that these steps be run on your workstation.</b>
 
-3) Run the <a href="https://github.com/reactome/graph-importer">graph-importer</a> module. This should take some time (30-60 minutes) and will output the results from <a href="https://github.com/reactome/database-checker">database-checker</a> as well as the imported graphDb in `target/graph.db/`.
+3) Run the <a href="https://github.com/reactome/graph-importer">graph-importer</a> module. This should take some time (30+ minutes) and will output the results from <a href="https://github.com/reactome/database-checker">database-checker</a> as well as the imported graphDb in `target/graph.db/`.
 
     -  The `database-checker` results will look the following:
     ```
@@ -98,7 +98,12 @@ Next, we want to make sure that newly-populated test_reactome database can be im
     ```
     The `database-checker` module just looks for any attributes of an instance that are <i>required</i> (as determined by the data model) and are not filled. Small numbers reported are OK but any newly reported entries should be investigated. 
     
-4) Finally, running the <a href="https://github.com/reactome/graph-qa">graph-qa</a> step will check a series of graphDB QA items and rank them by urgency. To run graph-qa, you will need to have an instance of neo4j running with the imported graph DB. To quickly get neo4j installed and running, a docker container is recommended. The following command can be used to get it running quickly and painlessly (generally speaking):` docker run -p 7687:7687 -p 7474:7474 -e NEO4J_dbms_allow__upgrade=true -e NEO4J_dbms_allowFormatMigration=true -e NEO4J_dbms_memory_heap_max__size=18G -v $(pwd)/target/graph.db:/var/lib/neo4j/data/databases/graph.db neo4j:3.4.9` -- Making sure that the location of the `graph.db/` folder is properly specified in the last argument and the `NEO4J_dbms_memory_heap_max__size` argument is appropriate for your computer/server. To verify that the graphDb has been properly populated, open `localhost:7474` (username and password default is `neo4j`), and click on the database icon at the top left. A panel titled <i>Database Information</i> should open up and display all nodes in the Data Model. If none of this appears, chances are the neo4j instance is not using the imported graphDB. Verify the `graph.db/` folder is in fact populated. 
+4) Finally, running the <a href="https://github.com/reactome/graph-qa">graph-qa</a> step will check a series of graphDB QA items and rank them by urgency. To run graph-qa, you will need to have an instance of neo4j running with the imported graph DB. To quickly get neo4j installed and running, a docker container is recommended. The following command can be used to get it running quickly and painlessly:<br><br>
+` docker run -p 7687:7687 -p 7474:7474 -e NEO4J_dbms_allow__upgrade=true -e NEO4J_dbms_allowFormatMigration=true -e NEO4J_dbms_memory_heap_max__size=18G -v $(pwd)/target/graph.db:/var/lib/neo4j/data/databases/graph.db neo4j:3.4.9` 
+    -  Make sure that the location of the `graph.db/` folder is properly specified in the last argument 
+    -  Adjust the `NEO4J_dbms_memory_heap_max__size` argument so that it is  appropriate for your computer/server. 
+  
+  To verify that the graphDb has been properly populated, open `localhost:7474` (username and password default is `neo4j`), and click on the database icon at the top left. A panel titled <i>Database Information</i> should open up and display all nodes in the Data Model. If none of this appears, chances are the neo4j instance is not using the imported graphDB. Verify the `graph.db/` folder is in fact populated. 
 
 Once you have verified that the graphDb is populated, graph-qa can be run. Build the jar file using `mvn clean compile package` and then follow the instructions at the <a href="https://github.com/reactome/graph-qa">repo</a>. After graph-qa has been run, it will output the number of offending instances for each QA category, ranked by urgency. These results can be compared with the QA results from the previous release (link needed).
 
