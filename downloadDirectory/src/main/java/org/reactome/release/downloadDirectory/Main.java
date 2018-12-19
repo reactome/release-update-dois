@@ -139,8 +139,8 @@ public class Main {
 		}
 		if (stepsToRun.contains("PathwaySummationMappingFile")) 
 		{
-			// This step takes all Human Pathway and creates a tab-seperated file with columns containining the stableIdentifier, name, and summation of the instance
-			// Output: pasthway2summation.txt
+			// This step takes all Human Pathway and creates a tab-separated file with columns containing the stableIdentifier, name, and summation of the instance
+			// Output: pathway2summation.txt
 			try {
 				PathwaySummationMappingFile.execute(dbAdaptor, releaseNumber);
 			} catch (Exception e) {
@@ -166,7 +166,7 @@ public class Main {
 			// Output: gene_association.reactome
 			logger.info("Copying gene_association.reactome to release directory");
 			try {
-				Files.copy(Paths.get(releaseDirAbsolute + "goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
+				Files.copy(Paths.get(releaseDirAbsolute + "goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "/gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
 			} catch (Exception e) {
 				failedSteps.add("gene_association.reactome");
 				e.printStackTrace();
@@ -177,7 +177,7 @@ public class Main {
 			// This step copies the models2pathways.tsv file generated during the biomodels step of Release to the download_directory folder
 			logger.info("Copying models2pathways.tsv to release directory");
 			try {
-				Files.copy(Paths.get(releaseDirAbsolute + "biomodels/models2pathways.tsv"), Paths.get(releaseNumber + "models2pathways.tsv"), StandardCopyOption.REPLACE_EXISTING);
+				Files.copy(Paths.get(releaseDirAbsolute + "biomodels/models2pathways.tsv"), Paths.get(releaseNumber + "/models2pathways.tsv"), StandardCopyOption.REPLACE_EXISTING);
 			} catch (Exception e) {
 				failedSteps.add("models2pathways.tsv");
 				e.printStackTrace();
@@ -195,12 +195,7 @@ public class Main {
 				e.printStackTrace();
 			}
 		}
-		
-		if (failedSteps.size() > 0) {
-			String failedStepsString = StringUtils.join(failedSteps, ", ");
-			logger.warn("The following steps reported an error: " + failedStepsString);
-		}
-		
+
 		// Move files to downloadDirectory release folder
 		logger.info("Moving all generated files to " + releaseDownloadDirWithNumber);
 		File folder = new File(releaseNumber);
@@ -213,6 +208,11 @@ public class Main {
 			}
 			
 			Files.move(Paths.get(releaseFiles[i].toString()), Paths.get(releaseDownloadDirWithNumber + "/" + releaseFiles[i].getName()), StandardCopyOption.REPLACE_EXISTING); 
+		}
+		
+		if (failedSteps.size() > 0) {
+			String failedStepsString = StringUtils.join(failedSteps, ", ");
+			logger.warn("\nErrors were reported in the following step(s): " + failedStepsString + "\n");
 		}
 		logger.info("Finished DownloadDirectory");
 	}
