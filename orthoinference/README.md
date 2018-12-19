@@ -55,7 +55,7 @@ Typically there are a number of instances that inference will be skipped for. Th
   ```
   If there aren't any instances that are to be skipped, the empty file still needs to exist.
   
-  <h3> Running Orthoinfence <h3>
+  <h3> Running Orthoinfence </h3>
   
   <b>Note</b>: For the orthoinference steps and QA, it is recommended that Java 8 be used and mySQL 5.5 or 5.7 be used.
   
