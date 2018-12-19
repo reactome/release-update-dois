@@ -25,7 +25,6 @@ hs_err_pid*
 .metadata
 .recommenders
 RemoteSystemsTempFiles
-
 update-dois/target/maven-status/maven-compiler-plugin/compile/default-compile/*.lst
 update-dois/.settings/org.eclipse.jdt.core.prefs
 orthoinference/src/main/resources/*.txt
@@ -39,3 +38,4 @@ config.properties
 target
 *.report
 .attach_pid*
+normal_event_skip_list.txt
