@@ -8,7 +8,7 @@ allSpecies=(pfal spom scer ddis cele sscr btau cfam mmus rnor ggal tgut xtro dre
 for species in "${allSpecies[@]}"
 do
 	echo "java -Xmx4096m -jar target/orthoinference-0.0.1-SNAPSHOT-jar-with-dependencies.jar $species > orthoinference_$species.out";
-	java -Xmx4096m -jar target/orthoinference-0.0.1-SNAPSHOT-jar-with-dependencies.jar $species > orthoinference_$species.out
+	java -Xmx4096m -jar target/orthoinference-0.0.1-SNAPSHOT-jar-with-dependencies.jar $species 
 done
 echo "Orthoinference complete"
 
