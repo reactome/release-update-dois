@@ -26,7 +26,7 @@ Orthoinference can be run once the <b>UpdateStableIds</b> step has been run. His
 - Locally install a build of <a href="https://github.com/reactome/data-release-pipeline/tree/develop/release-common-lib">release-common-lib</a>, following the instructions at the link
 - `normal_event_skip_list.txt` needs to be placed in `src/main/resources/` folder
 
-<h4> Setting config.properties <h4>
+<h4> Setting config.properties </h4>
   
   Create or update the `config.properties` file in the`orthoinference/src/main/resources/` folder, setting the following properties to match the current release:
   
