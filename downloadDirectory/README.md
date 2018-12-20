@@ -104,6 +104,28 @@ After each step is run, the output files associated with the step are moved to a
 
 This step generates two mySQL dump files from the `stable_identifiers` database and the `test_reactome` database corresponding to the current release (eg: `test_reactome_67`). The files produced are `gk_stable_ids.sql.gz` and `gk_current.sql.gz`, respectively. These are then placed in the `databases/` folder. Comparing the size of these files to the previous release is sufficient for verifying the success of this step. 
 
+<h4>BioPAX</h4>
+
+This step generates BioPAX level 2 and level 3 `owl`and `xml` validation files for each species in the `test_reactome` database. Additional information on BioPAX can be found at it's <a href="http://www.biopax.org/">website</a>. This is typically the longest running step of a full `DownloadDirectory` run, particularly due to the generation of the level 3 files. It makes use of the `Pathway-Exchange` jar that should have been locally installed during the <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">preparation</a> step of DownloadDirectory.
+
+<b>Note</b>: Due to the dependancy on a local installation of `Pathway-Exchange`, this is also the most error-prone step of `DownloadDirectory`. Any `attribute` or `instance` errors that result from `BioPAX` might mean that this installation will need to be updated to the most recent <a href="https://github.com/reactome/Pathway-Exchange/blob/master/ant/PathwayExchangeJar.xml">version</a>. See above for instructions on installing/updating the `Pathway-Exchange` module. 
+
+Each zip file produced should contain a number of files (`owl` or validation `xml`) corresponding to the species found in the <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/src/main/resources/Species.json">Species.json</a> file.
+
+`biopax2.zip` -- This zip file should contain a BioPAX <b>level 2</b> `owl` file for each species in `Species.json`. Ensure that the `owl` files pertain to `biopax-level2` by inspecting a few of the files. Looking at the corresponding validation files (found in `biopax2_validator.zip`) is also essential for determining if BioPAX level 2 ran correctly (see below).
+
+`biopax.zip` -- This zip file should contain a BioPAX <b>level 3</b> `owl` file for each species in `Species.json`. Ensure that the `owl` files pertain to `biopax-level3` by inspecting a few of the files. Looking at the corresponding validation files (found in `biopax_validator.zip`) is also essential for determining if BioPAX level 3 ran correctly (see below). 
+
+`biopax2_validator.zip` & `biopax_validator.zip` -- The  corresponding `validator.zip` file should contain a `validation.xml` file for each species that has an `owl` file in the `biopax.zip` file. These validation files can be quite large since they report problems at the `warning` and `error` levels, and historically there have been many warnings. Checking the `<validation description>` tag in the validation file will list the number of problems found, including any errors that might have come up. Any errors found will need to be investigated. Additionally, comparing the number of warnings between releases is another way to ensure that the BioPAX process ran successfully.
+
+Finally, a BioPAX validator tool exists <a href="http://biopax.baderlab.org/">online</a>. The `owl` files can be run through here as well to check validity.
+
+
+
+
+
+
+
 
 
 
