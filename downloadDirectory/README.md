@@ -1,9 +1,9 @@
 <h2>Download Directory</h2>
 
-The `Download Directory` step generates a number of files that can be downloaded from Reactome's <a href="https://reactome.org/download-data">download page</a>. It also generates an archive file (`reactome.tar.gz`) that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release repository</a> and release server. This module has been rewritten from Perl to Java. 
+The `Download Directory` step generates a number of files that can be downloaded from Reactome's <a href="https://reactome.org/download-data">download page</a>. It also generates an archive file during the `CreateReleaseTarball` step that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release repository</a> and release server. This module has been rewritten from Perl to Java. 
 <br><br>The steps of `DownloadDirectory` and files produced are:
 
-- DatabaesDumps: `gk_stable_ids.sql` (stable_identifiers), `gk_current.sql` (test_reactome)
+- <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#DatabaseDumps">DatabaseDumps</a>: `gk_stable_ids.sql` (stable_identifiers), `gk_current.sql` (test_reactome)
 - BioPAX: `biopax2.zip`, `biopax2_validator.zip`, `biopax.zip`, `biopax_validator.zip`
 - GSEAOutput: `ReactomePathways.gmt.zip`
 - ReactomeBook: `TheReactomeBook.pdf.zip`, `TheReactomeBook.rtf.zip`
@@ -97,6 +97,12 @@ In this example, the BioPAX level 2 and ReactomeBook steps will not be run and s
 <h3> Verifying Download Directory Results</h3>
 
 This section will touch on what the files produced by each step in `Download Directory` are, and how to verify they were produced correctly. Often, comparing the files produced in the previous release is the way to go, but where needed this guide will provide additional suggestions for checking the output.
+
+After each step is run, the output files associated with the step are moved to a folder corresponding to the current release. For release 67, the output files would appear in `data-release-pipeline/downloadDirectory/67`. 
+
+<h4>DatabaseDumps</h4>
+
+This step generates two mySQL dump files from the `stable_identifiers` database and the `test_reactome` database corresponding to the current release (eg: `test_reactome_67`). The files produced are `gk_stable_ids.sql.gz` and `gk_current.sql.gz`, respectively. These are then placed in the `databases/` folder. Comparing the size of these files to the previous release is sufficient for verifying the success of this step. 
 
 
 
