@@ -17,6 +17,7 @@ public class UpdateStableIds {
 
 	private static final Logger logger = LogManager.getLogger();
 	
+	@SuppressWarnings("unchecked")
 	public static void stableIdUpdater(MySQLAdaptor dbaSlice, MySQLAdaptor dbaPrevSlice, MySQLAdaptor dbaGkCentral, Long personId) throws Exception {
 		
 		logger.info("Generating InstanceEdits for " + dbaSlice.getDBName() + " and " + dbaGkCentral.getDBName());
@@ -83,7 +84,7 @@ public class UpdateStableIds {
 					if (isUpdated(sliceInstance, prevSliceInstance, dbaPrevSlice)) {
 						String releaseStatusString = (String) sliceInstance.getAttributeValue(releaseStatus);
 						String updated = "UPDATED";
-						if (releaseStatus != updated) {
+						if (releaseStatusString == null || !releaseStatusString.contentEquals(updated)) {
 							sliceInstance.addAttributeValue(releaseStatus, updated);
 							sliceInstance.addAttributeValue(modified, sliceIE);
 							dbaSlice.updateInstanceAttribute(sliceInstance, releaseStatus);
