@@ -1,7 +1,7 @@
 <h2>Download Directory</h2>
 
-The Download Directory step generates a number of files that can be downloaded from Reactome's <a href="https://reactome.org/download-data">download page</a>. It also generates an archive file during the `CreateReleaseTarball` step that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release repository</a> and release server. This module has been rewritten from Perl to Java. 
-<br><br>The steps of DownloadDirectory and files produced are:
+The Download Directory step generates a number of files that can be downloaded from Reactome's <a href="https://reactome.org/download-data">download page</a>. It also generates an archive file during the <b>CreateReleaseTarball</b> step that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release repository</a> and some services on the release server. This module has been rewritten from Perl to Java. 
+<br><br>The steps of Download Directory and files produced are:
 
 - <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#databasedumps">DatabaseDumps</a>: `gk_stable_ids.sql`, `gk_current.sql`
 - <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#biopax">BioPAX</a>: `biopax2.zip`, `biopax2_validator.zip`, `biopax.zip`, `biopax_validator.zip`
@@ -28,11 +28,15 @@ To run the Download Directory step, a few things need to be taken into account.
 
 <b> Local installation of the Pathway-Exchange dependancy</b>
 
-Download Directory depends on a local installation of <a href="https://github.com/reactome/Pathway-Exchange">Pathway-Exchange</a>. This requires generating a new <b>ant</b> build of from <a href="https://github.com/reactome/Pathway-Exchange/blob/master/ant/PathwayExchangeJar.xml">PathwayExchangeJar.xml</a>. Most IDEs (Eclipse, IntelliJ) should be able to build the file (command-line methods will be added once found). This makes sure that the Data Model is up to date during the `BioPAX` step. If not updated, an unexpected data structure could cause the `BioPAX`, `GSEAOutput` or `CreateReactome2BioSystems` steps to fail. 
+Download Directory depends on a local installation of <a href="https://github.com/reactome/Pathway-Exchange">Pathway-Exchange</a>. This requires generating a new <b>ant</b> build using <a href="https://github.com/reactome/Pathway-Exchange/blob/master/ant/PathwayExchangeJar.xml">PathwayExchangeJar.xml</a>. It can be built using most IDEs (such as Eclipse or IntelliJ) or using the following command:<br>
+`ant -buildfile ant/PathwayExchangeJar.xml`
 
-Once the jar file has been built, it should appear above the Pathway-Exchange directory in the `RESTfulAPI/web/WEB-INF/lib/` folder as `pathwayExchange.jar`. This jar file next needs to be installed locally in accordance with the <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/pom.xml">POM file</a> in the DownloadDirectory repo.
+This makes sure that the <a href="https://reactome.org/content/schema/">Data Model</a> is up to date. If not updated, an unexpected data structure could cause the <b>BioPAX</b>, <b>GSEAOutput</b> or <b>CreateReactome2BioSystems</b> steps to fail. 
+
+Once the jar file has been built, it should appear above the `Pathway-Exchange` directory in the `RESTfulAPI/web/WEB-INF/lib/` folder. The jar file next needs to be installed locally in accordance with the <b>POM</b> file in the Download Directory repo.
 <br><br>
-Here is a sample snippet from the `pom.xml` file in Download Directory that contains the `Pathway-Exchange` information we care about:
+Here is a sample snippet from the <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/pom.xml">pom.xml</a> file in Download Directory that contains the <b>Pathway-Exchange</b> information we care about:
+
 ```
 <!-- Locally installed pathway exchange jar -->
   <dependency>
@@ -42,22 +46,24 @@ Here is a sample snippet from the `pom.xml` file in Download Directory that cont
   </dependency>
 ```
 
-Based on the above information from the <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/pom.xml">pom.xml</a> file, to locally install the `pathwayExchange.jar` we would use the following command:<br><br>
+Based on the above information POM file snippet, to locally install the `pathwayExchange.jar` we would use the following command:<br><br>
 `mvn install:install-file -Dfile=pathwayExchange.jar -DgroupId=org.reactome.pathway-exchange -DartifactId=pathwayExchange -Dversion=1.0.1 -Dpackaging=jar`
 
-If the build was successful, we have successfully installed an up-to-date `Pathway-Exchange` jar file that will be used by various steps during Download Directory.
+  - Make sure the <i>groupId</i>, <i>artifactId</i>, and <i>version</i> arguments match the same fields in the POM
+
+If the build was successful, we have successfully installed an up-to-date Pathway-Exchange jar file that will be used during Download Directory.
 
 <b> Setting config.properties </b>
 
-Next the `config.properties` file must be set or updated in the `src/main/resources` folder. Below is a sample file:
+Next the `config.properties` file must be set or updated in the `src/main/resources/` folder. Below is a sample file:
 ```
 ## Sample config.properties file for Download Directory
 username=mySQLUsername
 password=mySQLPassword
-database=test_reactome_67
+database=test_reactome_##
 host=localhost
 port=3306
-release=67
+release=releaseNumber
 ## Filepaths important to the Download Directory step
 absoluteReleaseDirectoryPath=/usr/local/gkb/scripts/release/
 releaseDownloadDirectoryPath=/usr/local/gkb/scripts/release/download_directory/
@@ -66,12 +72,12 @@ stepsToRunConfigPath=src/main/resources/stepsToRun.config
 ```
 <b> Running the program </b>
 
-Now that the `Pathway-Exchange` project is accessible and the `config.properties` file set, the step can be run using the script runner <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/runDownloadDirectory.sh">runDownloadDirectory.sh</a>.
+Now that the Pathway-Exchange project is accessible and the `config.properties` file set, the step can be run using the script runner <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/runDownloadDirectory.sh">runDownloadDirectory.sh</a>.
 
-<b>Note</b>: The `ReactomeBook` and `CreateReleaseTarball` steps still use the old Perl scripts found <a href="https://github.com/reactome/Release/tree/master/scripts/release/download_directory">here</a>. This means that, to generate the associated files, the Download Directory step will need to be run in either a docker container with the <a href="https://github.com/reactome/Release">Release</a> project usable, or on the release server. Download Directory can be run anywhere despite this, but if these steps aren't commented out in <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/src/main/resources/stepsToRun.config">stepsToRun.config</a> (see below), they will report errors.
+<b>Note</b>: The <b>ReactomeBook</b> and <b>CreateReleaseTarball</b> steps still use the old Perl scripts found <a href="https://github.com/reactome/Release/tree/master/scripts/release/download_directory">here</a>. This means that, to generate the their output files, Download Directory will need to be run in either a docker container with the <a href="https://github.com/reactome/Release">Release</a> project usable (see <a href="https://github.com/reactome/Release/tree/release-container/container">release-container</a> project), or on the release server. Download Directory can be run anywhere despite this, but if these steps aren't commented out in <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/src/main/resources/stepsToRun.config">stepsToRun.config</a> (see below), they will report errors.
 <br>
 
-If the DownloadDirectory step has been run from the `release.pl` wrapper on the release server, the generated files would appear in `/usr/local/reactomes/Reactome/production/Website/static/download/67` if it was release 67. When the jar file is run directly, the files will appear in `/usr/local/gkb/scripts/release/download_directory/67`, again if it was release 67. 
+If the DownloadDirectory step has been run from the <a href="https://github.com/reactome/Release/blob/master/scripts/release/release.pl">release.pl</a> wrapper on the release server, the generated files would appear in `/usr/local/reactomes/Reactome/production/Website/static/download/67/` (if it was release 67). When the jar file is run directly, the files will appear in `/usr/local/gkb/scripts/release/download_directory/67/`. 
 
 <b> Running specific modules of Download Directory </b>
 
@@ -98,56 +104,56 @@ In this example, the BioPAX2 and ReactomeBook steps will not be run.
 
 <h3> Verifying Download Directory Results</h3>
 
-This section will touch on the files produced by each step in Download Directory, and how to verify they were produced correctly. Often, comparing the files produced in the previous release is the way to go, but where needed this guide will provide additional suggestions for checking the output.
+This section will touch on the <b>files</b> produced by each step in Download Directory, and how to verify they were produced correctly. Often, comparing the files produced in the previous release is the way to go, but where needed this guide will provide additional suggestions for checking the output.
 
-After each step is run, the output files associated with the step are temporarily held in a folder corresponding to the current release. For release 67, the output files would appear in `data-release-pipeline/downloadDirectory/67`. 
+<b>Note</b>: During Download Directory, the output files are temporarily held in a folder corresponding to the current release. For release 67, the output files would appear in `data-release-pipeline/downloadDirectory/67/`. 
 
 <h4>DatabaseDumps</h4>
 
-This step generates two mySQL dump files from the `stable_identifiers` database and the `test_reactome` database corresponding to the current release (eg: `test_reactome_67`). The files produced are `gk_stable_ids.sql.gz` and `gk_current.sql.gz`, respectively. These are then placed in the `data-release-pipeline/downloadDirectory/67/databases/` folder, if it was release 67. Comparing the size of these files to the previous release is sufficient for verifying the success of this step. 
+This step generates two mySQL dump files from the `stable_identifiers` and `test_reactome` databases. The files produced are `gk_stable_ids.sql.gz` and `gk_current.sql.gz`, respectively. These are then placed in the `data-release-pipeline/downloadDirectory/67/databases/` folder (if it was release 67). Comparing the size of these files to the previous release is sufficient for verifying the success of this step. 
 
 <h4>BioPAX</h4>
 
-This step generates BioPAX level 2 and level 3 `owl`and `xml` validation files for each species in the `test_reactome` database. Additional information on BioPAX can be found at it's <a href="http://www.biopax.org/">website</a>. This is typically the longest running step of a full Download Directory run, particularly due to the generation of the level 3 BioPAX files. It makes use of the `Pathway-Exchange` jar that should have been locally installed during the <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">preparation</a> step of Download Directory.
+This step generates <b>BioPAX level 2</b> and <b>level 3</b> files for each species in the `test_reactome` database. Additional information on BioPAX can be found at it's <a href="http://www.biopax.org/">website</a>. This will typically be the longest running step of Download Directory, particularly due to the generation of the level 3 BioPAX files. It makes use of the Pathway-Exchange jar that should have been locally installed during the <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">preparation</a> step of Download Directory.
 
-<b>Note</b>: Due to the dependancy on a local installation of `Pathway-Exchange`, this is also the most error-prone step of Download Directory. Any `attribute` or `instance` errors that result from `BioPAX` might mean that this installation will need to be updated to the most recent <a href="https://github.com/reactome/Pathway-Exchange/blob/master/ant/PathwayExchangeJar.xml">version</a>. See above for instructions on installing/updating the `Pathway-Exchange` module. 
+<b>Note</b>: Due to the dependancy on a local installation of Pathway-Exchange, this is also the most error-prone step of Download Directory. Any <i>attribute</i> or <i>instance</i> errors that result from BioPAX might mean that this installation will need to be updated to the most recent <a href="https://github.com/reactome/Pathway-Exchange/blob/master/ant/PathwayExchangeJar.xml">version</a>. See above for instructions on installing/updating the Pathway-Exchange module. 
 
 Each zip file produced should contain a number of files (`owl` or validation `xml`) corresponding to the species found in the <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/src/main/resources/Species.json">Species.json</a> file.
 
-`biopax2.zip` -- This zip file should contain a BioPAX <b>level 2</b> `owl` file for each species in `Species.json`. Ensure that the `owl` files pertain to `biopax-level2` by inspecting a few of the files. Looking at the corresponding validation files (found in `biopax2_validator.zip`) is also essential for determining if BioPAX level 2 ran correctly (see below).
+`biopax2.zip`: This zip file should contain BioPAX <b>level 2</b> files for each species in `Species.json`. Inspect a few of the files for the string `biopax-level2` near the beginning. Next, look at the corresponding validation files (found in `biopax2_validator.zip`) (see below).
 
-`biopax.zip` -- This zip file should contain a BioPAX <b>level 3</b> `owl` file for each species in `Species.json`. Ensure that the `owl` files pertain to `biopax-level3` by inspecting a few of the files. Looking at the corresponding validation files (found in `biopax_validator.zip`) is also essential for determining if BioPAX level 3 ran correctly (see below). 
+`biopax.zip`: This zip file should contain BioPAX <b>level 3</b> files for each species in `Species.json`. Inspect a few of the files for the string `biopax-level3` near the beginning. Next, look at the corresponding validation files (found in `biopax_validator.zip`) (see below).
 
-`biopax2_validator.zip` & `biopax_validator.zip` -- The  corresponding `validator.zip` file should contain a `validation.xml` file for each species that has an `owl` file in the `biopax.zip` file. These validation files can be quite large since they report problems at the `warning` and `error` levels, and historically there have been many warnings. Checking the `<validation description>` tag in the validation file will list the number of problems found, including any errors that might have come up. Any <b>errors</b> found will need to be investigated. Additionally, comparing the number of warnings between releases is another way to ensure that the BioPAX process ran successfully.
+`biopax2_validator.zip` & `biopax_validator.zip`:  These zip files should contain a `validation.xml` file for each species that has an `owl` file. These validation files can be quite large since they report problems at both the <b>warning</b> and <b>error</b> levels, and typically there have been many warnings. Checking the `<validation description>` tag in the validation file will list the number of problems found, including any errors that might have come up. <b>Any errors found will need to be investigated</b>. Additionally, comparing the number of warnings between releases is another way to ensure that the BioPAX process ran successfully.
 
-Additionally, a BioPAX validator tool exists <a href="http://biopax.baderlab.org/">online</a>. The `owl` files can be run through here as well to check validity.
+Finally, a BioPAX validator tool exists <a href="http://biopax.baderlab.org/">online</a>. The `owl` files can be run through here as well to check file validity.
 
 <h4>GSEAOutput</h4>
 
-This step uses the <a href="https://github.com/reactome/Pathway-Exchange/blob/master/src/org/reactome/gsea/ReactomeToMsigDBExport.java">ReactomeToMsigDBExport</a> method found in `Pathway-Exchange`. Ensure that the jar has been installed locally, as described in an earlier <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">section</a> of this document. It takes all Human Pathway instances in the `test_reactome` database and converts the data to MSigDB format, which can be used in Gene Set Enrichment Analysis (GSEA). More information can be found at the GSEA <a href="http://software.broadinstitute.org/gsea/msigdb">website</a>. 
+This step uses the <a href="https://github.com/reactome/Pathway-Exchange/blob/master/src/org/reactome/gsea/ReactomeToMsigDBExport.java">ReactomeToMsigDBExport</a> method found in Pathway-Exchange. Ensure that the jar has been installed locally, as described in an earlier <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">section</a> of this document. It takes all <b>Human</b> Pathway instances in the `test_reactome` database and converts the data to <i>MSigDB</i> format, which can be used in <i>Gene Set Enrichment Analysis</i> (GSEA). More information can be found at the GSEA <a href="http://software.broadinstitute.org/gsea/msigdb">website</a>. 
 
-The `Reactome.gmt.zip` file produced is tab-seperated with <b>at least</b> 5 columns. The first few columns are the Pathway's `displayName` and `stableIdentifier` for the first 2, and the string `Reactome Pathway` for the third. This third column is added manually after initially generating the `Reactome.gmt` file. The remaining columns are all gene names that are associated with the pathway (needs confirmation). Each line in the file corresponds to a Human Pathway, but some entries are excluded due to missing attributes in the instance, meaning that the file should have nearly as many lines as Human Pathway instances in `test_reactome`. 
+The `Reactome.gmt.zip` file produced is tab-seperated, with each row having varying numbers of columns. The first few columns for each row are a Pathway instance's <i>displayName</i> and <i>stableIdentifier</i> values, and the string `Reactome Pathway`. This third column is added manually after initially generating the `Reactome.gmt` file. The remaining columns are all gene names that are associated with the Pathway instance (needs confirmation). The <b>GSEAOutput</b> step attempts to add a line for each Human Pathway, but some entries are excluded due to missing attributes in the instance, meaning that the file should have nearly as many lines as there are Human Pathway instances in `test_reactome`. 
 
 <h4>ReactomeBook</h4>
  
-This step produces the `Reactome Book` in two filetypes: PDF and RTF (rich text format). Currently, this step still uses the Perl scripts found in Release (<a href="https://github.com/reactome/Release/blob/master/scripts/release/download_directory/genbook_pdf.pl">genbook_pdf.pl</a> and <a href="https://github.com/reactome/Release/blob/master/scripts/release/download_directory/genbook_rtf.pl">genbook_rtf.pl</a>). There are plans to update this scripts but there is no timeline at time of writing (December 2018). 
+This step produces the <b>Reactome Book</b> in two filetypes: <b>PDF</b> and <b>RTF</b> (rich text format). Currently, this step still uses the Perl scripts found in Release (<a href="https://github.com/reactome/Release/blob/master/scripts/release/download_directory/genbook_pdf.pl">genbook_pdf.pl</a> and <a href="https://github.com/reactome/Release/blob/master/scripts/release/download_directory/genbook_rtf.pl">genbook_rtf.pl</a>). There are plans to update these scripts but there is no timeline at time of writing (December 2018). 
 
 Once the step completes, the first check would be to compare the file sizes between releases. They should differ but still be relatively close to each other. Next, make sure each file can open on your computer and inspect the contents. 
 
-`TheReactomeBook.pdf.zip`: Check that the table of contents exists and that diagrams are visible (both EHLD and pathway diagrams). Check the end of the book to make sure that it ends at an appropriate point (typically it would end after the final Pathway instance, meaning that the final page should be <b>References</b>). You can also look at the end of the PDF file and see that the proper end-of-file character is present: `%%EOF`
+`TheReactomeBook.pdf.zip`: Check that the table of contents exists and that diagrams are visible (both EHLD and basic diagrams). Next, check the end of the book to make sure that it ends at an appropriate point (typically it would end after the final Pathway instance, meaning that the final page should be <b>References</b>). You can also look at the end of the PDF file and see that the proper PDF end-of-file character is present: `%%EOF`
 
-`TheReactomeBook.rtf.zip`: The zip file should contain a number of RTF files. Excluding the first file, `0.rtf` (which is introductory information), these files should correspond to the number of `top-level pathways` in Reactome. This can be confirmed by opening up an instance of <a href="https://reactome.org/download-data/reactome-curator-tool">CuratorTool</a> that points to the current `test_reactome` database and looking at the single `FrontPage` instance. This has an attribute, `frontPageItem`, that contains an array of all `top-level pathways`. The number of `top-level pathways` in this array should be equal to the number of RTF files (excluding the `0.rtf` file). Additionally, make sure that there are EHLD and pathway diagrams. The RTF book does not contain a table of contents. 
+`TheReactomeBook.rtf.zip`: The zip file should contain a number of RTF files. Excluding the first file, `0.rtf` (which is introductory information), there should be as many files as there are <b>top-level pathways</b> in Reactome. The number of these can be found by opening up an instance of <a href="https://reactome.org/download-data/reactome-curator-tool">CuratorTool</a> that points to the current `test_reactome` database and then looking at the single <i>FrontPage</i> instance in the tool. This has an attribute, <i>frontPageItem</i>, that contains an array of all top-level pathway names. The number of entries in this array should be equal to the number of RTF files (excluding the `0.rtf` file). Additionally, make sure that there are EHLD and pathway diagrams appearing in some of the RTF files. The RTF Reactome Book does not contain a table of contents. 
 
 <h4>FetchTestReactomeOntologyFiles</h4>
 
-This step produces 3 different files, `reactome_data_model.pprj`, `reactome_data_model.pont`, and `reactome_data_model.pins`. All are parsed from the `ontology` attribute in the `Ontology` table in `test_reactome`. This value in `Ontology.ontology` is a blob that contains all 3 files in it's contents. These 3 files are parsed out of the blob during the FetchTestReactomeOntologyFiles step. These files are associated with Protégé 2.0 (<a href="https://protege.stanford.edu/">website</a>). These files can be used with Protégé software. Additional information about each filetype can be found <a href="https://protegewiki.stanford.edu/wiki/PrF_UG_files_protege_files">here</a>.
+This step produces 3 different files, `reactome_data_model.pprj`, `reactome_data_model.pont`, and `reactome_data_model.pins`. All are parsed from the <i>ontology</i> attribute in the <i>Ontology</i> table in `test_reactome`. This value in Ontology.ontology is a <b>blob</b> that contains all 3 files. The contents of each file are parsed out of the blob during the <b>FetchTestReactomeOntologyFiles</b> step. These files are associated with <i>Protégé 2.0</i> (<a href="https://protege.stanford.edu/">website</a>)and can be used with their software. Additional information about each filetype can be found <a href="https://protegewiki.stanford.edu/wiki/PrF_UG_files_protege_files">here</a>.
 
 Compare each file with it's equivalent from the previous release. The beginning and end of each file should have the same formatting between them, although the content may differ. 
 
 <h4>CreateReleaseTarball</h4>
 
-The file produced by this step, `reactome.tar.gz`, is an archive that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release</a> repo and some aspects of the release server. 
-The tar file contains the following:
+The file produced by this step, `reactome.tar.gz`, is an archive that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release</a> repo and some aspects of the <b>release server</b>. 
+The <b>tar</b> file produced contains the following:
 
 - From the Release <b>repo</b>:
    - The contents of the `website/` folder
@@ -156,7 +162,7 @@ The tar file contains the following:
 - From the Release <b>server</b>:
   - The `analysis.bin` file generated during Release
   
- Some of the archiving doesn't take place due to the filepaths changing (this will be updated). The following are files/folders that the script attempts to archive but, at time of writing, has been unable to locate the file(s):
+ Some of the intended archiving doesn't take place due to file system changes that have taken place since this script was last maintained (this will be updated). The following are files/folders that the script attempts to archive but, at time of writing, is unable to locate the file(s):
 
 - Solr indexes, apache-tomcat folder, pathway diagrams and fireworks files
 
@@ -164,13 +170,13 @@ To check the tarball, compare it with the one generated during the previous rele
 
 <h4>PathwaySummationMappingFile</h4>
  
-This step creates a tab-seperated file, `pathway2summation.txt`. The file contains information on all Human Pathways in `test_reactome`. The 3 columns of the file are `stableIdentifier`, `name`, and `summation`, and are populated from the Pathway instances attributes of the same name. 
+This step creates a tab-seperated file, `pathway2summation.txt`. The file contains information on all Human Pathways in `test_reactome`. The 3 columns of the file are <i>stableIdentifier</i>, <i>name</i>, and <i>summation</i>. The file is populated from all <b>Human</b> Pathway instances. 
 
 The file should have the same amount of lines as Human Pathway instances in `test_reactome`. 
 
 <h4>MapOldStableIds</h4>
 
-This step will match old `stableIdentifiers` to ones in the new format. The file contains two tab-seperated columns of stable IDs in the new (eg: `R-HSA-1234567`) and old (eg: `REACT_98765`) formats. The file should include stableIdentifiers for <b>all</b> species in Reactome, and should have approximately the same number of lines as `stableIdentifier` instances in `test_reactome`.
+This step will match old <b>stableIdentifiers</b> to ones in the new format. The file contains two tab-seperated columns of stable IDs in the new (eg: `R-HSA-1234567`) and old (eg: `REACT_98765`) formats. The file should include stableIdentifiers for <b>all species</b> in Reactome, and should have approximately the same number of lines as <i>stableIdentifier</i> instances in `test_reactome`.
 
 <h4>gene_association.reactome</h4>
 
@@ -182,9 +188,9 @@ This step copes the `models2pathways.tsv` file that is produced during the <a hr
 
 <h4>CreateReactome2BioSystems</h4>
 
-This step creates a zip file containing an NCBI BioSystems-formatted `xml` file for each of Reactome's primary model organisms. More information on NCBI BioSystems is found at the <a href="https://www.ncbi.nlm.nih.gov/biosystems/">website</a>.
+This step creates a zip file containing an <i>NCBI BioSystems</i>-formatted `xml` file for each of Reactome's <b>primary model organisms</b>. More information on NCBI BioSystems is found at the <a href="https://www.ncbi.nlm.nih.gov/biosystems/">website</a>.
 
-This module uses the <a href="https://github.com/reactome/Pathway-Exchange/blob/master/src/org/gk/biosystems/ReactomeToBioSystemsConverter.java">ReactomeToBioSystemsConverter</a> method in `Pathway-Exchange`. Ensure that the jar has been installed locally, as described in an earlier <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">section</a> of this document. 
+This module uses the <a href="https://github.com/reactome/Pathway-Exchange/blob/master/src/org/gk/biosystems/ReactomeToBioSystemsConverter.java">ReactomeToBioSystemsConverter</a> method in Pathway-Exchange. Ensure that the jar has been installed locally, as described in an earlier <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">section</a> of this document. 
 
 Compare the files produced with those from an earlier release for verification the process ran successfully. 
 
