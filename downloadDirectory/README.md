@@ -1,6 +1,6 @@
 <h2>Download Directory</h2>
 
-The Download Directory step generates a number of files that can be downloaded from Reactome's <a href="https://reactome.org/download-data">download page</a>. It also generates an archive file during the `CreateReleaseTarball` step that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release repository</a> and some services on the release server. This module has been rewritten from Perl to Java. 
+The Download Directory step generates a number of files that can be downloaded from Reactome's <a href="https://reactome.org/download-data">download page</a>. It also generates an archive file during the <b>CreateReleaseTarball</b> step that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release repository</a> and some services on the release server. This module has been rewritten from Perl to Java. 
 <br><br>The steps of Download Directory and files produced are:
 
 - <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#databasedumps">DatabaseDumps</a>: `gk_stable_ids.sql`, `gk_current.sql`
@@ -124,7 +124,7 @@ Each zip file produced should contain a number of files (`owl` or validation `xm
 
 `biopax.zip`: This zip file should contain BioPAX <b>level 3</b> files for each species in `Species.json`. Inspect a few of the files for the string `biopax-level3` near the beginning. Next, look at the corresponding validation files (found in `biopax_validator.zip`) (see below).
 
-`biopax2_validator.zip` & `biopax_validator.zip`:  These zip files should contain a `validation.xml` file for each species that has an `owl` file in the `biopax.zip` file. These validation files can be quite large since they report problems at both the <b>warning</b> and <b>error</b> levels, and typically there have been many warnings. Checking the `<validation description>` tag in the validation file will list the number of problems found, including any errors that might have come up. <b>Any errors found will need to be investigated</b>. Additionally, comparing the number of warnings between releases is another way to ensure that the BioPAX process ran successfully.
+`biopax2_validator.zip` & `biopax_validator.zip`:  These zip files should contain a `validation.xml` file for each species that has an `owl` file. These validation files can be quite large since they report problems at both the <b>warning</b> and <b>error</b> levels, and typically there have been many warnings. Checking the `<validation description>` tag in the validation file will list the number of problems found, including any errors that might have come up. <b>Any errors found will need to be investigated</b>. Additionally, comparing the number of warnings between releases is another way to ensure that the BioPAX process ran successfully.
 
 Finally, a BioPAX validator tool exists <a href="http://biopax.baderlab.org/">online</a>. The `owl` files can be run through here as well to check file validity.
 
@@ -132,7 +132,7 @@ Finally, a BioPAX validator tool exists <a href="http://biopax.baderlab.org/">on
 
 This step uses the <a href="https://github.com/reactome/Pathway-Exchange/blob/master/src/org/reactome/gsea/ReactomeToMsigDBExport.java">ReactomeToMsigDBExport</a> method found in Pathway-Exchange. Ensure that the jar has been installed locally, as described in an earlier <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">section</a> of this document. It takes all <b>Human</b> Pathway instances in the `test_reactome` database and converts the data to <i>MSigDB</i> format, which can be used in <i>Gene Set Enrichment Analysis</i> (GSEA). More information can be found at the GSEA <a href="http://software.broadinstitute.org/gsea/msigdb">website</a>. 
 
-The `Reactome.gmt.zip` file produced is a tab-seperated with each row having varying numbers of columns. The first few columns for each row are a Pathway instance's <i>displayName</i> and <i>stableIdentifier</i> values, and the string `Reactome Pathway`. This third column is added manually after initially generating the `Reactome.gmt` file. The remaining columns are all gene names that are associated with the Pathway instance (needs confirmation). The <b>GSEAOutput</b> step attempts to add a line for each Human Pathway, but some entries are excluded due to missing attributes in the instance, meaning that the file should have almost as many lines as there are Human Pathway instances in `test_reactome`. 
+The `Reactome.gmt.zip` file produced is tab-seperated, with each row having varying numbers of columns. The first few columns for each row are a Pathway instance's <i>displayName</i> and <i>stableIdentifier</i> values, and the string `Reactome Pathway`. This third column is added manually after initially generating the `Reactome.gmt` file. The remaining columns are all gene names that are associated with the Pathway instance (needs confirmation). The <b>GSEAOutput</b> step attempts to add a line for each Human Pathway, but some entries are excluded due to missing attributes in the instance, meaning that the file should have nearly as many lines as there are Human Pathway instances in `test_reactome`. 
 
 <h4>ReactomeBook</h4>
  
@@ -140,19 +140,19 @@ This step produces the <b>Reactome Book</b> in two filetypes: <b>PDF</b> and <b>
 
 Once the step completes, the first check would be to compare the file sizes between releases. They should differ but still be relatively close to each other. Next, make sure each file can open on your computer and inspect the contents. 
 
-`TheReactomeBook.pdf.zip`: Check that the <i>table of contents</i> exists and that <i>diagrams</i> are visible (both EHLD and basic diagrams). Next, check the end of the book to make sure that it ends at an appropriate point (typically it would end after the final Pathway instance, meaning that the final page should be <b>References</b>). You can also look at the end of the PDF file and see that the proper PDF end-of-file character is present: `%%EOF`
+`TheReactomeBook.pdf.zip`: Check that the table of contents exists and that diagrams are visible (both EHLD and basic diagrams). Next, check the end of the book to make sure that it ends at an appropriate point (typically it would end after the final Pathway instance, meaning that the final page should be <b>References</b>). You can also look at the end of the PDF file and see that the proper PDF end-of-file character is present: `%%EOF`
 
-`TheReactomeBook.rtf.zip`: The zip file should contain a number of RTF files. Excluding the first file, `0.rtf` (which is introductory information), there should be as many files as there are <b>top-level pathways</b> in Reactome. The number of these can be found by opening up an instance of <a href="https://reactome.org/download-data/reactome-curator-tool">CuratorTool</a> that points to the current `test_reactome` database and then looking at the single `FrontPage` instance in the tool. This has an attribute, <i>frontPageItem</i>, that contains an array of all top-level pathway names. The number of entries in this array should be equal to the number of RTF files (excluding the `0.rtf` file). Additionally, make sure that there are EHLD and pathway diagrams appearing in some of the RTF files. The RTF Reactome Book does not contain a table of contents. 
+`TheReactomeBook.rtf.zip`: The zip file should contain a number of RTF files. Excluding the first file, `0.rtf` (which is introductory information), there should be as many files as there are <b>top-level pathways</b> in Reactome. The number of these can be found by opening up an instance of <a href="https://reactome.org/download-data/reactome-curator-tool">CuratorTool</a> that points to the current `test_reactome` database and then looking at the single <i>FrontPage</i> instance in the tool. This has an attribute, <i>frontPageItem</i>, that contains an array of all top-level pathway names. The number of entries in this array should be equal to the number of RTF files (excluding the `0.rtf` file). Additionally, make sure that there are EHLD and pathway diagrams appearing in some of the RTF files. The RTF Reactome Book does not contain a table of contents. 
 
 <h4>FetchTestReactomeOntologyFiles</h4>
 
-This step produces 3 different files, `reactome_data_model.pprj`, `reactome_data_model.pont`, and `reactome_data_model.pins`. All are parsed from the <i>ontology</i> attribute in the <i>Ontology</i> table in `test_reactome`. This value in Ontology.ontology is a <b>blob</b> that contains all 3 files. The contents of each file are parsed out of the blob during the <b>FetchTestReactomeOntologyFiles</b> step. These files are associated with Protégé 2.0 (<a href="https://protege.stanford.edu/">website</a>). These files can be used with Protégé software. Additional information about each filetype can be found <a href="https://protegewiki.stanford.edu/wiki/PrF_UG_files_protege_files">here</a>.
+This step produces 3 different files, `reactome_data_model.pprj`, `reactome_data_model.pont`, and `reactome_data_model.pins`. All are parsed from the <i>ontology</i> attribute in the <i>Ontology</i> table in `test_reactome`. This value in Ontology.ontology is a <b>blob</b> that contains all 3 files. The contents of each file are parsed out of the blob during the <b>FetchTestReactomeOntologyFiles</b> step. These files are associated with <i>Protégé 2.0</i> (<a href="https://protege.stanford.edu/">website</a>)and can be used with their software. Additional information about each filetype can be found <a href="https://protegewiki.stanford.edu/wiki/PrF_UG_files_protege_files">here</a>.
 
 Compare each file with it's equivalent from the previous release. The beginning and end of each file should have the same formatting between them, although the content may differ. 
 
 <h4>CreateReleaseTarball</h4>
 
-The file produced by this step, `reactome.tar.gz`, is an archive that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release</a> repo and some aspects of the release server. 
+The file produced by this step, `reactome.tar.gz`, is an archive that acts as a snapshot of the <a href="https://github.com/reactome/Release">Release</a> repo and some aspects of the <b>release server</b>. 
 The <b>tar</b> file produced contains the following:
 
 - From the Release <b>repo</b>:
@@ -188,7 +188,7 @@ This step copes the `models2pathways.tsv` file that is produced during the <a hr
 
 <h4>CreateReactome2BioSystems</h4>
 
-This step creates a zip file containing an NCBI BioSystems-formatted `xml` file for each of Reactome's primary model organisms. More information on NCBI BioSystems is found at the <a href="https://www.ncbi.nlm.nih.gov/biosystems/">website</a>.
+This step creates a zip file containing an <i>NCBI BioSystems</i>-formatted `xml` file for each of Reactome's <b>primary model organisms</b>. More information on NCBI BioSystems is found at the <a href="https://www.ncbi.nlm.nih.gov/biosystems/">website</a>.
 
 This module uses the <a href="https://github.com/reactome/Pathway-Exchange/blob/master/src/org/gk/biosystems/ReactomeToBioSystemsConverter.java">ReactomeToBioSystemsConverter</a> method in Pathway-Exchange. Ensure that the jar has been installed locally, as described in an earlier <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">section</a> of this document. 
 
