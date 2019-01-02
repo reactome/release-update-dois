@@ -114,9 +114,9 @@ This step generates two mySQL dump files from the `stable_identifiers` and `test
 
 <h4>BioPAX</h4>
 
-This step generates <b>BioPAX level 2</b> and <b>level 3</b> files for each species in the `test_reactome` database. Additional information on BioPAX can be found at it's <a href="http://www.biopax.org/">website</a>. This will typically be the longest running step of Download Directory, particularly due to the generation of the level 3 BioPAX files. It makes use of the Pathway-Exchange jar that should have been locally installed during the <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">preparation</a> step of Download Directory.
+This step generates <b>BioPAX level 2</b> and <b>level 3</b> files for each species in the `test_reactome` database. Additional information on BioPAX can be found at its <a href="http://www.biopax.org/">website</a>. This will typically be the longest running step of Download Directory, particularly due to the generation of the level 3 BioPAX files. It makes use of the Pathway-Exchange jar that should have been locally installed during the <a href="https://github.com/reactome/data-release-pipeline/tree/feature/download-directory/downloadDirectory#-preparing-and-running-download-directory">preparation</a> step of Download Directory.
 
-<b>Note</b>: Due to the dependancy on a local installation of Pathway-Exchange, this is also the most error-prone step of Download Directory. Any <i>attribute</i> or <i>instance</i> errors that result from BioPAX might mean that this installation will need to be updated to the most recent <a href="https://github.com/reactome/Pathway-Exchange/blob/master/ant/PathwayExchangeJar.xml">version</a>. See above for instructions on installing/updating the Pathway-Exchange module. 
+<b>Note</b>: Due to the dependency on a local installation of Pathway-Exchange, this is also the most error-prone step of Download Directory. Any <i>attribute</i> or <i>instance</i> errors that result from BioPAX might mean that this installation will need to be updated to the most recent <a href="https://github.com/reactome/Pathway-Exchange/blob/master/ant/PathwayExchangeJar.xml">version</a>. See above for instructions on installing/updating the Pathway-Exchange module. 
 
 Each zip file produced should contain a number of files (`owl` or validation `xml`) corresponding to the species found in the <a href="https://github.com/reactome/data-release-pipeline/blob/feature/download-directory/downloadDirectory/src/main/resources/Species.json">Species.json</a> file.
 
@@ -148,7 +148,7 @@ Once the step completes, the first check would be to compare the file sizes betw
 
 This step produces 3 different files, `reactome_data_model.pprj`, `reactome_data_model.pont`, and `reactome_data_model.pins`. All are parsed from the <i>ontology</i> attribute in the <i>Ontology</i> table in `test_reactome`. This value in Ontology.ontology is a <b>blob</b> that contains all 3 files. The contents of each file are parsed out of the blob during the <b>FetchTestReactomeOntologyFiles</b> step. These files are associated with <i>Protégé 2.0</i> (<a href="https://protege.stanford.edu/">website</a>)and can be used with their software. Additional information about each filetype can be found <a href="https://protegewiki.stanford.edu/wiki/PrF_UG_files_protege_files">here</a>.
 
-Compare each file with it's equivalent from the previous release. The beginning and end of each file should have the same formatting between them, although the content may differ. 
+Compare each file with its equivalent from the previous release. The beginning and end of each file should have the same formatting between them, although the content may differ. 
 
 <h4>CreateReleaseTarball</h4>
 
@@ -184,7 +184,7 @@ This step copies the `gene_association.reactome` file that is produced during th
 
 <h4>models2pathways.tsv</h4>
 
-This step copes the `models2pathways.tsv` file that is produced during the <a href="https://github.com/reactome/Release/tree/master/scripts/release/biomodels">Biomodels</a> step. Comparing the file to previous releases is sufficient for this step.
+This step copies the `models2pathways.tsv` file that is produced during the <a href="https://github.com/reactome/Release/tree/master/scripts/release/biomodels">Biomodels</a> step. Comparing the file to previous releases is sufficient for this step.
 
 <h4>CreateReactome2BioSystems</h4>
 
