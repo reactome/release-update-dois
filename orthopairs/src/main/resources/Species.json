@@ -324,24 +324,6 @@
 			"Arabidopsis thaliana"
 		]
 	},
-	"tgut":{
-		"compara":"core",
-		"group":"Vertebrate",
-		"refdb":{
-			"ensg_access":"http://www.ensembl.org/Taeniopygia_guttata/geneview?gene=###ID###&db=core",
-			"url":"http://www.ensembl.org/Taeniopygia_guttata/Info/Index/",
-			"dbname":[
-				"ENSEMBL",
-				"Ensembl",
-				"ENSEMBL_Taeniopygia_guttata_PROTEIN"
-			],
-			"access":"http://www.ensembl.org/Taeniopygia_guttata/Transcript/ProteinSummary?peptide=###ID###"
-		},
-		"name":[
-			"Taeniopygia guttata"
-		],
-		"mart_group":"tguttata_gene_ensembl"
-	},
 	"drer":{
 		"mart_group":"drerio_gene_ensembl",
 		"name":[
