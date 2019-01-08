@@ -10,15 +10,18 @@ import org.json.simple.parser.ParseException;
 
 public class Main 
 {
+    final private static String pathToSpeciesConfig = "src/main/resources/Species.json";
+    final private static String pathToXMLQuery = "src/main/resources/BiomartQuery.xml";
+    
     public static void main( String[] args ) throws FileNotFoundException, IOException, ParseException
     {
-        String pathToSpeciesConfig = "src/main/resources/Species.json";
+
         
         JSONParser parser = new JSONParser();
         JSONObject speciesJSONFile = (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig));
         
         for (Object speciesKey :  speciesJSONFile.keySet()) {
-        	BiomartQueryBuilder.buildBiomartXMLQuery((JSONObject) speciesJSONFile.get(speciesKey));
+        	BiomartQueryBuilder.buildBiomartXMLQuery((String) speciesKey, (JSONObject) speciesJSONFile.get(speciesKey), pathToXMLQuery);
         }
         
     }
