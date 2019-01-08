@@ -121,16 +121,16 @@ public class ReactionInferrer {
 							String inferredEvent = infReactionInst.getAttributeValue(DB_ID).toString() + "\t" + infReactionInst.getDisplayName() + "\n";	
 							Files.write(Paths.get(inferredFilehandle), inferredEvent.getBytes(), StandardOpenOption.APPEND);
 						} else {
-							logger.info("\tCatalyst inference unsuccessful -- terminating inference");
+							logger.info("\tCatalyst inference unsuccessful -- terminating inference for " + reactionInst);
 						}
 					} else {
-						logger.info("\tOutput inference unsuccessful -- terminating inference");
+						logger.info("\tOutput inference unsuccessful -- terminating inference for " + reactionInst);
 					}
 				} else {
-					logger.info("\tInput inference unsuccessful -- terminating inference");
+					logger.info("\tInput inference unsuccessful -- terminating inference for " + reactionInst);
 				}
 			} else {
-				logger.info("\tNo distinct proteins found in instance -- terminating inference");
+				logger.info("\tNo distinct proteins found in instance -- terminating inference for " + reactionInst);
 			}
 		}
 	}
