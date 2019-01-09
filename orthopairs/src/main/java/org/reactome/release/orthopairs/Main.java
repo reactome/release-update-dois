@@ -15,13 +15,15 @@ public class Main
     
     public static void main( String[] args ) throws FileNotFoundException, IOException, ParseException
     {
-
         
         JSONParser parser = new JSONParser();
         JSONObject speciesJSONFile = (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig));
         
         for (Object speciesKey :  speciesJSONFile.keySet()) {
-        	BiomartQueryBuilder.buildBiomartXMLQuery((String) speciesKey, (JSONObject) speciesJSONFile.get(speciesKey), pathToXMLQuery);
+        	// Build the XML portion of the Biomart query
+        	String biomartXMLQuery = BiomartUtilities.buildBiomartXML((String) speciesKey, (JSONObject) speciesJSONFile.get(speciesKey), pathToXMLQuery);
+        	// Query Biomart for gene-protein mappings for species
+        	BiomartUtilities.queryBiomart((String) speciesKey, (JSONObject) speciesJSONFile.get(speciesKey), biomartXMLQuery);
         }
         
     }

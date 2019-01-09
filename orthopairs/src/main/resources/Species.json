@@ -342,26 +342,6 @@
 		"group":"Vertebrate",
 		"compara":"core"
 	},
-	"mtub":{
-		"group":"Eubacteria",
-		"pan_name":"mycobacterium_tuberculosis_h37rv_asm19595v2",
-		"mart_group":"myc_30_gene",
-		"name":[
-			"Mycobacterium tuberculosis"
-		],
-		"refdb":{
-			"access":"http://bacteria.ensembl.org/Mycobacterium/M_tuberculosis_H37Rv/Transcript/ProteinSummary?peptide=###ID###",
-			"dbname":[
-				"ENSEMBL",
-				"Ensembl",
-				"Ensembl",
-				"ENSEMBL_M_tuberculosis_PROTEIN"
-			],
-			"url":"http://bacteria.ensembl.org/Mycobacterium/M_tuberculosis_H37Rv/Info/Index",
-			"ensg_access":"http://bacteria.ensembl.org/Mycobacterium/M_tuberculosis_H37Rv/geneview?gene=###ID###&db=core"
-		},
-		"prokaryote":1
-	},
 	"rnor":{
 		"compara":"core",
 		"group":"Vertebrate",
