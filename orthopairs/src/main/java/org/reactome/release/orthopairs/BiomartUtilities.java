@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -42,31 +44,33 @@ public class BiomartUtilities {
 	}
 
 	// This method performs the query that returns the gene-protein mapping for each species
-	public static void queryBiomart(String speciesKey, JSONObject speciesJSON, String biomartXMLQuery) throws IOException {
+	public static List<String> queryBiomart(String speciesKey, JSONObject speciesJSON, String biomartXMLQuery) throws IOException {
 
 		// Build remainder of query that contains the URL and the XML query
     	String speciesName = (String) ((JSONArray) speciesJSON.get("name")).get(0);
     	String biomartURL = speciesJSON.get("mart_url") != null ? (String) speciesJSON.get("mart_url") : "http://www.ensembl.org/biomart/martservice";
-    	biomartURL += "?query=";
-    	String finalBiomartQuery = biomartURL + URLEncoder.encode(biomartXMLQuery, "UTF-8");
+    	String finalBiomartQuery = biomartURL + "?query=" + URLEncoder.encode(biomartXMLQuery, "UTF-8");
     	
     	// Connect to Biomart API
     	URL biomartQueryURL = new URL(finalBiomartQuery);
     	HttpURLConnection connection = (HttpURLConnection) biomartQueryURL.openConnection();
 
-    	// Check response is correct and iterate through it, populating a Map with protein-gene mappings (Human) or gene-protein mappings (all other species)
+    	// Check response is correct and iterate through it, populating an array with line values
     	// TODO: Can it return 200 but still not contain the body?
+    	List<String> biomartQueryResults = new ArrayList<String>();
         if (connection.getResponseCode() == 200) {
         	BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-    		String inputLine;
-    		int count = 0;
-    		while ((inputLine = br.readLine()) != null) {
-    			count++;
+    		
+    		String resultsLine;
+    		while ((resultsLine = br.readLine()) != null) {
+    			biomartQueryResults.add(resultsLine);
     		}
     		br.close();
         } else {
-        	System.out.println("Got Bad Request response from Biomart for " + speciesName);
+        	System.out.println("Got bad response from " + biomartURL + " for " + speciesName + ": " + connection.getResponseCode() + " " + connection.getResponseMessage());
         }
+        
+        return biomartQueryResults;
 		
 	}
 
