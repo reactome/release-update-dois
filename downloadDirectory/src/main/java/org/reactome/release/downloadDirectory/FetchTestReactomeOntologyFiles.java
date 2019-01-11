@@ -130,7 +130,7 @@ public class FetchTestReactomeOntologyFiles {
 		}
 		String outpathName = releaseNumber + "/reactome_data_model.";
 		moveFile(pprjFilename, outpathName + "pprj");
-		moveFile(pprjFilename, outpathName + "pont");
+		moveFile(pontFilename, outpathName + "pont");
 		moveFile(pinsFilename, outpathName + "pins");
 		
 		logger.info("Finished FetchTestReactomeOntologyFiles");

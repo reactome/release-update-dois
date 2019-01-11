@@ -2,6 +2,7 @@ package org.reactome.release.downloadDirectory;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -32,63 +33,63 @@ public class GSEAOutput {
 		exporter.export(outFilename);
 		
 		logger.info("Updating ReactomePathways.gmt with 'Reactome Pathway' column...");
-		// Initial output file needs to be updated so that the third column contains 'Reactome Pathway' 
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(outFilename));
-			StringBuffer inputBuffer = new StringBuffer();
-			
-			String line;
-			while ((line = br.readLine()) != null) 
-			{
-				String[] tabSplit = line.split("\t");
-				List<String> updatedLine = new ArrayList<String>();
-				for (int i=0; i < tabSplit.length; i++)
-				{
-					if (i == 2)
-					{
-						updatedLine.add("Reactome Pathway");
-					}
-					updatedLine.add(tabSplit[i]);
-				}
-				inputBuffer.append(String.join("\t",updatedLine));
-				inputBuffer.append("\n");
-			}
-			String updatedLines = inputBuffer.toString();
-			br.close();
-			FileOutputStream fileOut = new FileOutputStream(outFilename);
-			fileOut.write(updatedLines.getBytes());
-			fileOut.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		updateGSEAFile();
 		
 		logger.info("Zipping ReactomePathways.gmt...");
-		// Zip the output and then remove original file
-		try {
-			FileOutputStream fos = new FileOutputStream(outFilename + ".zip");
-			ZipOutputStream zos = new ZipOutputStream(fos);
-			ZipEntry ze = new ZipEntry(outFilename);
-			zos.putNextEntry(ze);
-			FileInputStream inputStream = new FileInputStream(outFilename);
-			
-			byte[] bytes = new byte[1024];
-			int length;
-			
-			while ((length = inputStream.read(bytes)) > 0) 
-			{
-				zos.write(bytes, 0, length);
-			}
-			
-			inputStream.close();
-			zos.closeEntry();
-			zos.close();
-			Files.delete(Paths.get(outFilename));
-			String outpathName = releaseNumber + "/" + outFilename + ".zip";
-			Files.move(Paths.get(outFilename + ".zip"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		zipGSEAFile(releaseNumber);
+		
 		logger.info("Finished GSEAOutput");
+	}
+
+	// Adds the string 'Reactome Pathway' to the third column of the output file
+	private static void updateGSEAFile() throws IOException {
+		BufferedReader br = new BufferedReader(new FileReader(outFilename));
+		StringBuffer inputBuffer = new StringBuffer();
+		
+		String line;
+		while ((line = br.readLine()) != null) 
+		{
+			String[] tabSplit = line.split("\t");
+			List<String> updatedLine = new ArrayList<String>();
+			for (int i=0; i < tabSplit.length; i++)
+			{
+				if (i == 2)
+				{
+					updatedLine.add("Reactome Pathway");
+				}
+				updatedLine.add(tabSplit[i]);
+			}
+			inputBuffer.append(String.join("\t",updatedLine));
+			inputBuffer.append("\n");
+		}
+		String updatedLines = inputBuffer.toString();
+		br.close();
+		FileOutputStream fileOut = new FileOutputStream(outFilename);
+		fileOut.write(updatedLines.getBytes());
+		fileOut.close();
+	}
+	
+	// Zips the GSEA file and then removes the original
+	private static void zipGSEAFile(String releaseNumber) throws IOException {
+		FileOutputStream fos = new FileOutputStream(outFilename + ".zip");
+		ZipOutputStream zos = new ZipOutputStream(fos);
+		ZipEntry ze = new ZipEntry(outFilename);
+		zos.putNextEntry(ze);
+		FileInputStream inputStream = new FileInputStream(outFilename);
+		
+		byte[] bytes = new byte[1024];
+		int length;
+		
+		while ((length = inputStream.read(bytes)) > 0) 
+		{
+			zos.write(bytes, 0, length);
+		}
+		
+		inputStream.close();
+		zos.closeEntry();
+		zos.close();
+		Files.delete(Paths.get(outFilename));
+		String outpathName = releaseNumber + "/" + outFilename + ".zip";
+		Files.move(Paths.get(outFilename + ".zip"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
 	}
 }
