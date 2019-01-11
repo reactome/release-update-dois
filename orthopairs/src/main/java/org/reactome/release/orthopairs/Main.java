@@ -33,16 +33,16 @@ public class Main
         	
         	JSONObject speciesJSONObject = (JSONObject) speciesJSONFile.get(speciesKey);
         	String speciesName = (String) ((JSONArray) speciesJSONObject.get("name")).get(0);
-        	System.out.println("Generating Orthopair file for " + speciesName);
+        	System.out.println("Generating Biomart mapping file for " + speciesName);
         	// Build the XML portion of the Biomart query
         	String biomartXMLQuery = BiomartUtilities.buildBiomartXML((String) speciesKey, (JSONObject) speciesJSONFile.get(speciesKey), pathToXMLQuery);
         	// Query Biomart for gene-protein mappings for species
         	List<String> biomartResults = BiomartUtilities.queryBiomart((String) speciesKey, (JSONObject) speciesJSONFile.get(speciesKey), biomartXMLQuery);
-        	
+        	// Generate Orthopairs Mapping Files
         	if (speciesKey.equals(sourceMappingSpecies)) {
-        		MappingFileGenerator.createSourceProteinGeneMappingFile(biomartResults, (String) speciesKey);
+        		MappingFileGenerator.createSourceProteinGeneMappingFile(biomartResults, (String) speciesKey, speciesName);
         	} else {
-        		MappingFileGenerator.createTargetGeneProteinMappingFile(biomartResults, (String) speciesKey);
+        		MappingFileGenerator.createTargetGeneProteinMappingFile(biomartResults, (String) speciesKey, speciesName);
         	}
         }
         
