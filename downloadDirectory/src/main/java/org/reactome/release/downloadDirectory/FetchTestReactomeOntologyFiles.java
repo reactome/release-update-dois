@@ -3,7 +3,6 @@ package org.reactome.release.downloadDirectory;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -14,7 +13,6 @@ import java.nio.file.StandardOpenOption;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -39,7 +37,6 @@ public class FetchTestReactomeOntologyFiles {
 	private static final Logger logger = LogManager.getLogger();
 	private static Connection connect = null;
 	private static Statement statement = null;
-	private PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
 	
 	public static void execute(MySQLAdaptor dba, String username, String password, String host, String database, String releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
@@ -65,6 +62,7 @@ public class FetchTestReactomeOntologyFiles {
 			int dateTimeCounter = 0;
 			boolean pprjSwitch = true;
 			boolean pontSwitch = false;
+			boolean pinsSwitch = true;
 			String str;
 			logger.info("Generating " + pprjFilename + ", " + pontFilename + ", and " + pinsFilename);
 			while ((str = br.readLine()) != null) {
@@ -74,7 +72,7 @@ public class FetchTestReactomeOntologyFiles {
 				if (splitLine.length > 1 && splitLine[1].matches("( [A-Z][a-z]{2}){2} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3} [0-9]{4}")) {
 					String dateTime = ";" + splitLine[1] + "\n";
 					dateTimeCounter++;
-					if (pprjSwitch) {
+					if (pprjSwitch && dateTimeCounter == 1) {
 						Files.write(Paths.get(pprjFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
 					}
 					if (dateTimeCounter == 2) {
@@ -120,7 +118,14 @@ public class FetchTestReactomeOntologyFiles {
 					if (str.contains("pins_file_stub")) {
 						str = "\n";
 					}
-					Files.write(Paths.get(pinsFilename), str.getBytes(), StandardOpenOption.APPEND);
+
+					if (pinsSwitch) {
+						if (str.startsWith(";") || str.startsWith("(") || str.startsWith(")") || str.startsWith("\n") || str.startsWith("\t")) {
+							Files.write(Paths.get(pinsFilename), str.getBytes(), StandardOpenOption.APPEND);
+						} else {
+							pinsSwitch = false;
+						}
+					}
 				}
 			}
 		}
