@@ -1,6 +1,7 @@
 package org.reactome.release.downloadDirectory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,24 +36,22 @@ import org.gk.persistence.MySQLAdaptor;
 
 public class FetchTestReactomeOntologyFiles {
 	private static final Logger logger = LogManager.getLogger();
-	private static Connection connect = null;
-	private static Statement statement = null;
-	private static ResultSet resultSet = null;
 	
 	public static void execute(MySQLAdaptor dba, String username, String password, String host, String database, String releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
 		logger.info("Running FetchTestReactomeOntologyFiles step");
 		Class.forName("com.mysql.jdbc.Driver");
-		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?" + "user=" + username + "&password=" + password);
-		statement = connect.createStatement();
-		resultSet = statement.executeQuery("SELECT ontology FROM Ontology");
+		Connection connect = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?" + "user=" + username + "&password=" + password);
+		Statement statement = connect.createStatement();
+		ResultSet resultSet = statement.executeQuery("SELECT ontology FROM Ontology");
 		// The returned value is a single blob composed of binary and text. The three files produced by this step (pprj, pins, pont) are found within this blob.
 		// A handful of regexes and conditional statements are used to handle this data and output the 3 files. 
 		String pprjFilename = "reactome_data_model.pprj";
 		String pontFilename = "reactome_data_model.pont";
 		String pinsFilename = "reactome_data_model.pins";
-		PrintWriter pprjWriter = new PrintWriter(pprjFilename);
-		PrintWriter pontWriter = new PrintWriter(pontFilename);
-		PrintWriter pinsWriter = new PrintWriter(pinsFilename);
+		
+		createOutputFile(pprjFilename);		
+		createOutputFile(pontFilename);
+		createOutputFile(pinsFilename);
 		
 		while (resultSet.next()) {
 			
@@ -129,14 +128,24 @@ public class FetchTestReactomeOntologyFiles {
 				}
 			}
 		}
-		pprjWriter.close();
-		pontWriter.close();
-		pinsWriter.close();
 		String outpathName = releaseNumber + "/reactome_data_model.";
-		Files.move(Paths.get(pprjFilename), Paths.get(outpathName + "pprj"), StandardCopyOption.REPLACE_EXISTING); 
-		Files.move(Paths.get(pontFilename), Paths.get(outpathName + "pont"), StandardCopyOption.REPLACE_EXISTING); 
-		Files.move(Paths.get(pinsFilename), Paths.get(outpathName + "pins"), StandardCopyOption.REPLACE_EXISTING); 
+		moveFile(pprjFilename, outpathName + "pprj");
+		moveFile(pprjFilename, outpathName + "pont");
+		moveFile(pinsFilename, outpathName + "pins");
 		
 		logger.info("Finished FetchTestReactomeOntologyFiles");
+	}
+
+	private static void createOutputFile(String filename) throws IOException {
+		File file = new File(filename);
+		if (file.exists()) {
+			file.delete();
+		}
+		file.createNewFile();
+	}
+	
+	private static void moveFile(String filename, String outfilePath) throws IOException {
+		Files.move(Paths.get(filename), Paths.get(outfilePath), StandardCopyOption.REPLACE_EXISTING);
+		
 	}
 }
