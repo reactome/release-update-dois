@@ -75,7 +75,7 @@ public class Main {
 			// This step takes a DB Dump of the stable_identifiers and test_reactome DBs
 			// Outputs: gk_stable_ids.sql, gk_current.sql
 			try {
-				DatabaseDumps.execute(dbAdaptor, releaseNumber, username, password, host, port, database);
+				DatabaseDumps.execute(releaseNumber, username, password, host, port, database);
 			} catch (Exception e) {
 				failedSteps.add("DatabaseDumps");
 				e.printStackTrace();
@@ -128,17 +128,17 @@ public class Main {
 				e.printStackTrace();
 			}
 		}
-		if (stepsToRun.contains("CreateReleaseTarball")) 
-		{
-			// This step clones the Release repo from github, and generates an archive tarball from it and other files on the release server. Currently just runs make_release_tarball.pl.
-			// Output: reactome.tar.gz 
-			try {
-				CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
-			} catch (Exception e) {
-				failedSteps.add("CreateReleaseTarball");
-				e.printStackTrace();
-			}
-		}
+//		if (stepsToRun.contains("CreateReleaseTarball")) 
+//		{
+//			// This step clones the Release repo from github, and generates an archive tarball from it and other files on the release server. Currently just runs make_release_tarball.pl.
+//			// Output: reactome.tar.gz 
+//			try {
+//				CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
+//			} catch (Exception e) {
+//				failedSteps.add("CreateReleaseTarball");
+//				e.printStackTrace();
+//			}
+//		}
 		if (stepsToRun.contains("PathwaySummationMappingFile")) 
 		{
 			// This step takes all Human Pathway and creates a tab-separated file with columns containing the stableIdentifier, name, and summation of the instance
