@@ -3,6 +3,7 @@ package org.reactome.release.downloadDirectory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,21 +22,17 @@ import java.util.Map;
 
 public class MapOldStableIds {
 	private static final Logger logger = LogManager.getLogger();
-	
-	private static Connection connect = null;
+	private static final String filename = "reactome_stable_ids.txt";
 	
 	public static void execute(String username, String password, String host, String releaseNumber) throws Exception {
-		
-		Statement statement = null;
-		ResultSet resultSet = null;
 		
 		logger.info("Running MapOldStableIds step");
 		// Need to use mysql driver to access stable_identifiers db
 		logger.info("Connecting to stable_identifers db...");
 		Class.forName("com.mysql.jdbc.Driver");
-		connect = DriverManager.getConnection("jdbc:mysql://" + host + "/stable_identifiers?" + "user=" + username + "&password=" + password);
-		statement = connect.createStatement();
-		resultSet = statement.executeQuery("SELECT identifier,instanceId FROM StableIdentifier");
+		Connection connect = DriverManager.getConnection("jdbc:mysql://" + host + "/stable_identifiers?" + "user=" + username + "&password=" + password);
+		Statement statement = connect.createStatement();
+		ResultSet resultSet = statement.executeQuery("SELECT identifier,instanceId FROM StableIdentifier");
 		
 		// Iterate through returned results of DB IDs and stable IDs 
 		logger.info("Mapping Old Stable IDs to Current Stable IDs...");
@@ -68,6 +65,7 @@ public class MapOldStableIds {
 			// After sorting the first stable ID in the array is considered the primary ID.
 			// An Array of Arrays is used here, with each interior array's first element being 
 			// the primaryId string and the second element being an array of the remaining stable IDs.
+			// Example: [R-HSA-1006169, [REACT_118604]], [R-HSA-1006173, [REACT_119254]]]
 			if (!(stableIds.size() < 2) || (stableIds.get(0).matches("^R-.*"))) 
 			{
 				String primaryId = stableIds.get(0);
@@ -87,7 +85,8 @@ public class MapOldStableIds {
 		}
 
 		// Reorder the data so that the interior arrays that have only 1 element are going to be output first
-		List<ArrayList<Object>> combinedIds = new ArrayList<ArrayList<Object>>(hsaIds);
+		List<ArrayList<Object>> combinedIds = new ArrayList<ArrayList<Object>>();
+		combinedIds.addAll(hsaIds);
 		combinedIds.addAll(nonHsaIds);
 		List<ArrayList<Object>> preferredIds = new ArrayList<ArrayList<Object>>();
 		List<ArrayList<Object>> deferredIds = new ArrayList<ArrayList<Object>>();
@@ -105,20 +104,23 @@ public class MapOldStableIds {
 		preferredIds.addAll(deferredIds);
 		
 		// Write to file
-		PrintWriter oldIdMappingFile = new PrintWriter("reactome_stable_ids.txt");
-		oldIdMappingFile.close();
+		File oldIdMappingFile = new File(filename);
+		if (oldIdMappingFile.exists()) {
+			oldIdMappingFile.delete();
+		}
+		oldIdMappingFile.createNewFile();
 		String header = "# Reactome stable IDs for release " + releaseNumber + "\n" + "Stable_ID\told_identifier(s)\n";
-		Files.write(Paths.get("reactome_stable_ids.txt"), header.getBytes(), StandardOpenOption.APPEND);
+		Files.write(Paths.get(filename), header.getBytes(), StandardOpenOption.APPEND);
 		for (ArrayList<Object> stableIdsArray : preferredIds) 
 		{
 			String primaryId = (String) stableIdsArray.get(0);
 			@SuppressWarnings("unchecked")
 			ArrayList<String> secondaryIds = (ArrayList<String>) stableIdsArray.get(1);
 			String line = primaryId + "\t" + String.join(",", secondaryIds) + "\n";
-			Files.write(Paths.get("reactome_stable_ids.txt"), line.getBytes(), StandardOpenOption.APPEND);
+			Files.write(Paths.get(filename), line.getBytes(), StandardOpenOption.APPEND);
 		}
-		String outpathName = releaseNumber + "/reactome_stable_ids.txt";
-		Files.move(Paths.get("reactome_stable_ids.txt"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
+		String outpathName = releaseNumber + "/" + filename;
+		Files.move(Paths.get(filename), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING);
 		
 		logger.info("MapOldStableIds finished");
 	}

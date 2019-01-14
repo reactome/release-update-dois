@@ -33,16 +33,7 @@ public class PathwaySummationMappingFile {
 		pathwaySummationFile.createNewFile();
 		for (GKInstance pathwayInst : pathwayInstances) 
 		{
-			boolean containsHumanEntry = false;
-			// Check that at least one of the Species instances is for Homo sapiens
-			for (GKInstance speciesInst: (Collection<GKInstance>) pathwayInst.getAttributeValuesList(species)) 
-			{
-				if (speciesInst.getDisplayName().equals("Homo sapiens")) 
-				{
-					containsHumanEntry = true;
-				}
-			}
-			if (containsHumanEntry) 
+			if (containsHumanEntry((Collection<GKInstance>) pathwayInst.getAttributeValuesList(species)))
 			{
 				// Build line of file
 				String nameString = pathwayInst.getAttributeValue(name).toString();
@@ -64,5 +55,17 @@ public class PathwaySummationMappingFile {
 		Files.move(Paths.get("pathway2summation.txt"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
 		
 		logger.info("Finished PathwaySummationMappingFile");
+	}
+
+	// Check that at least one of the Species instances is for Homo sapiens
+	private static boolean containsHumanEntry(Collection<GKInstance> speciesInstances) {
+		for (GKInstance speciesInst: speciesInstances)
+		{
+			if (speciesInst.getDisplayName().equals("Homo sapiens"))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }

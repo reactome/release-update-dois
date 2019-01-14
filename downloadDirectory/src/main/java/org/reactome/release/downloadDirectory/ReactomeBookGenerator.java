@@ -15,33 +15,37 @@ public class ReactomeBookGenerator {
 	
 	static public void execute(String username, String password, String host, int port, String database, String releaseNumber, String releaseDir, boolean runPDF, boolean runRTF) throws IOException, InterruptedException {
 		logger.info("Running Reactome Book steps");
-		String pdfBookCommand = "perl " + releaseDir + "/genbook_pdf.pl -depth 100 -db " + database + " -host " + host + " -user " + username + " -pass " + password + " -port " + port + " -stdout -react_rep 2";
-		String rtfBookCommand = "perl " + releaseDir + "/genbook_rtf.pl -depth 100 -db " + database + " -host " + host + " -user " + username + " -pass " + password + " -port " + port + " -split -react_rep 2";
+		String args = "-depth 100 -db " + database + " -host " + host + " -user " + username + " -pass " + password + " -port " + port + " -react_rep 2";
+		String pdfBookCommand = "perl " + releaseDir + "/genbook_pdf.pl " + args + " -stdout";
+		String rtfBookCommand = "perl " + releaseDir + "/genbook_rtf.pl " + args + " -split";
 		
 		if (runPDF) {
-			logger.info("Generating PDF Reactome Book ...");
-			Process generatePDFBook = Runtime.getRuntime().exec(pdfBookCommand);
-			generatePDFBook.waitFor();
-			
-			Process zipPDFBook = Runtime.getRuntime().exec("zip TheReactomeBook.pdf.zip TheReactomeBook.pdf");
-			zipPDFBook.waitFor();
-			
-			Files.move(Paths.get("TheReactomeBook.pdf.zip"), Paths.get(releaseNumber + "/TheReactomeBook.pdf.zip"), StandardCopyOption.REPLACE_EXISTING); 
-			Files.delete(Paths.get("TheReactomeBook.pdf"));
-			logger.info("Finished generating PDF Reactome Book");
+		    generateReactomeBook("pdf", pdfBookCommand, releaseNumber);
 		}
 
 		if (runRTF) {
-			logger.info("Generating RTF Reactome Book ...");
-			Process generateRTFBook = Runtime.getRuntime().exec(rtfBookCommand);
-			generateRTFBook.waitFor();
-			
-			Process zipRTFBook = Runtime.getRuntime().exec("zip TheReactomeBook.rtf.zip TheReactomeBook");
-			zipRTFBook.waitFor();
-			
-			Files.move(Paths.get("TheReactomeBook.rtf.zip"), Paths.get(releaseNumber + "/TheReactomeBook.rtf.zip"), StandardCopyOption.REPLACE_EXISTING); 
-			FileUtils.deleteDirectory(new File("TheReactomeBook"));
-			logger.info("Finished generating RTF Reactome Book");
+		    generateReactomeBook("rtf", rtfBookCommand, releaseNumber);
 		}
+	}
+
+
+private static void generateReactomeBook(String bookType, String bookCommand, String releaseNumber) throws IOException, InterruptedException {
+
+	    logger.info("Generating " + bookType.toUpperCase() + " Reactome Book ...");
+	    Process generateBook = Runtime.getRuntime().exec(bookCommand);
+	    generateBook.waitFor();
+
+	    String bookFile = "TheReactomeBook." + bookType;
+	    String bookZipFile = bookFile + ".zip";
+	    Process zipBook = Runtime.getRuntime().exec("zip " + bookZipFile + " " + bookFile);
+	    zipBook.waitFor();
+
+	    Files.move(Paths.get(bookZipFile), Paths.get(releaseNumber + "/" + bookZipFile), StandardCopyOption.REPLACE_EXISTING);
+	    if (bookType.equals("pdf")) {
+	        Files.delete(Paths.get(bookFile));
+	    } else if (bookType.equals("rtf")) {
+	        FileUtils.deleteDirectory(new File("TheReactomeBook"));
+	    }
+	    logger.info("Finished generating " + bookType + " Reactome Book");
 	}
 }

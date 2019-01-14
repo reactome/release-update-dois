@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -18,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
 public class Main {
-	static MySQLAdaptor dbAdaptor = null;
 	private static final Logger logger = LogManager.getLogger();
 	
 	public static void main(String[] args) throws Exception {
@@ -32,6 +32,7 @@ public class Main {
 		//TODO: File existence check and size check
 		//TODO: Parallelize executions
 		//TODO: Integration with Perl wrapper
+		//TODO: Refactor to Command Pattern for execute calls
 		
 		//Set up DB adaptor
 		String username = props.getProperty("username");
@@ -43,7 +44,7 @@ public class Main {
 		String releaseDirAbsolute = props.getProperty("absoluteReleaseDirectoryPath");
 		String releaseDownloadDir = props.getProperty("releaseDownloadDirectoryPath");
 		String releaseDownloadDirWithNumber = releaseDownloadDir + releaseNumber;
-		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
+		MySQLAdaptor dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		File releaseDir = new File(releaseNumber);
 		if (!releaseDir.exists()) 
 		{
@@ -56,15 +57,9 @@ public class Main {
 		String pathToStepConfig = props.getProperty("stepsToRunConfigPath");
 		FileReader fr = new FileReader(pathToStepConfig);
 		BufferedReader br = new BufferedReader(fr);
-		List<String> stepsToRun = new ArrayList<String>();
-		String line;
-		while ((line = br.readLine()) != null) 
-		{
-			if (!line.startsWith("#")) 
-			{
-				stepsToRun.add(line);
-			}
-		}
+		List<String> stepsToRun = br.lines().filter(
+			    line -> !line.startsWith("#")
+			).collect(Collectors.toList());
 		br.close();
 		
 		// Temporary system for catching failed steps -- this will need to be cleaned up in future
@@ -202,16 +197,17 @@ public class Main {
 		logger.info("Moving all generated files to " + releaseDownloadDirWithNumber);
 		File folder = new File(releaseNumber);
 		File[] releaseFiles = folder.listFiles();
-		for (int i = 0; i < releaseFiles.length; i++) 
-		{
-			if (releaseFiles[i].isDirectory() && releaseFiles[i].getName().equalsIgnoreCase("databases")) 
+		if (releaseFiles != null) {
+			for (File releaseFile : releaseFiles) 
 			{
-				FileUtils.deleteDirectory(new File(releaseDownloadDirWithNumber + "/databases"));
+				if (releaseFile.isDirectory() && releaseFile.getName().equalsIgnoreCase("databases")) 
+				{
+					FileUtils.deleteDirectory(new File(releaseDownloadDirWithNumber + "/databases"));
+				}
+				
+				Files.move(Paths.get(releaseFile.toString()), Paths.get(releaseDownloadDirWithNumber + "/" + releaseFile.getName()), StandardCopyOption.REPLACE_EXISTING); 
 			}
-			
-			Files.move(Paths.get(releaseFiles[i].toString()), Paths.get(releaseDownloadDirWithNumber + "/" + releaseFiles[i].getName()), StandardCopyOption.REPLACE_EXISTING); 
 		}
-		
 		if (failedSteps.size() > 0) {
 			String failedStepsString = StringUtils.join(failedSteps, ", ");
 			logger.warn("\nErrors were reported in the following step(s): " + failedStepsString + "\n");
