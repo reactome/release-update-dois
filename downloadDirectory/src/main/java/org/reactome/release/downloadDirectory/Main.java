@@ -24,7 +24,12 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		
 		logger.info("Beginning Download Directory step");
-		String pathToConfig = "src/main/resources/config.properties";
+		String pathToConfig = "";
+		if (args.length > 0) {
+			pathToConfig = args[0];
+		} else {
+			pathToConfig = "src/main/resources/config.properties";
+		}
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
 		
