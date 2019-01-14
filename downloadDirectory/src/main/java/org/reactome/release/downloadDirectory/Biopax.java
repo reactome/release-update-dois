@@ -44,29 +44,29 @@ public class Biopax {
   static {
    logger.info("Running BioPAX step");
    logger.info("Preparing BioPAX validation rules...");
-    ctx = new ClassPathXmlApplicationContext(new String[]{
-      "META-INF/spring/appContext-validator.xml",
-      "META-INF/spring/appContext-loadTimeWeaving.xml"
-    });
-    validator = (Validator) ctx.getBean("validator");
-    logger.info("Finished preparing BioPAX validation rules");
+	ctx = new ClassPathXmlApplicationContext(new String[]{
+	  "META-INF/spring/appContext-validator.xml",
+	  "META-INF/spring/appContext-loadTimeWeaving.xml"
+	});
+	validator = (Validator) ctx.getBean("validator");
+	logger.info("Finished preparing BioPAX validation rules");
   }
   
   // Once BioPAX validation rules have loaded, the actual BioPAX process can start
   public static void execute(String username, String password, String host, String port, String database, String releaseNumber, String pathToSpeciesConfig, boolean runBioPAX2, boolean runBioPAX3) throws Exception {
-	  	// Temporary location where BioPAX files are stored
-	  	String biopaxDir = releaseNumber + "_biopax";
-        File biopaxDirFile = new File(biopaxDir);
-        if (!biopaxDirFile.exists()) {
-        	biopaxDirFile.mkdir();
-        }
-        
-        JSONParser parser = new JSONParser();
-        JSONObject speciesFile = (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig));
-        @SuppressWarnings("unchecked")
+		// Temporary location where BioPAX files are stored
+		String biopaxDir = releaseNumber + "_biopax";
+		File biopaxDirFile = new File(biopaxDir);
+		if (!biopaxDirFile.exists()) {
+			biopaxDirFile.mkdir();
+		}
+
+		JSONParser parser = new JSONParser();
+		JSONObject speciesFile = (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig));
+		@SuppressWarnings("unchecked")
 		Set<String> speciesKeys = speciesFile.keySet();
-        // First, generate owl files. This particular step requires a local maven installation of the PathwayExchange jar (see README.md for DownloadDirectory)
-        // We want to run BioPAX level 2 and BioPAX level 3, so the below loop starts with '2'
+		// First, generate owl files. This particular step requires a local maven installation of the PathwayExchange jar (see README.md for DownloadDirectory)
+		// We want to run BioPAX level 2 and BioPAX level 3, so the below loop starts with '2'
 		for (int biopaxLevel = 2; biopaxLevel < 4; biopaxLevel++) {
 			for (String speciesKey : speciesKeys) {
 				String speciesName = (String) ((JSONArray) ((JSONObject) speciesFile.get(speciesKey)).get("name")).get(0);
@@ -90,9 +90,9 @@ public class Biopax {
 			Files.move(Paths.get(outfile), Paths.get(outpathBiopax), StandardCopyOption.REPLACE_EXISTING);
 			FileUtils.deleteDirectory(new File(biopaxDir));
 		}	
-  	}
-  	
-    //Generate BioPAX files using the appropriate SpeciesAllPathwaysConverter function found in Pathway-Exchange
+	}
+
+	//Generate BioPAX files using the appropriate SpeciesAllPathwaysConverter function found in Pathway-Exchange
 	private static void generateBioPAXFile(String host, String database, String username, String password, String port, String biopaxDir, String speciesName, int biopaxLevel) throws Exception {
 		
 		if (biopaxLevel == 2) {
@@ -108,16 +108,16 @@ public class Biopax {
 	private static void validateBioPAX(String biopaxDir, int biopaxLevel, String releaseNumber, String outfile) throws Exception {
 		
 		// Rename files, replacing whitespace with underscores
-	    Files.newDirectoryStream(Paths.get(biopaxDir),
-	    	      owlFilepath -> owlFilepath.toString().endsWith(".owl"))
-	    	      .forEach(owlFile -> {
-	    	          String owlFilename = owlFile.toFile().getPath();
-	    	          owlFilename = owlFilename.replaceAll(" +", "_");
-	    	          File formattedOwlFilename = new File(owlFilename);
-	    	          owlFile.toFile().renameTo(formattedOwlFilename);
-	    	      });
-	    // Validate each owl file in the biopax output directory produced by PathwaysConverter
-	    logger.info("Validating owl files...");
+		Files.newDirectoryStream(Paths.get(biopaxDir),
+				  owlFilepath -> owlFilepath.toString().endsWith(".owl"))
+				  .forEach(owlFile -> {
+					  String owlFilename = owlFile.toFile().getPath();
+					  owlFilename = owlFilename.replaceAll(" +", "_");
+					  File formattedOwlFilename = new File(owlFilename);
+					  owlFile.toFile().renameTo(formattedOwlFilename);
+				  });
+		// Validate each owl file in the biopax output directory produced by PathwaysConverter
+		logger.info("Validating owl files...");
 		runBiopaxValidation(biopaxDir);
 
 		// Compress all Biopax and validation files into individual zip files
@@ -125,24 +125,24 @@ public class Biopax {
 		ZipOutputStream biopaxZipStream = getBiopaxZipStream(biopaxLevel);
 		ZipOutputStream validatorZipStream = getValidatorZipStream(biopaxLevel);
 		Files.newDirectoryStream(Paths.get(biopaxDir),
-			      path -> (path.toString().endsWith(".xml") || path.toString().endsWith(".owl")))
-			      .forEach(f -> {
-			          String spath = f.toFile().getPath();
-			          File file = new File(spath);
-		        	  try {
-		    	          if (spath.endsWith(".owl")) {
-		    	        	writeToZipFile(file, biopaxZipStream);
-		    	          } else if (spath.endsWith(".xml")) {
+				  path -> (path.toString().endsWith(".xml") || path.toString().endsWith(".owl")))
+				  .forEach(f -> {
+					  String spath = f.toFile().getPath();
+					  File file = new File(spath);
+					  try {
+						  if (spath.endsWith(".owl")) {
+							writeToZipFile(file, biopaxZipStream);
+						  } else if (spath.endsWith(".xml")) {
 							writeToZipFile(file, validatorZipStream);
-		    	          }
+						  }
 					  } catch (IOException e) {
 						e.printStackTrace();
 					  }
-			      });
-			    biopaxZipStream.close();
+				  });
+				biopaxZipStream.close();
 		validatorZipStream.close();
-	    
-	    logger.info("Finished BioPAX");
+
+		logger.info("Finished BioPAX");
 	}
 	
 	// Zip utilities
@@ -175,37 +175,37 @@ public class Biopax {
   
   // This function runs each file in the biopax output directory through the biopax validator
   public static void runBiopaxValidation(String directory) throws Exception {
-    Files.newDirectoryStream(Paths.get(directory),
-      owlFilename -> owlFilename.toString().endsWith(".owl"))
-      .forEach(owlFile -> {
-        try {
-          String owlFilepath = owlFile.toFile().getPath();
-          logger.info("Validating BioPAX file:" + owlFilepath);
-          validate(ctx.getResource("file:" + owlFilepath));
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      });
+	Files.newDirectoryStream(Paths.get(directory),
+	  owlFilename -> owlFilename.toString().endsWith(".owl"))
+	  .forEach(owlFile -> {
+		try {
+		  String owlFilepath = owlFile.toFile().getPath();
+		  logger.info("Validating BioPAX file:" + owlFilepath);
+		  validate(ctx.getResource("file:" + owlFilepath));
+		} catch (IOException e) {
+		  e.printStackTrace();
+		}
+	  });
   }
 
   // Function taken from the Biopax validator project, largely imitating their own 'main' function
   // but leaving out much that we don't need for this. Validates each owl file that is passed through.
   static void validate(Resource owlResource) throws IOException {
-    // Define a new  validation result for the input data
-    Validation result = new Validation(new IdentifierImpl(), owlResource.getDescription(), autofix, null, maxErrors, profile);
-    result.setDescription(owlResource.getDescription());
+	// Define a new  validation result for the input data
+	Validation result = new Validation(new IdentifierImpl(), owlResource.getDescription(), autofix, null, maxErrors, profile);
+	result.setDescription(owlResource.getDescription());
 
-    validator.importModel(result, owlResource.getInputStream());
-    validator.validate(result);
-    result.setModel(null);
-    result.setModelData(null);
+	validator.importModel(result, owlResource.getInputStream());
+	validator.validate(result);
+	result.setModel(null);
+	result.setModelData(null);
 
-    // Save the validation results
-    PrintWriter writer = new PrintWriter(owlResource.getFile().getPath() + "_validation." + outFormat);
-    ValidatorUtils.write(result, writer, null);
-    writer.close();
+	// Save the validation results
+	PrintWriter writer = new PrintWriter(owlResource.getFile().getPath() + "_validation." + outFormat);
+	ValidatorUtils.write(result, writer, null);
+	writer.close();
 
-    // Cleanup between files (though validator could instead check several resources and then write one report for all)
-    validator.getResults().remove(result);
+	// Cleanup between files (though validator could instead check several resources and then write one report for all)
+	validator.getResults().remove(result);
   }
 }

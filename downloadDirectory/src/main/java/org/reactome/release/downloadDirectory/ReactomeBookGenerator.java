@@ -20,32 +20,32 @@ public class ReactomeBookGenerator {
 		String rtfBookCommand = "perl " + releaseDir + "/genbook_rtf.pl " + args + " -split";
 		
 		if (runPDF) {
-		    generateReactomeBook("pdf", pdfBookCommand, releaseNumber);
+			generateReactomeBook("pdf", pdfBookCommand, releaseNumber);
 		}
 
 		if (runRTF) {
-		    generateReactomeBook("rtf", rtfBookCommand, releaseNumber);
+			generateReactomeBook("rtf", rtfBookCommand, releaseNumber);
 		}
 	}
 
 
 private static void generateReactomeBook(String bookType, String bookCommand, String releaseNumber) throws IOException, InterruptedException {
 
-	    logger.info("Generating " + bookType.toUpperCase() + " Reactome Book ...");
-	    Process generateBook = Runtime.getRuntime().exec(bookCommand);
-	    generateBook.waitFor();
+		logger.info("Generating " + bookType.toUpperCase() + " Reactome Book ...");
+		Process generateBook = Runtime.getRuntime().exec(bookCommand);
+		generateBook.waitFor();
 
-	    String bookFile = "TheReactomeBook." + bookType;
-	    String bookZipFile = bookFile + ".zip";
-	    Process zipBook = Runtime.getRuntime().exec("zip " + bookZipFile + " " + bookFile);
-	    zipBook.waitFor();
+		String bookFile = "TheReactomeBook." + bookType;
+		String bookZipFile = bookFile + ".zip";
+		Process zipBook = Runtime.getRuntime().exec("zip " + bookZipFile + " " + bookFile);
+		zipBook.waitFor();
 
-	    Files.move(Paths.get(bookZipFile), Paths.get(releaseNumber + "/" + bookZipFile), StandardCopyOption.REPLACE_EXISTING);
-	    if (bookType.equals("pdf")) {
-	        Files.delete(Paths.get(bookFile));
-	    } else if (bookType.equals("rtf")) {
-	        FileUtils.deleteDirectory(new File("TheReactomeBook"));
-	    }
-	    logger.info("Finished generating " + bookType + " Reactome Book");
+		Files.move(Paths.get(bookZipFile), Paths.get(releaseNumber + "/" + bookZipFile), StandardCopyOption.REPLACE_EXISTING);
+		if (bookType.equals("pdf")) {
+			Files.delete(Paths.get(bookFile));
+		} else if (bookType.equals("rtf")) {
+			FileUtils.deleteDirectory(new File("TheReactomeBook"));
+		}
+		logger.info("Finished generating " + bookType + " Reactome Book");
 	}
 }

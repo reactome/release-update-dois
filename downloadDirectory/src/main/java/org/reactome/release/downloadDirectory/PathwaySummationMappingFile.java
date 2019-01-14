@@ -61,9 +61,9 @@ public class PathwaySummationMappingFile {
 	// Check that at least one of the Species instances is for Homo sapiens
 	private static boolean containsHumanEntry(GKInstance pathwayInst) throws InvalidAttributeException, Exception {
 		
-	    @SuppressWarnings("unchecked")
+		@SuppressWarnings("unchecked")
 		Collection<GKInstance> speciesInstances = pathwayInst.getAttributeValuesList(species);
 
-	    return speciesInstances.stream().anyMatch(species -> species.getDisplayName().equals("Homo sapiens"));
+		return speciesInstances.stream().anyMatch(species -> species.getDisplayName().equals("Homo sapiens"));
 	}
 }

@@ -63,7 +63,7 @@ public class Main {
 		FileReader fr = new FileReader(pathToStepConfig);
 		BufferedReader br = new BufferedReader(fr);
 		List<String> stepsToRun = br.lines().filter(
-			    line -> !line.startsWith("#")
+				line -> !line.startsWith("#")
 			).collect(Collectors.toList());
 		br.close();
 		
