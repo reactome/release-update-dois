@@ -50,7 +50,7 @@ public class GSEAOutput {
 		while ((line = br.readLine()) != null) 
 		{
 			String[] tabSplit = line.split("\t");
-			List<String> updatedLine = new ArrayList<String>();
+			List<String> updatedLine = new ArrayList<>();
 			for (int i=0; i < tabSplit.length; i++)
 			{
 				if (i == 2)

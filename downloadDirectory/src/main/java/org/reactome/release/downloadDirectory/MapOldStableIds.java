@@ -35,7 +35,7 @@ public class MapOldStableIds {
 		
 		// Iterate through returned results of DB IDs and stable IDs 
 		logger.info("Mapping Old Stable IDs to Current Stable IDs...");
-		Map<String,ArrayList<String>> dbIdToStableIds = new HashMap<String,ArrayList<String>>();
+		Map<String,List<String>> dbIdToStableIds = new HashMap<>();
 		List<String> dbIds = new ArrayList<String>();
 		while (resultSet.next()) 
 		{
@@ -46,7 +46,8 @@ public class MapOldStableIds {
 			{
 				dbIdToStableIds.get(dbId).add(stableId);
 			} else {
-				ArrayList<String> stableIds = new ArrayList<String>(Arrays.asList(stableId));
+				ArrayList<String> stableIds = new ArrayList<>();
+				stableIds.add(stableId);
 				dbIdToStableIds.put(dbId, stableIds);
 				dbIds.add(dbId);
 			}
@@ -54,8 +55,8 @@ public class MapOldStableIds {
 		Collections.sort(dbIds);
 		
 		// Iterate through array of stable IDs associated with DB ID, splitting into human and non-human groups
-		List<ArrayList<Object>> hsaIds = new ArrayList<ArrayList<Object>>();
-		List<ArrayList<Object>> nonHsaIds = new ArrayList<ArrayList<Object>>();
+		List<List<Object>> hsaIds = new ArrayList<>();
+		List<List<Object>> nonHsaIds = new ArrayList<>();
 		for (String dbId : dbIds) 
 		{
 			List<String> stableIds = dbIdToStableIds.get(dbId);
@@ -69,7 +70,7 @@ public class MapOldStableIds {
 			{
 				String primaryId = stableIds.get(0);
 				stableIds.remove(0);
-				ArrayList<Object> organizedIds = new ArrayList<Object>();
+				ArrayList<Object> organizedIds = new ArrayList<>();
 				if (primaryId.matches("R-HSA.*")) 
 				{
 					organizedIds.add(primaryId);
@@ -84,15 +85,15 @@ public class MapOldStableIds {
 		}
 
 		// Reorder the data so that the interior arrays that have only 1 element are going to be output first
-		List<ArrayList<Object>> combinedIds = new ArrayList<ArrayList<Object>>();
+		List<List<Object>> combinedIds = new ArrayList<>();
 		combinedIds.addAll(hsaIds);
 		combinedIds.addAll(nonHsaIds);
-		List<ArrayList<Object>> preferredIds = new ArrayList<ArrayList<Object>>();
-		List<ArrayList<Object>> deferredIds = new ArrayList<ArrayList<Object>>();
-		for (ArrayList<Object> stableIdsArray : combinedIds) 
+		List<List<Object>> preferredIds = new ArrayList<>();
+		List<List<Object>> deferredIds = new ArrayList<>();
+		for (List<Object> stableIdsArray : combinedIds) 
 		{
 			@SuppressWarnings("unchecked")
-			List<String> secondaryIds = (ArrayList<String>) stableIdsArray.get(1);
+			List<String> secondaryIds = (List<String>) stableIdsArray.get(1);
 			if (secondaryIds.size() > 1) 
 			{
 				deferredIds.add(stableIdsArray);
@@ -110,11 +111,11 @@ public class MapOldStableIds {
 		oldIdMappingFile.createNewFile();
 		String header = "# Reactome stable IDs for release " + releaseNumber + "\n" + "Stable_ID\told_identifier(s)\n";
 		Files.write(Paths.get(filename), header.getBytes(), StandardOpenOption.APPEND);
-		for (ArrayList<Object> stableIdsArray : preferredIds) 
+		for (List<Object> stableIdsArray : preferredIds) 
 		{
 			String primaryId = (String) stableIdsArray.get(0);
 			@SuppressWarnings("unchecked")
-			ArrayList<String> secondaryIds = (ArrayList<String>) stableIdsArray.get(1);
+			List<String> secondaryIds = (ArrayList<String>) stableIdsArray.get(1);
 			String line = primaryId + "\t" + String.join(",", secondaryIds) + "\n";
 			Files.write(Paths.get(filename), line.getBytes(), StandardOpenOption.APPEND);
 		}

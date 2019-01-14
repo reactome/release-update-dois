@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.InvalidAttributeException;
 
 public class PathwaySummationMappingFile {
 	private static final Logger logger = LogManager.getLogger();
@@ -25,7 +26,7 @@ public class PathwaySummationMappingFile {
 		logger.info("Running PathwaySummationMappingFile step");
 		// Get all Pathway instances
 		Collection<GKInstance> pathwayInstances = dba.fetchInstancesByClass(Pathway);
-		Set<String> rowHash = new HashSet<String>();
+		Set<String> rowHash = new HashSet<>();
 		//Create file
 		logger.info("Generating pathway2summation.txt file...");
 		File pathwaySummationFile = new File(pathwaySummationFilename);
@@ -33,7 +34,7 @@ public class PathwaySummationMappingFile {
 		pathwaySummationFile.createNewFile();
 		for (GKInstance pathwayInst : pathwayInstances) 
 		{
-			if (containsHumanEntry((Collection<GKInstance>) pathwayInst.getAttributeValuesList(species)))
+			if (containsHumanEntry(pathwayInst))
 			{
 				// Build line of file
 				String nameString = pathwayInst.getAttributeValue(name).toString();
@@ -58,14 +59,11 @@ public class PathwaySummationMappingFile {
 	}
 
 	// Check that at least one of the Species instances is for Homo sapiens
-	private static boolean containsHumanEntry(Collection<GKInstance> speciesInstances) {
-		for (GKInstance speciesInst: speciesInstances)
-		{
-			if (speciesInst.getDisplayName().equals("Homo sapiens"))
-			{
-				return true;
-			}
-		}
-		return false;
+	private static boolean containsHumanEntry(GKInstance pathwayInst) throws InvalidAttributeException, Exception {
+		
+	    @SuppressWarnings("unchecked")
+		Collection<GKInstance> speciesInstances = pathwayInst.getAttributeValuesList(species);
+
+	    return speciesInstances.stream().anyMatch(species -> species.getDisplayName().equals("Homo sapiens"));
 	}
 }

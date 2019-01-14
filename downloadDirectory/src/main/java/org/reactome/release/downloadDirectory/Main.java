@@ -68,7 +68,7 @@ public class Main {
 		br.close();
 		
 		// Temporary system for catching failed steps -- this will need to be cleaned up in future
-		List<String> failedSteps = new ArrayList<String>();
+		List<String> failedSteps = new ArrayList<>();
 		//Begin download directory steps
 		if (stepsToRun.contains("DatabaseDumps")) 
 		{
