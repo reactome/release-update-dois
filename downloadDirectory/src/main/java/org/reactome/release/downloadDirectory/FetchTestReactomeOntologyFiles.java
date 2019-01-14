@@ -5,18 +5,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.sql.Blob;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,12 +33,10 @@ import org.gk.persistence.MySQLAdaptor;
 public class FetchTestReactomeOntologyFiles {
 	private static final Logger logger = LogManager.getLogger();
 	
-	public static void execute(MySQLAdaptor dba, String username, String password, String host, String database, String releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
+	public static void execute(MySQLAdaptor dba, String releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
+		
 		logger.info("Running FetchTestReactomeOntologyFiles step");
-		Class.forName("com.mysql.jdbc.Driver");
-		Connection connect = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?" + "user=" + username + "&password=" + password);
-		Statement statement = connect.createStatement();
-		ResultSet resultSet = statement.executeQuery("SELECT ontology FROM Ontology");
+		ResultSet resultSet = dba.executeQuery("SELECT ontology FROM Ontology", null);
 		// The returned value is a single blob composed of binary and text. The three files produced by this step (pprj, pins, pont) are found within this blob.
 		// A handful of regexes and conditional statements are used to handle this data and output the 3 files. 
 		String pprjFilename = "reactome_data_model.pprj";

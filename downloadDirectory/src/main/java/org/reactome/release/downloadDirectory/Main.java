@@ -122,7 +122,7 @@ public class Main {
 			// This step, (formerly fetchEmptyProject), takes the blob output from the Ontology.ontology and parses it into 3 files
 			// Outputs: reactome_data_model.pprj, reactome_data_model.pont, reactome_data_model.pins
 			try {
-				FetchTestReactomeOntologyFiles.execute(dbAdaptor, username, password, host, database, releaseNumber);
+				FetchTestReactomeOntologyFiles.execute(dbAdaptor, releaseNumber);
 			} catch (Exception e) {
 				failedSteps.add("FetchTestReactomeOntologyFiles");
 				e.printStackTrace();
