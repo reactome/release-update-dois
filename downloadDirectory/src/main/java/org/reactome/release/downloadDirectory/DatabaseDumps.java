@@ -16,12 +16,10 @@ import org.gk.persistence.MySQLAdaptor;
 
 public class DatabaseDumps {
 	private static final Logger logger = LogManager.getLogger();
-	
+
 	public static void execute(String releaseNumber, String username, String password, String host, int port, String testReactomeDatabase) throws IOException, InterruptedException {
 		// Take mysqldumps of 'stable_identifiers' and 'test_reactome_##' and compress them using gzip.
-		
-		//TODO: Refactor
-		
+
 		logger.info("Running DatabaseDumps step");
 		// Create databases folder that will hold the DB dumps
 		Files.createDirectories(Paths.get(releaseNumber + "/databases"));
@@ -29,10 +27,10 @@ public class DatabaseDumps {
 		dumpDatabaseAndGzip("stable_identifiers", username, password, host, port, releaseNumber + "/databases/gk_stable_ids.sql");
 		// Generate test_reactome dump
 		dumpDatabaseAndGzip(testReactomeDatabase, username, password, host, port, releaseNumber + "/databases/gk_current.sql");
-		
+
 		logger.info("Finished DatabaseDumps");
 	}
-	
+
 	private static void dumpDatabaseAndGzip(String databaseName, String username, String password, String host, int port, String dumpFile)
 		throws IOException, InterruptedException{
 
@@ -41,7 +39,7 @@ public class DatabaseDumps {
 		Files.delete(Paths.get(dumpFile));
 	}
 
-	private static void dumpDatabase(String databaseName, String username, String password, String host, int port, String dumpFile) 
+	private static void dumpDatabase(String databaseName, String username, String password, String host, int port, String dumpFile)
 		throws IOException, InterruptedException {
 		logger.info("Dumping " + databaseName + " to " + dumpFile);
 		File gkCurrentFile = new File(dumpFile);

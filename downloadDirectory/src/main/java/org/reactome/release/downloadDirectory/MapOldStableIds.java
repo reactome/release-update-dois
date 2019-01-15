@@ -19,9 +19,9 @@ import java.util.Map;
 public class MapOldStableIds {
 	private static final Logger logger = LogManager.getLogger();
 	private static final String filename = "reactome_stable_ids.txt";
-	
+
 	public static void execute(String username, String password, String host, String releaseNumber) throws Exception {
-		
+
 		logger.info("Running MapOldStableIds step");
 		// Need to use mysql driver to access stable_identifiers db
 		logger.info("Connecting to stable_identifers db...");
@@ -29,31 +29,31 @@ public class MapOldStableIds {
 		Connection connect = DriverManager.getConnection("jdbc:mysql://" + host + "/stable_identifiers?" + "user=" + username + "&password=" + password);
 		Statement statement = connect.createStatement();
 		ResultSet resultSet = statement.executeQuery("SELECT identifier,instanceId FROM StableIdentifier");
-		
+
 
 		logger.info("Mapping Old Stable IDs to Current Stable IDs...");
 		Map<String, List<String>> dbIdToStableIds = getDbIdToStableIds(resultSet);
 		List<String> dbIds = new ArrayList<>(dbIdToStableIds.keySet());
 		Collections.sort(dbIds);
-		
+
 		// Iterate through array of stable IDs associated with DB ID, splitting into human and non-human groups
 		List<List<Object>> hsaIds = new ArrayList<>();
 		List<List<Object>> nonHsaIds = new ArrayList<>();
-		for (String dbId : dbIds) 
+		for (String dbId : dbIds)
 		{
 			List<String> stableIds = dbIdToStableIds.get(dbId);
 			Collections.sort(stableIds);
-			
+
 			// After sorting the first stable ID in the array is considered the primary ID.
-			// An Array of Arrays is used here, with each interior array's first element being 
+			// An Array of Arrays is used here, with each interior array's first element being
 			// the primaryId string and the second element being an array of the remaining stable IDs.
 			// Example: [R-HSA-1006169, [REACT_118604]], [R-HSA-1006173, [REACT_119254]]]
-			if (!(stableIds.size() < 2) || (stableIds.get(0).matches("^R-.*"))) 
+			if (!(stableIds.size() < 2) || (stableIds.get(0).matches("^R-.*")))
 			{
 				String primaryId = stableIds.get(0);
 				stableIds.remove(0);
 				ArrayList<Object> organizedIds = new ArrayList<>();
-				if (primaryId.matches("R-HSA.*")) 
+				if (primaryId.matches("R-HSA.*"))
 				{
 					organizedIds.add(primaryId);
 					organizedIds.add(stableIds);
@@ -72,11 +72,11 @@ public class MapOldStableIds {
 		combinedIds.addAll(nonHsaIds);
 		List<List<Object>> preferredIds = new ArrayList<>();
 		List<List<Object>> deferredIds = new ArrayList<>();
-		for (List<Object> stableIdsArray : combinedIds) 
+		for (List<Object> stableIdsArray : combinedIds)
 		{
 			@SuppressWarnings("unchecked")
 			List<String> secondaryIds = (List<String>) stableIdsArray.get(1);
-			if (secondaryIds.size() > 1) 
+			if (secondaryIds.size() > 1)
 			{
 				deferredIds.add(stableIdsArray);
 			} else {
@@ -84,7 +84,7 @@ public class MapOldStableIds {
 			}
 		}
 		preferredIds.addAll(deferredIds);
-		
+
 		// Write to file
 		File oldIdMappingFile = new File(filename);
 		if (oldIdMappingFile.exists()) {
@@ -93,7 +93,7 @@ public class MapOldStableIds {
 		oldIdMappingFile.createNewFile();
 		String header = "# Reactome stable IDs for release " + releaseNumber + "\n" + "Stable_ID\told_identifier(s)\n";
 		Files.write(Paths.get(filename), header.getBytes(), StandardOpenOption.APPEND);
-		for (List<Object> stableIdsArray : preferredIds) 
+		for (List<Object> stableIdsArray : preferredIds)
 		{
 			String primaryId = (String) stableIdsArray.get(0);
 			@SuppressWarnings("unchecked")
@@ -103,7 +103,7 @@ public class MapOldStableIds {
 		}
 		String outpathName = releaseNumber + "/" + filename;
 		Files.move(Paths.get(filename), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING);
-		
+
 		logger.info("MapOldStableIds finished");
 	}
 

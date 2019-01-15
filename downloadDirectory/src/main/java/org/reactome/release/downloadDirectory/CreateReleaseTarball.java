@@ -20,10 +20,10 @@ import static org.bbop.util.ProcessCommunicator.run;
 public class CreateReleaseTarball {
 	private static final Logger logger = LogManager.getLogger();
 	public static boolean runPerl = true;
-	
+
 	public static void execute(String releaseNumber, String releaseDownloadDir) throws IOException, InterruptedException {
 		logger.info("Running CreateReleaseTarball step");
-		
+
 		if (runPerl) {
 			runCommand("perl " + releaseDownloadDir + "/make_release_tarball.pl " + releaseNumber);
 		} else {
@@ -54,7 +54,7 @@ public class CreateReleaseTarball {
 			final String tarballTargetPath = "reactome_tar/" + releaseNumber + "/reactome/";
 			releaseNumber = releaseNumber.replace("/", "");
 			//TODO: When the dust has settled, make sure the tarball contains everything we need
-			
+
 			// Remove any existing Release repositorys
 			Files.createDirectories(Paths.get(tarDirRelease));
 			logger.info("Cloning Release: " + releaseRepo + "...");
@@ -63,7 +63,7 @@ public class CreateReleaseTarball {
 				logger.info("Finshed cloning Release repository");
 			} catch (GitAPIException e) {
 				logger.error("Release repository could not be cloned from GitHub due to the following error: ", e);
-			} 
+			}
 			logger.info("Copying files into reactome_tar directory...");
 			Files.createDirectories(Paths.get(tarDirGKB));
 			try {
@@ -78,9 +78,9 @@ public class CreateReleaseTarball {
 			copyFile(Paths.get(statsReleasePNGSource), Paths.get(statsReleaseTarget));
 			runCommand("rm -fr " + downloadHTMLPath);
 			Files.createDirectories(Paths.get(downloadHTMLPath + releaseNumber));
-			
+
 			runCommand("cp -t"  + downloadHTMLPath + " " + allInteractionsHTML + " " + indexHTML);
-	
+
 			// This step might not be needed anymore, according to a comment in the old code (make_release_tarball.pl)
 			logger.info("Producing config.tar.gz file from " + thirdPartyRepoPath + "...");
 			Files.createDirectories(Paths.get(thirdPartyRepoPath));
@@ -88,19 +88,19 @@ public class CreateReleaseTarball {
 
 			Files.createDirectories(Paths.get(analysisServicePath + "/temp"));
 			Files.createDirectories(Paths.get(analysisServicePath + "/input"));
-		
+
 			logger.info("Copying fireworks directory into reactome_tar...");
 			FileUtils.copyDirectory(new File(fireworksSourcePath), new File(fireworksTargetPath));
 			logger.info("Copying diagram files into reactome_tar...");
 			copyFile(Paths.get(diagramsSourcePath), Paths.get(diagramsTargetPath));
 			copyFile(Paths.get(analysisBinSourcePath), Paths.get(analysisBinTargetPath));
 			// It usually created a 'RESTful' directory here. All it contains is an empty 'temp' subdirectory, so it wasn't included for this rewrite.
-			
+
 			// Tar everything
-			
+
 			logger.info("Generating reactome tarball...");
 			runCommand("tar czf " + tarballSourcePath + " -C " + tarballTargetPath + ".");
-	
+
 			runCommand("rm -r reactome_tar/");
 		}
 		// TODO: Solr, apache-tomcat(?), install_reactome.sh modification

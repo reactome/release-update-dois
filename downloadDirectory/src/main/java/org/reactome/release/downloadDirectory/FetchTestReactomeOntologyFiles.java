@@ -19,36 +19,36 @@ import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
 /**
- * 
+ *
  * @author jcook
  *		Explanation of this module:
 		We are taking from value of the 'ontology' attribute from test_reactome_XX.Ontology. This returns a blob that can be divided into 3 sections: pprj, pont, and pins.
 		Unfortunately, the blob isn't cleanly divided into 3 sections, as between sections 1 and 2 there are some extra content not needed.
 		The content of the pprj file appears first. We take all content from the blob until the string 'pprj_file_content' appears. This signifies the end of that file.
-		Next, we iterate through the lines of the blob until a second dateTime string appears  (signifying the start of the pont file) and subsequently 
+		Next, we iterate through the lines of the blob until a second dateTime string appears  (signifying the start of the pont file) and subsequently
 		add all content until the string 'pont_file_content' appears, signifying the end of the pont file.
 		Finally, the rest of the blob pertains to the 'pins' file, so the remaining content is appended to the pins file.
  */
 
 public class FetchTestReactomeOntologyFiles {
 	private static final Logger logger = LogManager.getLogger();
-	
+
 	public static void execute(MySQLAdaptor dba, String releaseNumber) throws SQLException, ClassNotFoundException, UnsupportedEncodingException, FileNotFoundException, IOException {
-		
+
 		logger.info("Running FetchTestReactomeOntologyFiles step");
 		ResultSet resultSet = dba.executeQuery("SELECT ontology FROM Ontology", null);
 		// The returned value is a single blob composed of binary and text. The three files produced by this step (pprj, pins, pont) are found within this blob.
-		// A handful of regexes and conditional statements are used to handle this data and output the 3 files. 
+		// A handful of regexes and conditional statements are used to handle this data and output the 3 files.
 		String pprjFilename = "reactome_data_model.pprj";
 		String pontFilename = "reactome_data_model.pont";
 		String pinsFilename = "reactome_data_model.pins";
-		
-		createOutputFile(pprjFilename);		
+
+		createOutputFile(pprjFilename);
 		createOutputFile(pontFilename);
 		createOutputFile(pinsFilename);
-		
+
 		while (resultSet.next()) {
-			
+
 			Blob blob = resultSet.getBlob("ontology");
 			BufferedReader br = new BufferedReader(new InputStreamReader(blob.getBinaryStream()));
 
@@ -77,7 +77,7 @@ public class FetchTestReactomeOntologyFiles {
 					continue;
 				}
 				line += "\n";
-				
+
 				// Generate pprj file
 				if (dateTimeCounter == 1 && pprjSwitch) {
 					if (line.contains("pprj_file_content")) {
@@ -92,7 +92,7 @@ public class FetchTestReactomeOntologyFiles {
 					}
 					Files.write(Paths.get(pprjFilename), line.getBytes(), StandardOpenOption.APPEND);
 				}
-				
+
 				// Generate pont file
 				if (dateTimeCounter == 2 && line.startsWith(";")) {
 					pontSwitch = true;
@@ -105,7 +105,7 @@ public class FetchTestReactomeOntologyFiles {
 					}
 					Files.write(Paths.get(pontFilename), line.getBytes(), StandardOpenOption.APPEND);
 				}
-				
+
 				// Generate pins file
 				if (dateTimeCounter == 3) {
 					if (line.contains("pins_file_stub")) {
@@ -126,7 +126,7 @@ public class FetchTestReactomeOntologyFiles {
 		moveFile(pprjFilename, outpathName + "pprj");
 		moveFile(pontFilename, outpathName + "pont");
 		moveFile(pinsFilename, outpathName + "pins");
-		
+
 		logger.info("Finished FetchTestReactomeOntologyFiles");
 	}
 
@@ -137,9 +137,9 @@ public class FetchTestReactomeOntologyFiles {
 		}
 		file.createNewFile();
 	}
-	
+
 	private static void moveFile(String filename, String outfilePath) throws IOException {
 		Files.move(Paths.get(filename), Paths.get(outfilePath), StandardCopyOption.REPLACE_EXISTING);
-		
+
 	}
 }

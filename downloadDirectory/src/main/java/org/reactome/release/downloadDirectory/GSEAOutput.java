@@ -22,22 +22,22 @@ import org.reactome.gsea.ReactomeToMsigDBExport;
 public class GSEAOutput {
 	private static final Logger logger = LogManager.getLogger();
 	private static final String outFilename = "ReactomePathways.gmt";
-	
+
 	public static void execute(MySQLAdaptor dba, String releaseNumber) throws Exception {
 		logger.info("Running GSEAOutput step");
-		
+
 		// Generate the ReactomePathways.gmt file
 		ReactomeToMsigDBExport exporter = new ReactomeToMsigDBExport();
 		exporter.setIsForGMT(true);
 		exporter.setDBA(dba);
 		exporter.export(outFilename);
-		
+
 		logger.info("Updating ReactomePathways.gmt with 'Reactome Pathway' column...");
 		updateGSEAFile();
-		
+
 		logger.info("Zipping ReactomePathways.gmt...");
 		zipGSEAFile(releaseNumber);
-		
+
 		logger.info("Finished GSEAOutput");
 	}
 
@@ -45,9 +45,9 @@ public class GSEAOutput {
 	private static void updateGSEAFile() throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader(outFilename));
 		StringBuffer inputBuffer = new StringBuffer();
-		
+
 		String line;
-		while ((line = br.readLine()) != null) 
+		while ((line = br.readLine()) != null)
 		{
 			String[] tabSplit = line.split("\t");
 			List<String> updatedLine = new ArrayList<>();
@@ -68,7 +68,7 @@ public class GSEAOutput {
 		fileOut.write(updatedLines.getBytes());
 		fileOut.close();
 	}
-	
+
 	// Zips the GSEA file and then removes the original
 	private static void zipGSEAFile(String releaseNumber) throws IOException {
 		FileOutputStream fos = new FileOutputStream(outFilename + ".zip");
@@ -76,20 +76,20 @@ public class GSEAOutput {
 		ZipEntry ze = new ZipEntry(outFilename);
 		zos.putNextEntry(ze);
 		FileInputStream inputStream = new FileInputStream(outFilename);
-		
+
 		byte[] bytes = new byte[1024];
 		int length;
-		
-		while ((length = inputStream.read(bytes)) > 0) 
+
+		while ((length = inputStream.read(bytes)) > 0)
 		{
 			zos.write(bytes, 0, length);
 		}
-		
+
 		inputStream.close();
 		zos.closeEntry();
 		zos.close();
 		Files.delete(Paths.get(outFilename));
 		String outpathName = releaseNumber + "/" + outFilename + ".zip";
-		Files.move(Paths.get(outFilename + ".zip"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
+		Files.move(Paths.get(outFilename + ".zip"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING);
 	}
 }
