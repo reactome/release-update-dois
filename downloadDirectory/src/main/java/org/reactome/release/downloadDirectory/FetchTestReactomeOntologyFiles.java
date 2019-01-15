@@ -59,8 +59,8 @@ public class FetchTestReactomeOntologyFiles {
 			String str;
 			logger.info("Generating " + pprjFilename + ", " + pontFilename + ", and " + pinsFilename);
 			while ((str = br.readLine()) != null) {
-				
-				String[] splitLine = str.split(";");
+				String line = str;
+				String[] splitLine = line.split(";");
 				// A very specific regex for matching a datetime string -- Could probably be matched to a specific format that looks cleaner
 				if (splitLine.length > 1 && splitLine[1].matches("( [A-Z][a-z]{2}){2} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3} [0-9]{4}")) {
 					String dateTime = ";" + splitLine[1] + "\n";
@@ -76,45 +76,45 @@ public class FetchTestReactomeOntologyFiles {
 					}
 					continue;
 				}
-				str += "\n";
+				line += "\n";
 				
 				// Generate pprj file
 				if (dateTimeCounter == 1 && pprjSwitch) {
-					if (str.contains("pprj_file_content")) {
-						str = "\n";
+					if (line.contains("pprj_file_content")) {
+						line = "\n";
 						pprjSwitch = false;
 					}
-					if (str.contains(".pont")) {
-						str = str.replaceAll("[a-zA-Z0-9]+.pont", pontFilename);
+					if (line.contains(".pont")) {
+						line = line.replaceAll("[a-zA-Z0-9]+.pont", pontFilename);
 					}
-					if (str.contains(".pins")) {
-						str = str.replaceAll("[a-zA-Z0-9]+.pins", pinsFilename);
+					if (line.contains(".pins")) {
+						line = line.replaceAll("[a-zA-Z0-9]+.pins", pinsFilename);
 					}
-					Files.write(Paths.get(pprjFilename), str.getBytes(), StandardOpenOption.APPEND);
+					Files.write(Paths.get(pprjFilename), line.getBytes(), StandardOpenOption.APPEND);
 				}
 				
 				// Generate pont file
-				if (dateTimeCounter == 2 && str.startsWith(";")) {
+				if (dateTimeCounter == 2 && line.startsWith(";")) {
 					pontSwitch = true;
 				}
 				if (pontSwitch) {
-					if (str.contains("pont_file_content")) {
-						String[] asciiSplit = str.split("\\)\\)\\)");
-						str = asciiSplit[0] + ")))\n";
+					if (line.contains("pont_file_content")) {
+						String[] asciiSplit = line.split("\\)\\)\\)");
+						line = asciiSplit[0] + ")))\n";
 						pontSwitch = false;
 					}
-					Files.write(Paths.get(pontFilename), str.getBytes(), StandardOpenOption.APPEND);
+					Files.write(Paths.get(pontFilename), line.getBytes(), StandardOpenOption.APPEND);
 				}
 				
 				// Generate pins file
 				if (dateTimeCounter == 3) {
-					if (str.contains("pins_file_stub")) {
-						str = "\n";
+					if (line.contains("pins_file_stub")) {
+						line = "\n";
 					}
 
 					if (pinsSwitch) {
-						if (str.startsWith(";") || str.startsWith("(") || str.startsWith(")") || str.startsWith("\n") || str.startsWith("\t")) {
-							Files.write(Paths.get(pinsFilename), str.getBytes(), StandardOpenOption.APPEND);
+						if (line.startsWith(";") || line.startsWith("(") || line.startsWith(")") || line.startsWith("\n") || line.startsWith("\t")) {
+							Files.write(Paths.get(pinsFilename), line.getBytes(), StandardOpenOption.APPEND);
 						} else {
 							pinsSwitch = false;
 						}
