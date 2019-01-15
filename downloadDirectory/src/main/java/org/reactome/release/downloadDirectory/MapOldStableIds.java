@@ -8,10 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,25 +30,10 @@ public class MapOldStableIds {
 		Statement statement = connect.createStatement();
 		ResultSet resultSet = statement.executeQuery("SELECT identifier,instanceId FROM StableIdentifier");
 		
-		// Iterate through returned results of DB IDs and stable IDs 
+
 		logger.info("Mapping Old Stable IDs to Current Stable IDs...");
-		Map<String,List<String>> dbIdToStableIds = new HashMap<>();
-		List<String> dbIds = new ArrayList<String>();
-		while (resultSet.next()) 
-		{
-			String stableId = resultSet.getString(1);
-			String dbId = resultSet.getString(2);
-			
-			if (dbIdToStableIds.get(dbId) != null) 
-			{
-				dbIdToStableIds.get(dbId).add(stableId);
-			} else {
-				ArrayList<String> stableIds = new ArrayList<>();
-				stableIds.add(stableId);
-				dbIdToStableIds.put(dbId, stableIds);
-				dbIds.add(dbId);
-			}
-		}
+		Map<String, List<String>> dbIdToStableIds = getDbIdToStableIds(resultSet);
+		List<String> dbIds = new ArrayList<>(dbIdToStableIds.keySet());
 		Collections.sort(dbIds);
 		
 		// Iterate through array of stable IDs associated with DB ID, splitting into human and non-human groups
@@ -123,5 +105,25 @@ public class MapOldStableIds {
 		Files.move(Paths.get(filename), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING);
 		
 		logger.info("MapOldStableIds finished");
+	}
+
+	// Iterate through returned results of DB IDs and stable IDs 
+	private static Map<String, List<String>> getDbIdToStableIds(ResultSet resultSet) throws SQLException {
+		Map<String, List<String>> dbIdToStableIds = new HashMap<>();
+
+		// Iterate through returned results of DB IDs and stable IDs
+		while (resultSet.next()) {
+			String stableId = resultSet.getString(1);
+			String dbId = resultSet.getString(2);
+
+			if (dbIdToStableIds.get(dbId) != null) {
+				dbIdToStableIds.get(dbId).add(stableId);
+			} else {
+				List<String> stableIds = new ArrayList<>(Collections.singletonList(stableId));
+				dbIdToStableIds.put(dbId, stableIds);
+			}
+		}
+
+		return dbIdToStableIds;
 	}
 }
