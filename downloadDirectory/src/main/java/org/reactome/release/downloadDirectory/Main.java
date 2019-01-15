@@ -86,8 +86,15 @@ public class Main {
 			// This step runs BioPAX level 2 and BioPAX level 3 for Reactome's data using the Pathway-Exchange functions
 			// Outputs: biopax2.zip and biopax2_validator.zip, and biopax.zip and biopax_validator.zip (for level 3)
 			// These zip files should contain a number of species-specific 'owl' (BioPAX files) and 'xml' validation files
+			List<Integer> biopaxLevels = new ArrayList<>();
+			if (stepsToRun.contains("BioPAX2")) {
+				biopaxLevels.add(2);
+			}
+			if (stepsToRun.contains("BioPAX3")) {
+				biopaxLevels.add(3);
+			}
 			try {
-				Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig, stepsToRun.contains("BioPAX2"), stepsToRun.contains("BioPAX3"));
+				Biopax.execute(username, password, host, Integer.toString(port), database, releaseNumber, pathToSpeciesConfig, biopaxLevels);
 			} catch (Exception e) {
 				failedSteps.add("BioPAX");
 				//TODO: Catch the specific exception when its a DataModel problem
