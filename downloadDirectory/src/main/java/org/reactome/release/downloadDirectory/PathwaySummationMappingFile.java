@@ -22,13 +22,14 @@ public class PathwaySummationMappingFile {
 	
 	@SuppressWarnings("unchecked")
 	public static void execute(MySQLAdaptor dba, String releaseNumber) throws Exception {
-		
+		final String pathwaySummationFilename = "pathway2summation.txt";
+
 		logger.info("Running PathwaySummationMappingFile step");
 		// Get all Pathway instances
 		Collection<GKInstance> pathwayInstances = dba.fetchInstancesByClass(Pathway);
 		Set<String> rowHash = new HashSet<>();
 		//Create file
-		logger.info("Generating pathway2summation.txt file...");
+		logger.info("Generating " + pathwaySummationFilename + " file...");
 		File pathwaySummationFile = new File(pathwaySummationFilename);
 		pathwaySummationFile.delete();
 		pathwaySummationFile.createNewFile();
@@ -46,14 +47,14 @@ public class PathwaySummationMappingFile {
 					// Filter duplicates
 					if (!rowHash.contains(row)) 
 					{
-						Files.write(Paths.get("pathway2summation.txt"), row.getBytes(), StandardOpenOption.APPEND);
+						Files.write(Paths.get(pathwaySummationFilename), row.getBytes(), StandardOpenOption.APPEND);
 						rowHash.add(row);
 					}
 				}
 			}
 		}
-		String outpathName = releaseNumber + "/pathway2summation.txt";
-		Files.move(Paths.get("pathway2summation.txt"), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING); 
+		String outpathName = releaseNumber + "/" + pathwaySummationFilename;
+		Files.move(Paths.get(pathwaySummationFilename), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING);
 		
 		logger.info("Finished PathwaySummationMappingFile");
 	}

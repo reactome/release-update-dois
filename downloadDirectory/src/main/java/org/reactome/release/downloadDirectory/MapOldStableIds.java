@@ -107,7 +107,7 @@ public class MapOldStableIds {
 		logger.info("MapOldStableIds finished");
 	}
 
-	// Iterate through returned results of DB IDs and stable IDs 
+	// Iterate through returned results of DB IDs and stable IDs
 	private static Map<String, List<String>> getDbIdToStableIds(ResultSet resultSet) throws SQLException {
 		Map<String, List<String>> dbIdToStableIds = new HashMap<>();
 
