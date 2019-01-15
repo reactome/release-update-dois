@@ -19,11 +19,9 @@ import org.gk.schema.InvalidAttributeException;
 public class PathwaySummationMappingFile {
 	private static final Logger logger = LogManager.getLogger();
 	private static final String pathwaySummationFilename = "pathway2summation.txt";
-	
+
 	@SuppressWarnings("unchecked")
 	public static void execute(MySQLAdaptor dba, String releaseNumber) throws Exception {
-		final String pathwaySummationFilename = "pathway2summation.txt";
-
 		logger.info("Running PathwaySummationMappingFile step");
 		// Get all Pathway instances
 		Collection<GKInstance> pathwayInstances = dba.fetchInstancesByClass(Pathway);
