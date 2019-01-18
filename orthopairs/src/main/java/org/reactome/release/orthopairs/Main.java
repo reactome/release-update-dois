@@ -2,8 +2,7 @@ package org.reactome.release.orthopairs;
 
 import java.io.*;
 import java.net.URL;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -34,16 +33,23 @@ public class Main
         String releaseNumber = props.get("releaseNumber").toString();
         String pathToSpeciesConfig = props.get("pathToSpeciesConfig").toString();
         String pathToXMLQuery = props.get("pathToXMLQuery").toString();
-        URL pantherFileURL = new URL(props.get("pantherFileURL").toString());
-        String pantherFilename = props.get("pantherFilename").toString();
-        String pantherFilenameWithRelease = releaseNumber + "_" + pantherFilename;
-        File pantherFileTar = new File(pantherFilenameWithRelease);
+        String pantherFilepath = props.get("pantherFileURL").toString();
+        String pantherQfOFilename = props.get("pantherQfOFilename").toString();
+        String pantherHCOPFilename = props.get("pantherHCOPFilename").toString();
 
-        if (!pantherFileTar.exists()) {
-            System.out.println("Downloading " + pantherFileURL);
-            FileUtils.copyURLToFile(pantherFileURL, new File(pantherFilenameWithRelease));
-        } else {
-            System.out.println(pantherFileTar + " already exists");
+        List<String> pantherFiles = new ArrayList<String>(Arrays.asList(pantherQfOFilename, pantherHCOPFilename));
+
+        for (String pantherFilename : pantherFiles) {
+            URL pantherFileURL = new URL(pantherFilepath + pantherFilename);
+            String pantherFilenameWithRelease = releaseNumber + "_" + pantherFilename;
+            File pantherFileTar = new File(pantherFilenameWithRelease);
+
+            if (!pantherFileTar.exists()) {
+                System.out.println("Downloading " + pantherFileURL);
+                FileUtils.copyURLToFile(pantherFileURL, new File(pantherFilenameWithRelease));
+            } else {
+                System.out.println(pantherFileTar + " already exists");
+            }
         }
 
         JSONParser parser = new JSONParser();
@@ -57,6 +63,7 @@ public class Main
             sourceMappingSpecies = "hsap";
         }
 
+        Set<String> pantherSpeciesNames = new HashSet<>();
         for (Object speciesKey : speciesJSONFile.keySet()) {
 
             JSONObject speciesJSONObject = (JSONObject) speciesJSONFile.get(speciesKey);
@@ -66,6 +73,7 @@ public class Main
                 biomartFilename += "_protein_gene_mapping.txt";
             } else {
                 biomartFilename += "_gene_protein_mapping.txt";
+                pantherSpeciesNames.add(speciesJSONObject.get("panther_name").toString());
             }
             File biomartFile = new File(biomartFilename);
 
@@ -86,31 +94,42 @@ public class Main
             }
         }
 
-        File extractedPantherFile = new File(pantherFilename.replace(".tar.gz", ""));
-        if (!extractedPantherFile.exists()) {
-            InputStream is = new FileInputStream(pantherFileTar);
-            GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(is);
-            TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn);
-            TarArchiveEntry tarFile;
-            while ((tarFile = (TarArchiveEntry) tarIn.getNextEntry()) != null) {
-                int count;
-                byte data[] = new byte[1024];
-                FileOutputStream fos = new FileOutputStream(tarFile.getName(), false);
-                try (BufferedOutputStream dest = new BufferedOutputStream(fos, 1024)) {
-                    while ((count = tarIn.read(data, 0, 1024)) != -1) {
-                        dest.write(data, 0, count);
+        for (String pantherFilename : pantherFiles) {
+            String pantherFilenameWithRelease = releaseNumber + "_" + pantherFilename;
+            File pantherFileTar = new File(pantherFilenameWithRelease);
+            File extractedPantherFile = new File(pantherFilename.replace(".tar.gz", ""));
+            if (!extractedPantherFile.exists()) {
+                InputStream is = new FileInputStream(pantherFileTar);
+                GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(is);
+                TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn);
+                TarArchiveEntry tarFile;
+                while ((tarFile = (TarArchiveEntry) tarIn.getNextEntry()) != null) {
+                    int count;
+                    byte data[] = new byte[1024];
+                    FileOutputStream fos = new FileOutputStream(tarFile.getName(), false);
+                    try (BufferedOutputStream dest = new BufferedOutputStream(fos, 1024)) {
+                        while ((count = tarIn.read(data, 0, 1024)) != -1) {
+                            dest.write(data, 0, count);
+                        }
+                    }
+                    //TODO: Version output file
+                }
+            } else {
+                System.out.println("Panther file has already been extracted");
+            }
+
+            BufferedReader br = new BufferedReader(new FileReader(extractedPantherFile));
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("HUMAN")) {
+                    String[] tabSplit = line.split("\t");
+                    String[] speciesSplit = tabSplit[1].split("\\|");
+                    if (pantherSpeciesNames.contains(speciesSplit[0])) {
+                        //TODO
                     }
                 }
-                //TODO: Version output file
             }
-        } else {
-            System.out.println("Panther file has already been extracted");
-        }
-
-        BufferedReader br = new BufferedReader(new FileReader(extractedPantherFile));
-        String line;
-        while ((line = br.readLine()) != null) {
-//            System.out.println(line);
         }
     }
+
 }
