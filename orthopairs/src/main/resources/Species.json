@@ -23,7 +23,8 @@
 			"Dictyostelium discoideum"
 		],
 		"mart_virtual_schema":"protists_mart",
-		"group":"Eukaryotes"
+		"group":"Eukaryotes",
+		"panther_name":"DICDI"
 	},
 	"cele":{
 		"alt_refdb":{
@@ -48,7 +49,8 @@
 		],
 		"mart_group":"celegans_gene_ensembl",
 		"compara":"core",
-		"group":"Metazoan"
+		"group":"Metazoan",
+		"panther_name":"CAEEL"
 	},
 	"scer":{
 		"mart_group":"scerevisiae_gene_ensembl",
@@ -74,7 +76,8 @@
 			"url":"http://www.yeastgenome.org"
 		},
 		"group":"Fungi/Plants",
-		"compara":"core"
+		"compara":"core",
+		"panther_name":"YEAST"
 	},
 	"sscr":{
 		"group":"Vertebrate",
@@ -92,7 +95,8 @@
 				"ENSEMBL_Sus_scrofa_PROTEIN"
 			],
 			"access":"http://www.ensembl.org/Sus_scrofa/Transcript/ProteinSummary?peptide=###ID###"
-		}
+		},
+		"panther_name":"PIG"
 	},
 	"hsap":{
 		"group":"Human",
@@ -109,7 +113,8 @@
 				"ENSEMBL_Homo_sapiens_PROTEIN"
 			],
 			"access":"http://www.ensembl.org/Homo_sapiens/Transcript/ProteinSummary?peptide=###ID###"
-		}
+		},
+		"panther_name":"HUMAN"
 	},
 	"ggal":{
 		"refdb":{
@@ -127,7 +132,8 @@
 			"Gallus gallus"
 		],
 		"compara":"core",
-		"group":"Vertebrate"
+		"group":"Vertebrate",
+		"panther_name":"CHICK"
 	},
 	"xtro":{
 		"mart_group":"xtropicalis_gene_ensembl",
@@ -145,26 +151,8 @@
 			"ensg_access":"http://www.ensembl.org/Xenopus_tropicalis/geneview?gene=###ID###&db=core"
 		},
 		"group":"Vertebrate",
-		"compara":"core"
-	},
-	"osat":{
-		"name":[
-			"Oryza sativa"
-		],
-		"mart_group":"osativa_eg_gene",
-		"mart_url":"http://plants.ensembl.org/biomart/martservice",
-		"refdb":{
-			"dbname":[
-				"ENSEMBL",
-				"Ensembl",
-				"ENSEMBL_Oryza_sativa_PROTEIN"
-			],
-			"access":"http://plants.ensembl.org/Oryza_sativa/Transcript/ProteinSummary?peptide=###ID###",
-			"url":"http://plants.ensembl.org/Oryza_sativa/Info/Index",
-			"ensg_access":"http://plants.ensembl.org/Oryza_sativa/geneview?gene=###ID###&db=core"
-		},
-		"mart_virtual_schema":"plants_mart",
-		"group":"Fungi/Plants"
+		"compara":"core",
+		"panther_name":"XENTR"
 	},
 	"spom":{
 		"group":"Fungi/Plants",
@@ -190,7 +178,8 @@
 			"access":"http://fungi.ensembl.org/Schizosaccharomyces_pombe/Transcript/ProteinSummary?peptide=###ID###",
 			"ensg_access":"http://fungi.ensembl.org/Schizosaccharomyces_pombe/geneview?gene=###ID###&db=core",
 			"url":"http://fungi.ensembl.org/Schizosaccharomyces_pombe/Info/Index"
-		}
+		},
+		"panther_name":"SCHPO"
 	},
 	"btau":{
 		"refdb":{
@@ -208,7 +197,8 @@
 			"Bos taurus"
 		],
 		"compara":"core",
-		"group":"Vertebrate"
+		"group":"Vertebrate",
+		"panther_name":"BOVIN"
 	},
 	"mmus":{
 		"refdb":{
@@ -226,7 +216,8 @@
 			"Mus musculus"
 		],
 		"compara":"core",
-		"group":"Vertebrate"
+		"group":"Vertebrate",
+		"panther_name":"MOUSE"
 	},
 	"cfam":{
 		"compara":"core",
@@ -244,7 +235,8 @@
 		"name":[
 			"Canis familiaris"
 		],
-		"mart_group":"cfamiliaris_gene_ensembl"
+		"mart_group":"cfamiliaris_gene_ensembl",
+		"panther_name":"CANLF"
 	},
 	"pfal":{
 		"mart_group":"pfalciparum_eg_gene",
@@ -270,7 +262,8 @@
 			"url":"http://plasmodb.org"
 		},
 		"group":"Eukaryotes",
-		"mart_virtual_schema":"protists_mart"
+		"mart_virtual_schema":"protists_mart",
+		"panther_name":"PLAF7"
 	},
 	"dmel":{
 		"compara":"core",
@@ -295,34 +288,8 @@
 		"mart_group":"dmelanogaster_gene_ensembl",
 		"name":[
 			"Drosophila melanogaster"
-		]
-	},
-	"atha":{
-		"group":"Fungi/Plants",
-		"mart_virtual_schema":"plants_mart",
-		"refdb":{
-			"access":"http://plants.ensembl.org/Arabidopsis_thaliana/Transcript/ProteinSummary?peptide=###ID###",
-			"dbname":[
-				"ENSEMBL",
-				"Ensembl",
-				"ENSEMBL_Arabidopsis_PROTEIN"
-			],
-			"url":"http://plants.ensembl.org/Arabidopsis_thaliana",
-			"ensg_access":"http://plants.ensembl.org/Arabidopsis_thaliana/geneview?gene=###ID###&db=core"
-		},
-		"mart_url":"http://plants.ensembl.org/biomart/martservice",
-		"alt_refdb":{
-			"url":"http://www.arabidopsis.org/index.jsp",
-			"alt_id":"-TAIR-G",
-			"dbname":[
-				"TAIR"
-			],
-			"access":"http://www.arabidopsis.org/servlets/TairObject?type=locus&name=###ID###"
-		},
-		"mart_group":"athaliana_eg_gene",
-		"name":[
-			"Arabidopsis thaliana"
-		]
+		],
+		"panther_name":"DROME"
 	},
 	"drer":{
 		"mart_group":"drerio_gene_ensembl",
@@ -340,7 +307,8 @@
 			"url":"http://www.ensembl.org/Danio_rerio/Info/Index/"
 		},
 		"group":"Vertebrate",
-		"compara":"core"
+		"compara":"core",
+		"panther_name":"DANRE"
 	},
 	"rnor":{
 		"compara":"core",
@@ -358,6 +326,7 @@
 		"mart_group":"rnorvegicus_gene_ensembl",
 		"name":[
 			"Rattus norvegicus"
-		]
+		],
+		"panther_name":"RAT"
 	}
 }
