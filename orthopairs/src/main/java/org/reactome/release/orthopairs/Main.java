@@ -4,7 +4,12 @@ import java.io.*;
 import java.net.URL;
 import java.util.List;
 import java.util.Properties;
+import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -81,10 +86,19 @@ public class Main
             }
         }
 
-        speciesJSONFile.remove(sourceMappingSpecies);
-        for (Object speciesKey : speciesJSONFile.keySet()) {
-            System.out.println(speciesKey);
+        InputStream is = new FileInputStream(pantherFile);
+        GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(is);
+        TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn);
+        TarArchiveEntry tarFile;
+        while ((tarFile = (TarArchiveEntry) tarIn.getNextEntry()) != null) {
+            int count;
+            byte data[] = new byte[1024];
+            FileOutputStream fos = new FileOutputStream(tarFile.getName(), false);
+            try (BufferedOutputStream dest = new BufferedOutputStream(fos, 1024)) {
+                while ((count = tarIn.read(data, 0, 1024)) != -1) {
+                    dest.write(data, 0, count);
+                }
+            }
         }
-        
     }
 }
