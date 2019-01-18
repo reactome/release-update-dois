@@ -20,7 +20,7 @@ public class MappingFileGenerator {
 
 	// Creates the protein-gene mapping file for the species that will be the source for Orthoinference. 
 	// Typically this is Human for Reactome and O. sativa (rice) for Plant Reactome.
-	public static void createSourceProteinGeneMappingFile(List<String> biomartResults, String sourceSpeciesKey, String speciesName) throws IOException {
+	public static void createSourceProteinGeneMappingFile(List<String> biomartResults, String sourceSpeciesKey, String speciesName, File biomartFile) throws IOException {
 		
 		Map<String,HashSet<String>> proteinGeneMap = new HashMap<String,HashSet<String>>();
 		for (String resultLine : biomartResults) {
@@ -57,13 +57,12 @@ public class MappingFileGenerator {
 		}
 		
 		// Creates and populates output file for source species
-		String filename = sourceSpeciesKey + "_protein_gene_mapping.txt";
 		Map<String,ArrayList<String>> valuesSortedProteinGeneMap = new HashMap<String,ArrayList<String>>();
 		if (proteinGeneMap.keySet().size() > 0) {
 			for (String gene : proteinGeneMap.keySet()) {
 				valuesSortedProteinGeneMap.put(gene, sortSet(proteinGeneMap.get(gene)));
 			}
-			outputMappingFile(filename, valuesSortedProteinGeneMap);
+			outputMappingFile(biomartFile, valuesSortedProteinGeneMap);
 		} else {
 			System.out.println("Problem generating Biomart file for " + speciesName);
 		}
@@ -72,7 +71,7 @@ public class MappingFileGenerator {
 	// Creates the gene-protein mapping file for species that will be inferred to during orthoinference. While this may look
 	// similar to the 'createSourceProteinGeneMappingFile' function in this class, the values are actually inverted and the
 	// handling of them differs slightly. It felt appropriate to divide these into 2 methods so that it's easier to deconstruct.
-	public static void createTargetGeneProteinMappingFile(List<String> biomartResults, String targetSpeciesKey, String speciesName) throws IOException {
+	public static void createTargetGeneProteinMappingFile(List<String> biomartResults, String targetSpeciesKey, String speciesName, File biomartFile) throws IOException {
 		
 		Set<String> genes = new HashSet<String>();
 		Map<String,HashSet<String>> geneSwissprotMap = new HashMap<String,HashSet<String>>();
@@ -150,10 +149,10 @@ public class MappingFileGenerator {
 				geneProteinMap.put(gene, sortSet(geneEnsemblMap.get(gene)));
 			}
 		}
-		
+
 		String filename = targetSpeciesKey + "_gene_protein_mapping.txt";
 		if (geneProteinMap.keySet().size() > 0) {
-			outputMappingFile(filename, geneProteinMap);
+			outputMappingFile(biomartFile, geneProteinMap);
 		} else {
 			System.out.println("Problem generating Biomart file for " + speciesName);
 		}
@@ -168,18 +167,14 @@ public class MappingFileGenerator {
 	}
 
 	// Outputs the mapping file for both source and target species. Sorts the keys of the incoming map before writing to file. 
-	private static void outputMappingFile(String filename, Map<String, ArrayList<String>> biomartMapping) throws IOException {
+	private static void outputMappingFile(File biomartFile, Map<String, ArrayList<String>> biomartMapping) throws IOException {
 		
 		SortedSet<String> sortedBiomartMapKeys = new TreeSet<String>(biomartMapping.keySet());
-		File outputFile = new File(filename);
-		if (outputFile.exists()) {
-			outputFile.delete();
-		}
-		outputFile.createNewFile();
+		biomartFile.createNewFile();
 		for (String key : sortedBiomartMapKeys) {
 			Collections.sort(biomartMapping.get(key));
-			String output = key + "\t" + String.join(" ", biomartMapping.get(key)) + "\n";
-			Files.write(Paths.get(filename), output.getBytes(), StandardOpenOption.APPEND);
+			String outputLine = key + "\t" + String.join(" ", biomartMapping.get(key)) + "\n";
+			Files.write(Paths.get(biomartFile.getPath()), outputLine.getBytes(), StandardOpenOption.APPEND);
 		}
 		
 	}
