@@ -40,6 +40,7 @@ public class BiomartUtilities {
 			biomartXMLQuery = biomartXMLQuery.replace("<Attribute name = \"uniprotsptrembl\" />", "");
 		}
 
+		// If alternative IDs are needed for the species, this block will added it to the XML query
 		ArrayList pantherGeneDbs = (JSONArray) speciesJSON.get("panther_gene_dbs");
 		if (pantherGeneDbs != null) {
 			String attributeTag = "<Attribute name = \"PLACEHOLDER\" />";

@@ -36,15 +36,6 @@ public class MappingFileGenerator {
 				if (tabSplit.length > 4) {
 					hgnc = tabSplit[4].replace("HGNC:", "");
 				}
-				if (!hgnc.equals("")) {
-					if (hgncEnsemblMap.get(hgnc) != null) {
-						hgncEnsemblMap.get(hgnc).add(ensemblGene);
-					} else {
-						HashSet<String> firstEnsemblAdded = new HashSet<>(Arrays.asList(ensemblGene));
-						hgncEnsemblMap.put(hgnc, firstEnsemblAdded);
-					}
-				}
-
 				
 				// Filters for empty fields in the swissprot (2nd) column
 				// If they are occupied, adds to the HashMap with the swissprot (protein) ID as the key and the gene ID to the array in the value
@@ -65,6 +56,16 @@ public class MappingFileGenerator {
 					} else {
 						HashSet<String> firstEnsemblAdded = new HashSet<String>(Arrays.asList(ensemblGene));
 						proteinGeneMap.put(trembl, firstEnsemblAdded);
+					}
+				}
+
+				// Panther uses HGNC IDs for Human genes sometimes. This populates the Mapping between these values. 
+				if (!hgnc.equals("")) {
+					if (hgncEnsemblMap.get(hgnc) != null) {
+						hgncEnsemblMap.get(hgnc).add(ensemblGene);
+					} else {
+						HashSet<String> firstEnsemblAdded = new HashSet<>(Arrays.asList(ensemblGene));
+						hgncEnsemblMap.put(hgnc, firstEnsemblAdded);
 					}
 				}
 			}
@@ -111,10 +112,10 @@ public class MappingFileGenerator {
 			String ensemblProtein = "";
 
 
-			// Biomart results should generally be a 4-column tab-seperated column.
+			// Biomart results
 			// S. cerevisiae doesn't contain Trembl IDs, so it only contains 3 columns
 			if (tabSplit.length > 1) {
-				//TODO:Find out how long to iterate for, and then create the line of altIds
+				// lineLength is used to determine which columns contain alternative IDs
 				int lineLength = 0;
 				if (!targetSpeciesKey.equals("scer")) {
 					ensemblGene = tabSplit[0];
@@ -166,6 +167,7 @@ public class MappingFileGenerator {
 					}
 				}
 
+				// This populates the Map of alternative gene IDs and ensembl gene IDs
 				for (int i = lineLength; i < tabSplit.length; i++) {
 					String altId = tabSplit[i];
 					if (altIdEnsemblMap.get(altId) != null) {
@@ -200,7 +202,7 @@ public class MappingFileGenerator {
 			System.out.println("Problem generating Biomart file for " + speciesName);
 		}
 
-		// Creates and populates output HGNC-Ensembl Gene mapping file
+		// Creates and populates output alternative Id-Ensembl Gene Id mapping file
 		Map<String,ArrayList<String>> valuesSortedaltIdEnsemblMap = new HashMap<String,ArrayList<String>>();
 		if (altIdEnsemblMap.keySet().size() > 0) {
 			for (String hgnc : altIdEnsemblMap.keySet()) {

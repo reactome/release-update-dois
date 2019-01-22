@@ -103,7 +103,11 @@ public class Main
             }
         }
 
+        // PIG is found only in the Ortholog_HCOP file, while the rest are found in the QfO_Genome_Orthologs.
+        // We need to go through both files to get all information. The exact same information is found for species
+        // found in both files. Sets are used to prevent redundancy.
         for (String pantherFilename : pantherFiles) {
+            // First, extract the tar file if needed.
             String pantherFilenameWithRelease = releaseNumber + "_" + pantherFilename;
             File pantherFileTar = new File(pantherFilenameWithRelease);
             File extractedPantherFile = new File(pantherFilename.replace(".tar.gz", ""));
@@ -127,43 +131,75 @@ public class Main
                 System.out.println("Panther file has already been extracted");
             }
 
+            // Panther has specific names for each organism that are found in the Species config
             JSONObject sourceJSONObject = (JSONObject) speciesJSONFile.get(sourceMappingSpecies);
-            String sourcePantherName = (String) sourceJSONObject.get("panther_name");
+            String sourceSpeciesName = (String) sourceJSONObject.get("panther_name");
 
-            Map<String, Set<String>> homologGenes = new HashMap<>();
+            // Iterate through each line of the file
+            Map<String, Map<String,Set<String>>> homologGenes = new HashMap<>();
             Map<String, Set<String>> homlogProteins = new HashMap<>();
-            Set<String> humanSource = new HashSet<>();
-            BufferedReader br = new BufferedReader(new FileReader(extractedPantherFile));
             String line;
+            BufferedReader br = new BufferedReader(new FileReader(extractedPantherFile));
             while ((line = br.readLine()) != null) {
-                if (line.startsWith(sourcePantherName)) {
+                // Filter for only Reactome's species
+                if (line.startsWith(sourceSpeciesName)) {
+                    // Example line: HUMAN|HGNC=10663|UniProtKB=O60524       MOUSE|MGI=MGI=1918305|UniProtKB=Q8CCP0  LDO     Euarchontoglires        PTHR15239
+                    // 5 tab-seperated columns. The first and second pertain to the source and target species, respectively. These two columns can be further divided by '|',
+                    // giving the species Name, geneId and its source DB, and proteinId and its source DB. The third tab-seperated column gives the ortholog type (LDO = Least Diverged Ortholog, O = Ortholog).
+                    // Fourth column is last common ancestor or clade between source and target (verify). Fifth column is Panther ID.
+                    // We only parse the first three columns.
                     String[] tabSplit = line.split("\t");
-                    String sourceInfo = tabSplit[0];
+                    String sourceGeneInfo = tabSplit[0].split("\\|")[1];
                     String targetInfo = tabSplit[1];
                     String orthologType = tabSplit[2];
-                    String[] speciesSplit = targetInfo.split("\\|");
+                    String[] targetSplit = targetInfo.split("\\|");
 
-                    if (pantherSpeciesNames.contains(speciesSplit[0])) {
-                        String speciesName = speciesSplit[0];
-                        String[] geneSplit = speciesSplit[1].split("=");
-                        String geneDb = geneSplit[0];
-                        String geneId = geneSplit[geneSplit.length - 1];
-                        String[] proteinSplit = speciesSplit[2].split("=");
-                        String proteinDb = proteinSplit[0];
-                        String proteinId = proteinSplit[proteinSplit.length - 1];
-
-                        if (homologGenes.get(speciesName) == null) {
-                            HashSet<String> speciesGeneDbs = new HashSet<>(Arrays.asList(geneDb));
-                            homologGenes.put(speciesName, speciesGeneDbs);
+                    // Gene IDs that are labelled with 'Gene|GeneID|Gene_Name|Gene_ORFName|Gene_OrderedLocusName' are not traceable to specific resource, so are ignored.
+                    //TODO: This might not apply to Proteins?
+                    if (pantherSpeciesNames.contains(targetSplit[0]) && !sourceGeneInfo.startsWith("Gene") && ((orthologType.equals("LDO") || orthologType.equals("O")))) {
+                        String targetSpeciesName = targetSplit[0];
+                        String targetGeneInfo = targetSplit[1];
+                        // Lines with LDO are the most important. If a human gene has an LDO ortholog with the species, then it is the only ortholog we keep.
+                        // Rarely there are multiple LDOs, and in those cases we keep both.
+                        if (homologGenes.get(targetSpeciesName) == null) {
+                            Map<String,Set<String>> firstHumanSpeciesGeneMap = new HashMap<>();
+                            Set<String> firstSpeciesGene = new HashSet<>(Arrays.asList(targetGeneInfo));
+                            if (orthologType.equals("LDO")) {
+                                firstSpeciesGene.add("LDO");
+                            }
+                            firstHumanSpeciesGeneMap.put(sourceGeneInfo, firstSpeciesGene);
+                            homologGenes.put(targetSpeciesName, firstHumanSpeciesGeneMap);
                         } else {
-                            homologGenes.get(speciesName).add(geneDb);
-                        }
+                            if (homologGenes.get(targetSpeciesName).get(sourceGeneInfo) == null) {
+                                Set<String> firstSpeciesGene = new HashSet<>(Arrays.asList(targetGeneInfo));
+                                if (orthologType.equals("LDO")) {
+                                    firstSpeciesGene.add("LDO");
+                                }
+                                homologGenes.get(targetSpeciesName).put(sourceGeneInfo, firstSpeciesGene);
+                            } else {
+                                Set<String> speciesGeneSet = homologGenes.get(targetSpeciesName).get(sourceGeneInfo);
+                                if (speciesGeneSet.contains("LDO")) {
+                                    // Human gene will have multiple LDO's
+                                    if (orthologType.equals("LDO")) {
+                                        homologGenes.get(targetSpeciesName).get(sourceGeneInfo).add(targetGeneInfo);
 
-                        String sourceDbInfo = sourceInfo.split("\\|")[1];
-                        String sourceDb = sourceDbInfo.split("=")[0];
+                                    }
+                                } else if (orthologType.equals("LDO")) {
+                                    speciesGeneSet.clear();
+                                    speciesGeneSet.add(targetGeneInfo);
+                                    speciesGeneSet.add("LDO");
+                                    homologGenes.get(targetSpeciesName).put(sourceGeneInfo, speciesGeneSet);
+                                } else {
+                                    homologGenes.get(targetSpeciesName).get(sourceGeneInfo).add(targetGeneInfo);
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            // Having iterated through both files, we now have two structures: Source species Genes and their target species orthologs, and the protein counterpart.
+            // We will now write these results to a file before mapping them with the Biomart files.
         }
     }
 
