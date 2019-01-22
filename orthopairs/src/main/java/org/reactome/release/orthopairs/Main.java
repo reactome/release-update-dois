@@ -65,32 +65,41 @@ public class Main
 
         Set<String> pantherSpeciesNames = new HashSet<>();
         for (Object speciesKey : speciesJSONFile.keySet()) {
-
             JSONObject speciesJSONObject = (JSONObject) speciesJSONFile.get(speciesKey);
             String speciesName = (String) ((JSONArray) speciesJSONObject.get("name")).get(0);
             String biomartFilename = releaseNumber + "_" + speciesKey;
+            String alternativeIdsFilename = releaseNumber + "_" + speciesKey;
             if (speciesKey.equals(sourceMappingSpecies)) {
                 biomartFilename += "_protein_gene_mapping.txt";
+                alternativeIdsFilename += "_altId_ensembl_mapping.txt";
             } else {
                 biomartFilename += "_gene_protein_mapping.txt";
+                alternativeIdsFilename += "_altId_ensembl_mapping.txt";
                 pantherSpeciesNames.add(speciesJSONObject.get("panther_name").toString());
             }
-            File biomartFile = new File(biomartFilename);
 
-            if (!biomartFile.exists()) {
-                System.out.println("Generating Biomart mapping file for " + speciesName);
+            File biomartFile = new File(biomartFilename);
+            File altIdFile = new File(alternativeIdsFilename);
+
+            boolean altIdFileNeeded = false;
+            if (speciesJSONObject.get("panther_gene_dbs") != null && !altIdFile.exists()) {
+                altIdFileNeeded = true;
+            }
+
+            if (!biomartFile.exists() || altIdFileNeeded) {
+                System.out.println("Generating Biomart mapping files for " + speciesName);
                 // Build the XML portion of the Biomart query
                 String biomartXMLQuery = BiomartUtilities.buildBiomartXML((String) speciesKey, (JSONObject) speciesJSONFile.get(speciesKey), pathToXMLQuery);
                 // Query Biomart for gene-protein mappings for species
                 List<String> biomartResults = BiomartUtilities.queryBiomart((String) speciesKey, (JSONObject) speciesJSONFile.get(speciesKey), biomartXMLQuery);
                 // Generate Orthopairs Mapping Files
                 if (speciesKey.equals(sourceMappingSpecies)) {
-                    MappingFileGenerator.createSourceProteinGeneMappingFile(biomartResults, (String) speciesKey, speciesName, biomartFile);
+                    MappingFileGenerator.createSourceProteinGeneMappingFile(biomartResults, (String) speciesKey, speciesName, biomartFile, altIdFile);
                 } else {
-                    MappingFileGenerator.createTargetGeneProteinMappingFile(biomartResults, (String) speciesKey, speciesName, biomartFile);
+                    MappingFileGenerator.createTargetGeneProteinMappingFile(biomartResults, (String) speciesKey, speciesName, biomartFile, altIdFile);
                 }
             } else {
-                System.out.println(biomartFile + " already exists");
+                System.out.println("Biomart mapping files already exist");
             }
         }
 
@@ -118,14 +127,40 @@ public class Main
                 System.out.println("Panther file has already been extracted");
             }
 
+            JSONObject sourceJSONObject = (JSONObject) speciesJSONFile.get(sourceMappingSpecies);
+            String sourcePantherName = (String) sourceJSONObject.get("panther_name");
+
+            Map<String, Set<String>> homologGenes = new HashMap<>();
+            Map<String, Set<String>> homlogProteins = new HashMap<>();
+            Set<String> humanSource = new HashSet<>();
             BufferedReader br = new BufferedReader(new FileReader(extractedPantherFile));
             String line;
             while ((line = br.readLine()) != null) {
-                if (line.startsWith("HUMAN")) {
+                if (line.startsWith(sourcePantherName)) {
                     String[] tabSplit = line.split("\t");
-                    String[] speciesSplit = tabSplit[1].split("\\|");
+                    String sourceInfo = tabSplit[0];
+                    String targetInfo = tabSplit[1];
+                    String orthologType = tabSplit[2];
+                    String[] speciesSplit = targetInfo.split("\\|");
+
                     if (pantherSpeciesNames.contains(speciesSplit[0])) {
-                        //TODO
+                        String speciesName = speciesSplit[0];
+                        String[] geneSplit = speciesSplit[1].split("=");
+                        String geneDb = geneSplit[0];
+                        String geneId = geneSplit[geneSplit.length - 1];
+                        String[] proteinSplit = speciesSplit[2].split("=");
+                        String proteinDb = proteinSplit[0];
+                        String proteinId = proteinSplit[proteinSplit.length - 1];
+
+                        if (homologGenes.get(speciesName) == null) {
+                            HashSet<String> speciesGeneDbs = new HashSet<>(Arrays.asList(geneDb));
+                            homologGenes.put(speciesName, speciesGeneDbs);
+                        } else {
+                            homologGenes.get(speciesName).add(geneDb);
+                        }
+
+                        String sourceDbInfo = sourceInfo.split("\\|")[1];
+                        String sourceDb = sourceDbInfo.split("=")[0];
                     }
                 }
             }

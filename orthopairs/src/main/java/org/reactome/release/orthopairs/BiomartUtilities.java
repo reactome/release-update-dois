@@ -39,7 +39,15 @@ public class BiomartUtilities {
 		if (speciesName.equals("scer")) {
 			biomartXMLQuery = biomartXMLQuery.replace("<Attribute name = \"uniprotsptrembl\" />", "");
 		}
-		
+
+		ArrayList pantherGeneDbs = (JSONArray) speciesJSON.get("panther_gene_dbs");
+		if (pantherGeneDbs != null) {
+			String attributeTag = "<Attribute name = \"PLACEHOLDER\" />";
+			for (Object geneDb : pantherGeneDbs) {
+				String attributeTagWithDb = attributeTag.replace("PLACEHOLDER", geneDb.toString());
+				biomartXMLQuery = biomartXMLQuery.replace("</Dataset>", attributeTagWithDb + "</Dataset>");
+			}
+		}
 		return biomartXMLQuery;
 	}
 
