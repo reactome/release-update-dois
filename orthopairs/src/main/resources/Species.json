@@ -77,7 +77,8 @@
 		},
 		"group":"Fungi/Plants",
 		"compara":"core",
-		"panther_name":"YEAST"
+		"panther_name":"YEAST",
+		"alt_id_file": "src/main/resources/sgd_ids.txt"
 	},
 	"sscr":{
 		"group":"Vertebrate",
@@ -115,9 +116,7 @@
 			"access":"http://www.ensembl.org/Homo_sapiens/Transcript/ProteinSummary?peptide=###ID###"
 		},
 		"panther_name":"HUMAN",
-		"panther_gene_dbs":[
-			"hgnc_id"
-		]
+		"alt_id_file": "hgnc_complete_set.txt"
 	},
 	"ggal":{
 		"refdb":{
@@ -156,9 +155,7 @@
 		"group":"Vertebrate",
 		"compara":"core",
 		"panther_name":"XENTR",
-		"panther_gene_dbs":[
-			"xenbase"
-		]
+		"alt_id_file": "GenePageEnsemblModelMapping.txt"
 	},
 	"spom":{
 		"group":"Fungi/Plants",
@@ -224,9 +221,7 @@
 		"compara":"core",
 		"group":"Vertebrate",
 		"panther_name":"MOUSE",
-		"panther_gene_dbs":[
-			"mgi_id"
-		]
+		"alt_id_file": "HGNC_homologene.rpt"
 	},
 	"cfam":{
 		"compara":"core",
@@ -318,9 +313,7 @@
 		"group":"Vertebrate",
 		"compara":"core",
 		"panther_name":"DANRE",
-		"panther_gene_dbs":[
-			"zfin_id_id"
-		]
+		"alt_id_file": "ensembl_1_to_1.txt"
 	},
 	"rnor":{
 		"compara":"core",
@@ -340,9 +333,6 @@
 			"Rattus norvegicus"
 		],
 		"panther_name":"RAT",
-		"panther_gene_dbs":[
-			"rgd_id"
-		]
-
+		"alt_id_file":"GENES_RAT.txt"
 	}
 }

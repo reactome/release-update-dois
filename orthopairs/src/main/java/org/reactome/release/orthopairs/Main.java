@@ -69,15 +69,22 @@ public class Main
 
         System.out.println();
         JSONParser parser = new JSONParser();
+        JSONObject speciesJSONFile = (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig));
 
         // This method will produce two multi-level Maps, sourceTargetProteinHomologs and targetGeneProteinMap
         // sourceTargetProteinHomologs structure: {TargetSpecies-->{SourceProteinId-->[TargetSpeciesHomologousProteinIds]}}
         // targetGeneProteinMap structure: {TargetSpecies-->{TargetGeneId-->[targetProteinIds]}}
         // The lower-level structure is a Set to reduce redundancy
-        Map<String,Map<String,Map<String,Set<String>>>> proteinAndGeneMaps = parsePantherOrthologFiles(pantherFiles, sourceMappingSpecies, (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig)));
+        Map<String,Map<String,Map<String,Set<String>>>> proteinAndGeneMaps = parsePantherOrthologFiles(pantherFiles, sourceMappingSpecies, speciesJSONFile);
         Map<String,Map<String,Set<String>>> sourceTargetProteinHomologs = proteinAndGeneMaps.get("Protein");
         Map<String,Map<String,Set<String>>> targetGeneProteinMap = proteinAndGeneMaps.get("Gene");
-        //TODO: Get Alt ID mapping file
+        for (Object speciesKey : speciesJSONFile.keySet()) {
+            JSONObject speciesJSON = (JSONObject) speciesJSONFile.get(speciesKey);
+            Map<String,Set<String>> altIdToEnsemblMap = new HashMap<>();
+            if (speciesJSON.get("alt_id_file") != null) {
+                altIdToEnsemblMap = AlternateIdMapper.getAltIdMappingFile(speciesKey, speciesJSON.get("alt_id_file").toString());
+            }
+        }
     }
 
     private static Map<String, Map<String, Map<String, Set<String>>>> parsePantherOrthologFiles(List<String> pantherFiles, String sourceMappingSpecies, JSONObject speciesJSONFile) throws IOException {
