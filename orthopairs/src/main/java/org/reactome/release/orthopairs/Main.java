@@ -40,7 +40,7 @@ public class Main
         String XenbaseFileURL = props.get("XenbaseFileURL").toString();
         String ZFINFileURL = props.get("ZFINFileURL").toString();
 
-//        new File(releaseNumber).mkdir();
+        new File(releaseNumber).mkdir();
 
         // Download and extract homology files from Panther
         List<String> pantherFiles = new ArrayList<String>(Arrays.asList(pantherQfOFilename, pantherHCOPFilename));
@@ -84,7 +84,7 @@ public class Main
             if (!speciesKey.equals(sourceMappingSpecies)) {
                 System.out.println(speciesKey);
                 // Create source-target protein mapping file
-                String sourceTargetProteinMappingFilename = sourceMappingSpecies + "_" + speciesKey + "_mapping.txt";
+                String sourceTargetProteinMappingFilename = releaseNumber + "/" + sourceMappingSpecies + "_" + speciesKey + "_mapping.txt";
                 File sourceTargetProteinMappingFile = new File(sourceTargetProteinMappingFilename);
                 if (sourceTargetProteinMappingFile.exists()) {
                     sourceTargetProteinMappingFile.delete();
@@ -115,7 +115,7 @@ public class Main
                 }
 
                 // Create target species gene-protein mapping file
-                String targetGeneProteinMappingFilename = speciesKey + "_gene_protein_mapping.txt";
+                String targetGeneProteinMappingFilename = releaseNumber + "/" + speciesKey + "_gene_protein_mapping.txt";
                 File targetGeneProteinMappingFile = new File (targetGeneProteinMappingFilename);
                 if (targetGeneProteinMappingFile.exists()) {
                     targetGeneProteinMappingFile.delete();
@@ -125,34 +125,33 @@ public class Main
                 for (String targetGeneId : targetGeneProteinMap.get(speciesPantherName).keySet()) {
                     String[] geneSplit = targetGeneId.split("=");
                     String geneSource = geneSplit[0];
-                    String geneId = geneSplit[1];
+                    String geneId = geneSplit[geneSplit.length - 1];
                     Set<String> targetProteinIds = targetGeneProteinMap.get(speciesPantherName).get(targetGeneId);
                     targetProteinIds.remove("LDO");
                     List<String> cleanTargetProteinIds = new ArrayList<>();
                     for (String targetProteinId : targetGeneProteinMap.get(speciesPantherName).get(targetGeneId)) {
                         cleanTargetProteinIds.add(targetProteinId.split("=")[1]);
                     }
-                    Collections.sort(cleanTargetProteinIds);
-                    if (!geneSource.startsWith("Ensembl") && altIdMappingExists) {
-                        Set<String> ensemblGeneIds = altIdToEnsemblMap.get(geneId);
-                        if (ensemblGeneIds != null) {
-                            for (String ensemblGeneId : altIdToEnsemblMap.get(geneId)) {
-                                String geneProteinLine = ensemblGeneId + "\t" + String.join(" ", cleanTargetProteinIds) + "\n";
-                                targetGeneProteinLines.add(geneProteinLine);
+                    if (cleanTargetProteinIds.size() > 0) {
+                        Collections.sort(cleanTargetProteinIds);
+                        if (!geneSource.startsWith("Ensembl") && altIdMappingExists) {
+                            Set<String> ensemblGeneIds = altIdToEnsemblMap.get(geneId);
+                            if (ensemblGeneIds != null) {
+                                for (String ensemblGeneId : altIdToEnsemblMap.get(geneId)) {
+                                    String geneProteinLine = ensemblGeneId + "\t" + String.join(" ", cleanTargetProteinIds) + "\n";
+                                    targetGeneProteinLines.add(geneProteinLine);
+                                }
                             }
+                        } else {
+                            String geneProteinLine = geneId + "\t" + String.join(" ", cleanTargetProteinIds) + "\n";
+                            targetGeneProteinLines.add(geneProteinLine);
                         }
-                    } else {
-                        String geneProteinLine = ensemblGeneId + "\t" + String.join(" ", cleanTargetProteinIds) + "\n";
-                        targetGeneProteinLines.add(geneProteinLine);
                     }
                 }
                 Collections.sort(targetGeneProteinLines);
                 for (String targetGeneProteinLine : targetGeneProteinLines) {
                     Files.write(Paths.get(targetGeneProteinMappingFile.getPath()), targetGeneProteinLine.getBytes(), StandardOpenOption.APPEND);
                 }
-            }
-            if (speciesKey.equals("cfam")) {
-                System.exit(0);
             }
         }
     }

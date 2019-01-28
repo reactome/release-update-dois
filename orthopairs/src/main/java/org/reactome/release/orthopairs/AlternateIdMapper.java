@@ -47,7 +47,7 @@ public class AlternateIdMapper {
                 }
             } else {
                 //TODO: Check ensemblIdIndex != 0
-                String altId = tabSplit[altIdIndex];
+                String altId = tabSplit[altIdIndex].split(":")[1];
                 String ensemblId = tabSplit[ensemblIdIndex];
                 if (!ensemblId.equals("null")) {
                     Set<String> firstIdAdded = new HashSet<>(Arrays.asList(ensemblId));
