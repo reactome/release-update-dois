@@ -2,6 +2,9 @@ package org.reactome.release.orthopairs;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -32,7 +35,6 @@ public class Main
         String pantherFilepath = props.get("pantherFileURL").toString();
         String pantherQfOFilename = props.get("pantherQfOFilename").toString();
         String pantherHCOPFilename = props.get("pantherHCOPFilename").toString();
-        String HGNCFileURL = props.get("HGNCFileURL").toString();
         String MGIFileURL = props.get("MGIFileURL").toString();
         String RGDFileURL = props.get("RGDFileURL").toString();
         String XenbaseFileURL = props.get("XenbaseFileURL").toString();
@@ -48,7 +50,7 @@ public class Main
 
         // Download ID files from various model organism databases (Mouse Genome Informatics, Rat Genome Database, Xenbase (frog), ZFIN (Zebrafish))
         // HGNC identifier file is downloaded as well.
-        List<String> alternativeIdMappingURLs = new ArrayList<>(Arrays.asList(HGNCFileURL, MGIFileURL,RGDFileURL,XenbaseFileURL,ZFINFileURL));
+        List<String> alternativeIdMappingURLs = new ArrayList<>(Arrays.asList(MGIFileURL,RGDFileURL,XenbaseFileURL,ZFINFileURL));
         for (String altIdURL : alternativeIdMappingURLs) {
             File altIdFilepath = new File(altIdURL.substring(altIdURL.lastIndexOf("/")+1));
             if (!altIdFilepath.exists()) {
@@ -79,10 +81,78 @@ public class Main
         Map<String,Map<String,Set<String>>> sourceTargetProteinHomologs = proteinAndGeneMaps.get("Protein");
         Map<String,Map<String,Set<String>>> targetGeneProteinMap = proteinAndGeneMaps.get("Gene");
         for (Object speciesKey : speciesJSONFile.keySet()) {
-            JSONObject speciesJSON = (JSONObject) speciesJSONFile.get(speciesKey);
-            Map<String,Set<String>> altIdToEnsemblMap = new HashMap<>();
-            if (speciesJSON.get("alt_id_file") != null) {
-                altIdToEnsemblMap = AlternateIdMapper.getAltIdMappingFile(speciesKey, speciesJSON.get("alt_id_file").toString());
+            if (!speciesKey.equals(sourceMappingSpecies)) {
+                System.out.println(speciesKey);
+                // Create source-target protein mapping file
+                String sourceTargetProteinMappingFilename = sourceMappingSpecies + "_" + speciesKey + "_mapping.txt";
+                File sourceTargetProteinMappingFile = new File(sourceTargetProteinMappingFilename);
+                if (sourceTargetProteinMappingFile.exists()) {
+                    sourceTargetProteinMappingFile.delete();
+                }
+                sourceTargetProteinMappingFile.createNewFile();
+                JSONObject speciesJSON = (JSONObject) speciesJSONFile.get(speciesKey);
+                String speciesPantherName = speciesJSON.get("panther_name").toString();
+                Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
+                boolean altIdMappingExists = false;
+                if (speciesJSON.get("alt_id_file") != null) {
+                    altIdToEnsemblMap = AlternateIdMapper.getAltIdMappingFile(speciesKey, speciesJSON.get("alt_id_file").toString());
+                    altIdMappingExists = true;
+                }
+                List<String> sourceProteinIds = new ArrayList<>();
+                sourceProteinIds.addAll(sourceTargetProteinHomologs.get(speciesPantherName).keySet());
+                Collections.sort(sourceProteinIds);
+                for (String sourceProteinId : sourceProteinIds) {
+                    Set<String> targetProteinIds = sourceTargetProteinHomologs.get(speciesPantherName).get(sourceProteinId);
+                    targetProteinIds.remove("LDO");
+                    String proteinOrthologLine = sourceProteinId.split("=")[1] + "\t";
+                    List<String> cleanTargetProteinIds = new ArrayList<>();
+                    for (String targetProteinId : targetProteinIds) {
+                        cleanTargetProteinIds.add(targetProteinId.split("=")[1]);
+                    }
+                    Collections.sort(cleanTargetProteinIds);
+                    proteinOrthologLine += String.join(" ", cleanTargetProteinIds) + "\n";
+                    Files.write(Paths.get(sourceTargetProteinMappingFile.getPath()), proteinOrthologLine.getBytes(), StandardOpenOption.APPEND);
+                }
+
+                // Create target species gene-protein mapping file
+                String targetGeneProteinMappingFilename = speciesKey + "_gene_protein_mapping.txt";
+                File targetGeneProteinMappingFile = new File (targetGeneProteinMappingFilename);
+                if (targetGeneProteinMappingFile.exists()) {
+                    targetGeneProteinMappingFile.delete();
+                }
+                targetGeneProteinMappingFile.createNewFile();
+                List<String> targetGeneProteinLines = new ArrayList<>();
+                for (String targetGeneId : targetGeneProteinMap.get(speciesPantherName).keySet()) {
+                    String[] geneSplit = targetGeneId.split("=");
+                    String geneSource = geneSplit[0];
+                    String geneId = geneSplit[1];
+                    Set<String> targetProteinIds = targetGeneProteinMap.get(speciesPantherName).get(targetGeneId);
+                    targetProteinIds.remove("LDO");
+                    List<String> cleanTargetProteinIds = new ArrayList<>();
+                    for (String targetProteinId : targetGeneProteinMap.get(speciesPantherName).get(targetGeneId)) {
+                        cleanTargetProteinIds.add(targetProteinId.split("=")[1]);
+                    }
+                    Collections.sort(cleanTargetProteinIds);
+                    if (!geneSource.startsWith("Ensembl") && altIdMappingExists) {
+                        Set<String> ensemblGeneIds = altIdToEnsemblMap.get(geneId);
+                        if (ensemblGeneIds != null) {
+                            for (String ensemblGeneId : altIdToEnsemblMap.get(geneId)) {
+                                String geneProteinLine = ensemblGeneId + "\t" + String.join(" ", cleanTargetProteinIds) + "\n";
+                                targetGeneProteinLines.add(geneProteinLine);
+                            }
+                        }
+                    } else {
+                        String geneProteinLine = ensemblGeneId + "\t" + String.join(" ", cleanTargetProteinIds) + "\n";
+                        targetGeneProteinLines.add(geneProteinLine);
+                    }
+                }
+                Collections.sort(targetGeneProteinLines);
+                for (String targetGeneProteinLine : targetGeneProteinLines) {
+                    Files.write(Paths.get(targetGeneProteinMappingFile.getPath()), targetGeneProteinLine.getBytes(), StandardOpenOption.APPEND);
+                }
+            }
+            if (speciesKey.equals("cfam")) {
+                System.exit(0);
             }
         }
     }
