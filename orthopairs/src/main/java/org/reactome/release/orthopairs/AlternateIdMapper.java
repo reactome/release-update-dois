@@ -25,7 +25,7 @@ public class AlternateIdMapper {
         } else if (speciesKey.equals("scer")) {
             altIdToEnsemblMap = mapYeastAlternateIds(br);
         } else {
-            System.out.println("Did not locate species");
+            System.out.println(speciesKey + " does not have a method for mapping its alternate Ids to Ensembl Ids");
         }
 
         return altIdToEnsemblMap;
@@ -61,7 +61,6 @@ public class AlternateIdMapper {
                 }
             }
         }
-
         return altIdToEnsemblMap;
     }
 
@@ -82,6 +81,7 @@ public class AlternateIdMapper {
                     }
                 }
             } else {
+                //TODO: Check ensemblIdIndex != 0
                 String altId = tabSplit[altIdIndex];
                 String ensemblId = tabSplit[ensemblIdIndex];
                 if (!ensemblId.equals("null")) {
@@ -98,12 +98,9 @@ public class AlternateIdMapper {
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         int altIdIndex = 0;
         int ensemblIdIndex = 0;
-        int lineCount = 0;
         while ((line = br.readLine()) != null) {
-            lineCount++;
             String[] tabSplit = line.split("\t");
             if (line.startsWith("GENE")) {
-
                 for (int i = 0; i<tabSplit.length; i++) {
                     if (tabSplit[i].equals("GENE_RGD_ID")) {
                         altIdIndex = i;
@@ -158,6 +155,7 @@ public class AlternateIdMapper {
     }
 
     private static Map<String, Set<String>> mapZebraFishAlternateIds(BufferedReader br) throws IOException {
+
         String line;
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         while ((line = br.readLine()) != null) {
@@ -165,20 +163,27 @@ public class AlternateIdMapper {
             String altId = "";
             String ensemblId = "";
             for (int i = 0; i < tabSplit.length; i++) {
-                if (tabSplit[i].startsWith("ZDB-GENE")) {
+                if (tabSplit[i].startsWith("ZDB-")) {
                     altId = tabSplit[i];
                 }
                 if (tabSplit[i].startsWith("ENSDARG")) {
                     ensemblId = tabSplit[i];
                 }
             }
-            Set<String> firstIdAdded = new HashSet<>(Arrays.asList(ensemblId));
-            altIdToEnsemblMap.put(altId, firstIdAdded);
+
+            if (altIdToEnsemblMap.get(altId) == null) {
+                Set<String> firstIdAdded = new HashSet<>(Arrays.asList(ensemblId));
+                altIdToEnsemblMap.put(altId, firstIdAdded);
+            } else {
+                altIdToEnsemblMap.get(altId).add(ensemblId);
+            }
+
         }
         return altIdToEnsemblMap;
     }
 
     private static Map<String, Set<String>> mapYeastAlternateIds(BufferedReader br) throws IOException {
+
         String line;
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         while ((line = br.readLine()) != null) {
@@ -187,6 +192,7 @@ public class AlternateIdMapper {
             String ensemblId = tabSplit[1];
             Set<String> firstIdAdded = new HashSet<>(Arrays.asList(ensemblId));
             altIdToEnsemblMap.put(altId, firstIdAdded);
+
         }
         return altIdToEnsemblMap;
     }
