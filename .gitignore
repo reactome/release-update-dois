@@ -39,3 +39,5 @@ target
 *.report
 .attach_pid*
 normal_event_skip_list.txt
+
+\.idea/
