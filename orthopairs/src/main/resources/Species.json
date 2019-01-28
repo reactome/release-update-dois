@@ -115,8 +115,7 @@
 			],
 			"access":"http://www.ensembl.org/Homo_sapiens/Transcript/ProteinSummary?peptide=###ID###"
 		},
-		"panther_name":"HUMAN",
-		"alt_id_file": "hgnc_complete_set.txt"
+		"panther_name":"HUMAN"
 	},
 	"ggal":{
 		"refdb":{

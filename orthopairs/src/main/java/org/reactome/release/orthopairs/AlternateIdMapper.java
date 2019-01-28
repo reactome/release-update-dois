@@ -12,9 +12,7 @@ public class AlternateIdMapper {
         File alternateIdFile = new File(alternateIdFilename);
         BufferedReader br = new BufferedReader(new FileReader(alternateIdFile));
         Map<String,Set<String>> altIdToEnsemblMap = new HashMap<>();
-        if (speciesKey.equals("hsap")) {
-            altIdToEnsemblMap = mapHumanAlternateIds(br);
-        } else if (speciesKey.equals("mmus")) {
+        if (speciesKey.equals("mmus")) {
             altIdToEnsemblMap = mapMouseAlternateIds(br);
         } else if (speciesKey.equals("rnor")) {
             altIdToEnsemblMap = mapRatAlternateIds(br);
@@ -28,39 +26,6 @@ public class AlternateIdMapper {
             System.out.println(speciesKey + " does not have a method for mapping its alternate Ids to Ensembl Ids");
         }
 
-        return altIdToEnsemblMap;
-    }
-
-    private static Map<String, Set<String>> mapHumanAlternateIds(BufferedReader br) throws IOException {
-        Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
-        String line;
-        int altIdIndex = 0;
-        int ensemblIdIndex = 0;
-        while ((line = br.readLine()) != null) {
-            String[] tabSplit = line.split("\t");
-
-            if (!line.startsWith("HGNC")) {
-                for (int i = 0; i < tabSplit.length; i++) {
-                    if (tabSplit[i].equals("hgnc_id")) {
-                        altIdIndex = i;
-                    }
-                    if (tabSplit[i].equals("ensembl_gene_id")) {
-                        ensemblIdIndex = i;
-                    }
-                }
-            } else {
-                boolean ensemblIdColumnExists = true;
-                if (tabSplit.length < (ensemblIdIndex + 1)) {
-                    ensemblIdColumnExists = false;
-                }
-                if (ensemblIdColumnExists && !tabSplit[ensemblIdIndex].equals("")) {
-                    String altId = tabSplit[altIdIndex];
-                    String ensemblId = tabSplit[ensemblIdIndex];
-                    Set<String> firstIdAdded = new HashSet<>(Arrays.asList(ensemblId));
-                    altIdToEnsemblMap.put(altId, firstIdAdded);
-                }
-            }
-        }
         return altIdToEnsemblMap;
     }
 
