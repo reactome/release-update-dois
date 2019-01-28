@@ -20,7 +20,12 @@ public class Main
     {
     	logger.info("Beginning UpdateStableIds step...");
        
-       String pathToConfig = "src/main/resources/config.properties";
+    	String pathToConfig = "";
+    	if (args.length > 0) {
+    		pathToConfig = args[0];
+    	} else {
+    		pathToConfig = "src/main/resources/config.properties";
+    	}
        
        //Sets up the various DB Adaptors needed. This includes the current and previous test_slice versions on the release server, 
        //as well as gk_central on the curation server.
