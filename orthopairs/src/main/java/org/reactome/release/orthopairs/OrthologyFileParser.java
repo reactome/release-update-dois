@@ -13,6 +13,8 @@ public class OrthologyFileParser {
     private static Map<String,Map<String, Set<String>>> targetGeneProteinMap = new HashMap<>();
 
     public static void parsePantherOrthologFiles(List<String> pantherFiles, String sourceMappingSpecies, JSONObject speciesJSONFile) throws IOException {
+
+        System.out.println("Parsing homolog information from PANTHER files");
         // Panther uses different naming conventions for species, which needs to be mapped to Reactome's 4-letter species keys
         Set<String> pantherSpeciesNames = new HashSet<>();
         String sourceSpeciesPantherName = "";
@@ -25,10 +27,7 @@ public class OrthologyFileParser {
             }
         }
 
-        // Ugly 4-level Map that stores the two maps produced, since Java doesn't allow you to return multiple values.
-        Map<String,Map<String,Map<String,Set<String>>>> proteinAndGeneMaps = new HashMap<>();
         if (!sourceSpeciesPantherName.equals("")) {
-
             // There are 2 Panther files at time of writing since Sus Scrofa (PIG) info is found in a seperate file.
             // The program iterates through both since for overlapping species it produces the same data structure. This is where the redundancy reduction of Sets comes in handy.
             for (String pantherFileTar : pantherFiles) {
@@ -55,7 +54,7 @@ public class OrthologyFileParser {
 
                         String orthologType = tabSplit[2];
 
-                        // We don't look at lines that contain species that arent in Reactome, or lines where the gene value starts with Gene (Gene|GeneID|Gene_Name|Gene_ORFName|Gene_OrderedLocusName)
+                        // We don't look at lines that contain species that aren't in Reactome, or lines where the gene value starts with Gene (Gene|GeneID|Gene_Name|Gene_ORFName|Gene_OrderedLocusName)
                         // since these are often just names, not IDs. Additionally, we only want lines where orthologType is either an 'LDO' or 'O', and not a 'P', 'X', or 'LDX'.
                         if (pantherSpeciesNames.contains(targetSpecies) && !sourceGene.startsWith("Gene") && !targetGene.startsWith("Gene") && orthologType.contains("O")) {
                             sourceTargetProteinHomologs = MapId(targetSpecies, sourceProtein, targetProtein, sourceTargetProteinHomologs, orthologType);
@@ -89,7 +88,7 @@ public class OrthologyFileParser {
             }
         }
 
-        // Lines with an orthologType equal to 'LDO' mean that we only want that value in the Set, since its the Least Diverged Ortholog, meaning we have a
+        // Lines with an orthologType equal to 'LDO' mean that we only want that value in the Set since its the Least Diverged Ortholog, meaning we have a
         // high degree of confidence in its homology. We remove all other values from the Set unless an 'LDO' value already exists. In this rare case,
         // we will keep multiple LDOs.
         Set<String> targetEntitys = entityMap.get(targetSpecies).get(keyEntity);

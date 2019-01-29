@@ -5,8 +5,8 @@ import java.util.*;
 
 public class AlternateIdMapper {
 
-    // TODO: Make sure duplicate handling exists for alt IDs
-    // TODO: Line count discrepancys
+    // Since we require some species-specific databases, there is a method for mapping the returned files. This wasn't
+    // abstractble, considering that the files all have different formats.
     public static Map<String, Set<String>> getAltIdMappingFile(Object speciesKey, String alternateIdFilename) throws IOException {
 
         File alternateIdFile = new File(alternateIdFilename);
@@ -29,6 +29,7 @@ public class AlternateIdMapper {
         return altIdToEnsemblMap;
     }
 
+    // This uses HGNC_homologene.rpt from http://www.informatics.jax.org/downloads/reports/
     private static Map<String, Set<String>> mapMouseAlternateIds(BufferedReader br) throws IOException {
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         String line;
@@ -58,6 +59,7 @@ public class AlternateIdMapper {
         return altIdToEnsemblMap;
     }
 
+    // This uses GENES_RAT.txt from ftp://ftp.rgd.mcw.edu/pub/data_release/
     private static Map<String, Set<String>> mapRatAlternateIds(BufferedReader br) throws IOException {
         String line;
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
@@ -97,8 +99,8 @@ public class AlternateIdMapper {
         return altIdToEnsemblMap;
     }
 
+    // This uses GenePageEnsemblModelMapping.txt from ftp://ftp.xenbase.org/pub/GenePageReports/
     private static Map<String,Set<String>> mapFrogAlternateIds(BufferedReader br) throws IOException {
-
         String line;
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         while ((line = br.readLine()) != null) {
@@ -119,8 +121,8 @@ public class AlternateIdMapper {
         return altIdToEnsemblMap;
     }
 
+    // This uses ensembl_1_to_1.txt from https://zfin.org/downloads/
     private static Map<String, Set<String>> mapZebraFishAlternateIds(BufferedReader br) throws IOException {
-
         String line;
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         while ((line = br.readLine()) != null) {
@@ -135,7 +137,6 @@ public class AlternateIdMapper {
                     ensemblId = tabSplit[i];
                 }
             }
-
             if (altIdToEnsemblMap.get(altId) == null) {
                 Set<String> firstIdAdded = new HashSet<>(Arrays.asList(ensemblId));
                 altIdToEnsemblMap.put(altId, firstIdAdded);
@@ -147,8 +148,10 @@ public class AlternateIdMapper {
         return altIdToEnsemblMap;
     }
 
+    // This uses a static file found in src/main/resources/ -- there is no way to download the file programmatically.
+    // We were told that the file shouldn't be changing much considering the yeast genome is well categorized.
+    // The file is saved as sgf_ids.txt and was taken from https://yeastmine.yeastgenome.org/yeastmine/bagDetails.do?scope=all&bagName=ALL_Verified_Uncharacterized_Dubious_ORFs
     private static Map<String, Set<String>> mapYeastAlternateIds(BufferedReader br) throws IOException {
-
         String line;
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         while ((line = br.readLine()) != null) {
@@ -157,7 +160,6 @@ public class AlternateIdMapper {
             String ensemblId = tabSplit[1];
             Set<String> firstIdAdded = new HashSet<>(Arrays.asList(ensemblId));
             altIdToEnsemblMap.put(altId, firstIdAdded);
-
         }
         return altIdToEnsemblMap;
     }
