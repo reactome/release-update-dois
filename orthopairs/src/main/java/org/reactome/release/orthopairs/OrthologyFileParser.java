@@ -8,7 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
-public class OrthologFileParser {
+public class OrthologyFileParser {
     private static Map<String,Map<String, Set<String>>> sourceTargetProteinHomologs = new HashMap<>();
     private static Map<String,Map<String, Set<String>>> targetGeneProteinMap = new HashMap<>();
 
