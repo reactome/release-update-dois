@@ -6,7 +6,7 @@ This module has been rewritten from Perl to Java. This first iteration of orthoi
 
 In a nutshell, the inference process follows this workflow:
 
-![alt text](https://github.com/reactome/data-release-pipeline/blob/feature/orthoinference/assets/OrthoinferenceOverview.png)
+![alt text](https://github.com/reactome/data-release-pipeline/blob/develop/assets/OrthoinferenceOverview.png)
 
 For each species, we take all Human <b>ReactionlikeEvents</b> (RlE) instances (<i>Reaction, BlackBoxEvent, Polymerisation, Depolymerisation, FailedReaction</i>) in the `test_reactome` database that was generated from the `test_slice` using the <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/tweak_datamodel.pl">tweak_datamodel.pl</a> script. For each of these RlE instances, there are a few basic rules that must be followed for an inference to be attempted. It must pass a series of <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/SkipInstanceChecker.java">filters</a> and have <b>at least 1</b> protein instance, determined using the <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/ProteinCountUtility.java">ProteinCountUtility</a>. 
 
