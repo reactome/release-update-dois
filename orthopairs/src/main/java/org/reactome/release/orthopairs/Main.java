@@ -64,6 +64,7 @@ public class Main
 
         new File(releaseNumber).mkdir();
 
+        System.out.println("Starting Orthopairs file generation");
         // Download and extract homology files from Panther
         List<String> pantherFiles = new ArrayList<String>(Arrays.asList(pantherQfOFilename, pantherHCOPFilename));
         for (String pantherFilename : pantherFiles) {
