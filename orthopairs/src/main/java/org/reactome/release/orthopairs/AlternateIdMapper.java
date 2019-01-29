@@ -1,10 +1,13 @@
 package org.reactome.release.orthopairs;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.*;
 import java.util.*;
 
 public class AlternateIdMapper {
-
+    private static final Logger logger = LogManager.getLogger();
     // Since we require some species-specific databases, there is a method for mapping the returned files. This wasn't
     // abstractble, considering that the files all have different formats.
     public static Map<String, Set<String>> getAltIdMappingFile(Object speciesKey, String alternateIdFilename) throws IOException {
@@ -23,7 +26,7 @@ public class AlternateIdMapper {
         } else if (speciesKey.equals("scer")) {
             altIdToEnsemblMap = mapYeastAlternateIds(br);
         } else {
-            System.out.println(speciesKey + " does not have a method for mapping its alternate Ids to Ensembl Ids");
+            logger.warn(speciesKey + " does not have a method for mapping its alternate Ids to Ensembl Ids");
         }
 
         return altIdToEnsemblMap;

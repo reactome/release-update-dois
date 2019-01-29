@@ -1,5 +1,7 @@
 package org.reactome.release.orthopairs;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 
 import java.io.File;
@@ -10,11 +12,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 public class OrthopairFileGenerator {
-
+    private static final Logger logger = LogManager.getLogger();
     // Create source-target protein mapping file
     public static void createProteinHomologyFile(String speciesKey, String sourceTargetProteinMappingFilename, JSONObject speciesJSON, Map<String,Set<String>> speciesProteinHomologs ) throws IOException {
 
-        System.out.println("\tGenerating " + sourceTargetProteinMappingFilename);
+        logger.info("\tGenerating " + sourceTargetProteinMappingFilename);
         File sourceTargetProteinMappingFile = new File(sourceTargetProteinMappingFilename);
         if (sourceTargetProteinMappingFile.exists()) {
             sourceTargetProteinMappingFile.delete();
@@ -41,7 +43,7 @@ public class OrthopairFileGenerator {
     // Create target species gene-protein mapping file
     public static void createSpeciesGeneProteinFile(String speciesKey, String targetGeneProteinMappingFilename, JSONObject speciesJSON, Map<String,Set<String>> speciesGeneProteinMap) throws IOException {
 
-        System.out.println("\tGenerating " + targetGeneProteinMappingFilename);
+        logger.info("\tGenerating " + targetGeneProteinMappingFilename);
         File targetGeneProteinMappingFile = new File (targetGeneProteinMappingFilename);
         if (targetGeneProteinMappingFile.exists()) {
             targetGeneProteinMappingFile.delete();
@@ -50,7 +52,7 @@ public class OrthopairFileGenerator {
         boolean altIdMappingExists = false;
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         if (speciesJSON.get("alt_id_file") != null) {
-            System.out.println("\tAlternate ID-Ensembl ID mapping required");
+            logger.info("\tAlternate ID-Ensembl ID mapping required");
             altIdToEnsemblMap = AlternateIdMapper.getAltIdMappingFile(speciesKey, speciesJSON.get("alt_id_file").toString());
             altIdMappingExists = true;
         }

@@ -1,5 +1,7 @@
 package org.reactome.release.orthopairs;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 
 import java.io.BufferedReader;
@@ -9,12 +11,13 @@ import java.io.IOException;
 import java.util.*;
 
 public class OrthologyFileParser {
+    private static final Logger logger = LogManager.getLogger();
     private static Map<String,Map<String, Set<String>>> sourceTargetProteinHomologs = new HashMap<>();
     private static Map<String,Map<String, Set<String>>> targetGeneProteinMap = new HashMap<>();
 
     public static void parsePantherOrthologFiles(List<String> pantherFiles, String sourceMappingSpecies, JSONObject speciesJSONFile) throws IOException {
 
-        System.out.println("Parsing homolog information from PANTHER files");
+        logger.info("Parsing homolog information from PANTHER files");
         // Panther uses different naming conventions for species, which needs to be mapped to Reactome's 4-letter species keys
         Set<String> pantherSpeciesNames = new HashSet<>();
         String sourceSpeciesPantherName = "";
@@ -66,7 +69,7 @@ public class OrthologyFileParser {
                 br.close();
             }
         } else {
-            System.out.println("Could not find source species in Species.json");
+            logger.warn("Could not find source species in Species.json");
         }
     }
 

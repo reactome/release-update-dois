@@ -11,6 +11,8 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -35,6 +37,8 @@ public class Main
      *  These files are much smaller than the older version, since PANTHER annotates which homologs are the 'Least Diverged', meaning we can filter out many that add noise to the dataset.
      *
      */
+
+    private static final Logger logger = LogManager.getLogger();
 
     public static void main( String[] args ) throws IOException, ParseException {
 
@@ -64,7 +68,7 @@ public class Main
 
         new File(releaseNumber).mkdir();
 
-        System.out.println("Starting Orthopairs file generation");
+        logger.info("Starting Orthopairs file generation");
         // Download and extract homology files from Panther
         List<String> pantherFiles = new ArrayList<String>(Arrays.asList(pantherQfOFilename, pantherHCOPFilename));
         for (String pantherFilename : pantherFiles) {
@@ -77,10 +81,10 @@ public class Main
         for (String altIdURL : alternativeIdMappingURLs) {
             File altIdFilepath = new File(altIdURL.substring(altIdURL.lastIndexOf("/")+1));
             if (!altIdFilepath.exists()) {
-                System.out.println("Downloading " + altIdURL);
+                logger.info("Downloading " + altIdURL);
                 FileUtils.copyURLToFile(new URL(altIdURL), altIdFilepath);
             } else {
-                System.out.println(altIdFilepath + " already exists");
+                logger.info(altIdFilepath + " already exists");
             }
         }
 
@@ -100,7 +104,7 @@ public class Main
             if (!speciesKey.equals(sourceMappingSpecies)) {
                 JSONObject speciesJSON = (JSONObject)speciesJSONFile.get(speciesKey);
                 JSONArray speciesNames = (JSONArray) speciesJSON.get("name");
-                System.out.println("Attempting to create orthopairs files for " + speciesNames.get(0));
+                logger.info("Attempting to create orthopairs files for " + speciesNames.get(0));
                 String speciesPantherName = speciesJSON.get("panther_name").toString();
                 // Produces the {sourceSpecies}_{targetspecies}_mapping.txt file
                 String sourceTargetProteinMappingFilename = releaseNumber + "/" + sourceMappingSpecies + "_" + speciesKey + "_mapping.txt";
@@ -112,7 +116,7 @@ public class Main
                 OrthopairFileGenerator.createSpeciesGeneProteinFile(speciesKey.toString(), targetGeneProteinMappingFilename, speciesJSON, speciesGeneProteinMap);
             }
         }
-        System.out.println("Finished Orthopairs file generation");
+        logger.info("Finished Orthopairs file generation");
     }
 
     private static void downloadAndExtractTarFile(String pantherFilename, String pantherFilepath) throws IOException {
@@ -122,16 +126,16 @@ public class Main
 
         // Download files
         if (!pantherTarFile.exists()) {
-            System.out.println("Downloading " + pantherFileURL);
+            logger.info("Downloading " + pantherFileURL);
             FileUtils.copyURLToFile(pantherFileURL, new File(pantherFilename));
         } else {
-            System.out.println(pantherTarFile + " already exists");
+            logger.info(pantherTarFile + " already exists");
         }
 
         // Extract tar files
         File extractedPantherFile = new File(pantherFilename.replace(".tar.gz", ""));
         if (!extractedPantherFile.exists()) {
-            System.out.println("Extracting " + pantherTarFile);
+            logger.info("Extracting " + pantherTarFile);
             TarArchiveInputStream tarIn = new TarArchiveInputStream(new GzipCompressorInputStream(new FileInputStream(pantherTarFile)));
             TarArchiveEntry tarFile;
             while ((tarFile = (TarArchiveEntry) tarIn.getNextEntry()) != null) {
@@ -145,7 +149,7 @@ public class Main
                 }
             }
         } else {
-            System.out.println(pantherTarFile + " has already been extracted");
+            logger.info(pantherTarFile + " has already been extracted");
         }
     }
 }
