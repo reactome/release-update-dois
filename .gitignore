@@ -27,10 +27,6 @@ hs_err_pid*
 RemoteSystemsTempFiles
 update-dois/target/maven-status/maven-compiler-plugin/compile/default-compile/*.lst
 update-dois/.settings/org.eclipse.jdt.core.prefs
-orthoinference/src/main/resources/*.txt
-orthoinference/src/main/resources/orthopairs/*
-orthoinference/*.txt
-orthoinference/target/*
 config.properties
 *.classpath
 *.project
