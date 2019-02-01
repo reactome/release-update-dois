@@ -1,3 +1,7 @@
+#!/bin/bash
+DIR=$(dirname "$(readlink -f "$0")") # Directory of the script -- allows the script to invoked from anywhere
+cd $DIR
+
 ## Make sure the repo is up to date
 git pull
 ## Generate the jar file and run the Download Directory program
