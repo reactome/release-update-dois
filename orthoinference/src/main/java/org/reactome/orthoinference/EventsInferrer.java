@@ -50,7 +50,6 @@ public class EventsInferrer
 	private static GKInstance speciesInst;
 	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static List<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
-	private static Integer nullCount = 0;
 
 	@SuppressWarnings("unchecked")
 	public static void inferEvents(Properties props, String pathToConfig, String species) throws Exception
@@ -177,8 +176,6 @@ public class EventsInferrer
 			try {
 				logger.info("Attempting to infer " + reactionInst);
 				ReactionInferrer.inferReaction(reactionInst);
-			} catch (NullPointerException e) {
-				nullCount++;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -188,7 +185,6 @@ public class EventsInferrer
 		outputReport(species);
 		resetVariables();
 		System.gc();
-		System.out.println("NullPointer Exceptions found: " + nullCount);
 		logger.info("Finished orthoinference of " + speciesName + ".");
 	}
 
