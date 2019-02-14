@@ -45,11 +45,11 @@ public class EWASInferrer {
 		if (homologueMappings.get(referenceEntityId) != null)
 			{
 				// Iterate through the array of homologue mappings, attempting to infer EWAS instances for each.
-				for (String homologue : homologueMappings.get(referenceEntityId))
+				for (String homologueId : homologueMappings.get(referenceEntityId))
 				{
-					String[] splitHomologue = homologue.toString().split(":");
-					String homologueSource = splitHomologue[0];
-					String homologueId = splitHomologue[1];
+//					String[] splitHomologue = homologue.toString().split(":");
+//					String homologueSource = splitHomologue[0];
+//					String homologueId = splitHomologue[1];
 					
 					GKInstance infReferenceGeneProductInst = null;
 					if (referenceGeneProductIdenticals.get(homologueId) == null)
@@ -57,13 +57,13 @@ public class EWASInferrer {
 						infReferenceGeneProductInst = InstanceUtilities.createNewInferredGKInstance((GKInstance) ewasInst.getAttributeValue(referenceEntity));
 						infReferenceGeneProductInst.addAttributeValue(identifier, homologueId);
 						// Reference DB can differ between homologue mappings, but can be differentiated by the 'homologueSource' found in each mapping.
-						GKInstance referenceDatabaseInst = null;
-						if (homologueSource.equals("ENSP"))
-						{
-							referenceDatabaseInst = enspDbInst;
-						} else {
-							referenceDatabaseInst = uniprotDbInst;
-						}
+						GKInstance referenceDatabaseInst = uniprotDbInst;
+//						if (homologueSource.equals("ENSP"))
+//						{
+//							referenceDatabaseInst = enspDbInst;
+//						} else {
+//							referenceDatabaseInst = uniprotDbInst;
+//						}
 						infReferenceGeneProductInst.addAttributeValue(referenceDatabase,  referenceDatabaseInst);
 						
 						// Creates ReferenceDNASequence instance from ReferenceEntity
@@ -292,14 +292,14 @@ public class EWASInferrer {
 			String[] spaceSplit = tabSplit[1].split(" ");
 			for (String proteinId : spaceSplit) 
 			{
-				String[] colonSplit = proteinId.split(":");
-				if (ensgMappings.get(colonSplit[1]) == null)
+//				String[] colonSplit = proteinId.split(":");
+				if (ensgMappings.get(proteinId) == null)
 				{
 					List<String> singleArray = new ArrayList<String>();
 					singleArray.add(ensgKey);
-					ensgMappings.put(colonSplit[1], (ArrayList<String>) singleArray);
+					ensgMappings.put(proteinId, (ArrayList<String>) singleArray);
 				} else {
-					ensgMappings.get(colonSplit[1]).add(ensgKey);
+					ensgMappings.get(proteinId).add(ensgKey);
 				}
 			}
 		}
