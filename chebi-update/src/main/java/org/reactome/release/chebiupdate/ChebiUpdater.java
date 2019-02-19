@@ -54,7 +54,7 @@ public class ChebiUpdater
 	private StringBuilder formulaUpdateSB = new StringBuilder();
 	private StringBuilder formulaFillSB = new StringBuilder();
 	private StringBuilder duplicatesSB = new StringBuilder();
-	private Map<GKInstance, List<String>> referenceEntityChanges = new HashMap<GKInstance, List<String>>();
+	private Map<GKInstance, List<String>> referenceEntityChanges = new HashMap<>();
 	private long personID;
 	private boolean useCache;
 	private Comparator<GKInstance> personComparator;
@@ -210,7 +210,7 @@ public class ChebiUpdater
 		{
 			for (String message : this.referenceEntityChanges.get(creator))
 			{
-				refEntChangeLog.info("{}\t{}",creator.toString(), message);
+				refEntChangeLog.info("{}", message);
 			}
 		}
 	}
@@ -310,7 +310,7 @@ public class ChebiUpdater
 		if (!newChebiID.equals(oldMoleculeIdentifier))
 		{
 			 //Need to get list of DB_IDs of referrers for *old* Identifier and also for *new* Identifier.
-			String oldIdentifierReferrersString = referrerIDJoiner(molecule);
+			String oldIdentifierReferrersString = this.referrerIDJoiner(molecule);
 
 			// It's possible that the "new" identifier is already in our system. And duplicate ReferenceMolecules are also *possible*, so this will
 			// get a little bit messy...
@@ -388,7 +388,7 @@ public class ChebiUpdater
 							GKInstance creator = (GKInstance) createdInstanceEdit.getAttributeValue(ReactomeJavaConstants.author);
 
 							@SuppressWarnings("unchecked")
-							String message = referrer.getDBID()+"\t"+referrer.toString()+"\t"+chebiName+"\t"+((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
+							String message = referrer.getDBID()+"\t"+creator.toString()+"\t"+referrer.toString()+"\t"+chebiName+"\t"+((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
 							// Add the message to the map of messages, keyed by the creator.
 							if (this.referenceEntityChanges.containsKey(creator))
 							{
@@ -517,100 +517,102 @@ public class ChebiUpdater
 	{
 		Map<Long, Entity> entityMap = Collections.synchronizedMap(new HashMap<Long, Entity>());
 		final Map<String,List<String>> chebiCache = loadCacheFromFile();
-		FileWriter fileWriter = new FileWriter("chebi-cache", true);
+		
 		// BufferedWriter is supposed to be thread-safe.
-		BufferedWriter bw = new BufferedWriter(fileWriter);
-		AtomicInteger counter = new AtomicInteger(0);
-		// The web service calls are a bit slow to respond, so do them in parallel.
-		refMolecules.parallelStream().forEach(molecule ->
+		try(FileWriter fileWriter = new FileWriter("chebi-cache", true);
+			BufferedWriter bw = new BufferedWriter(fileWriter);)
 		{
-			String identifier = null;
-			try
+			AtomicInteger counter = new AtomicInteger(0);
+			// The web service calls are a bit slow to respond, so do them in parallel.
+			refMolecules.parallelStream().forEach(molecule ->
 			{
-				identifier = (String) molecule.getAttributeValue("identifier");
-				if (identifier != null && !identifier.trim().equals(""))
+				String identifier = null;
+				try
 				{
-					Entity entity;
-					// only query web service if the data is not in the chebi-cache - NOTE: chebiCache will always be empty if this.useCache == false
-					if (!chebiCache.containsKey("CHEBI:"+identifier))
+					identifier = (String) molecule.getAttributeValue("identifier");
+					if (identifier != null && !identifier.trim().equals(""))
 					{
-						if (this.useCache && chebiCache.size() > 0)
+						Entity entity;
+						// only query web service if the data is not in the chebi-cache - NOTE: chebiCache will always be empty if this.useCache == false
+						if (!chebiCache.containsKey("CHEBI:"+identifier))
 						{
-							logger.trace("Cache miss for CHEBI:{}", identifier);
-						}
-						entity = this.chebiClient.getCompleteEntity(identifier);
-						if (entity != null && this.useCache)
-						{
-							bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
-							bw.flush();
-						}
-						else
-						{
-							if (entity == null)
+							if (this.useCache && chebiCache.size() > 0)
 							{
-								failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
+								logger.trace("Cache miss for CHEBI:{}", identifier);
+							}
+							entity = this.chebiClient.getCompleteEntity(identifier);
+							if (entity != null && this.useCache)
+							{
+								bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
+								bw.flush();
+							}
+							else
+							{
+								if (entity == null)
+								{
+									failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
+								}
 							}
 						}
+						else // ...Load data from the cache.
+						{
+							entity = extractChEBIEntityFromCache(chebiCache, identifier);
+						}
+						// Add entity to map (if it's non-null)
+						if (entity != null)
+						{
+							entityMap.put(molecule.getDBID(), entity);
+						}
 					}
-					else // ...Load data from the cache.
+					else
 					{
-						entity = extractChEBIEntityFromCache(chebiCache, identifier);
+						logger.error("ERROR: Instance \"{}\" has an empty/null identifier. This should not be allowed.", molecule.toString());
+						failedEntitiesList.put(molecule, molecule.toString() + " has an empty/NULL identifier.");
 					}
-					// Add entity to map (if it's non-null)
-					if (entity != null)
+					int i = counter.getAndIncrement();
+					if (i % 250 == 0)
 					{
-						entityMap.put(molecule.getDBID(), entity);
+						logger.debug("{} ChEBI identifiers checked", i);
 					}
 				}
-				else
+				catch (ChebiWebServiceFault_Exception e)
 				{
-					logger.error("ERROR: Instance \"{}\" has an empty/null identifier. This should not be allowed.", molecule.toString());
-					failedEntitiesList.put(molecule, molecule.toString() + " has an empty/NULL identifier.");
+					// "invalid ChEBI identifier" probably shouldn't break execution but should be logged for further investigation.
+					if (e.getMessage().contains("invalid ChEBI identifier"))
+					{
+						logger.error("ERROR: ChEBI Identifier \"{}\" is not formatted correctly.", identifier);
+						failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is not formatted correctly.");
+					}
+					// Log this identifier, but don't fail.
+					else if (e.getMessage().contains("the entity in question is deleted, obsolete, or not yet released"))
+					{
+						logger.error("ERROR: ChEBI Identifier \"{}\" is deleted, obsolete, or not yet released.", identifier);
+						failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is deleted, obsolete, or not yet released.");
+					}
+					else
+					{
+						// Other Webservice errors should probably break execution - if one fails, they will all probably fail.
+						// This is *not* a general principle, but is based on my experience with the ChEBI webservice specifically -
+						// it's a pretty stable service so it's unlikely that if one service call fails, the others will succeed.
+						logger.error("WebService error occurred! Message is: {}", e.getMessage());
+						e.printStackTrace();
+						throw new RuntimeException(e);
+					}
 				}
-				int i = counter.getAndIncrement();
-				if (i % 250 == 0)
+				catch (InvalidAttributeException e)
 				{
-					logger.debug("{} ChEBI identifiers checked", i);
-				}
-			}
-			catch (ChebiWebServiceFault_Exception e)
-			{
-				// "invalid ChEBI identifier" probably shouldn't break execution but should be logged for further investigation.
-				if (e.getMessage().contains("invalid ChEBI identifier"))
-				{
-					logger.error("ERROR: ChEBI Identifier \"{}\" is not formatted correctly.", identifier);
-					failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is not formatted correctly.");
-				}
-				// Log this identifier, but don't fail.
-				else if (e.getMessage().contains("the entity in question is deleted, obsolete, or not yet released"))
-				{
-					logger.error("ERROR: ChEBI Identifier \"{}\" is deleted, obsolete, or not yet released.", identifier);
-					failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is deleted, obsolete, or not yet released.");
-				}
-				else
-				{
-					// Other Webservice errors should probably break execution - if one fails, they will all probably fail.
-					// This is *not* a general principle, but is based on my experience with the ChEBI webservice specifically -
-					// it's a pretty stable service so it's unlikely that if one service call fails, the others will succeed.
-					logger.error("WebService error occurred! Message is: {}", e.getMessage());
+					logger.error("InvalidAttributeException caught while trying to get the \"identifier\" attribute on " + molecule.toString());
+					// stack trace should be printed, but I don't think this should break execution, though the only way I can think
+					// of this happening is if the data model changes - otherwise, this exception would probably never be caught.
 					e.printStackTrace();
-					throw new RuntimeException(e);
 				}
-			}
-			catch (InvalidAttributeException e)
-			{
-				logger.error("InvalidAttributeException caught while trying to get the \"identifier\" attribute on " + molecule.toString());
-				// stack trace should be printed, but I don't think this should break execution, though the only way I can think
-				// of this happening is if the data model changes - otherwise, this exception would probably never be caught.
-				e.printStackTrace();
-			}
-			catch (Exception e)
-			{
-				// general exceptions - print stack trace but keep going.
-				e.printStackTrace();
-			}
-		});
-		bw.close();
+				catch (Exception e)
+				{
+					// general exceptions - print stack trace but keep going.
+					e.printStackTrace();
+				}
+			});
+		}
 		return entityMap;
 	}
 
