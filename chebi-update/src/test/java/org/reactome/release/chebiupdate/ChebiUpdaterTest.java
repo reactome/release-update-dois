@@ -51,7 +51,7 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"org.apache.logging.log4j.*", "uk.ac.ebi.*", "javax.management.*", "javax.script.*", 
 			"javax.xml.*", "com.sun.org.apache.xerces.*", "org.xml.sax.*", "com.sun.xml.*", "org.w3c.dom.*", "org.mockito.*"})
-@PrepareForTest({InstanceEditUtils.class, ChebiUpdater.class})
+@PrepareForTest({InstanceEditUtils.class, ChebiUpdater.class, ChebiDataRetriever.class})
 public class ChebiUpdaterTest
 {
 	private static final long PERSON_ID = 12345L;
@@ -153,7 +153,7 @@ public class ChebiUpdaterTest
 		
 		when(chebiRefDB.getDBID()).thenReturn(123456L);
 		when(adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI")).thenReturn(Arrays.asList(chebiRefDB)) ;
-
+		PowerMockito.whenNew(ChebiWebServiceClient.class).withAnyArguments().thenReturn(chebiClient);
 	}
 	
 	@Test
@@ -354,75 +354,5 @@ public class ChebiUpdaterTest
 		when(adaptor._fetchInstance(ArgumentMatchers.anyList())).thenReturn( result1 ).thenReturn( result2 );
 		
 		updator.checkForDuplicates();
-	}
-	
-	@Test
-	public void testChEBIWSException()
-	{
-		String identifier = "112233";
-		try
-		{
-			when(chebiClient.getCompleteEntity(anyString())).thenThrow(new ChebiWebServiceFault_Exception("invalid ChEBI identifier", new ChebiWebServiceFault()));
-			ChebiDataRetriever retriever = new ChebiDataRetriever(false);
-			retriever.retrieveUpdatesFromChebi(Arrays.asList(molecule1), new HashMap<GKInstance, String>());
-		}
-		catch (ChebiWebServiceFault_Exception e)
-		{
-			e.printStackTrace();
-			assertTrue(e.getMessage().contains("ERROR: ChEBI Identifier \""+identifier+"\" is not formatted correctly."));
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			fail();
-		}
-	}
-	
-	@Test
-	public void testChEBIWSException2()
-	{
-		String identifier = "112233";
-		try
-		{
-			when(chebiClient.getCompleteEntity(anyString())).thenThrow(new ChebiWebServiceFault_Exception("the entity in question is deleted, obsolete, or not yet released", new ChebiWebServiceFault()));
-			ChebiDataRetriever retriever = new ChebiDataRetriever(false);
-			retriever.retrieveUpdatesFromChebi(Arrays.asList(molecule1), new HashMap<GKInstance, String>());
-		}
-		catch (ChebiWebServiceFault_Exception e)
-		{
-			e.printStackTrace();
-			assertTrue(e.getMessage().contains("ERROR: ChEBI Identifier \""+identifier+"\" is deleted, obsolete, or not yet released."));
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			fail();
-		}
-	}
-	
-	@Test
-	public void testChEBIWSException3()
-	{
-		String identifier = "112233";
-		try
-		{
-			when(chebiClient.getCompleteEntity(anyString())).thenThrow(new ChebiWebServiceFault_Exception("(this should trigger a RuntimeException)", new ChebiWebServiceFault()));
-			ChebiDataRetriever retriever = new ChebiDataRetriever(false);
-			retriever.retrieveUpdatesFromChebi(Arrays.asList(molecule1), new HashMap<GKInstance, String>());
-		}
-		catch (ChebiWebServiceFault_Exception e)
-		{
-			e.printStackTrace();
-			assertTrue(e.getMessage().contains("ERROR: ChEBI Identifier \""+identifier+"\" is deleted, obsolete, or not yet released."));
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			fail();
-		}
-		catch (RuntimeException e)
-		{
-			assertTrue(e.getMessage().contains("(this should trigger a RuntimeException)"));
-		}
 	}
 }
