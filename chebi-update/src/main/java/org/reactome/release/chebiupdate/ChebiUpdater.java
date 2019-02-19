@@ -41,7 +41,6 @@ public class ChebiUpdater
 	private static final Logger failedChebiLookupsLog = LogManager.getLogger("failedChebiLookupsLog");
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
-//	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
 	private StringBuilder formulaUpdateSB = new StringBuilder();
 	private StringBuilder formulaFillSB = new StringBuilder();
 	private StringBuilder duplicatesSB = new StringBuilder();
@@ -341,8 +340,8 @@ public class ChebiUpdater
 	private static String referrerIDJoiner(GKInstance molecule) throws Exception
 	{
 		return ((Collection<GKInstance>) molecule.getReferers(ReactomeJavaConstants.referenceEntity)).stream()
-												.map(referrer -> referrer.getDBID().toString())
-												.collect(Collectors.joining("|"));
+				.map(referrer -> referrer.getDBID().toString())
+				.collect(Collectors.joining("|"));
 	}
 
 	/**
@@ -356,7 +355,7 @@ public class ChebiUpdater
 	 */
 	private void updateReferenceEntities(GKInstance molecule, String chebiName, GKInstance instanceEdit) throws Exception, InvalidAttributeException, InvalidAttributeValueException
 	{
-		// now, update the any Entities that refer to the ReferenceMolecule by appending chebiName to the list of names. TODO: Refactor to a function.
+		// now, update the any Entities that refer to the ReferenceMolecule by appending chebiName to the list of names.
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> referrers = molecule.getReferers(ReactomeJavaConstants.referenceEntity);
 		if (referrers != null && referrers.size() > 0)
