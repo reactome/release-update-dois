@@ -1,4 +1,4 @@
-package org.reactome.release.update_stable_ids;
+package org.reactome.release.updateStableIds;
 
 import java.io.FileInputStream;
 import java.util.Properties;
@@ -53,7 +53,7 @@ public class Main
        
        MySQLAdaptor dbaGkCentral = new MySQLAdaptor(gkCentralHost, gkCentralDatabase, gkCentralUsername, gkCentralPassword, port);
        
-       Long personId = Long.parseLong(props.getProperty("personInstanceId"));
+       long personId = Long.parseLong(props.getProperty("personInstanceId"));
        UpdateStableIds.stableIdUpdater(dbaSlice, dbaPrevSlice, dbaGkCentral, personId);
        logger.info("Finished UpdateStableIds step");
 ;    }

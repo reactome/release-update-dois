@@ -1,10 +1,8 @@
-package org.reactome.release.update_stable_ids;
+package org.reactome.release.updateStableIds;
 
 import static org.gk.model.ReactomeJavaConstants.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,7 +20,7 @@ public class UpdateStableIds {
 		
 		logger.info("Generating InstanceEdits for " + dbaSlice.getDBName() + " and " + dbaGkCentral.getDBName());
 		// Instance Edits for test_slice and gk_central
-		String creatorName = "org.reactome.release.update_stable_ids";
+		String creatorName = "org.reactome.release.updateStableIds";
 		GKInstance sliceIE = InstanceEditUtils.createInstanceEdit(dbaSlice, personId, creatorName);
 		GKInstance gkCentralIE = InstanceEditUtils.createInstanceEdit(dbaGkCentral, personId, creatorName);
 
@@ -31,9 +29,8 @@ public class UpdateStableIds {
 			dbaSlice.startTransaction();
 		}
 		dbaGkCentral.startTransaction();
-		
-		//TODO:Should legacy regulation instances be updated?
-		//TODO:Ensure that re-run handling is implemented (backing up DB)
+
+		//TODO: Perl wrapper will create a 'snapshot' of the previous slice -- once the wrapper is retired this needs to be done
 		
 		// These two Lists were originally used to determine what classes' instances should be updated.
 		// Since all 'accepted' classes turned out to encompass all PhysicalEntity and Event classes, and all
@@ -50,12 +47,13 @@ public class UpdateStableIds {
 		sliceInstances.addAll(eventInstances);
 		sliceInstances.addAll(physicalEntityInstances);
 
-		int incrementCount = 0;
+		int incrementedCount = 0;
+		int notIncrementedCount = 0;
 		logger.info("Total instances to check: " + sliceInstances.size());
 		for (GKInstance sliceInstance : sliceInstances) {
 			logger.info("Checking " + sliceInstance);
-			GKInstance gkCentralInstance = (GKInstance) dbaGkCentral.fetchInstance(sliceInstance.getDBID());
-			GKInstance prevSliceInstance = (GKInstance) dbaPrevSlice.fetchInstance(sliceInstance.getDBID());
+			GKInstance gkCentralInstance = dbaGkCentral.fetchInstance(sliceInstance.getDBID());
+			GKInstance prevSliceInstance = dbaPrevSlice.fetchInstance(sliceInstance.getDBID());
 			// Check if instance is new and that it exists on gkCentral (they could be deleted)
 			if (prevSliceInstance != null && gkCentralInstance != null) {
 				
@@ -66,25 +64,28 @@ public class UpdateStableIds {
 					// Make sure StableIdentifier instance exists
 					if (sliceInstance.getAttributeValue(stableIdentifier) != null && gkCentralInstance.getAttributeValue(stableIdentifier) != null) {
 						logger.info("\tIncrementing " + sliceInstance.getAttributeValue(stableIdentifier));
+
 						incrementStableIdentifier(sliceInstance, dbaSlice, sliceIE);
 						incrementStableIdentifier(gkCentralInstance, dbaGkCentral, gkCentralIE);
-						incrementCount++;
+
 					}
 				} else {
 					if (sliceInstanceModified.size() == prevSliceInstanceModified.size()) {
-//						System.out.println("No change between releases");
+						notIncrementedCount++;
 					} else {
 						logger.warn("Unexpected: Number of 'Modified' instances in [" + sliceInstance.getDBID() + "] is fewer than in previous release");
+						notIncrementedCount++;
 					}
 				}
-				
 				// Instances that have been updated already during the current release will have their 'releaseStatus' attribute equal to 'UPDATED'.
 				// This will make sure that StableIDs are only updated once per release.
 				try {
 					if (isUpdated(sliceInstance, prevSliceInstance, dbaPrevSlice)) {
 						String releaseStatusString = (String) sliceInstance.getAttributeValue(releaseStatus);
 						String updated = "UPDATED";
-						if (releaseStatusString == null || !releaseStatusString.contentEquals(updated)) {
+
+						if (releaseStatusString == null || !releaseStatusString.equals(updated)) {
+							incrementedCount++;
 							sliceInstance.addAttributeValue(releaseStatus, updated);
 							sliceInstance.addAttributeValue(modified, sliceIE);
 							dbaSlice.updateInstanceAttribute(sliceInstance, releaseStatus);
@@ -104,7 +105,10 @@ public class UpdateStableIds {
 		}
 		logger.info("Commiting all changes in " + dbaGkCentral.getDBName());
 		dbaGkCentral.commit();
-		logger.info(incrementCount + " Stable Identifiers were updated");
+		logger.info(incrementedCount + " Stable Identifiers were updated");
+		logger.info(notIncrementedCount + "were not updated");
+		logger.info("UpdateStableIdentifiers step has finished");
+		System.out.println(incrementedCount);
 	}
 
 	// Increments the identifierVersion attribute and updates the StableIdentifier displayName accordingly.

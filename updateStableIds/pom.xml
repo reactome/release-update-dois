@@ -3,12 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.reactome.release</groupId>
-  <artifactId>update-stable-ids</artifactId>
+  <artifactId>updateStableIds</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>update-stable-ids</name>
-  <url>http://maven.apache.org</url>
+  <name>updateStableIds</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -64,7 +63,7 @@
 	      <configuration>
 	        <archive>
 	          <manifest>
-	            <mainClass>org.reactome.release.update_stable_ids.Main</mainClass>
+	            <mainClass>org.reactome.release.updateStableIds.Main</mainClass>
 	          </manifest>
 	        </archive>
 	        <descriptorRefs>
