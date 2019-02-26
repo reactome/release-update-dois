@@ -14,7 +14,7 @@ import org.reactome.release.common.database.InstanceEditUtils;
 public class StableIdentifierUpdater {
 
 	private static final Logger logger = LogManager.getLogger();
-	
+
 	@SuppressWarnings("unchecked")
 	public static void updateStableIdentifiers(MySQLAdaptor dbaSlice, MySQLAdaptor dbaPrevSlice, MySQLAdaptor dbaGkCentral, Long personId) throws Exception {
 		
@@ -69,6 +69,7 @@ public class StableIdentifierUpdater {
 				} else {
 					if (sliceInstanceModified.size() < prevSliceInstanceModified.size()) {
 						logger.fatal(sliceInstance + " in current release has less modification instances than previous release");
+						throw new IllegalStateException("Found instance with less modification instances than in previous release -- terminating");
 					}
 					notIncrementedCount++;
 				}
@@ -88,7 +89,7 @@ public class StableIdentifierUpdater {
 							logger.info("StableIdentifer has already been updated during this release");
 						}
 					}
-				} catch (StackOverflowError e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			} else if (gkCentralInstance == null) {
