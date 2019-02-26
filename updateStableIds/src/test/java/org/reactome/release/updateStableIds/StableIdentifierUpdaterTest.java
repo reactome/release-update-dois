@@ -32,9 +32,9 @@ import static org.junit.Assert.*;
         "javax.xml.*", "com.sun.org.apache.xerces.*", "org.xml.sax.*", "com.sun.xml.*", "org.w3c.dom.*", "org.mockito.*"})
 public class StableIdentifierUpdaterTest {
 
-    private MySQLAdaptor mockAdaptor = PowerMockito.mock(MySQLAdaptor.class);
-    private MySQLAdaptor mockAdaptor2 = PowerMockito.mock(MySQLAdaptor.class);
-    private MySQLAdaptor mockAdaptor3 = PowerMockito.mock(MySQLAdaptor.class);
+    private MySQLAdaptor mockSliceAdaptor = PowerMockito.mock(MySQLAdaptor.class);
+    private MySQLAdaptor mockPrevSliceAdaptor = PowerMockito.mock(MySQLAdaptor.class);
+    private MySQLAdaptor mockGkCentralAdaptor = PowerMockito.mock(MySQLAdaptor.class);
 
 //    @Mock
 //    UpdateStableIds stableUpdater = new UpdateStableIds();
@@ -65,7 +65,7 @@ public class StableIdentifierUpdaterTest {
     }
 
     @Test
-    public void stableIdUpdaterTest() throws Exception {
+    public void updateStableIdentifiersTest() throws Exception {
 
         PowerMockito.mockStatic(InstanceEditUtils.class);
 //        Mockito.when(InstanceEditUtils.createInstanceEdit(mockAdaptor, 12345L, "CreatorName")).thenReturn(mockInstanceEdit);
@@ -73,11 +73,11 @@ public class StableIdentifierUpdaterTest {
         sliceList = Arrays.asList(mockInstance, mockInstance, mockInstance);
         sliceList2 = Arrays.asList(mockInstance, mockInstance);
 
-        Mockito.when(mockAdaptor.fetchInstancesByClass("Event")).thenReturn(sliceList);
-        Mockito.when(mockAdaptor.fetchInstancesByClass("PhysicalEntity")).thenReturn(sliceList);
+        Mockito.when(mockSliceAdaptor.fetchInstancesByClass("Event")).thenReturn(sliceList);
+        Mockito.when(mockSliceAdaptor.fetchInstancesByClass("PhysicalEntity")).thenReturn(sliceList);
 
-        Mockito.when(mockAdaptor2.fetchInstance(mockInstance.getDBID())).thenReturn(mockInstance2);
-        Mockito.when(mockAdaptor3.fetchInstance(mockInstance.getDBID())).thenReturn(mockInstance3);
+        Mockito.when(mockPrevSliceAdaptor.fetchInstance(mockInstance.getDBID())).thenReturn(mockInstance2);
+        Mockito.when(mockGkCentralAdaptor.fetchInstance(mockInstance.getDBID())).thenReturn(mockInstance3);
 
         Mockito.when(mockInstance.getAttributeValuesList("modified")).thenReturn(sliceList);
         Mockito.when(mockInstance2.getAttributeValuesList("modified")).thenReturn(sliceList2);
@@ -93,21 +93,21 @@ public class StableIdentifierUpdaterTest {
         Mockito.when(mockInstance.getAttributeValuesList("reviewed")).thenReturn(sliceList);
         Mockito.when(mockInstance2.getAttributeValuesList("reviewed")).thenReturn(sliceList2);
 
-        StableIdentifierUpdater.updateStableIdentifiers(mockAdaptor, mockAdaptor2, mockAdaptor3, 12345L);
+        StableIdentifierUpdater.updateStableIdentifiers(mockSliceAdaptor, mockPrevSliceAdaptor, mockGkCentralAdaptor, 12345L);
     }
 
     @Test
-    public void stableIdUpdaterModifiedListTest() throws Exception {
+    public void updateStableIdentifiersModifiedListsWithSameSizeTest() throws Exception {
         PowerMockito.mockStatic(InstanceEditUtils.class);
 
         sliceList = Arrays.asList(mockInstance);
         sliceList2 = Arrays.asList(mockInstance, mockInstance);
 
-        Mockito.when(mockAdaptor.fetchInstancesByClass("Event")).thenReturn(sliceList);
-        Mockito.when(mockAdaptor.fetchInstancesByClass("PhysicalEntity")).thenReturn(sliceList);
+        Mockito.when(mockSliceAdaptor.fetchInstancesByClass("Event")).thenReturn(sliceList);
+        Mockito.when(mockSliceAdaptor.fetchInstancesByClass("PhysicalEntity")).thenReturn(sliceList);
 
-        Mockito.when(mockAdaptor2.fetchInstance(mockInstance.getDBID())).thenReturn(mockInstance2);
-        Mockito.when(mockAdaptor3.fetchInstance(mockInstance.getDBID())).thenReturn(mockInstance3);
+        Mockito.when(mockPrevSliceAdaptor.fetchInstance(mockInstance.getDBID())).thenReturn(mockInstance2);
+        Mockito.when(mockGkCentralAdaptor.fetchInstance(mockInstance.getDBID())).thenReturn(mockInstance3);
 
         Mockito.when(mockInstance.getAttributeValuesList("modified")).thenReturn(sliceList);
         Mockito.when(mockInstance2.getAttributeValuesList("modified")).thenReturn(sliceList2);
@@ -115,6 +115,6 @@ public class StableIdentifierUpdaterTest {
         Mockito.when(mockInstance.getSchemClass()).thenReturn(mockSchemaClass);
         Mockito.when(mockInstance.getSchemClass().isa("Event")).thenReturn(false);
 
-        StableIdentifierUpdater.updateStableIdentifiers(mockAdaptor, mockAdaptor2, mockAdaptor3, 12345L);
+        StableIdentifierUpdater.updateStableIdentifiers(mockSliceAdaptor, mockPrevSliceAdaptor, mockGkCentralAdaptor, 12345L);
     }
 }

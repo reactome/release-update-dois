@@ -68,7 +68,7 @@ public class StableIdentifierUpdater {
 					}
 				} else {
 					if (sliceInstanceModified.size() < prevSliceInstanceModified.size()) {
-						logger.warn("Unexpected: Number of 'Modified' instances in [" + sliceInstance.getDBID() + "] is fewer than in previous release");
+						logger.fatal(sliceInstance + " in current release has less modification instances than previous release");
 					}
 					notIncrementedCount++;
 				}
@@ -96,6 +96,7 @@ public class StableIdentifierUpdater {
 			}
 		}
 
+		// TODO: Update test_slice after gkCentral has been successfully updated
 		if (dbaSlice.supportsTransactions()) {
 			dbaSlice.commit();
 		}
@@ -104,10 +105,10 @@ public class StableIdentifierUpdater {
 		logger.info(incrementedCount + " Stable Identifiers were updated");
 		logger.info(notIncrementedCount + " were not updated");
 		logger.info("UpdateStableIdentifiers step has finished");
-		System.out.println(incrementedCount);
 	}
 
-	// Increments the identifierVersion attribute and updates the StableIdentifier displayName accordingly. TODO: IT
+	// Increments the identifierVersion attribute and updates the StableIdentifier displayName accordingly.
+	// TODO: Integration Testing of increment function
 	private static void incrementStableIdentifier(GKInstance instance, MySQLAdaptor dba, GKInstance instanceEdit) throws InvalidAttributeException, Exception {
 		GKInstance stableIdentifierInst = (GKInstance) instance.getAttributeValue(stableIdentifier);
 		String id = (String) stableIdentifierInst.getAttributeValue(identifier);
