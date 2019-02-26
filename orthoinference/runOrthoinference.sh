@@ -12,7 +12,7 @@ allSpecies=(pfal spom scer ddis cele sscr btau cfam mmus rnor ggal xtro drer dme
 for species in "${allSpecies[@]}"
 do
 	echo "java -jar target/orthoinference-0.0.1-SNAPSHOT-jar-with-dependencies.jar $species > orthoinference_$species.out";
-	java -jar target/orthoinference-0.0.1-SNAPSHOT-jar-with-dependencies.jar $species > orthoinference.out;
+	java -jar target/orthoinference-0.0.1-SNAPSHOT-jar-with-dependencies.jar $species > orthoinference_$species.out;
 done
 echo "Orthoinference complete"
 
