@@ -27,10 +27,10 @@ import static org.junit.Assert.*;
 
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({UpdateStableIds.class, InstanceEditUtils.class})
+@PrepareForTest({StableIdentifierUpdater.class, InstanceEditUtils.class})
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "javax.script.*",
         "javax.xml.*", "com.sun.org.apache.xerces.*", "org.xml.sax.*", "com.sun.xml.*", "org.w3c.dom.*", "org.mockito.*"})
-public class UpdateStableIdsTest {
+public class StableIdentifierUpdaterTest {
 
     private MySQLAdaptor mockAdaptor = PowerMockito.mock(MySQLAdaptor.class);
     private MySQLAdaptor mockAdaptor2 = PowerMockito.mock(MySQLAdaptor.class);
@@ -93,7 +93,7 @@ public class UpdateStableIdsTest {
         Mockito.when(mockInstance.getAttributeValuesList("reviewed")).thenReturn(sliceList);
         Mockito.when(mockInstance2.getAttributeValuesList("reviewed")).thenReturn(sliceList2);
 
-        UpdateStableIds.stableIdUpdater(mockAdaptor, mockAdaptor2, mockAdaptor3, 12345L);
+        StableIdentifierUpdater.updateStableIdentifiers(mockAdaptor, mockAdaptor2, mockAdaptor3, 12345L);
     }
 
     @Test
@@ -115,6 +115,6 @@ public class UpdateStableIdsTest {
         Mockito.when(mockInstance.getSchemClass()).thenReturn(mockSchemaClass);
         Mockito.when(mockInstance.getSchemClass().isa("Event")).thenReturn(false);
 
-        UpdateStableIds.stableIdUpdater(mockAdaptor, mockAdaptor2, mockAdaptor3, 12345L);
+        StableIdentifierUpdater.updateStableIdentifiers(mockAdaptor, mockAdaptor2, mockAdaptor3, 12345L);
     }
 }

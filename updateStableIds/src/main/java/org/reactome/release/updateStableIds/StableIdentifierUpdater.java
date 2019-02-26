@@ -11,12 +11,12 @@ import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
 import org.reactome.release.common.database.InstanceEditUtils;
 
-public class UpdateStableIds {
+public class StableIdentifierUpdater {
 
 	private static final Logger logger = LogManager.getLogger();
 	
 	@SuppressWarnings("unchecked")
-	public static void stableIdUpdater(MySQLAdaptor dbaSlice, MySQLAdaptor dbaPrevSlice, MySQLAdaptor dbaGkCentral, Long personId) throws Exception {
+	public static void updateStableIdentifiers(MySQLAdaptor dbaSlice, MySQLAdaptor dbaPrevSlice, MySQLAdaptor dbaGkCentral, Long personId) throws Exception {
 		
 		logger.info("Generating InstanceEdits for " + dbaSlice.getDBName() + " and " + dbaGkCentral.getDBName());
 		// Instance Edits for test_slice and gk_central
@@ -31,13 +31,6 @@ public class UpdateStableIds {
 		dbaGkCentral.startTransaction();
 
 		//TODO: Perl wrapper will create a 'snapshot' of the previous slice -- once the wrapper is retired this needs to be done
-		
-		// These two Lists were originally used to determine what classes' instances should be updated.
-		// Since all 'accepted' classes turned out to encompass all PhysicalEntity and Event classes, and all
-		// 'excluded' classes were Regulation classes, the filter was not needed anymore.
-//		final List<String> acceptedClassesWithStableIdentifiers = Arrays.asList("Pathway","SimpleEntity","OtherEntity","DefinedSet","Complex","EntityWithAccessionedSequence","GenomeEncodedEntity","Reaction","BlackBoxEvent","CandidateSet","Polymer","Depolymerisation","Polymerisation","Drug","FailedReaction","EntitySet");
-//		List<String> excludedClassesWithStableIdentifiers = Arrays.asList("PositiveGeneExpressionRegulation","PositiveRegulation","NegativeRegulation","Requirement","NegativeGeneExpressionRegulation");
-//		ResultSet classesWithStableIdentifiers = dbaGkCentral.executeQuery("SELECT DISTINCT _class FROM DatabaseObject WHERE StableIdentifier IS NOT NULL", null);		
 
 		logger.info("Fetching all Event and PhysicalEntity instances");
 		// Get all Event and PhysicalEntity instances and combine them into one large List
@@ -109,7 +102,7 @@ public class UpdateStableIds {
 		logger.info("Commiting all changes in " + dbaGkCentral.getDBName());
 		dbaGkCentral.commit();
 		logger.info(incrementedCount + " Stable Identifiers were updated");
-		logger.info(notIncrementedCount + "were not updated");
+		logger.info(notIncrementedCount + " were not updated");
 		logger.info("UpdateStableIdentifiers step has finished");
 		System.out.println(incrementedCount);
 	}

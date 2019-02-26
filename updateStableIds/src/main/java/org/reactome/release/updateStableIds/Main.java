@@ -54,7 +54,7 @@ public class Main
        MySQLAdaptor dbaGkCentral = new MySQLAdaptor(gkCentralHost, gkCentralDatabase, gkCentralUsername, gkCentralPassword, port);
        
        long personId = Long.parseLong(props.getProperty("personInstanceId"));
-       UpdateStableIds.stableIdUpdater(dbaSlice, dbaPrevSlice, dbaGkCentral, personId);
+       StableIdentifierUpdater.updateStableIdentifiers(dbaSlice, dbaPrevSlice, dbaGkCentral, personId);
        logger.info("Finished UpdateStableIds step");
 ;    }
 }
