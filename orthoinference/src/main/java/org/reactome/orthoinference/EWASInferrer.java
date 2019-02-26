@@ -79,8 +79,6 @@ public class EWASInferrer {
 					for (int endCoord : (Collection<Integer>) ewasInst.getAttributeValuesList(endCoordinate)) {
 						infEWASInst.addAttributeValue(endCoordinate, endCoord);
 					}
-					//					int startCoord = (int) infEWASInst.getAttributeValue(startCoordinate);
-					//					int endCoord = (int) infEWASInst.getAttributeValue(endCoordinate);
 					if (infEWASInst.getAttributeValue(startCoordinate) != null && (int) infEWASInst.getAttributeValue(startCoordinate) > 1 || infEWASInst.getAttributeValue(endCoordinate) != null && (int) infEWASInst.getAttributeValue(endCoordinate) > 1) {
 						List<String> infEWASInstNames = (ArrayList<String>) ((GKInstance) ewasInst).getAttributeValuesList(name);
 						infEWASInst.addAttributeValue(name, infEWASInstNames.get(0));
