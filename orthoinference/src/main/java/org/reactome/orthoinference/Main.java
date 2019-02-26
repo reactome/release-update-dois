@@ -22,7 +22,7 @@ public class Main {
 		} else if (args.length == 1 && args[0].length() == 4){
 			speciesCode = args[0];
 		} else {
-			logger.warn("Please include a 4-letter species code as the first argument (eg: mmus)");
+			logger.fatal("Please include a 4-letter species code as the first argument (eg: mmus)");
 			System.exit(0);
 		}
 		
