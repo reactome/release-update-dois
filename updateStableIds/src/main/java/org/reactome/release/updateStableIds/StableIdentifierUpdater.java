@@ -77,6 +77,7 @@ public class StableIdentifierUpdater {
 				// This will make sure that StableIDs are only updated once per release.
 				try {
 					if (isUpdated(sliceInstance, prevSliceInstance, dbaPrevSlice)) {
+						logger.info("Checking if " + sliceInstance + " needs to be updated");
 						String releaseStatusString = (String) sliceInstance.getAttributeValue(releaseStatus);
 						String updated = "UPDATED";
 
