@@ -3,11 +3,7 @@ package org.reactome.orthoinference;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
@@ -31,7 +27,7 @@ public class EWASInferrer {
 	private static GKInstance uniprotDbInst;
 	private static GKInstance speciesInst;
 	private static Map<String, String[]> homologueMappings = new HashMap<String,String[]>();
-	private static Map<String, ArrayList<String>> ensgMappings = new HashMap<String,ArrayList<String>>();
+	private static Map<String, List<String>> ensgMappings = new HashMap<>();
 	private static Map<String, GKInstance> referenceGeneProductIdenticals = new HashMap<String,GKInstance>();
 	private static Map<String,GKInstance> ewasIdenticals = new HashMap<String,GKInstance>();
 	private static Map<String,GKInstance> residueIdenticals = new HashMap<String,GKInstance>();
@@ -194,12 +190,7 @@ public class EWASInferrer {
 	// This is different from when we built Orthopairs files using Compara, since the homology mapping file was generated using IDs from the gene-protein file.
 	// This function prevents a Null Exception from killing the entire Reaction's inference, rather than just the EWAS inference.
 	private static boolean checkValidSpeciesProtein(String homologueId) {
-		List<String> ensgIds = ensgMappings.get(homologueId);
-		if (ensgIds == null) {
-			return false;
-		} else {
-			return true;
-		}
+		return ensgMappings.containsKey(homologueId);
 	}
 
 	// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein. Creates an instance for the primary database and an alternate, if it exists.
@@ -270,14 +261,12 @@ public class EWASInferrer {
 		{
 			String[] tabSplit = currentLine.split("\t");
 			String ensgKey = tabSplit[0];
-			String[] spaceSplit = tabSplit[1].split(" ");
-			for (String proteinId : spaceSplit)
+			String[] proteinIds = tabSplit[1].split(" ");
+			for (String proteinId : proteinIds)
 			{
 				if (ensgMappings.get(proteinId) == null)
 				{
-					List<String> singleArray = new ArrayList<String>();
-					singleArray.add(ensgKey);
-					ensgMappings.put(proteinId, (ArrayList<String>) singleArray);
+					ensgMappings.put(proteinId, Collections.singletonList(ensgKey));
 				} else {
 					ensgMappings.get(proteinId).add(ensgKey);
 				}
@@ -357,9 +346,9 @@ public class EWASInferrer {
 	public static void resetVariables()
 	{
 		homologueMappings = new HashMap<>();
-		ensgMappings = new HashMap<String,ArrayList<String>>();
-		referenceGeneProductIdenticals = new HashMap<String,GKInstance>();
-		ewasIdenticals = new HashMap<String,GKInstance>();
-		residueIdenticals = new HashMap<String,GKInstance>();
+		ensgMappings = new HashMap<>();
+		referenceGeneProductIdenticals = new HashMap<>();
+		ewasIdenticals = new HashMap<>();
+		residueIdenticals = new HashMap<>();
 	}
 }
