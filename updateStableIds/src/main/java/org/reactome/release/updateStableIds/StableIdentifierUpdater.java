@@ -81,6 +81,7 @@ public class StableIdentifierUpdater {
 						String updated = "UPDATED";
 
 						if (releaseStatusString == null || !releaseStatusString.equals(updated)) {
+							logger.info("Updating release status for " + sliceInstance);
 							sliceInstance.addAttributeValue(releaseStatus, updated);
 							sliceInstance.addAttributeValue(modified, sliceIE);
 							dbaSlice.updateInstanceAttribute(sliceInstance, releaseStatus);
