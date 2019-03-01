@@ -8,7 +8,7 @@ In a nutshell, the inference process follows this workflow:
 
 ![alt text](https://github.com/reactome/data-release-pipeline/blob/develop/assets/OrthoinferenceOverview.png)
 
-For each species, we take all Human <b>ReactionlikeEvents</b> (RlE) instances (<i>Reaction, BlackBoxEvent, Polymerisation, Depolymerisation, FailedReaction</i>) in the `release_current/test_reactome` database that is a copy of the the `slice_current/test_slice` database after <a href="https://github.com/reactome/data-release-pipeline/tree/develop/updateStableIds">updateStableIds</a> has beenr un. For each of these RlE instances, there are a few basic rules that must be followed for an inference to be attempted. It must pass a series of <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/SkipInstanceChecker.java">filters</a> and have <b>at least 1</b> protein instance, determined using the <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/ProteinCountUtility.java">ProteinCountUtility</a>. 
+For each species, we take all Human <b>ReactionlikeEvents</b> (RlE) instances (<i>Reaction, BlackBoxEvent, Polymerisation, Depolymerisation, FailedReaction</i>) in the `release_current/test_reactome` database that is a copy of the the `slice_current/test_slice` database after <a href="https://github.com/reactome/data-release-pipeline/tree/develop/updateStableIds">updateStableIds</a> has been run. For each of these RlE instances, there are a few basic rules that must be followed for an inference to be attempted. It must pass a series of <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/SkipInstanceChecker.java">filters</a> and have <b>at least 1</b> protein instance, determined using the <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/ProteinCountUtility.java">ProteinCountUtility</a>. 
 
 If the RlE passes all these tests, it is considered <i>eligible</i> for inference. Inference is first attempted on the RlE's <b>input</b> and <b>output</b> attributes, followed by <b>catalyst</b> and <b>regulation</b> inference attempts. <u>If the input or output inferences fail, then the process is terminated for that RlE since they are required components of any ReactionlikeEvent.</u> 
   
@@ -80,7 +80,7 @@ Typically there are a number of instances that inference will be skipped for. Th
  
 <h3> Verifying Orthoinference </h3>
 
-Once all scripts in the previous step have been run (including <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/remove_unused_PE.pl">remove_unusued_PE.pl</a> and <a href="https://github.com/reactome/Release/blob/master/scripts/release/updateDisplayName.pl">updateDisplayName.pl</a>), there is a QA process that should be followed. Orthoinference is a foundational step for the Reactome release pipeline, and ensuring that this process worked as expected will save much time later in the Release process if anything erroneous happened. 
+Once all scripts in the previous step have been run there is a QA process that should be followed. Orthoinference is a foundational step for the Reactome release pipeline, and ensuring that this process worked as expected will save much time later in the Release process if anything erroneous happened. 
 
 <b> Recommended QA </b><br>
 
