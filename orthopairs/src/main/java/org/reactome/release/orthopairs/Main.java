@@ -66,6 +66,10 @@ public class Main
         String XenbaseFileURL = props.get("XenbaseFileURL").toString();
         String ZFINFileURL = props.get("ZFINFileURL").toString();
 
+        if (releaseNumber.isEmpty()) {
+            logger.fatal("Please populate config.properties file with releaseNumber");
+            throw new IllegalStateException("No releaseNumber attribute in config.properties");
+        }
         new File(releaseNumber).mkdir();
 
         logger.info("Starting Orthopairs file generation");
