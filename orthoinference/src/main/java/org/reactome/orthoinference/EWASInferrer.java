@@ -266,7 +266,9 @@ public class EWASInferrer {
 			{
 				if (ensgMappings.get(proteinId) == null)
 				{
-					ensgMappings.put(proteinId, Collections.singletonList(ensgKey));
+					List<String> singleArray = new ArrayList<>();
+					singleArray.add(ensgKey);
+					ensgMappings.put(proteinId, singleArray);
 				} else {
 					ensgMappings.get(proteinId).add(ensgKey);
 				}
