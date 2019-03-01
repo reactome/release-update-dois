@@ -1,0 +1,6 @@
+logs
+orthoinference.out
+src/main/resources/*.txt
+src/main/resources/orthopairs/*
+*.txt
+target/*

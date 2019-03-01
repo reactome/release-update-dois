@@ -1,14 +1,14 @@
 <h2> Orthoinference: Generating Reactome's Computationally Inferred Reactions and Pathways</h2>
 
-This module has been rewritten from Perl to Java. This first iteration of orthoinference only contains the components of the orthoinference module that pertain to the <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/infer_events.pl">infer_events.pl</a> script in the Release repository. While this contains the majority of code run for orthoinference, the rewrite of the <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/tweak_datamodel.pl">tweak_datamodel.pl</a>, <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/remove_unused_PE.pl">remove_unusued_PE.pl</a>, and <a href="https://github.com/reactome/Release/blob/master/scripts/release/updateDisplayName.pl">updateDisplayName.pl</a> modules will need to be completed for this to be considered a completed rewrite.
+This module has been rewritten from Perl to Java. This first iteration of orthoinference only contains the components of the orthoinference module that pertain to the <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/infer_events.pl">infer_events.pl</a> script in the Release repository. While this contains the majority of code run for orthoinference, the rewrite of the <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/remove_unused_PE.pl">remove_unusued_PE.pl</a>, and <a href="https://github.com/reactome/Release/blob/master/scripts/release/updateDisplayName.pl">updateDisplayName.pl</a> modules will need to be completed for this to be considered a completed rewrite.
 
 <h3> The Inference Process </h3>
 
 In a nutshell, the inference process follows this workflow:
 
-![alt text](https://github.com/reactome/data-release-pipeline/blob/feature/orthoinference/assets/OrthoinferenceOverview.png)
+![alt text](https://github.com/reactome/data-release-pipeline/blob/develop/assets/OrthoinferenceOverview.png)
 
-For each species, we take all Human <b>ReactionlikeEvents</b> (RlE) instances (<i>Reaction, BlackBoxEvent, Polymerisation, Depolymerisation, FailedReaction</i>) in the `test_reactome` database that was generated from the `test_slice` using the <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/tweak_datamodel.pl">tweak_datamodel.pl</a> script. For each of these RlE instances, there are a few basic rules that must be followed for an inference to be attempted. It must pass a series of <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/SkipInstanceChecker.java">filters</a> and have <b>at least 1</b> protein instance, determined using the <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/ProteinCountUtility.java">ProteinCountUtility</a>. 
+For each species, we take all Human <b>ReactionlikeEvents</b> (RlE) instances (<i>Reaction, BlackBoxEvent, Polymerisation, Depolymerisation, FailedReaction</i>) in the `release_current/test_reactome` database that is a copy of the the `slice_current/test_slice` database after <a href="https://github.com/reactome/data-release-pipeline/tree/develop/updateStableIds">updateStableIds</a> has been run. For each of these RlE instances, there are a few basic rules that must be followed for an inference to be attempted. It must pass a series of <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/SkipInstanceChecker.java">filters</a> and have <b>at least 1</b> protein instance, determined using the <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/src/main/java/org/reactome/orthoinference/ProteinCountUtility.java">ProteinCountUtility</a>. 
 
 If the RlE passes all these tests, it is considered <i>eligible</i> for inference. Inference is first attempted on the RlE's <b>input</b> and <b>output</b> attributes, followed by <b>catalyst</b> and <b>regulation</b> inference attempts. <u>If the input or output inferences fail, then the process is terminated for that RlE since they are required components of any ReactionlikeEvent.</u> 
   
@@ -21,7 +21,7 @@ After all valid ReactionlikeEvents instances have been inferred for a species, t
 Orthoinference can be run once the <a href="https://github.com/reactome/data-release-pipeline/tree/feature/update-stable-ids">UpdateStableIds</a> step has been run. Historically, it had been run following the now-deprecated MyISAM step. Before running the new Java Orthoinference code, there are a few requirements:<br>
 
 - Orthopair file generation must have been completed
-- The <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/tweak_datamodel.pl">tweak_datamodel.pl</a> step of Perl Orthoinference needs to be run, producing the fresh `test_reactome_##` database (this will be ported to Java before release 68)
+- <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/tweak_datamodel.pl">tweak_datamodel.pl</a> has been deprecated. This step produced the `test_reactome_##` database with some data model modifications. These modifications aren't required anymore, but the user now needs to create `release_current/test_reactome_##` from `slice_current/test_slice_##`.
 - Set the `config.properties` file
 - Locally install a build of <a href="https://github.com/reactome/data-release-pipeline/tree/develop/release-common-lib">release-common-lib</a>, following the instructions at the link
 - `normal_event_skip_list.txt` needs to be placed in `src/main/resources/` folder
@@ -59,7 +59,7 @@ Typically there are a number of instances that inference will be skipped for. Th
   
   <b>Note</b>: For the orthoinference steps and QA, it is recommended that <b>Java 8</b> be used and <b>mySQL 5.5</b> or <b>5.7</b> be used.
   
-  Once all <a href="https://github.com/reactome/data-release-pipeline/tree/develop/orthoinference#-preparing-orthoinference-">prerequisites</a> have been completed (most importantly the running of <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/tweak_datamodel.pl">tweak_datamodel.pl</a>), running the <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/runOrthoinference.sh">runOrthoinference.sh</a> script will begin the process. This bash script performs a git pull to update the repo with any changes that may have happened between releases. It then builds the orthoinference jar file with all dependencies and then executes it for each species that will be projected to.
+  Once all <a href="https://github.com/reactome/data-release-pipeline/tree/develop/orthoinference#-preparing-orthoinference-">prerequisites</a> have been completed, running the <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/runOrthoinference.sh">runOrthoinference.sh</a> script will begin the process. This bash script performs a git pull to update the repo with any changes that may have happened between releases. It then builds the orthoinference jar file with all dependencies and then executes it for each species that will be projected to.
   
   <b>Note</b>: To run orthoinference on particular species, modify the 'allSpecies' array in <a href="https://github.com/reactome/data-release-pipeline/blob/develop/orthoinference/runOrthoinference.sh">runOrthoinference.sh</a> so that it only contains the species you wish to project too. Alternatively, if the jar file has been built and only one species needs to be inferred, run the following command:<br> 
 `java -Xmx4096m -jar target/orthoinference-0.0.1-SNAPSHOT-jar-with-dependencies.jar speciesCode`
@@ -76,11 +76,11 @@ Typically there are a number of instances that inference will be skipped for. Th
  
  Once the Java code has been finished, verify that all `eligible_(speciesCode)_75.txt` files have the same number of lines. If the line counts are different, something likely went wrong during inference and will need to be investigated.
  
- The final scripts to run are <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/remove_unused_PE.pl">remove_unusued_PE.pl</a> and <a href="https://github.com/reactome/Release/blob/master/scripts/release/updateDisplayName.pl">updateDisplayName.pl</a>. 
+ The final scripts to run are <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/remove_unused_PE.pl">remove_unusued_PE.pl</a> (Note: for 68 this script can be skipped) and <a href="https://github.com/reactome/Release/blob/master/scripts/release/updateDisplayName.pl">updateDisplayName.pl</a>. 
  
 <h3> Verifying Orthoinference </h3>
 
-Once all scripts in the previous step have been run (including <a href="https://github.com/reactome/Release/blob/master/scripts/release/orthoinference/remove_unused_PE.pl">remove_unusued_PE.pl</a> and <a href="https://github.com/reactome/Release/blob/master/scripts/release/updateDisplayName.pl">updateDisplayName.pl</a>), there is a QA process that should be followed. Orthoinference is a foundational step for the Reactome release pipeline, and ensuring that this process worked as expected will save much time later in the Release process if anything erroneous happened. 
+Once all scripts in the previous step have been run there is a QA process that should be followed. Orthoinference is a foundational step for the Reactome release pipeline, and ensuring that this process worked as expected will save much time later in the Release process if anything erroneous happened. 
 
 <b> Recommended QA </b><br>
 
@@ -89,7 +89,7 @@ Once all scripts in the previous step have been run (including <a href="https://
 
 Next, we want to make sure that the new `test_reactome database` can be imported to the <b>graphDb</b> in neo4j and that it reports acceptable graph QA numbers. <br><b>It is recommended that the following steps be run on your workstation.</b>
 
-3) Run the <a href="https://github.com/reactome/graph-importer">graph-importer</a> module. This should take some time (30+ minutes). After it has run, the imported graphDb will appear in `target/graph.db/`. Additionally, it will output the <a href="https://github.com/reactome/database-checker">database-checker</a> results.
+3) Run the <a href="https://github.com/reactome/graph-importer">graph-importer</a> module. This should take some time (30+ minutes) and will output the results from <a href="https://github.com/reactome/database-checker">database-checker</a> as well as the imported graphDb in `target/graph.db/`.
 
     -  The <b>database-checker</b> results should resemble the following:
     ```
@@ -100,9 +100,12 @@ Next, we want to make sure that the new `test_reactome database` can be imported
     ```
     The database-checker  module just looks for any attributes of an instance that are <i>required</i> (as determined by the data model) and are not filled. Small numbers reported are OK but any newly reported entries should be investigated. 
     
-4) Finally, running the <a href="https://github.com/reactome/graph-qa">graph-qa</a> step will check a series of graphDB QA items and rank them by urgency. To run <b>graph-qa</b>, you will need to have an instance of neo4j running with the imported graph DB. To quickly get neo4j installed and running, a docker container is recommended. The following command can be used to get it running quickly and, hopefully,  painlessly :<br> ` docker run -p 7687:7687 -p 7474:7474 -e NEO4J_dbms_allow__upgrade=true -e NEO4J_dbms_allowFormatMigration=true -e NEO4J_dbms_memory_heap_max__size=18G -v $(pwd)/target/graph.db:/var/lib/neo4j/data/databases/graph.db neo4j:3.4.9` <br>
-    - The `NEO4J_dbms_memory_heap_max__size` argument needs to be appropriate for your computer/server. 
-    - Make sure that the location of the `graph.db/` folder is properly specified in the last argument
+4) Finally, running the <a href="https://github.com/reactome/graph-qa">graph-qa</a> step will check a series of graphDB QA items and rank them by urgency. To run graph-qa, you will need to have an instance of neo4j running with the imported graph DB. To quickly get neo4j installed and running, a docker container is recommended. The following command can be used to get it running quickly and painlessly:<br><br>
+` docker run -p 7687:7687 -p 7474:7474 -e NEO4J_dbms_allow__upgrade=true -e NEO4J_dbms_allowFormatMigration=true -e NEO4J_dbms_memory_heap_max__size=18G -v $(pwd)/target/graph.db:/var/lib/neo4j/data/databases/graph.db neo4j:3.4.9` 
+    -  Make sure that the location of the `graph.db/` folder is properly specified in the last argument 
+    -  Adjust the `NEO4J_dbms_memory_heap_max__size` argument so that it is  appropriate for your computer/server. 
+  
+  To verify that the graphDb has been properly populated, open `localhost:7474` (username and password default is `neo4j`), and click on the database icon at the top left. A panel titled <i>Database Information</i> should open up and display all nodes in the Data Model. If none of this appears, chances are the neo4j instance is not using the imported graphDB. Verify the `graph.db/` folder is in fact populated. 
 
 To verify that the graphDb has been properly populated, open `localhost:7474` in your browser once the docker container is built (username and password default is <b>neo4j</b>), and click on the <i>database icon</i> at the top left. A panel titled <i>Database Information</i> should open up and display all nodes in the <a href="https://reactome.org/content/schema">Data Model</a>. If none of this appears, chances are the neo4j instance is not using the imported graphDB. Verify the `graph.db/` folder is in fact populated and make sure the location of the `graph.db/` folder is properly specified in the docker command's last argument.
 

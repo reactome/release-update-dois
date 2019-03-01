@@ -409,7 +409,7 @@ public class OrthologousEntityGenerator {
 		complexSummationInst = new GKInstance(dba.getSchema().getClassByName(Summation));
 		complexSummationInst.setDbAdaptor(dba);
 		complexSummationInst.addAttributeValue(created, instanceEditInst);
-		String complexSummationText = "This complex/polymer has been computationally inferred (based on Ensembl Compara) from a complex/polymer involved in an event that has been demonstrated in another species.";
+		String complexSummationText = "This complex/polymer has been computationally inferred (based on PANTHER) from a complex/polymer involved in an event that has been demonstrated in another species.";
 		complexSummationInst.addAttributeValue(text, complexSummationText);
 		complexSummationInst.setAttributeValue(_displayName, complexSummationText);
 		complexSummationInst = InstanceUtilities.checkForIdenticalInstances(complexSummationInst);
