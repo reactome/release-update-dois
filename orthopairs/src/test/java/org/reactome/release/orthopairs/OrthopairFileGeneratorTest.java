@@ -30,10 +30,10 @@ public class OrthopairFileGeneratorTest {
     @Mock
     JSONObject mockJSONObject;
 
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-    }
+//    @Before
+//    public void setUp() {
+//        MockitoAnnotations.initMocks(this);
+//    }
 
     @Test
     public void createProteinHomologyFileTest() throws IOException {

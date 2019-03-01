@@ -1,6 +1,7 @@
 package org.reactome.release.orthopairs;
 
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,13 +30,13 @@ public class OrthologyFileParserTest {
     private String pantherTestFile = "src/test/resources/PantherTestFile.txt";
     private List<String> mockList = new ArrayList<>(Arrays.asList(pantherTestFile));
     private Object mockObject;
-    private Object mockObject2;
     private Set<Object> mockObjectSet = new HashSet<>();
-    private Set<String> mockStringSet = new HashSet<String>();
+
+    String pathToSpeciesConfig = "src/main/resources/Species.json";
+    private JSONParser parser = new JSONParser();
 
     @Mock
     private JSONObject mockJSONObject;
-
 
     @Before
     public void setUp() {
@@ -51,22 +52,11 @@ public class OrthologyFileParserTest {
         Mockito.when(mockJSONObject.get(mockObject)).thenReturn(mockJSONObject);
         Mockito.when(mockJSONObject.get("panther_name")).thenReturn(mockObject);
         OrthologyFileParser.parsePantherOrthologFiles(mockList, "sourceMappingSpecies", mockJSONObject);
-
     }
 
-//    @Test
-//    public void orthologyParserTest() throws Exception {
-//        mockObject = "hsap";
-//
-////        mockObjectSet.add(mockObject);
-//
-//        mockJSONObject.put("HUMAN", "value");
-////        Mockito.when(mockJSONObject.keySet()).thenReturn(mockObjectSet);
-//
-//        Mockito.when(mockJSONObject.get(mockObject)).thenReturn(mockJSONObject);
-//        Mockito.when(mockJSONObject.get("panther_name")).thenReturn("HUMAN");
-////        Mockito.when(mockStringSet.contains("DICDI")).thenReturn(true);
-//
-//        OrthologyFileParser.parsePantherOrthologFiles(mockList, "hsap", mockJSONObject);
-//    }
+    @Test
+    public void orthologyFileParserTest() throws Exception {
+        JSONObject speciesJSONFile = (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig));
+        OrthologyFileParser.parsePantherOrthologFiles(mockList, "hsap", speciesJSONFile);
+    }
 }
