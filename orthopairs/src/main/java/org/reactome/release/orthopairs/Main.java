@@ -83,7 +83,7 @@ public class Main
         // HGNC identifier file is downloaded as well.
         List<String> alternativeIdMappingURLs = new ArrayList<>(Arrays.asList(MGIFileURL,RGDFileURL,XenbaseFileURL,ZFINFileURL));
         for (String altIdURL : alternativeIdMappingURLs) {
-            File altIdFilepath = new File(altIdURL.substring(altIdURL.lastIndexOf("/")+1));
+            File altIdFilepath = Paths.get(altIdURL).getFileName().toFile();
             if (!altIdFilepath.exists()) {
                 logger.info("Downloading " + altIdURL);
                 FileUtils.copyURLToFile(new URL(altIdURL), altIdFilepath);
@@ -113,13 +113,15 @@ public class Main
                 // Produces the {sourceSpecies}_{targetspecies}_mapping.txt file
                 String sourceTargetProteinMappingFilename = releaseNumber + "/" + sourceMappingSpecies + "_" + speciesKey + "_mapping.txt";
                 Map<String,Set<String>> speciesProteinHomologs = sourceTargetProteinHomologs.get(speciesPantherName);
-                OrthopairFileGenerator.createProteinHomologyFile(speciesKey.toString(), sourceTargetProteinMappingFilename, speciesJSON, speciesProteinHomologs);
+                OrthopairFileGenerator.createProteinHomologyFile(sourceTargetProteinMappingFilename, speciesProteinHomologs);
                 // Produces the {targetSpecies}_gene_protein_mapping.txt file
                 String targetGeneProteinMappingFilename = releaseNumber + "/" + speciesKey + "_gene_protein_mapping.txt";
                 Map<String,Set<String>> speciesGeneProteinMap = targetGeneProteinMap.get(speciesPantherName);
                 OrthopairFileGenerator.createSpeciesGeneProteinFile(speciesKey.toString(), targetGeneProteinMappingFilename, speciesJSON, speciesGeneProteinMap);
             }
         }
+
+        removePantherFiles(pantherFiles);
         logger.info("Finished Orthopairs file generation");
     }
 
@@ -154,6 +156,14 @@ public class Main
             }
         } else {
             logger.info(pantherTarFile + " has already been extracted");
+        }
+    }
+
+    private static void removePantherFiles(List<String> pantherFiles) {
+        for (String pantherFile : pantherFiles) {
+            String unzippedPantherFile = pantherFile.replace(".tar.gz", "");
+            new File(pantherFile).delete();
+            new File(unzippedPantherFile).delete();
         }
     }
 }

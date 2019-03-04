@@ -41,7 +41,7 @@ public class OrthopairFileGeneratorTest {
         mockSet.add("UniProtKB=Q6DEX5");
         mockSet.add("LDO");
         mockMap.put("UniProtKB=Q86YI8", mockSet);
-        OrthopairFileGenerator.createProteinHomologyFile("speciesKey", sourceTargetProteinMappingFilename, mockJSONObject, mockMap);
+        OrthopairFileGenerator.createProteinHomologyFile( sourceTargetProteinMappingFilename, mockMap);
         Files.delete(Paths.get(sourceTargetProteinMappingFilename));
     }
 

@@ -1,3 +1,7 @@
+#!/bin/bash
+DIR=$(dirname "$(readlink -f "$0")") # Directory of the script -- allows the script to invoked from anywhere
+cd $DIR
+
 ## Update repo
 git pull
 ## Create new jar file with orthoinference code
