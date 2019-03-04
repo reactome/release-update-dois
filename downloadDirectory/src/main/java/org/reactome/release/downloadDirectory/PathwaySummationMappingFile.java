@@ -40,7 +40,10 @@ public class PathwaySummationMappingFile {
 				String stableId = ((GKInstance) pathwayInst.getAttributeValue(stableIdentifier)).getAttributeValue(identifier).toString();
 				for (GKInstance summationInst : (Collection<GKInstance>) pathwayInst.getAttributeValuesList(summation))
 				{
-					String textString = summationInst.getAttributeValue(text).toString().replaceAll(" +", " ").replaceAll("\n", "");
+					String textString = summationInst.getAttributeValue(text).toString()
+						.replaceAll(" +", " ")
+						.replaceAll("\r\n", " ")
+						.replaceAll("\n", " ");
 					String row = stableId + "\t" + nameString + "\t" + textString + "\n";
 					// Filter duplicates
 					if (!rowHash.contains(row))
