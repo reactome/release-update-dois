@@ -103,6 +103,7 @@ public class EventsInferrer
 		inferredFile.createNewFile();
 		ReactionInferrer.setEligibleFilename(eligibleFilename);
 		ReactionInferrer.setInferredFilename(inferredFilename);
+		StableIdentifierGenerator.setSpeciesAbbreviation((String) speciesObject.get("abbreviation"));
 
 		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
 		setInstanceEdits(personId);
@@ -236,6 +237,7 @@ public class EventsInferrer
 		SkipInstanceChecker.setAdaptor(dbAdaptor);
 		InstanceUtilities.setAdaptor(dbAdaptor);
 		OrthologousEntityGenerator.setAdaptor(dbAdaptor);
+		StableIdentifierGenerator.setAdaptor(dbAdaptor);
 		EWASInferrer.setAdaptor(dbAdaptor);
 		HumanEventsUpdater.setAdaptor(dbAdaptor);
 		
@@ -312,6 +314,7 @@ public class EventsInferrer
 		instanceEditInst = InstanceEditUtils.createInstanceEdit(dbAdaptor, personId, "org.reactome.orthoinference");
 		InstanceUtilities.setInstanceEdit(instanceEditInst);
 		OrthologousEntityGenerator.setInstanceEdit(instanceEditInst);
+		StableIdentifierGenerator.setInstanceEdit(instanceEditInst);
 		EWASInferrer.setInstanceEdit(instanceEditInst);
 		HumanEventsUpdater.setInstanceEdit(instanceEditInst);
 	}

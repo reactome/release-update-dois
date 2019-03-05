@@ -90,7 +90,7 @@ public class ReactionInferrer {
 							}
 							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
 							// add a new inferred instance, the storeInstance method is just called here.
-							StableIdentifierGenerator.generateOrthologousStableId(infReactionInst, reactionInst);
+							infReactionInst = StableIdentifierGenerator.generateOrthologousStableId(infReactionInst, reactionInst);
 							dba.storeInstance(infReactionInst);
 							logger.info("\tInference complete -- " + infReactionInst + " inserted");
 							if (infReactionInst.getSchemClass().isValidAttribute(inferredFrom))
@@ -121,6 +121,7 @@ public class ReactionInferrer {
 							inferrableHumanEvents.add(reactionInst);
 							String inferredEvent = infReactionInst.getAttributeValue(DB_ID).toString() + "\t" + infReactionInst.getDisplayName() + "\n";	
 							Files.write(Paths.get(inferredFilehandle), inferredEvent.getBytes(), StandardOpenOption.APPEND);
+							logger.info("Successfully inferred " + reactionInst);
 						} else {
 							logger.info("\tCatalyst inference unsuccessful -- terminating inference for " + reactionInst);
 						}
