@@ -145,7 +145,7 @@ public class OrthologousEntityGenerator {
 				{
 					infDefinedSetInst = definedSetIdenticals.get(cacheKey);
 				} else {
-					infDefinedSetInst = InstanceUtilities.checkForIdenticalInstances(infDefinedSetInst);
+					infDefinedSetInst = InstanceUtilities.checkForIdenticalInstances(infDefinedSetInst, ewasInst);
 					definedSetIdenticals.put(cacheKey, infDefinedSetInst);
 				}
 				infDefinedSetInst = InstanceUtilities.addAttributeValueIfNecessary(infDefinedSetInst, ewasInst, inferredFrom);
@@ -227,7 +227,7 @@ public class OrthologousEntityGenerator {
 			{
 				infComplexInst = complexIdenticals.get(cacheKey);
 			} else {
-				infComplexInst = InstanceUtilities.checkForIdenticalInstances(infComplexInst);
+				infComplexInst = InstanceUtilities.checkForIdenticalInstances(infComplexInst, complexInst);
 				complexIdenticals.put(cacheKey, infComplexInst);
 			}
 
@@ -370,7 +370,7 @@ public class OrthologousEntityGenerator {
 			{
 				infEntitySetInst = entitySetIdenticals.get(cacheKey);
 			} else {
-				infEntitySetInst = InstanceUtilities.checkForIdenticalInstances(infEntitySetInst);
+				infEntitySetInst = InstanceUtilities.checkForIdenticalInstances(infEntitySetInst, entitySetInst);
 				entitySetIdenticals.put(cacheKey, infEntitySetInst);
 			}
 			if (infEntitySetInst.getSchemClass().isValidAttribute(species) && entitySetInst.getAttributeValue(species) != null)
@@ -412,7 +412,7 @@ public class OrthologousEntityGenerator {
 		String complexSummationText = "This complex/polymer has been computationally inferred (based on PANTHER) from a complex/polymer involved in an event that has been demonstrated in another species.";
 		complexSummationInst.addAttributeValue(text, complexSummationText);
 		complexSummationInst.setAttributeValue(_displayName, complexSummationText);
-		complexSummationInst = InstanceUtilities.checkForIdenticalInstances(complexSummationInst);
+		complexSummationInst = InstanceUtilities.checkForIdenticalInstances(complexSummationInst, null);
 	}
 	
 	public static void resetVariables()

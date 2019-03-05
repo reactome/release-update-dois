@@ -82,7 +82,7 @@ public class InstanceUtilities {
 				}
 			}
 		}
-		newCompartmentInst = checkForIdenticalInstances(newCompartmentInst);
+		newCompartmentInst = checkForIdenticalInstances(newCompartmentInst, null);
 		return newCompartmentInst;
 	}
 
@@ -107,7 +107,7 @@ public class InstanceUtilities {
 		{
 			mockedInst = mockedIdenticals.get(cacheKey);
 		} else {
-			mockedInst = checkForIdenticalInstances(mockedInst);
+			mockedInst = checkForIdenticalInstances(mockedInst, instanceToBeMocked);
 			mockedIdenticals.put(cacheKey, mockedInst);
 		}
 		instanceToBeMocked = addAttributeValueIfNecessary(instanceToBeMocked, mockedInst, inferredTo);
@@ -117,7 +117,7 @@ public class InstanceUtilities {
 	}
 	
 	// Checks that equivalent instances don't already exist in the DB, substituting if they do
-	public static GKInstance checkForIdenticalInstances(GKInstance inferredInst) throws Exception
+	public static GKInstance checkForIdenticalInstances(GKInstance inferredInst, GKInstance originalInst) throws Exception
 	{
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
@@ -132,6 +132,14 @@ public class InstanceUtilities {
 				return identicalInstances.iterator().next();
 			}
 		} else {
+			if (inferredInst.getSchemClass().isa(PhysicalEntity)) {
+				GKInstance stableIdentifierInst = (GKInstance) originalInst.getAttributeValue(stableIdentifier);
+				if (stableIdentifierInst != null) {
+					StableIdentifierGenerator.generateOrthologousStableId(inferredInst, stableIdentifierInst);
+				} else {
+					System.out.println("Null stableIdentifierInst");
+				}
+			}
 			dba.storeInstance(inferredInst);
 			logger.info("\tNo identical instance found -- inserting " + inferredInst);
 			return inferredInst;
