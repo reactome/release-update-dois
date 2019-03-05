@@ -72,6 +72,7 @@ public class OrthopairFileGeneratorTest {
         Mockito.when(mockJSONObject.get("alt_id_file")).thenReturn("test.txt");
         PowerMockito.when(AlternateIdMapper.getAltIdMappingFile("xtro", "test.txt")).thenReturn(mockAltIdMap);
         OrthopairFileGenerator.createSpeciesGeneProteinFile("xtro", targetGeneProteinMappingFilename, mockJSONObject, mockMap);
+
         BufferedReader br = new BufferedReader(new FileReader(targetGeneProteinMappingFilename));
         String line;
         while ((line = br.readLine()) != null) {
@@ -98,6 +99,7 @@ public class OrthopairFileGeneratorTest {
         PowerMockito.when(AlternateIdMapper.getAltIdMappingFile("xtro", "test.txt")).thenReturn(nullAltIdMap);
 
         OrthopairFileGenerator.createSpeciesGeneProteinFile("xtro", targetGeneProteinMappingFilename, mockJSONObject, mockMap);
+        Files.delete(Paths.get(targetGeneProteinMappingFilename));
     }
 
 }
