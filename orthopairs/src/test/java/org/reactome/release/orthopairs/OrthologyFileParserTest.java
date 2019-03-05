@@ -14,12 +14,11 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
+import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({OrthologyFileParser.class})
@@ -58,5 +57,13 @@ public class OrthologyFileParserTest {
     public void orthologyFileParserTest() throws Exception {
         JSONObject speciesJSONFile = (JSONObject) parser.parse(new FileReader(pathToSpeciesConfig));
         OrthologyFileParser.parsePantherOrthologFiles(mockList, "hsap", speciesJSONFile);
+
+        Map<String, Map<String, Set<String>>> testProteinHomologsMap = OrthologyFileParser.getSourceAndTargetProteinHomologs();
+        assertEquals(testProteinHomologsMap.get("DICDI").get("UniProtKB=O60524").toString(), "[UniProtKB=Q54HA7, LDO]");
+        assertEquals(testProteinHomologsMap.get("DICDI").get("UniProtKB=O60524").size(), 2);
+
+        Map<String, Map<String, Set<String>>> testGeneProteinMap = OrthologyFileParser.getTargetGeneProteinMap();
+        assertEquals(testGeneProteinMap.get("DICDI").get("dictyBase=DDB_G0267808").toString(), "[UniProtKB=Q55G56]");
+        assertEquals(testGeneProteinMap.get("DICDI").get("dictyBase=DDB_G0267808").size(), 1);
     }
 }

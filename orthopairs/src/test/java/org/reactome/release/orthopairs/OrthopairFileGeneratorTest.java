@@ -12,10 +12,14 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+
+import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({OrthopairFileGenerator.class, AlternateIdMapper.class})
@@ -42,6 +46,15 @@ public class OrthopairFileGeneratorTest {
         mockSet.add("LDO");
         mockMap.put("UniProtKB=Q86YI8", mockSet);
         OrthopairFileGenerator.createProteinHomologyFile( sourceTargetProteinMappingFilename, mockMap);
+        BufferedReader br = new BufferedReader(new FileReader(sourceTargetProteinMappingFilename));
+        String line;
+        while ((line = br.readLine()) != null) {
+            String[] tabSplit = line.split("\t");
+            assertEquals(tabSplit.length, 2);
+            assertEquals(tabSplit[0], "Q86YI8");
+            assertEquals(tabSplit[1], "Q6DEX5");
+        }
+        br.close();
         Files.delete(Paths.get(sourceTargetProteinMappingFilename));
     }
 
@@ -58,8 +71,17 @@ public class OrthopairFileGeneratorTest {
         String targetGeneProteinMappingFilename = "targetGeneProteinMapingFilename";
         Mockito.when(mockJSONObject.get("alt_id_file")).thenReturn("test.txt");
         PowerMockito.when(AlternateIdMapper.getAltIdMappingFile("xtro", "test.txt")).thenReturn(mockAltIdMap);
-
         OrthopairFileGenerator.createSpeciesGeneProteinFile("xtro", targetGeneProteinMappingFilename, mockJSONObject, mockMap);
+        BufferedReader br = new BufferedReader(new FileReader(targetGeneProteinMappingFilename));
+        String line;
+        while ((line = br.readLine()) != null) {
+            String[] tabSplit = line.split("\t");
+            assertEquals(tabSplit.length, 2);
+            assertEquals(tabSplit[0], "ENSXETG00000010038");
+            assertEquals(tabSplit[1], "F6UIU7");
+        }
+        br.close();
+        Files.delete(Paths.get(targetGeneProteinMappingFilename));
     }
 
     @Test

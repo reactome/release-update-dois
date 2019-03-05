@@ -9,6 +9,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -32,32 +34,40 @@ public class AlternateIdMapperTest {
     @Test
     public void mapMouseAlternateIdsTest() throws IOException {
 
-        AlternateIdMapper.getAltIdMappingFile("mmus", mouseTestFilename);
+        Map<String, Set<String>> mouseAltIds = AlternateIdMapper.getAltIdMappingFile("mmus", mouseTestFilename);
+        assertEquals(mouseAltIds.get("87859").toString(), "[ENSMUSG00000026842]");
+        assertEquals(mouseAltIds.size(), 3);
     }
 
     @Test
     public void mapRatAlternateIdsTest() throws IOException {
 
-        AlternateIdMapper.getAltIdMappingFile("rnor", ratTestFilename);
+        Map<String, Set<String>> ratAltIds = AlternateIdMapper.getAltIdMappingFile("rnor", ratTestFilename);
+        assertEquals(ratAltIds.get("1303072").toString(),"[ENSRNOG00000000478]");
+        assertEquals(ratAltIds.size(), 5);
     }
 
     @Test
     public void mapFrogAlternateIdsTest() throws IOException {
 
-        AlternateIdMapper.getAltIdMappingFile("xtro", frogTestFilename);
+        Map<String, Set<String>> frogAltIds = AlternateIdMapper.getAltIdMappingFile("xtro", frogTestFilename);
+        assertEquals(frogAltIds.get("XB-GENE-478094").toString(), "[ENSXETG00000024397]");
+        assertEquals(frogAltIds.size(), 5);
     }
 
     @Test
     public void mapZebrafishAlternateIdsTest() throws IOException {
 
-        AlternateIdMapper.getAltIdMappingFile("drer", zebrafishTestFilename);
+        Map<String, Set<String>> zebrafishAltIds = AlternateIdMapper.getAltIdMappingFile("drer", zebrafishTestFilename);
+        assertEquals(zebrafishAltIds.get("ZDB-GENE-000128-8").toString(), "[ENSDARG00000086393]");
+        assertEquals(zebrafishAltIds.size(), 5);
     }
 
     @Test
     public void mapYeastAlternateIdsTest() throws IOException {
 
-        AlternateIdMapper.getAltIdMappingFile("scer", yeastTestFilename);
+        Map<String, Set<String>> yeastAltIds = AlternateIdMapper.getAltIdMappingFile("scer", yeastTestFilename);
+        assertEquals(yeastAltIds.get("S000000002").toString(), "[YAL002W]");
+        assertEquals(yeastAltIds.size(), 5);
     }
-
-
 }
