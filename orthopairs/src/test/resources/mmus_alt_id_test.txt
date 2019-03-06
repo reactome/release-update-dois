@@ -1,0 +1,5 @@
+MGI Accession ID	Marker Symbol	Marker Name	Feature Type	EntrezGene ID	NCBI Gene chromosome	NCBI Gene start	NCBI Gene end	NCBI Gene strand	Ensembl Gene ID	Ensembl Gene chromosome	Ensembl Gene start	Ensembl Gene end	Ensembl Gene strand	CCDS IDs	HGNC ID	HomoloGene ID
+MGI:87853	a	nonagouti	protein coding gene	50518	2	154950204	155051012	+	ENSMUSG00000027596	2	154791402	155051012	+	CCDS16941.1	HGNC:745	1264	
+MGI:87854	Pzp	PZP, alpha-2-macroglobulin like	protein coding gene	11287	6	128483567	128526720	-	ENSMUSG00000030359	6	128483567	128526720	-	CCDS39650.1	null	104112	
+MGI:87855	Aal	active avoidance learning	heritable phenotypic marker	null	null	null	null	null	null	null	null	null	null	null	null	null	
+MGI:87859	Abl1	c-abl oncogene 1, non-receptor tyrosine kinase	protein coding gene	11350	2	31688354	31807093	+	ENSMUSG00000026842	2	31688376	31804227	+	CCDS15901.1|CCDS50563.1	HGNC:76	3783	

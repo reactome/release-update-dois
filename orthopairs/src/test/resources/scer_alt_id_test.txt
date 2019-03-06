@@ -1,0 +1,5 @@
+S000000001	YAL001C	S. cerevisiae	TFC3	Transcription Factor class C
+S000000002	YAL002W	S. cerevisiae	VPS8	Vacuolar Protein Sorting
+S000000003	YAL003W	S. cerevisiae	EFB1	Elongation Factor Beta
+S000000004	YAL005C	S. cerevisiae	SSA1	Stress-Seventy subfamily A
+S000000005	YAL007C	S. cerevisiae	ERP2	Emp24p/Erv25p Related Protein
