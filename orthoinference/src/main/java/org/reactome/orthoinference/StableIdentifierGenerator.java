@@ -52,6 +52,7 @@ public class StableIdentifierGenerator {
 
     }
 
+    // speciesAbbreviation is taken from the Species.json file. It is the 3-letter species code that makes up the StableIdentifier. eg: R-'MMU'-123456.
     public static void setSpeciesAbbreviation(String speciesAbbreviationCopy) {
         speciesAbbreviation = speciesAbbreviationCopy;
     }
