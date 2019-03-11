@@ -32,6 +32,7 @@ public class Main {
     MySQLAdaptor dbaGkCentral = null;
     long authorIdTR = 0;
     long authorIdGK = 0;
+    boolean testMode = true;
 
     // Properties file should contain information needed to access current Test Reactome and GKCentral databases
     try 
@@ -50,6 +51,7 @@ public class Main {
       authorIdTR = Integer.valueOf(props.getProperty("authorIdTR"));
       authorIdGK = Integer.valueOf(props.getProperty("authorIdGK"));
       int port = Integer.valueOf(props.getProperty("port"));
+      testMode = Boolean.valueOf(props.getProperty("testMode"));
 
       // Set up db connections.
       dbaTestReactome = new MySQLAdaptor(hostTR, databaseTR, userTR, passwordTR, port);
@@ -58,8 +60,8 @@ public class Main {
       e.printStackTrace();
     }
       UpdateDOIs.setAdaptors(dbaTestReactome, dbaGkCentral);
-      UpdateDOIs.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport);
-
+      logger.info("Starting UpdateDOIs");
+      UpdateDOIs.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport, testMode);
       logger.info( "UpdateDOIs Complete" );
     }
 }
