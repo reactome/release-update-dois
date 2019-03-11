@@ -34,7 +34,7 @@ public class ReportTests {
 		// This entails comparing the DB ID, display name and the stable ID version of the provided list (UpdateDOIs.report) with the actual updated instances
 		if (notUpdated.size() > 0)
 		{
-			
+			warningsLog.warn("Some DOIs from UpdateDOIs.report were not updated");
 			ArrayList<String> unresolvedDOIs = new ArrayList<String>();
 			for (String missed : notUpdated) 
 			{
