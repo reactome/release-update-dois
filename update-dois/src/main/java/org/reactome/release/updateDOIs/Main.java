@@ -51,7 +51,11 @@ public class Main {
       authorIdTR = Integer.valueOf(props.getProperty("authorIdTR"));
       authorIdGK = Integer.valueOf(props.getProperty("authorIdGK"));
       int port = Integer.valueOf(props.getProperty("port"));
-      testMode = Boolean.valueOf(props.getProperty("testMode"));
+      if (props.getProperty("testMode") == null) {
+        testMode = true;
+      } else {
+        testMode = Boolean.valueOf(props.getProperty("testMode"));
+      }
 
       // Set up db connections.
       dbaTestReactome = new MySQLAdaptor(hostTR, databaseTR, userTR, passwordTR, port);
@@ -62,6 +66,10 @@ public class Main {
       UpdateDOIs.setAdaptors(dbaTestReactome, dbaGkCentral);
       logger.info("Starting UpdateDOIs");
       UpdateDOIs.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport, testMode);
-      logger.info( "UpdateDOIs Complete" );
+      if (!testMode) {
+        logger.info("UpdateDOIs Complete");
+      } else {
+        logger.info("Finished test run of UpdateDOIs");
+      }
     }
 }
