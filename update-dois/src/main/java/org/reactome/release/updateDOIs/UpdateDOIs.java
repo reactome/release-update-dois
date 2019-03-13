@@ -1,9 +1,7 @@
 package org.reactome.release.updateDOIs;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,14 +48,13 @@ public class UpdateDOIs {
 			instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, authorIdGK, creatorFile);
 		}
 		// Gets the updated report file if it was provided for this release
-		HashMap<String, HashMap<String,String>> expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport);
+		Map<String, Map<String,String>> expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport);
 		if (expectedUpdatedDOIs.size() == 0) {
 			logger.warn("No DOIs listed in UpdateDOIs.report. Please add expected DOI and displayName to UpdateDOIs.report.");
 			return;
 		}
-		ArrayList<String> updated = new ArrayList<String>();
-		ArrayList<String> notUpdated = new ArrayList<String>();
-		int fetchHits = 0;
+		List<String> updated = new ArrayList<>();
+		List<String> notUpdated = new ArrayList<>();
 		try 
 		{
 			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
@@ -78,7 +75,6 @@ public class UpdateDOIs {
 						String dbId = trDOI.getAttributeValue("DB_ID").toString();
 
 						// Used to verify that report contents are as expected, based on provided list from curators
-						fetchHits++;
 						if (expectedUpdatedDOIs.get(updatedDoi) != null && expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
 						{
 							updated.add(updatedDoi);
@@ -128,7 +124,7 @@ public class UpdateDOIs {
 							dbaTestReactome.updateInstanceAttribute(trDOI, "doi");
 						}
 					}
-					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updated, notUpdated, fetchHits );
+					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updated, notUpdated, doisTR.size());
 				} else {
 					logger.info("No DOIs to update");
 				}
@@ -153,9 +149,9 @@ public class UpdateDOIs {
 	}
 
 	// Parses input report and places each line's contents in HashMap
-	public static HashMap<String, HashMap<String,String>> getExpectedUpdatedDOIs(String pathToReport) {
+	public static Map<String, Map<String,String>> getExpectedUpdatedDOIs(String pathToReport) {
 
-		HashMap<String, HashMap<String, String>> expectedUpdatedDOIs = new HashMap<String, HashMap<String,String>>();
+		Map<String, Map<String, String>> expectedUpdatedDOIs = new HashMap<>();
 		try 
 		{
 			FileReader fr = new FileReader(pathToReport);
@@ -164,7 +160,7 @@ public class UpdateDOIs {
 			String sCurrentLine;
 			while ((sCurrentLine = br.readLine()) != null) 
 			{
-				HashMap<String, String> doiAttributes = new HashMap<String,String>();
+				Map<String, String> doiAttributes = new HashMap<>();
 				String[] commaSplit = sCurrentLine.split(",", 2);
 				String reactomeDoi = commaSplit[0];
 				String displayName = commaSplit[1];
@@ -239,7 +235,7 @@ public class UpdateDOIs {
 			} else {
 				// This 'else' block wasn't here when first copied from ReferenceCreator. Added
 				// to reduce future potential headaches. (JC)
-				System.out.println("needStore set to false");
+				logger.info("needStore set to false");
 			}
 			return newIE;
 		} else {
