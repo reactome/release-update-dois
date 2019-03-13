@@ -43,12 +43,17 @@ public class UpdateDOIs {
 
 		// Initialize instance edits for each DB
 		String creatorFile = "org.reactome.release.updateDOIs.Main";
-		GKInstance instanceEditTR = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaTestReactome, authorIdTR, creatorFile);
-		GKInstance instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, authorIdGK, creatorFile);
+		GKInstance instanceEditTR = null;
+		GKInstance instanceEditGK = null;
+		if (!testMode) {
+			instanceEditTR = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaTestReactome, authorIdTR, creatorFile);
+			instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, authorIdGK, creatorFile);
+		}
 		// Gets the updated report file if it was provided for this release
 		HashMap<String, HashMap<String,String>> expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport);
 		if (expectedUpdatedDOIs.size() == 0) {
 			logger.warn("No DOIs listed in UpdateDOIs.report. Please add expected DOI and displayName to UpdateDOIs.report.");
+			return;
 		}
 		ArrayList<String> updated = new ArrayList<String>();
 		ArrayList<String> notUpdated = new ArrayList<String>();
@@ -85,7 +90,6 @@ public class UpdateDOIs {
 							}
 						}
 						// This updates the 'modified' field for Pathways instances, keeping track of when changes happened for each instance
-						// TODO: Put this after the update to GK Central so that we make sure values match
 						trDOI.getAttributeValuesList("modified");
 						trDOI.addAttributeValue("modified", instanceEditTR);
 						trDOI.setAttributeValue("doi", updatedDoi);
@@ -128,7 +132,11 @@ public class UpdateDOIs {
 				} else {
 					logger.info("No DOIs to update");
 				}
-				dbaGkCentral.commit();
+				if (!testMode) {
+					dbaGkCentral.commit();
+				} else {
+					dbaGkCentral.rollback();
+				}
 			} else {
 				logger.fatal("Unable to open transaction with GK Central, rolling back");
 				dbaGkCentral.rollback();
