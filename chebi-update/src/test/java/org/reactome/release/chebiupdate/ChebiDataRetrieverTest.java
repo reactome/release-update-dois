@@ -144,21 +144,12 @@ public class ChebiDataRetrieverTest
 			ChebiDataRetriever retriever = new ChebiDataRetriever(false);
 			retriever.retrieveUpdatesFromChebi(Arrays.asList(molecule1), failedEntities);
 		}
-		catch (ChebiWebServiceFault_Exception e)
+		catch (ChebiWebServiceFault_Exception | IOException | RuntimeException e)
 		{
 			e.printStackTrace();
 			fail();
 		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			fail();
-		}
-		catch (RuntimeException e)
-		{
-			e.printStackTrace();
-			fail();
-		}
+		
 		System.out.println(failedEntities);
 		assertTrue(failedEntities.size() > 0);
 		assertTrue(failedEntities.get(molecule1).equals("ChEBI WebService response was NULL."));

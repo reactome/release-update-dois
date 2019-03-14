@@ -133,6 +133,7 @@ class ChebiDataRetriever
 				catch (Exception e)
 				{
 					// general exceptions - print stack trace but keep going.
+					logger.error("Exception was caught: {}", e.getMessage());
 					e.printStackTrace();
 				}
 			});
@@ -156,14 +157,16 @@ class ChebiDataRetriever
 		// "invalid ChEBI identifier" probably shouldn't break execution but should be logged for further investigation.
 		if (e.getMessage().contains("invalid ChEBI identifier"))
 		{
-			logger.error("ERROR: ChEBI Identifier \"{}\" is not formatted correctly.", identifier);
-			failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is not formatted correctly.");
+			String errMsg = "ChEBI Identifier \""+identifier+"\" is not formatted correctly.";
+			logger.error(errMsg);
+			failedEntitiesList.put(molecule, errMsg);
 		}
 		// Log this identifier, but don't fail.
 		else if (e.getMessage().contains("the entity in question is deleted, obsolete, or not yet released"))
 		{
-			logger.error("ERROR: ChEBI Identifier \"{}\" is deleted, obsolete, or not yet released.", identifier);
-			failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is deleted, obsolete, or not yet released.");
+			String errMsg = "ChEBI Identifier \""+identifier+"\" is deleted, obsolete, or not yet released.";
+			logger.error(errMsg);
+			failedEntitiesList.put(molecule, errMsg);
 		}
 		else
 		{
@@ -190,12 +193,11 @@ class ChebiDataRetriever
 	private Entity getChEBIDataFromWebService(Map<GKInstance, String> failedEntitiesList, final Map<String, List<String>> chebiCache, BufferedWriter bw, GKInstance molecule) throws ChebiWebServiceFault_Exception, IOException, Exception
 	{
 		String identifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
-		Entity entity;
 		if (this.useCache && chebiCache.size() > 0)
 		{
 			logger.trace("Cache miss for CHEBI:{}", identifier);
 		}
-		entity = this.chebiClient.getCompleteEntity(identifier);
+		Entity entity = this.chebiClient.getCompleteEntity(identifier);
 		if (entity != null && this.useCache)
 		{
 			bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
@@ -251,9 +253,8 @@ class ChebiDataRetriever
 	 */
 	private Entity extractChEBIEntityFromCache(Map<String, List<String>> chebiCache, String identifier)
 	{
-		Entity entity;
 		// Use the AccessibleEntity to set the formula.
-		entity = new AccessibleEntity();
+		Entity entity = new AccessibleEntity();
 		entity.setChebiId(chebiCache.get("CHEBI:"+identifier).get(0));
 		entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(1) );
 		DataItem formula = new DataItem();
