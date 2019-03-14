@@ -200,12 +200,13 @@ class ChebiDataRetriever
 			logger.trace("Cache miss for CHEBI:{}", identifier);
 		}
 		Entity entity = this.chebiClient.getCompleteEntity(identifier);
+		// IF there is valid entity AND we are supposed to use a cache, then write the entity to the cache file.
 		if (entity != null && this.useCache)
 		{
 			bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
 			bw.flush();
 		}
-		// If the entity was still null, log a message that the webservice response was null.
+		// IF the entity was null, then log a message that the webservice response was null!
 		if (entity == null)
 		{
 			failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
