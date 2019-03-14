@@ -458,35 +458,35 @@ public class ChebiUpdater
 				+ "where ReferenceDatabase_2_name.name = 'ChEBI' and identifier is not null\n" + "group by ReferenceEntity.identifier\n"
 				+ "having count(ReferenceMolecule.DB_ID) > 1;\n";
 
-		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
-		duplicatesLog.info("# DB_ID\tCreator\tDuplicated Identifier\tReferenceMolecule");
-
-		// Should only be one, but API returns collection.
-		@SuppressWarnings("unchecked")
-		Collection<GKInstance> chebiDBInsts = (Collection<GKInstance>)adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "ChEBI");
-		GKInstance chebiDBInst = chebiDBInsts.stream().findFirst().orElse(null);
-		
-		AttributeQueryRequest chebiAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.referenceDatabase, "=", chebiDBInst);
-		
-		while (duplicates.next())
+		try(ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null))
 		{
-			String identifier = duplicates.getString(1);
-			int numberOfDuplicates = duplicates.getInt(2);
-			this.duplicatesSB.append("\n** ReferenceMolecule with identifier " + identifier + " occurs " + numberOfDuplicates + " times:\n\n");
-			String operator = identifier == null ? "IS NULL" : "=";
-			
-			AttributeQueryRequest identifierAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, operator, identifier);
-			
+			duplicatesLog.info("# DB_ID\tCreator\tDuplicated Identifier\tReferenceMolecule");
+	
+			// Should only be one, but API returns collection.
 			@SuppressWarnings("unchecked")
-			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(chebiAQR, identifierAQR));
-			for (GKInstance duplicate : dupesOfIdentifier)
+			Collection<GKInstance> chebiDBInsts = (Collection<GKInstance>)adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "ChEBI");
+			GKInstance chebiDBInst = chebiDBInsts.stream().findFirst().orElse(null);
+			
+			AttributeQueryRequest chebiAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.referenceDatabase, "=", chebiDBInst);
+			
+			while (duplicates.next())
 			{
-				GKInstance creator = ChebiUpdater.getCreator(duplicate);
-				duplicatesLog.info("{}\t{}\t{}\t{}", duplicate.getDBID(), creator.toString(), identifier, duplicate.toString());
+				String identifier = duplicates.getString(1);
+				int numberOfDuplicates = duplicates.getInt(2);
+				this.duplicatesSB.append("\n** ReferenceMolecule with identifier " + identifier + " occurs " + numberOfDuplicates + " times:\n\n");
+				String operator = identifier == null ? "IS NULL" : "=";
+				
+				AttributeQueryRequest identifierAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, operator, identifier);
+				
+				@SuppressWarnings("unchecked")
+				Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(chebiAQR, identifierAQR));
+				for (GKInstance duplicate : dupesOfIdentifier)
+				{
+					GKInstance creator = ChebiUpdater.getCreator(duplicate);
+					duplicatesLog.info("{}\t{}\t{}\t{}", duplicate.getDBID(), creator.toString(), identifier, duplicate.toString());
+				}
 			}
 		}
-
-		duplicates.close();
 		if (this.duplicatesSB.length() > 0)
 		{
 			logger.info(this.duplicatesSB.toString());
