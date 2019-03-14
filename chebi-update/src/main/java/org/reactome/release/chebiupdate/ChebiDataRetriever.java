@@ -64,7 +64,7 @@ class ChebiDataRetriever
 	
 	
 	/**
-	 * Makes calls to the ChEBI web service to get info for speciefied ChEBI
+	 * Makes calls to the ChEBI web service to get info for specified ChEBI
 	 * identifiers.
 	 * 
 	 * @param updator
