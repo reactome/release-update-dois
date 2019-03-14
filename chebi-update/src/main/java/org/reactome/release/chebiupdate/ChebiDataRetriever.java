@@ -193,6 +193,8 @@ class ChebiDataRetriever
 	private Entity getChEBIDataFromWebService(Map<GKInstance, String> failedEntitiesList, final Map<String, List<String>> chebiCache, BufferedWriter bw, GKInstance molecule) throws ChebiWebServiceFault_Exception, IOException, Exception
 	{
 		String identifier = (String) molecule.getAttributeValue(ReactomeJavaConstants.identifier);
+		// If there's a valid cache and we're supposed to use it, log a message here indicating
+		// that there must have been a cache miss.
 		if (this.useCache && chebiCache.size() > 0)
 		{
 			logger.trace("Cache miss for CHEBI:{}", identifier);
@@ -203,13 +205,12 @@ class ChebiDataRetriever
 			bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
 			bw.flush();
 		}
-		else
+		// If the entity was still null, log a message that the webservice response was null.
+		if (entity == null)
 		{
-			if (entity == null)
-			{
-				failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
-			}
+			failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
 		}
+		
 		return entity;
 	}
 
