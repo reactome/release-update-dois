@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome.release</groupId>
 	<artifactId>release-common-lib</artifactId>
@@ -8,6 +10,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
+		<mockito.version>2.18.3</mockito.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -58,17 +61,28 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>2.18.3</version>
+			<version>${mockito.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-junit-jupiter</artifactId>
-			<version>2.18.3</version>
+			<version>${mockito.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
+	<distributionManagement>
+		<repository>
+			<id>oicr-central</id>
+			<name>artifacts.oicr.on.ca-releases</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+		</repository>
+		<snapshotRepository>
+			<id>oicr-snapshots</id>
+			<name>artifacts.oicr.on.ca-snapshots</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+		</snapshotRepository>
+	</distributionManagement>
 	<!-- This repo is necessary for the chebiWS-client -->
 	<repositories>
 		<repository>
@@ -106,6 +120,26 @@
 			<releases>
 				<enabled>true</enabled>
 			</releases>
+		</repository>
+		<!-- OICR respository for Reactome artefacts -->
+		<repository>
+			<id>oicr-central</id>
+			<name>artifacts.oicr.on.ca-releases</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+		<repository>
+			<id>oicr-snapshots</id>
+			<name>artifacts.oicr.on.ca-snapshots</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
 </project>
