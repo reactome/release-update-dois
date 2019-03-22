@@ -61,7 +61,7 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 				"WITH rgp, p",
 				"RETURN DISTINCT p.dbId"
 			),
-			Values.parameters(getUniprotAccession())
+			Values.parameters("uniprotAccession", getUniprotAccession())
 		)
 		.stream()
 		.map(record -> record.get("p.dbId").asLong())
@@ -138,10 +138,10 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		topLevelPathway = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (p:Pathway)",
-				"WHERE p.dbId = {}",
+				"WHERE p.dbId = {topLevelPathwayId}",
 				"RETURN p.displayName, p.stId"
 			),
-			Values.parameters(topLevelPathwayId)
+			Values.parameters("topLevelPathwayId", topLevelPathwayId)
 		)
 		.stream()
 		.map(
