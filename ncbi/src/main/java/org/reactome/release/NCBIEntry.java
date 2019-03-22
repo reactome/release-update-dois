@@ -89,7 +89,6 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 
 			Set<Long> parentPathwayIds = pathwayHierarchy.computeIfAbsent(pathwayId, k -> new HashSet<>());
 			parentPathwayIds.add(parentPathwayId);
-			//pathwayHierarchy.put(pathwayId, parentPathwayIds);
 		};
 
 		return pathwayHierarchy;
