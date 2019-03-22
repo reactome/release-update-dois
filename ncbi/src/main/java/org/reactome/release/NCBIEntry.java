@@ -58,7 +58,6 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 				"(ewas:EntityWithAccessionedSequence)<-[:hasComponent|:hasMember|:hasCandidate|:repeatedUnit" +
 				"|:input|:output|:catalystActivity|:physicalEntity*]-(rle:ReactionLikeEvent)<-[:hasEvent]-(p:Pathway)",
 				"WHERE rgp.identifier = {uniprotAccession}",
-				"WITH rgp, p",
 				"RETURN DISTINCT p.dbId"
 			),
 			Values.parameters("uniprotAccession", getUniprotAccession())
