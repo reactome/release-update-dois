@@ -64,7 +64,11 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		)
 		.stream()
 		.map(record -> record.get("p.dbId").asLong())
-		.flatMap(pathwayId -> fetchTopLevelPathwayHierarchy(graphDBSession).get(pathwayId).stream())
+		.flatMap(pathwayId ->
+			fetchTopLevelPathwayHierarchy(graphDBSession)
+				.computeIfAbsent(pathwayId, k -> new HashSet<>())
+				.stream()
+		)
 		.collect(Collectors.toList());
 	}
 
