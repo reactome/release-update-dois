@@ -21,7 +21,7 @@ public class NCBI {
 	public static void main( String[] args ) throws IOException {
 		logger.info("Beginning NCBI step...");
 
-		String pathToResources = args.length > 0 ? args[0] : "ncbi/src/main/resources/config.properties";
+		String pathToResources = args.length > 0 ? args[0] : "ncbi/src/main/resources/sample_config.properties";
 		Properties props = new Properties();
 		try {
 			props.load(new FileInputStream(pathToResources));
