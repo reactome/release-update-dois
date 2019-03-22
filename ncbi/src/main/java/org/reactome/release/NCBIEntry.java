@@ -72,6 +72,27 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		.collect(Collectors.toList());
 	}
 
+	private static Map<Long, Set<TopLevelPathway>> fetchTopLevelPathwayHierarchy(Session graphDBSession) {
+		if (pathwayHierarchy == null) {
+			pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
+		}
+
+		Map<Long, Set<TopLevelPathway>> topLevelPathwayHierarchy = new HashMap<>();
+		for (Long pathwayId : pathwayHierarchy.keySet()) {
+			topLevelPathwayHierarchy
+				.computeIfAbsent(pathwayId, k -> new HashSet<>())
+				.addAll(
+					findTopLevelPathwayIds(pathwayId, pathwayHierarchy)
+						.stream()
+						.map(
+							topLevelPathwayId -> getTopLevelPathwayObject(graphDBSession, topLevelPathwayId)
+						)
+						.collect(Collectors.toList())
+				);
+		}
+		return topLevelPathwayHierarchy;
+	}
+
 	private static Map<Long, Set<Long>> fetchPathwayHierarchy(Session graphDBSession) {
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
@@ -92,27 +113,6 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		};
 
 		return pathwayHierarchy;
-	}
-
-	private static Map<Long, Set<TopLevelPathway>> fetchTopLevelPathwayHierarchy(Session graphDBSession) {
-		if (pathwayHierarchy == null) {
-			pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
-		}
-
-		Map<Long, Set<TopLevelPathway>> topLevelPathwayHierarchy = new HashMap<>();
-		for (Long pathwayId : pathwayHierarchy.keySet()) {
-			topLevelPathwayHierarchy
-				.computeIfAbsent(pathwayId, k -> new HashSet<>())
-				.addAll(
-					findTopLevelPathwayIds(pathwayId, pathwayHierarchy)
-						.stream()
-						.map(
-							topLevelPathwayId -> getTopLevelPathwayObject(graphDBSession, topLevelPathwayId)
-						)
-						.collect(Collectors.toList())
-				);
-		}
-		return topLevelPathwayHierarchy;
 	}
 
 	private static Set<Long> findTopLevelPathwayIds(Long pathwayId, Map<Long, Set<Long>> pathwayHierarchy) {
@@ -159,77 +159,6 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return topLevelPathway;
 	}
 
-	@Override
-	public int compareTo(NCBIEntry o) {
-		return this.getUniprotAccession().compareTo(o.getUniprotAccession());
-	}
-
-	public static class TopLevelPathway {
-		private String name;
-		private String stableIdentifier;
-
-		public TopLevelPathway(String name, String stableIdentifier) {
-			this.name = name;
-			this.stableIdentifier = stableIdentifier;
-		}
-
-		public String getName() {
-			return fixName(this.name);
-		}
-
-		private String fixName(String name) {
-			Map<String, String> patternToReplacement = new TreeMap<>();
-			patternToReplacement.put("amino acids", "Metabolism of nitrogenous molecules");
-			patternToReplacement.put("Cycle, Mitotic", "Cell Cycle (Mitotic)");
-			patternToReplacement.put("L13a-mediated translation", "L13a-mediated translation");
-			patternToReplacement.put("Abortive initiation after", "Abortive initiation");
-			patternToReplacement.put("Formation of the Cleavage and Polyadenylation", "Cleavage and Polyadenylation");
-			patternToReplacement.put("energy metabolism", "Energy Metabolism");
-			patternToReplacement.put("sugars", "Metabolism of sugars");
-
-			return patternToReplacement
-				.keySet()
-				.stream()
-				.filter(name::matches)
-				.map(patternToReplacement::get)
-				.reduce((first, second) -> second) // Get last element in stream
-				.orElse(name); // Default to original name if no replacement
-		}
-
-		public String getStableIdentifier() {
-			return stableIdentifier;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (o == this) {
-				return true;
-			}
-
-			if (!(o instanceof TopLevelPathway)) {
-				return false;
-			}
-
-			TopLevelPathway oTLP = (TopLevelPathway) o;
-
-			return	getName().equals(oTLP.getName()) &&
-					getStableIdentifier().equals(oTLP.getStableIdentifier());
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(getName(), getStableIdentifier());
-		}
-
-		@Override
-		public String toString() {
-			return String.join("\t",
-				getName(),
-				getStableIdentifier()
-			);
-		}
-	}
-
 	public static String getXMLHeader() {
 		return String.join(System.lineSeparator(),
 			"<?xml version=\"1.0\"?>",
@@ -239,7 +168,7 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 			"<!ENTITY entity.base.url \"http://www.reactome.org/content/query?q=UniProt:\">",
 			"<!ENTITY event.base.url \"http://www.reactome.org/PathwayBrowser/#\">",
 			"]>"
-		);
+		).concat(System.lineSeparator());
 	}
 
 	public static String getOpenRootTag() {
@@ -286,5 +215,71 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 			"\t\t</ObjectUrl>",
 			"\t</Link>"
 		).concat(System.lineSeparator());
+	}
+
+	public static class TopLevelPathway {
+		private String name;
+		private String stableIdentifier;
+
+		public TopLevelPathway(String name, String stableIdentifier) {
+			this.name = name;
+			this.stableIdentifier = stableIdentifier;
+		}
+
+		public String getName() {
+			return fixName(this.name);
+		}
+
+		private String fixName(String name) {
+			Map<String, String> patternToReplacement = new TreeMap<>();
+			patternToReplacement.put("amino acids", "Metabolism of nitrogenous molecules");
+			patternToReplacement.put("Cycle, Mitotic", "Cell Cycle (Mitotic)");
+			patternToReplacement.put("L13a-mediated translation", "L13a-mediated translation");
+			patternToReplacement.put("Abortive initiation after", "Abortive initiation");
+			patternToReplacement.put("Formation of the Cleavage and Polyadenylation", "Cleavage and Polyadenylation");
+			patternToReplacement.put("energy metabolism", "Energy Metabolism");
+			patternToReplacement.put("sugars", "Metabolism of sugars");
+
+			return patternToReplacement
+					.keySet()
+					.stream()
+					.filter(name::matches)
+					.map(patternToReplacement::get)
+					.reduce((first, second) -> second) // Get last element in stream
+					.orElse(name); // Default to original name if no replacement
+		}
+
+		public String getStableIdentifier() {
+			return stableIdentifier;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o == this) {
+				return true;
+			}
+
+			if (!(o instanceof TopLevelPathway)) {
+				return false;
+			}
+
+			TopLevelPathway oTLP = (TopLevelPathway) o;
+
+			return	getName().equals(oTLP.getName()) &&
+					getStableIdentifier().equals(oTLP.getStableIdentifier());
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(getName(), getStableIdentifier());
+		}
+
+		@Override
+		public String toString() {
+			return String.join("\t",
+				getName(),
+				getStableIdentifier()
+			);
+		}
 	}
 }
