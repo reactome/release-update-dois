@@ -34,12 +34,17 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j.driver</groupId>
+			<artifactId>neo4j-java-driver</artifactId>
+			<version>1.7.2</version>
+		</dependency>
+	</dependencies>
 
-    <build>
+	<build>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
