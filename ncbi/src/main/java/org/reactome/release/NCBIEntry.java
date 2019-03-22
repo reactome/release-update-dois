@@ -5,6 +5,7 @@ import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Values;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,11 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		}
 
 		return this.topLevelPathways;
+	}
+
+	@Override
+	public int compareTo(@Nonnull NCBIEntry o) {
+		return this.getUniprotAccession().compareTo(o.getUniprotAccession());
 	}
 
 	private List<TopLevelPathway> fetchTopLevelPathways(Session graphDBSession) {
