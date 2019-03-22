@@ -204,8 +204,8 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 
 			TopLevelPathway oTLP = (TopLevelPathway) o;
 
-			return getName().equals(oTLP.getName()) &&
-				   getStableIdentifier().equals(oTLP.getStableIdentifier());
+			return	getName().equals(oTLP.getName()) &&
+					getStableIdentifier().equals(oTLP.getStableIdentifier());
 		}
 
 		@Override
