@@ -114,7 +114,7 @@ public class NCBI {
 			);
 			for (NCBIEntry ncbiEntry: ncbiEntrySubList) {
 				System.out.println("Getting top level pathways for " + ncbiEntry.getUniprotAccession());
-				List<NCBIEntry.TopLevelPathway> topLevelPathways = ncbiEntry.getTopLevelPathways(graphDBSession);
+				List<PathwayHierarchyUtilities.TopLevelPathway> topLevelPathways = ncbiEntry.getTopLevelPathways(graphDBSession);
 				if (topLevelPathways.isEmpty()) {
 					String errorMessage = ncbiEntry.getUniprotDisplayName() +
 					" participates in Event(s) but no top Pathway can be found, i.e. there seem to be a pathway" +
@@ -131,7 +131,7 @@ public class NCBI {
 						StandardOpenOption.APPEND
 					);
 
-					for (NCBIEntry.TopLevelPathway topLevelPathway : topLevelPathways) {
+					for (PathwayHierarchyUtilities.TopLevelPathway topLevelPathway : topLevelPathways) {
 						Files.write(
 							geneXMLFilePath,
 							ncbiEntry.getEventLinkXML(ncbiGeneId, topLevelPathway).getBytes(),
