@@ -1,5 +1,6 @@
 package org.reactome.release;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.neo4j.driver.v1.*;
@@ -11,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class NCBI {
 	private static final Logger logger = LogManager.getLogger();
@@ -43,7 +45,12 @@ public class NCBI {
 		System.out.println("Generating gene XML file(s)");
 		generateGeneXMLFiles(graphDBSession, numGeneXMLFiles);
 
+		System.out.println("Generating " + getNCBIProteinFilePath().getFileName());
+		generateNCBIProteinFile();
+
+		graphDBSession.close();
 		logger.info("Finished NCBI step");
+		System.exit(0);
 	}
 
 	private static void writeProteinFile(String fileName) throws IOException {
@@ -143,6 +150,55 @@ public class NCBI {
 
 			Files.write(geneXMLFilePath, NCBIEntry.getCloseRootTag().getBytes(), StandardOpenOption.APPEND);
 		}
+	}
+
+	private static void generateNCBIProteinFile() throws IOException {
+		Path ncbiProteinFilePath = getNCBIProteinFilePath();
+		Files.deleteIfExists(ncbiProteinFilePath);
+		Files.createFile(ncbiProteinFilePath);
+
+		Files.write(ncbiProteinFilePath, getProteinFileHeader().getBytes(), StandardOpenOption.APPEND);
+
+		List<String> proteinFileLines =
+			ncbiEntries
+			.stream()
+			.map(NCBIEntry::getUniprotAccession)
+			.map(uniprotId -> String.join("\t", "query:", uniprotId, "[pacc]").concat(System.lineSeparator()))
+			.collect(Collectors.toList());
+		for (String proteinFileLine : proteinFileLines) {
+			Files.write(ncbiProteinFilePath, proteinFileLine.getBytes(), StandardOpenOption.APPEND);
+		}
+
+		Files.write(ncbiProteinFilePath, getProteinFileFooter().getBytes(), StandardOpenOption.APPEND);
+	}
+
+	private static Path getNCBIProteinFilePath() {
+		return Paths.get(outputDir, "protein_reactome" + version + ".ft");
+	}
+
+	private static String getProteinFileHeader() {
+		return String.join(System.lineSeparator(),
+			getProteinFileSeparator(),
+			"prid:\t4914",
+			"dbase:\tprotein",
+			"stype:\tmeta-databases",
+			"!base:\thttps://www.reactome.org/content/query?q=UniProt:",
+			getProteinFileSeparator(),
+			"linkid:\t0"
+		);
+	}
+
+	private static String getProteinFileFooter() {
+		return String.join(System.lineSeparator(),
+			"base:\t&base;",
+			"rule:\t&lo.pacc;",
+			getProteinFileSeparator()
+		);
+	}
+
+	private static String getProteinFileSeparator() {
+		final int TIMES_TO_REPEAT = 56;
+		return StringUtils.repeat('-', TIMES_TO_REPEAT);
 	}
 
 	private static List<List<NCBIEntry>> splitList(List<NCBIEntry> list, int numOfSubLists) {
