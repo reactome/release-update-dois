@@ -9,16 +9,49 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class PathwayHierarchyUtilities {
+	private static Map<String, Set<Long>> uniprotAccessionToPathwayId;
 	private static Map<Long, Set<Long>> pathwayHierarchy;
+	private static Map<Long, Set<TopLevelPathway>> topLevelPathwayHierarchy;
 	private static Map<Long, TopLevelPathway> topLevelPathwaysCache = new HashMap<>();
 
-	public static Map<Long, Set<TopLevelPathway>> fetchTopLevelPathwayHierarchy(Session graphDBSession) {
-		if (pathwayHierarchy == null) {
-			pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
+	public static Map<String, Set<Long>> fetchUniProtAccessionToPathwayId(Session graphDBSession) {
+		if (uniprotAccessionToPathwayId != null) {
+			return uniprotAccessionToPathwayId;
 		}
 
-		Map<Long, Set<TopLevelPathway>> topLevelPathwayHierarchy = new HashMap<>();
-		for (Long pathwayId : pathwayHierarchy.keySet()) {
+		StatementResult statementResult = graphDBSession.run(
+			String.join(System.lineSeparator(),
+				"MATCH (rgp:ReferenceGeneProduct)<-[:referenceEntity|:referenceSequence|:hasModifiedResidue]-" +
+				"(ewas:EntityWithAccessionedSequence)<-[:hasComponent|:hasMember|:hasCandidate|:repeatedUnit" +
+				"|:input|:output|:catalystActivity|:physicalEntity*]-(rle:ReactionLikeEvent)<-[:hasEvent]-(p:Pathway)",
+				"RETURN DISTINCT rgp.identifier, p.dbId"
+			)
+		);
+
+		uniprotAccessionToPathwayId = new HashMap<>();
+		while (statementResult.hasNext()) {
+			Record record = statementResult.next();
+
+			String uniprotAccession = record.get("rgp.identifier").asString();
+			long pathwayId = record.get("p.dbId").asLong();
+
+			uniprotAccessionToPathwayId
+				.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
+				.add(pathwayId);
+		};
+
+		return uniprotAccessionToPathwayId;
+	}
+
+	public static Map<Long, Set<TopLevelPathway>> fetchTopLevelPathwayHierarchy(Session graphDBSession) {
+		if (topLevelPathwayHierarchy != null) {
+			return topLevelPathwayHierarchy;
+		}
+
+		Map<Long, Set<Long>> pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
+
+		topLevelPathwayHierarchy = new HashMap<>();
+		for (long pathwayId : pathwayHierarchy.keySet()) {
 			topLevelPathwayHierarchy
 				.computeIfAbsent(pathwayId, k -> new HashSet<>())
 				.addAll(
@@ -34,6 +67,14 @@ public class PathwayHierarchyUtilities {
 	}
 
 	public static Map<Long, Set<Long>> fetchPathwayHierarchy(Session graphDBSession) {
+		if (pathwayHierarchy != null) {
+			return pathwayHierarchy;
+		}
+
+		if (graphDBSession == null) {
+			throw new IllegalStateException("Neo4j driver session parameter is null");
+		}
+
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (p:Pathway)<-[:hasEvent]-(pp:Pathway)",
@@ -41,7 +82,7 @@ public class PathwayHierarchyUtilities {
 			)
 		);
 
-		Map<Long, Set<Long>> pathwayHierarchy = new HashMap<>();
+		pathwayHierarchy = new HashMap<>();
 		while (statementResult.hasNext()) {
 			Record record = statementResult.next();
 

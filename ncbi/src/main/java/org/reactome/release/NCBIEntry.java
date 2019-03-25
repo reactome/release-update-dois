@@ -1,7 +1,6 @@
 package org.reactome.release;
 
 import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.Values;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -48,24 +47,15 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 	}
 
 	private List<PathwayHierarchyUtilities.TopLevelPathway> fetchTopLevelPathways(Session graphDBSession) {
-		return graphDBSession.run(
-			String.join(System.lineSeparator(),
-				"MATCH (rgp:ReferenceGeneProduct)<-[:referenceEntity|:referenceSequence|:hasModifiedResidue]-" +
-				"(ewas:EntityWithAccessionedSequence)<-[:hasComponent|:hasMember|:hasCandidate|:repeatedUnit" +
-				"|:input|:output|:catalystActivity|:physicalEntity*]-(rle:ReactionLikeEvent)<-[:hasEvent]-(p:Pathway)",
-				"WHERE rgp.identifier = {uniprotAccession}",
-				"RETURN DISTINCT p.dbId"
-			),
-			Values.parameters("uniprotAccession", getUniprotAccession())
-		)
-		.stream()
-		.map(record -> record.get("p.dbId").asLong())
-		.flatMap(pathwayId ->
-			PathwayHierarchyUtilities.fetchTopLevelPathwayHierarchy(graphDBSession)
+		return PathwayHierarchyUtilities.fetchUniProtAccessionToPathwayId(graphDBSession)
+			.computeIfAbsent(getUniprotAccession(), k -> new HashSet<>())
+			.stream()
+			.flatMap(pathwayId ->
+				PathwayHierarchyUtilities.fetchTopLevelPathwayHierarchy(graphDBSession)
 				.computeIfAbsent(pathwayId, k -> new HashSet<>())
 				.stream()
-		)
-		.collect(Collectors.toList());
+			)
+			.collect(Collectors.toList());
 	}
 
 	public static String getXMLHeader() {
