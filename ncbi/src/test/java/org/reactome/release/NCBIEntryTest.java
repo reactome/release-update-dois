@@ -2,11 +2,23 @@ package org.reactome.release;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import java.util.*;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 
 public class NCBIEntryTest {
 
 	@Test
-	public void getTopLevelPathways() {
+	public void sortsByUniProtAccessionAscendingly() {
+		List<NCBIEntry> ncbiEntries = new ArrayList<>();
+		NCBIEntry entry1 = new NCBIEntry("Q12345", "test UniProt", new HashSet<>(Arrays.asList("1", "2")));
+		NCBIEntry entry2 = new NCBIEntry("P23456", "another test UniProt", new HashSet<>(Arrays.asList("3", "4")));
+		ncbiEntries.add(entry1);
+		ncbiEntries.add(entry2);
+
+		Collections.sort(ncbiEntries);
+
+		assertThat(ncbiEntries, contains(entry2, entry1));
 	}
 }
