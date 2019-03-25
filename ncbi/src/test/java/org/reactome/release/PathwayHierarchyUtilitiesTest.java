@@ -104,4 +104,12 @@ public class PathwayHierarchyUtilitiesTest {
 		assertThat(pathwayHierarchy.get(3L), contains(5L));
 		assertThat(pathwayHierarchy.get(4L), nullValue());
 	}
+
+	@Test
+	public void topLevelPathwayNameCorrection() {
+		PathwayHierarchyUtilities.TopLevelPathway topLevelPathway =
+			new PathwayHierarchyUtilities.TopLevelPathway("something to do with sugars", "R-HSA-123456");
+
+		assertThat(topLevelPathway.getName(), equalTo("Metabolism of sugars"));
+	}
 }
