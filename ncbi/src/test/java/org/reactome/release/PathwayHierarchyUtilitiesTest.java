@@ -3,6 +3,8 @@ package org.reactome.release;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
@@ -10,17 +12,18 @@ import org.neo4j.driver.v1.Value;
 
 import java.util.*;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 
 public class PathwayHierarchyUtilitiesTest {
+	@Mock private Session graphDBSession;
+	@Mock private StatementResult statementResult;
+	@Mock private Record record;
+	@Mock private Value value;
+
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();
 
@@ -73,10 +76,7 @@ public class PathwayHierarchyUtilitiesTest {
 
 	@Test
 	public void fetchPathwayHierarchy() {
-		Session graphDBSession = mock(Session.class);
-		StatementResult statementResult = mock(StatementResult.class);
-		Record record = mock(Record.class);
-		Value value = mock(Value.class);
+		MockitoAnnotations.initMocks(this);
 
 		when(graphDBSession.run(any(String.class))).thenReturn(statementResult);
 		when(statementResult.hasNext()).thenReturn(
