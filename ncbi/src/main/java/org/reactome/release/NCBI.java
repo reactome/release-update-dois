@@ -36,17 +36,18 @@ public class NCBI {
 		System.out.println("Files for Reactome version " + version + " will be output to the directory " + outputDir);
 
 		Session graphDBSession = getGraphDBDriver(props).session();
+		System.out.println("Generating UniProt accession to NCBI Gene mapping");
 		ncbiEntries = getUniProtToNCBIGeneMap(graphDBSession);
 
-		System.out.println("Creating proteins_version file");
+		System.out.println("Writing proteins_version file");
 		writeProteinFile("proteins_version" + version);
 
 		int numGeneXMLFiles = Integer.parseInt(props.getProperty("numGeneXMLFiles", "1"));
-		System.out.println("Generating gene XML file(s)");
-		generateGeneXMLFiles(graphDBSession, numGeneXMLFiles);
+		System.out.println("Writing gene XML file(s)");
+		writeGeneXMLFiles(graphDBSession, numGeneXMLFiles);
 
-		System.out.println("Generating " + getNCBIProteinFilePath().getFileName());
-		generateNCBIProteinFile();
+		System.out.println("Writing " + getNCBIProteinFilePath().getFileName());
+		writeNCBIProteinFile();
 
 		graphDBSession.close();
 		logger.info("Finished NCBI step");
@@ -84,9 +85,12 @@ public class NCBI {
 		Map<UniProtInfo, Set<String>> uniprotToNCBIGene = new HashMap<>();
 		while (result.hasNext()) {
 			Record record = result.next();
-			UniProtInfo uniprot = new UniProtInfo(record);
+			long uniprotDbId = record.get("rgp.dbId").asLong();
+			String uniprotDisplayName = record.get("rgp.displayName").asString();
+			String uniprotAccession = record.get("rgp.identifier").asString();
 			String ncbiGeneID = record.get("rds.identifier").asString();
 
+			UniProtInfo uniprot = new UniProtInfo(uniprotDbId, uniprotDisplayName, uniprotAccession);
 			Set<String> ncbiGeneIDs = uniprotToNCBIGene.computeIfAbsent(uniprot, k -> new HashSet<>());
 			ncbiGeneIDs.add(ncbiGeneID);
 		}
@@ -101,7 +105,7 @@ public class NCBI {
 		return ncbiEntries;
 	}
 
-	private static void generateGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles) throws IOException {
+	private static void writeGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles) throws IOException {
 		Path geneErrorFilePath = Paths.get(outputDir, "geneentrez_" + version + ".err");
 		Files.deleteIfExists(geneErrorFilePath);
 		Files.createFile(geneErrorFilePath);
@@ -120,7 +124,6 @@ public class NCBI {
 				StandardOpenOption.APPEND
 			);
 			for (NCBIEntry ncbiEntry: ncbiEntrySubList) {
-				System.out.println("Getting top level pathways for " + ncbiEntry.getUniprotAccession());
 				List<PathwayHierarchyUtilities.TopLevelPathway> topLevelPathways = ncbiEntry.getTopLevelPathways(graphDBSession);
 				if (topLevelPathways.isEmpty()) {
 					String errorMessage = ncbiEntry.getUniprotDisplayName() +
@@ -152,7 +155,7 @@ public class NCBI {
 		}
 	}
 
-	private static void generateNCBIProteinFile() throws IOException {
+	private static void writeNCBIProteinFile() throws IOException {
 		Path ncbiProteinFilePath = getNCBIProteinFilePath();
 		Files.deleteIfExists(ncbiProteinFilePath);
 		Files.createFile(ncbiProteinFilePath);
@@ -254,10 +257,10 @@ public class NCBI {
 		private String displayName;
 		private String accession;
 
-		public UniProtInfo(Record record) {
-			this.dbId = record.get("rgp.dbId").asLong();
-			this.displayName = record.get("rgp.displayName").asString();
-			this.accession = record.get("rgp.identifier").asString();
+		public UniProtInfo(long dbId, String displayName, String accession) {
+			this.dbId = dbId;
+			this.displayName = displayName;
+			this.accession = accession;
 		}
 
 		public long getDbId() {
