@@ -147,15 +147,15 @@ public class PathwayHierarchyUtilities {
 			),
 			Values.parameters("topLevelPathwayId", topLevelPathwayId)
 		)
-			.stream()
-			.map(
-				record -> new TopLevelPathway(
-					record.get("p.displayName").asString(),
-					record.get("p.stId").asString()
-				)
+		.stream()
+		.map(
+			record -> new TopLevelPathway(
+				record.get("p.displayName").asString(),
+				record.get("p.stId").asString()
 			)
-			.findFirst()
-			.orElseThrow(() -> new RuntimeException("No top level pathway for db id " + topLevelPathwayId));
+		)
+		.findFirst()
+		.orElseThrow(() -> new RuntimeException("No top level pathway for db id " + topLevelPathwayId));
 
 		topLevelPathwaysCache.put(topLevelPathwayId, topLevelPathway);
 		return topLevelPathway;
@@ -186,12 +186,12 @@ public class PathwayHierarchyUtilities {
 			patternToReplacement.put("sugars", "Metabolism of sugars");
 
 			return patternToReplacement
-					.keySet()
-					.stream()
-					.filter(name::matches)
-					.map(patternToReplacement::get)
-					.reduce((first, second) -> second) // Get last element in stream
-					.orElse(name); // Default to original name if no replacement
+				.keySet()
+				.stream()
+				.filter(name::contains)
+				.map(patternToReplacement::get)
+				.reduce((first, second) -> second) // Get last element in stream
+				.orElse(name); // Default to original name if no replacement
 		}
 
 		public String getStableIdentifier() {
