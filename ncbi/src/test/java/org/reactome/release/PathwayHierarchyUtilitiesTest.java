@@ -3,11 +3,21 @@ package org.reactome.release;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.neo4j.driver.v1.Record;
+import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Value;
 
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 public class PathwayHierarchyUtilitiesTest {
@@ -59,5 +69,39 @@ public class PathwayHierarchyUtilitiesTest {
 		expectedException.expect(IllegalStateException.class);
 		expectedException.expectMessage(pathwayId + " does not exist");
 		PathwayHierarchyUtilities.findTopLevelPathwayIds(pathwayId, pathwayHierarchy);
+	}
+
+	@Test
+	public void fetchPathwayHierarchy() {
+		Session graphDBSession = mock(Session.class);
+		StatementResult statementResult = mock(StatementResult.class);
+		Record record = mock(Record.class);
+		Value value = mock(Value.class);
+
+		when(graphDBSession.run(any(String.class))).thenReturn(statementResult);
+		when(statementResult.hasNext()).thenReturn(
+			true, true,
+			true, true,
+			true, true,
+			true, true,
+			false);
+		when(statementResult.next()).thenReturn(record);
+		when(record.get(any(String.class))).thenReturn(value);
+		when(value.asLong()).thenReturn(
+			1L, 2L,
+			1L, 3L,
+			2L, 4L,
+			3L, 5L
+		);
+
+		Map<Long, Set<Long>> pathwayHierarchy = PathwayHierarchyUtilities.fetchPathwayHierarchy(graphDBSession);
+
+		assertThat(pathwayHierarchy.get(1L), hasSize(2));
+		assertThat(pathwayHierarchy.get(1L), contains(2L, 3L));
+		assertThat(pathwayHierarchy.get(2L), hasSize(1));
+		assertThat(pathwayHierarchy.get(2L), contains(4L));
+		assertThat(pathwayHierarchy.get(3L), hasSize(1));
+		assertThat(pathwayHierarchy.get(3L), contains(5L));
+		assertThat(pathwayHierarchy.get(4L), nullValue());
 	}
 }
