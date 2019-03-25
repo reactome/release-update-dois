@@ -113,6 +113,11 @@ public class ChebiUpdater
 		@SuppressWarnings("unchecked")
 		String chebiRefDBID = (new ArrayList<GKInstance>( adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI"))).get(0).getDBID().toString();
 
+		if (chebiRefDBID == null || chebiRefDBID.trim().equals(""))
+		{
+			throw new RuntimeException("No ReferenceDatabase instance could be found for the name \"ChEBI\"! This program REQUIRES a ReferenceDatabase object with the name \"ChEBI\". Exiting now.");
+		}
+		
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> refMolecules = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "referenceDatabase", "=", chebiRefDBID);
 
@@ -450,6 +455,7 @@ public class ChebiUpdater
 	public void checkForDuplicates() throws SQLException, Exception
 	{
 		this.duplicatesSB = new StringBuilder();
+		// This query should find duplicated ChEBI Identifiers.
 		String findDuplicateReferenceMolecules = "select ReferenceEntity.identifier, count(ReferenceMolecule.DB_ID)\n"
 				+ "from ReferenceMolecule\n"
 				+ "inner join ReferenceEntity on ReferenceEntity.DB_ID = ReferenceMolecule.DB_ID\n"
@@ -460,26 +466,45 @@ public class ChebiUpdater
 
 		try(ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null))
 		{
+			// write the header for the Duplicates report.
 			duplicatesLog.info("# DB_ID\tCreator\tDuplicated Identifier\tReferenceMolecule");
 	
 			// Should only be one, but API returns collection.
 			@SuppressWarnings("unchecked")
 			Collection<GKInstance> chebiDBInsts = (Collection<GKInstance>)adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "ChEBI");
 			GKInstance chebiDBInst = chebiDBInsts.stream().findFirst().orElse(null);
+			// It is ***HIGHLY*** unlikely this will happen (since it should have already been verified to exist at the beginning of updateChebiReferenceMolecules()),
+			// but just to be sure, terminate if the ChEBI ReferenceDatabase does not exist. If this *does* happen (despite the earlier check), maybe buy a lottery ticket tonight! ;)
+			if (chebiDBInst == null)
+			{
+				throw new RuntimeException("No ReferenceDatabase instance could be found for the name \"ChEBI\"! This program REQUIRES a ReferenceDatabase object with the name \"ChEBI\". Exiting now.");
+			}
 			
+			// Create an AQR to query for ReferenceMolecules associated with the ChEBI ReferenceDatabase
 			AttributeQueryRequest chebiAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.referenceDatabase, "=", chebiDBInst);
-			
+			// for each duplicate that was found...
 			while (duplicates.next())
 			{
 				String identifier = duplicates.getString(1);
 				int numberOfDuplicates = duplicates.getInt(2);
+				// report the number of TIMES the duplicate was found.
 				this.duplicatesSB.append("\n** ReferenceMolecule with identifier " + identifier + " occurs " + numberOfDuplicates + " times:\n\n");
+
+				// If the identifier is null, then the SQL operator must be IS NULL.
+				// This seems like it *should not* be necessary, but if there are instances
+				// with a NULL identifier, this logic should catch them in the report. NULL
+				// identifiers were observed in the initial runs of this application.
 				String operator = identifier == null ? "IS NULL" : "=";
 				
+				// Create an AQR for ReferenceMolecules with an identifier (that is based on the current loop).
 				AttributeQueryRequest identifierAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, operator, identifier);
 				
+				// Query using two AQRs: One for making sure the object is associated with the ChEBI ReferenceDatabase, the other for checking that
+				// the identifier matches the one from the duplicate OR that the identifier is null.
 				@SuppressWarnings("unchecked")
 				Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(chebiAQR, identifierAQR));
+				
+				// Log information about the duplicate instances for the identifier.
 				for (GKInstance duplicate : dupesOfIdentifier)
 				{
 					GKInstance creator = ChebiUpdater.getCreator(duplicate);
