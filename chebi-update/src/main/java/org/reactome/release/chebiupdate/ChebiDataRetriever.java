@@ -142,7 +142,7 @@ class ChebiDataRetriever
 	}
 
 	/**
-	 * Handles exceptions from the ChEBI web service. Some of them are ok, as as "invalid ChEBI identifier",
+	 * Handles exceptions from the ChEBI web service. Some of them are ok, as in "invalid ChEBI identifier",
 	 * and "entity is deleted, obsolete, not released", but anything else
 	 * will cause a runtime exception to be thrown. It's probably not safe to continue with unrecognized exceptions.
 	 * IF you encounter *new* exceptions that are not listed here, but are not too serious, feel free to update this code
