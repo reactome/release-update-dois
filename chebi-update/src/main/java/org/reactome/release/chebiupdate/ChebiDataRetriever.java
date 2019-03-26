@@ -32,6 +32,9 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
  */
 class ChebiDataRetriever
 {
+	// Optional TODO: Make this user-configurable. Not really a high priority, but might prove useful some day in the distant future...
+	private static final String CHEBI_CACHE_FILE_NAME = "chebi-cache";
+
 	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
 	
 	private static final Logger logger = LogManager.getLogger();
@@ -79,7 +82,7 @@ class ChebiDataRetriever
 		final Map<String,List<String>> chebiCache = loadCacheFromFile();
 		
 		// BufferedWriter is supposed to be thread-safe.
-		try(FileWriter fileWriter = new FileWriter("chebi-cache", true);
+		try(FileWriter fileWriter = new FileWriter(CHEBI_CACHE_FILE_NAME, true);
 			BufferedWriter bw = new BufferedWriter(fileWriter);)
 		{
 			AtomicInteger counter = new AtomicInteger(0);
@@ -92,15 +95,16 @@ class ChebiDataRetriever
 					identifier = (String) molecule.getAttributeValue("identifier");
 					if (identifier != null && !identifier.trim().equals(""))
 					{
-						Entity entity;
-						// only query web service if the data is not in the chebi-cache - NOTE: chebiCache will always be empty if this.useCache == false
-						if (!chebiCache.containsKey("CHEBI:"+identifier))
-						{
-							entity = this.getChEBIDataFromWebService(failedEntitiesList, chebiCache, bw, molecule);
-						}
-						else // ...Load data from the cache.
+						Entity entity = null;
+						// first, try to get from cache. NULL will be returned if identifier is not in cache.
+						if (this.useCache)
 						{
 							entity = this.extractChEBIEntityFromCache(chebiCache, identifier);
+						}
+						// if the data we want is not in the cache OR we don't want to use the cache, try the web service. This will be done even if this.useCache == true
+						if (entity == null || !this.useCache)
+						{
+							entity = this.getChEBIDataFromWebService(failedEntitiesList, chebiCache, bw, molecule);
 						}
 						// Add entity to map (if it's non-null)
 						if (entity != null)
@@ -227,9 +231,9 @@ class ChebiDataRetriever
 		{
 			logger.info("useCache is TRUE - chebi-cache file will be read, and populated. Identifiers not in the cache will be queried from ChEBI.");
 			// if the cache exists, load it.
-			if (Files.exists(Paths.get("chebi-cache")))
+			if (Files.exists(Paths.get(CHEBI_CACHE_FILE_NAME)))
 			{
-				Files.readAllLines(Paths.get("chebi-cache")).parallelStream().forEach( line -> {
+				Files.readAllLines(Paths.get(CHEBI_CACHE_FILE_NAME)).parallelStream().forEach( line -> {
 					String[] parts = line.split("\t");
 					String oldChebiID = parts[0];
 					String newChebiID = parts[1];
@@ -252,16 +256,21 @@ class ChebiDataRetriever
 	 * @param chebiCache - The cache from a file.
 	 * @param identifier - The chebi Identifier.
 	 * @return A ChEBI Entity that will be built from the data in the cache. It will only have: an Identifier, ChEBI Name, Formula.
+	 * NULL will be returned if <code>identifier</code> is not in the cache.
 	 */
 	private Entity extractChEBIEntityFromCache(Map<String, List<String>> chebiCache, String identifier)
 	{
-		// Use the AccessibleEntity to set the formula.
-		Entity entity = new AccessibleEntity();
-		entity.setChebiId(chebiCache.get("CHEBI:"+identifier).get(0));
-		entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(1) );
-		DataItem formula = new DataItem();
-		formula.setData(chebiCache.get("CHEBI:"+identifier).get(2));
-		((AccessibleEntity)entity).setFormulae(Arrays.asList(formula));
+		Entity entity = null;
+		if (chebiCache.containsKey("CHEBI:"+identifier))
+		{
+			// Use the AccessibleEntity to set the formula.
+			entity = new AccessibleEntity();
+			entity.setChebiId(chebiCache.get("CHEBI:"+identifier).get(0));
+			entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(1) );
+			DataItem formula = new DataItem();
+			formula.setData(chebiCache.get("CHEBI:"+identifier).get(2));
+			((AccessibleEntity)entity).setFormulae(Arrays.asList(formula));
+		}
 		return entity;
 	}
 }
