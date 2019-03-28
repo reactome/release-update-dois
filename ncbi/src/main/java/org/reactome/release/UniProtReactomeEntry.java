@@ -47,9 +47,9 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 	}
 
 	private UniProtReactomeEntry(long dbId, String accession, String displayName) {
-		this.dbId = dbId;
-		this.accession = accession;
-		this.displayName = displayName;
+		setDbId(dbId);
+		setAccession(accession);
+		setDisplayName(displayName);
 	}
 
 	public long getDbId() { return this.dbId; }
@@ -60,6 +60,41 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 
 	public String getDisplayName() {
 		return this.displayName;
+	}
+
+	private void setDbId(long dbId) {
+		this.dbId = dbId;
+	}
+
+	private void setAccession(String accession) {
+		final List<Integer> ACCEPTED_UNIPROT_ACCESSION_LENGTHS = Arrays.asList(6, 10);
+		if (accession == null) {
+			throw new NullPointerException("UniProt Accession is null");
+		}
+
+		if (!ACCEPTED_UNIPROT_ACCESSION_LENGTHS.contains(accession.length())) {
+			throw new IllegalArgumentException(
+				accession + " is not a proper UniProt Accession.  Must be of length " + ACCEPTED_UNIPROT_ACCESSION_LENGTHS
+			);
+		}
+
+		this.accession = accession;
+	}
+
+	private void setDisplayName(String displayName) {
+		final String DISPLAY_NAME_PREFIX = "UniProt:";
+
+		if (displayName == null) {
+			throw new NullPointerException("UniProt Display Name is null");
+		}
+
+		if (!displayName.startsWith(DISPLAY_NAME_PREFIX)) {
+			throw new IllegalArgumentException(
+				displayName + " is not a proper UniProt Display Name.  Must start with " + DISPLAY_NAME_PREFIX
+			);
+		}
+
+		this.displayName = displayName;
 	}
 
 	public Set<PathwayHierarchyUtilities.ReactomeEvent> getEvents(Session graphDBSession) {
