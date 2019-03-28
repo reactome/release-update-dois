@@ -107,9 +107,9 @@ public class PathwayHierarchyUtilitiesTest {
 
 	@Test
 	public void topLevelPathwayNameCorrection() {
-		PathwayHierarchyUtilities.TopLevelPathway topLevelPathway =
-			new PathwayHierarchyUtilities.TopLevelPathway("something to do with sugars", "R-HSA-123456");
+		PathwayHierarchyUtilities.ReactomeEvent reactomeEvent =
+			new PathwayHierarchyUtilities.ReactomeEvent(1L, "something to do with sugars", "R-HSA-123456");
 
-		assertThat(topLevelPathway.getName(), equalTo("Metabolism of sugars"));
+		assertThat(reactomeEvent.getName(), equalTo("Metabolism of sugars"));
 	}
 }
