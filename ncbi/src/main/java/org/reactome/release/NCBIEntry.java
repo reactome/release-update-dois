@@ -64,8 +64,8 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 			"<!DOCTYPE LinkSet PUBLIC \"-//NLM//DTD LinkOut 1.0//EN\"",
 			"\"http://www.ncbi.nlm.nih.gov/entrez/linkout/doc/LinkOut.dtd\"",
 			"[",
-			"<!ENTITY entity.base.url \"https://www.reactome.org/content/query?q=UniProt:\">",
-			"<!ENTITY event.base.url \"https://www.reactome.org/PathwayBrowser/#\">",
+			"<!ENTITY entity.base.url \"" + ReactomeConstants.UNIPROT_QUERY_URL + "\">",
+			"<!ENTITY event.base.url \"" + ReactomeConstants.PATHWAY_BROWSER_URL + "\">",
 			"]>"
 		).concat(System.lineSeparator());
 	}

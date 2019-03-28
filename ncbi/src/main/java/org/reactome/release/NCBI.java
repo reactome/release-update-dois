@@ -185,7 +185,7 @@ public class NCBI {
 			"prid:\t4914",
 			"dbase:\tprotein",
 			"stype:\tmeta-databases",
-			"!base:\thttps://www.reactome.org/content/query?q=UniProt:",
+			"!base:\t" + ReactomeConstants.UNIPROT_QUERY_URL,
 			getProteinFileSeparator(),
 			"linkid:\t0"
 		);
