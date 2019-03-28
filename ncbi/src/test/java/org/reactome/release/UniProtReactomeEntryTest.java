@@ -11,19 +11,19 @@ public class UniProtReactomeEntryTest {
 
 	@Before
 	public void createUniProtReactomeEntry() {
-		uniProtReactomeEntry = UniProtReactomeEntry.get(1L, "test UniProt", "P12345");
+		uniProtReactomeEntry = UniProtReactomeEntry.get(3L, "test UniProt", "P12345");
 	}
 
 	@Test
 	public void sameUniProtObjectIsEqual() {
 		assertThat(
 			uniProtReactomeEntry,
-			sameInstance(UniProtReactomeEntry.get(1L, "test UniProt", "P12345"))
+			sameInstance(UniProtReactomeEntry.get(3L, "test UniProt", "P12345"))
 		);
 	}
 
 	@Test
 	public void differentUniProtObjectsWithDifferentValuesNotEqual() {
-		assertNotEquals(uniProtReactomeEntry, UniProtReactomeEntry.get(2L, "another test UniProt", "Q54321"));
+		assertNotEquals(uniProtReactomeEntry, UniProtReactomeEntry.get(4L, "another test UniProt", "Q54321"));
 	}
 }
