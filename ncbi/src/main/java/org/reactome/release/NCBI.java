@@ -82,7 +82,7 @@ public class NCBI {
 			)
 		);
 
-		Map<UniProtInfo, Set<String>> uniprotToNCBIGene = new HashMap<>();
+		Map<UniProtReactomeEntry, Set<String>> uniprotToNCBIGene = new HashMap<>();
 		while (result.hasNext()) {
 			Record record = result.next();
 			long uniprotDbId = record.get("rgp.dbId").asLong();
@@ -90,15 +90,15 @@ public class NCBI {
 			String uniprotAccession = record.get("rgp.identifier").asString();
 			String ncbiGeneID = record.get("rds.identifier").asString();
 
-			UniProtInfo uniprot = new UniProtInfo(uniprotDbId, uniprotDisplayName, uniprotAccession);
+			UniProtReactomeEntry uniprot = UniProtReactomeEntry.get(uniprotDbId, uniprotDisplayName, uniprotAccession);
 			Set<String> ncbiGeneIDs = uniprotToNCBIGene.computeIfAbsent(uniprot, k -> new HashSet<>());
 			ncbiGeneIDs.add(ncbiGeneID);
 		}
 
 		List<NCBIEntry> ncbiEntries = new ArrayList<>();
-		for (UniProtInfo uniprot : uniprotToNCBIGene.keySet()) {
+		for (UniProtReactomeEntry uniprot : uniprotToNCBIGene.keySet()) {
 			ncbiEntries.add(
-				new NCBIEntry(uniprot.getAccession(), uniprot.getDisplayName(), uniprotToNCBIGene.get(uniprot))
+				new NCBIEntry(uniprot, uniprotToNCBIGene.get(uniprot))
 			);
 		}
 		Collections.sort(ncbiEntries);
@@ -125,6 +125,8 @@ public class NCBI {
 			);
 			for (NCBIEntry ncbiEntry: ncbiEntrySubList) {
 				List<PathwayHierarchyUtilities.TopLevelPathway> topLevelPathways = ncbiEntry.getTopLevelPathways(graphDBSession);
+				Set<PathwayHierarchyUtilities.ReactomeEvent> topLevelPathways =
+					ncbiEntry.getTopLevelPathways(graphDBSession);
 				if (topLevelPathways.isEmpty()) {
 					String errorMessage = ncbiEntry.getUniprotDisplayName() +
 					" participates in Event(s) but no top Pathway can be found, i.e. there seem to be a pathway" +
@@ -141,7 +143,7 @@ public class NCBI {
 						StandardOpenOption.APPEND
 					);
 
-					for (PathwayHierarchyUtilities.TopLevelPathway topLevelPathway : topLevelPathways) {
+					for (PathwayHierarchyUtilities.ReactomeEvent topLevelPathway : topLevelPathways) {
 						Files.write(
 							geneXMLFilePath,
 							ncbiEntry.getEventLinkXML(ncbiGeneId, topLevelPathway).getBytes(),
@@ -250,51 +252,5 @@ public class NCBI {
 		String password = props.getProperty("password", "root");
 
 		return GraphDatabase.driver("bolt://" + host + ":" + port, AuthTokens.basic(user, password));
-	}
-
-	public static class UniProtInfo {
-		private long dbId;
-		private String displayName;
-		private String accession;
-
-		public UniProtInfo(long dbId, String displayName, String accession) {
-			this.dbId = dbId;
-			this.displayName = displayName;
-			this.accession = accession;
-		}
-
-		public long getDbId() {
-			return dbId;
-		}
-
-		public String getDisplayName() {
-			return displayName;
-		}
-
-		public String getAccession() {
-			return accession;
-		}
-
-		@Override
-		public boolean equals(Object object) {
-			if (object == this) {
-				return true;
-			}
-
-			if (!(object instanceof UniProtInfo)) {
-				return false;
-			}
-
-			UniProtInfo otherUniprot = (UniProtInfo) object;
-			return
-				getDbId() == otherUniprot.getDbId() &&
-				getDisplayName().equals(otherUniprot.getDisplayName()) &&
-				getAccession().equals(otherUniprot.getAccession());
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(getDbId(), getDisplayName(), getAccession());
-		}
 	}
 }
