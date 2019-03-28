@@ -8,13 +8,16 @@ import org.neo4j.driver.v1.StatementResult;
 
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class PathwayHierarchyUtilities {
 	private static final Logger logger = LogManager.getLogger();
 
-	private static Map<String, Set<Long>> uniprotAccessionToReactionLikeEventId;
+	private static Map<String, Set<ReactomeEvent>> uniprotAccessionToTopLevelPathways;
 	private static Map<String, Set<ReactomeEvent>> uniprotAccessionToReactomeEvent;
+	private static Map<String, Set<Long>> uniprotAccessionToReactionLikeEventId;
 	private static Map<Long, Set<Long>> rleToPathwayId;
 	private static Map<Long, Set<Long>> pathwayHierarchy;
 	private static Set<Long> topLevelPathwayIds;
@@ -22,17 +25,20 @@ public class PathwayHierarchyUtilities {
 	private static Map<Long, ReactomeEvent> eventCache;
 
 	public static Map<String, Set<ReactomeEvent>> fetchUniProtAccessionToTopLevelPathways(Session graphDBSession) {
-		if (topLevelPathwayIds == null) {
-			topLevelPathwayIds = getTopLevelPathwayIds(graphDBSession);
+		if (uniprotAccessionToTopLevelPathways != null) {
+			return uniprotAccessionToTopLevelPathways;
 		}
 
-		return fetchUniProtAccessionToReactomeEvents(graphDBSession).entrySet().stream().collect(Collectors.toMap(
+		uniprotAccessionToTopLevelPathways =
+			fetchUniProtAccessionToReactomeEvents(graphDBSession).entrySet().stream().collect(Collectors.toMap(
 			Map.Entry::getKey,
 			entry -> entry.getValue()
 					.stream()
-					.filter(reactomeEvent -> topLevelPathwayIds.contains(reactomeEvent.getDbId()))
+					.filter(reactomeEvent -> getTopLevelPathwayIds(graphDBSession).contains(reactomeEvent.getDbId()))
 					.collect(Collectors.toSet())
 		));
+
+		return uniprotAccessionToTopLevelPathways;
 	}
 
 	public static Map<String, Set<ReactomeEvent>> fetchUniProtAccessionToReactomeEvents(Session graphDBSession) {
@@ -44,19 +50,11 @@ public class PathwayHierarchyUtilities {
 		Map<Long, ReactomeEvent> eventCache = fetchReactomeEventCache(graphDBSession);
 		Map<String, Set<Long>> uniprotAccessionToReactionLikeEventId = fetchUniProtAccessionToRLEId(graphDBSession);
 		Map<Long, Set<Long>> rleToPathwayId = fetchRLEIdToPathwayId(graphDBSession);
+		Map<Long, Set<Long>> pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
 
-		int count = 0;
-		uniprotAccessionToReactomeEvent = new HashMap<>();
-		for (String uniprotAccession : uniprotAccessionToReactionLikeEventId.keySet()) {
-			if (count % 100 == 0) {
-				System.out.println("Processed events for " + count + " out of "
-					+ uniprotAccessionToReactionLikeEventId.size() + " (" +
-				String.format("%.2f", (100 * (double) count) / uniprotAccessionToReactionLikeEventId.size()) + "%) " +
-				LocalTime.now());
-			}
-			count++;
-
-
+		AtomicInteger count = new AtomicInteger(0);
+		uniprotAccessionToReactomeEvent = new ConcurrentHashMap<>();
+		uniprotAccessionToReactionLikeEventId.keySet().parallelStream().forEach(uniprotAccession -> {
 			//System.out.println("Finding events for " + uniprotAccession + " " + LocalTime.now());
 			Set<Long> reactionLikeEventIds =
 				uniprotAccessionToReactionLikeEventId.computeIfAbsent(uniprotAccession, k -> new HashSet<>());
@@ -97,7 +95,14 @@ public class PathwayHierarchyUtilities {
 			}
 			//System.out.println("Finished finding pathways for " + uniprotAccession + " " + LocalTime.now());
 			//System.out.println("Finished finding events for " + uniprotAccession + " " + LocalTime.now());
-		}
+
+			if (count.getAndIncrement() % 10000 == 0) {
+				System.out.println("Processed events for " + count.get() + " out of "
+								   + uniprotAccessionToReactionLikeEventId.size() + " (" +
+								   String.format("%.2f", (100 * (double) count.get()) / uniprotAccessionToReactionLikeEventId.size()) + "%) " +
+								   LocalTime.now());
+			}
+		});
 		//System.out.println("Finished computing uniprot to reactome events " + LocalTime.now());
 
 		return uniprotAccessionToReactomeEvent;
