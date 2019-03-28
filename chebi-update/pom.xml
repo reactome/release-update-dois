@@ -4,20 +4,20 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome.release</groupId>
 	<artifactId>chebi-update</artifactId>
-	<version>1.1.0</version>
+	<version>1.1.1</version>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<powermock.version>2.0.0-beta.5</powermock.version>
+		<powermock.version>2.0.0</powermock.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>uk.ac.ebi.chebi.webapps.chebiWS.client</groupId>
 			<artifactId>chebiWS-client</artifactId>
-			<version>2.3.2</version>
+			<version>2.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome.release</groupId>
@@ -124,6 +124,26 @@
 			<releases>
 				<enabled>true</enabled>
 			</releases>
+		</repository>
+		<!-- OICR respository for Reactome artefacts -->
+		<repository>
+			<id>oicr-central</id>
+			<name>artifacts.oicr.on.ca-releases</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+		<repository>
+			<id>oicr-snapshots</id>
+			<name>artifacts.oicr.on.ca-snapshots</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
 </project>
