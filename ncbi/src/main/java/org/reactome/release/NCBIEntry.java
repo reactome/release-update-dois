@@ -4,41 +4,41 @@ import org.neo4j.driver.v1.Session;
 
 import javax.annotation.Nonnull;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class NCBIEntry implements Comparable<NCBIEntry> {
 	private static int linkId = 1;
 	private static final String rootTag = "LinkSet";
 
-	private String uniprotAccession;
-	private String uniprotDisplayName;
+	private UniProtReactomeEntry uniProtReactomeEntry;
 	private Set<String> ncbiGeneIds;
-	private List<PathwayHierarchyUtilities.TopLevelPathway> topLevelPathways;
 
-	public NCBIEntry(String uniprotAccession, String uniprotDisplayName, Set<String> ncbiGeneIds) {
-		this.uniprotAccession = uniprotAccession;
-		this.uniprotDisplayName = uniprotDisplayName;
+	public NCBIEntry(UniProtReactomeEntry uniProtReactomeEntry, Set<String> ncbiGeneIds) {
+		this.uniProtReactomeEntry = uniProtReactomeEntry;
 		this.ncbiGeneIds = ncbiGeneIds;
 	}
 
+	public NCBIEntry(long dbId, String uniprotAccession, String uniprotDisplayName, Set<String> ncbiGeneIds) {
+		this(UniProtReactomeEntry.get(dbId, uniprotAccession, uniprotDisplayName), ncbiGeneIds);
+	}
+
 	public String getUniprotAccession() {
-		return this.uniprotAccession;
+		return this.uniProtReactomeEntry.getAccession();
 	}
 
 	public String getUniprotDisplayName() {
-		return this.uniprotDisplayName;
+		return this.uniProtReactomeEntry.getDisplayName();
 	}
 
 	public Set<String> getNcbiGeneIds() {
 		return this.ncbiGeneIds;
 	}
 
-	public List<PathwayHierarchyUtilities.TopLevelPathway> getTopLevelPathways(Session graphDBSession) {
-		if (this.topLevelPathways == null) {
-			this.topLevelPathways = fetchTopLevelPathways(graphDBSession);
-		}
+	public Set<PathwayHierarchyUtilities.ReactomeEvent> getEvents(Session graphDBSession) {
+		return uniProtReactomeEntry.getEvents(graphDBSession);
+	}
 
-		return this.topLevelPathways;
+	public Set<PathwayHierarchyUtilities.ReactomeEvent> getTopLevelPathways(Session graphDBSession) {
+		return uniProtReactomeEntry.getTopLevelPathways(graphDBSession);
 	}
 
 	@Override
@@ -46,16 +46,26 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return this.getUniprotAccession().compareTo(o.getUniprotAccession());
 	}
 
-	private List<PathwayHierarchyUtilities.TopLevelPathway> fetchTopLevelPathways(Session graphDBSession) {
-		return PathwayHierarchyUtilities.fetchUniProtAccessionToPathwayId(graphDBSession)
-			.computeIfAbsent(getUniprotAccession(), k -> new HashSet<>())
-			.stream()
-			.flatMap(pathwayId ->
-				PathwayHierarchyUtilities.fetchTopLevelPathwayHierarchy(graphDBSession)
-				.computeIfAbsent(pathwayId, k -> new HashSet<>())
-				.stream()
-			)
-			.collect(Collectors.toList());
+	@Override
+	public boolean equals(Object o) {
+		if (o == this) {
+			return true;
+		}
+
+		if (!(o instanceof NCBIEntry)) {
+			return false;
+		}
+
+		NCBIEntry other = (NCBIEntry) o;
+
+		return other.getUniprotAccession().equals(this.getUniprotAccession()) &&
+			   other.getUniprotDisplayName().equals(this.getUniprotDisplayName()) &&
+			   other.getNcbiGeneIds().equals(this.getNcbiGeneIds());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getUniprotAccession(), getUniprotDisplayName(), getNcbiGeneIds());
 	}
 
 	public static String getXMLHeader() {
@@ -87,7 +97,7 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		);
 	}
 
-	public String getEventLinkXML(String ncbiGene, PathwayHierarchyUtilities.TopLevelPathway pathway) {
+	public String getEventLinkXML(String ncbiGene, PathwayHierarchyUtilities.ReactomeEvent pathway) {
 		return getLinkXML(
 			ncbiGene,
 			"&event.base.url;",
