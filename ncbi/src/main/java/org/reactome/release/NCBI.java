@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,7 @@ public class NCBI {
 		System.out.println("Files for Reactome version " + version + " will be output to the directory " + outputDir);
 
 		Session graphDBSession = getGraphDBDriver(props).session();
-		System.out.println("Generating UniProt accession to NCBI Gene mapping");
+		System.out.println("Generating UniProt accession to NCBI Gene mapping " + LocalTime.now());
 		ncbiEntries = getUniProtToNCBIGeneMap(graphDBSession);
 
 		System.out.println("Writing proteins_version file");
@@ -127,7 +128,7 @@ public class NCBI {
 				StandardOpenOption.APPEND
 			);
 			for (NCBIEntry ncbiEntry: ncbiEntrySubList) {
-				List<PathwayHierarchyUtilities.TopLevelPathway> topLevelPathways = ncbiEntry.getTopLevelPathways(graphDBSession);
+				System.out.println("Working on " + ncbiEntry.getUniprotAccession() + " " + LocalTime.now());
 				Set<PathwayHierarchyUtilities.ReactomeEvent> topLevelPathways =
 					ncbiEntry.getTopLevelPathways(graphDBSession);
 				if (topLevelPathways.isEmpty()) {
@@ -154,6 +155,7 @@ public class NCBI {
 						);
 					}
 				}
+				System.out.println("Finished with " + ncbiEntry.getUniprotAccession() + LocalTime.now());
 			}
 
 			Files.write(geneXMLFilePath, NCBIEntry.getCloseRootTag().getBytes(), StandardOpenOption.APPEND);
