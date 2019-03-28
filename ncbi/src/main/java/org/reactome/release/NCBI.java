@@ -94,7 +94,7 @@ public class NCBI {
 			String uniprotAccession = record.get("rgp.identifier").asString();
 			String ncbiGeneID = record.get("rds.identifier").asString();
 
-			UniProtReactomeEntry uniprot = UniProtReactomeEntry.get(uniprotDbId, uniprotDisplayName, uniprotAccession);
+			UniProtReactomeEntry uniprot = UniProtReactomeEntry.get(uniprotDbId, uniprotAccession, uniprotDisplayName);
 			Set<String> ncbiGeneIDs = uniprotToNCBIGene.computeIfAbsent(uniprot, k -> new HashSet<>());
 			ncbiGeneIDs.add(ncbiGeneID);
 		}
