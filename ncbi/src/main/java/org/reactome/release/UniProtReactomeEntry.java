@@ -14,10 +14,6 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 	private Set<PathwayHierarchyUtilities.ReactomeEvent> reactomeEvents;
 	private Set<PathwayHierarchyUtilities.ReactomeEvent> topLevelPathways;
 
-	public static void clearCache() {
-		uniProtReactomeEntryMap.clear();
-	}
-
 	public static UniProtReactomeEntry get(long dbId, String uniprotAccession, String uniprotDisplayName) {
 		UniProtReactomeEntry uniProtReactomeEntry = uniProtReactomeEntryMap.computeIfAbsent(
 			dbId, k -> new UniProtReactomeEntry(dbId, uniprotAccession, uniprotDisplayName)
