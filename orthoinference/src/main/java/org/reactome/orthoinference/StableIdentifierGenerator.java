@@ -8,6 +8,8 @@ import org.gk.persistence.MySQLAdaptor;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
 import static org.gk.model.ReactomeJavaConstants.*;
 
 /*
@@ -40,14 +42,11 @@ public class StableIdentifierGenerator {
 
         // Paralogs will have the same base stable identifier, but we want to denote when that happens.
         // We pull the value from `seenOrthoIds`, increment it and then add it to the stable identifier name (eg: R-MMU-123456-2)
-        if (seenOrthoIds.get(targetIdentifier) == null) {
-            seenOrthoIds.put(targetIdentifier, 1);
-        } else {
-            int paralogCount = seenOrthoIds.get(targetIdentifier);
-            paralogCount++;
-            seenOrthoIds.put(targetIdentifier, paralogCount);
+        int paralogCount = Optional.ofNullable(seenOrthoIds.get(targetIdentifier)).orElse(0) + 1;
+        if (paralogCount > 1) {
             targetIdentifier += "-" + paralogCount;
         }
+        seenOrthoIds.put(targetIdentifier, paralogCount);
 
         // Check that the stable identifier instance does not already exist in DB
         // TODO: Performance check
@@ -69,7 +68,6 @@ public class StableIdentifierGenerator {
 
         // Populate inferred instance with new StableIdentifier instance
         inferredInst.addAttributeValue(stableIdentifier, orthoStableIdentifierInst);
-
         return inferredInst;
     }
 }
