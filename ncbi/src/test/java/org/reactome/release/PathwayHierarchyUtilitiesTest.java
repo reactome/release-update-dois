@@ -64,17 +64,6 @@ public class PathwayHierarchyUtilitiesTest {
 	}
 
 	@Test
-	public void findTopLevelPathwayIdsWithUnknownPathwayId() throws IllegalStateException {
-		long pathwayId = 1L;
-		Map<Long, Set<Long>> pathwayHierarchy = new HashMap<>();
-		pathwayHierarchy.put(2L, new HashSet<>(Arrays.asList(3L, 4L ,5L)));
-
-		expectedException.expect(IllegalStateException.class);
-		expectedException.expectMessage(pathwayId + " does not exist");
-		PathwayHierarchyUtilities.findTopLevelPathwayIds(pathwayId, pathwayHierarchy);
-	}
-
-	@Test
 	public void fetchPathwayHierarchy() {
 		MockitoAnnotations.initMocks(this);
 
