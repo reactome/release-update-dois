@@ -58,7 +58,7 @@ public class UpdateDOIs {
 		try 
 		{
 			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
-			 doisTR = dbaTestReactome.fetchInstanceByAttribute("Pathway", "doi", "NOT REGEXP", "^10.3180");
+			 doisTR = dbaTestReactome.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^10.3180");
 			 logger.info("Found " + doisTR.size() + " Pathway instances that need a DOI");
 			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
@@ -69,10 +69,10 @@ public class UpdateDOIs {
 					for (GKInstance trDOI : doisTR)
 					{
 						// The dois are constructed from the instances 'stableIdentifier', which should be in the db already
-						String stableIdFromDb = ((GKInstance) trDOI.getAttributeValue("stableIdentifier")).getDisplayName();
-						String nameFromDb = trDOI.getAttributeValue("name").toString();
+						String stableIdFromDb = ((GKInstance) trDOI.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
+						String nameFromDb = trDOI.getAttributeValue(ReactomeJavaConstants.name).toString();
 						String updatedDoi = "10.3180/" + stableIdFromDb;
-						String dbId = trDOI.getAttributeValue("DB_ID").toString();
+						String dbId = trDOI.getAttributeValue(ReactomeJavaConstants.DB_ID).toString();
 
 						// Used to verify that report contents are as expected, based on provided list from curators
 						if (expectedUpdatedDOIs.get(updatedDoi) != null && expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
@@ -86,13 +86,13 @@ public class UpdateDOIs {
 							}
 						}
 						// This updates the 'modified' field for Pathways instances, keeping track of when changes happened for each instance
-						trDOI.getAttributeValuesList("modified");
-						trDOI.addAttributeValue("modified", instanceEditTR);
+						trDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
+						trDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditTR);
 						trDOI.setAttributeValue("doi", updatedDoi);
 
 						// Grabs instance from GKCentral based on DB_ID taken from Test Reactome and updates it's DOI
 						dbaGkCentral.startTransaction();
-						doisGK = dbaGkCentral.fetchInstanceByAttribute("Pathway", "DB_ID", "=", dbId);
+						doisGK = dbaGkCentral.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, ReactomeJavaConstants.DB_ID, "=", dbId);
 						if (!doisGK.isEmpty())
 						{
 							for (GKInstance gkDOI : doisGK)
@@ -100,11 +100,11 @@ public class UpdateDOIs {
 								boolean verified = ReportTests.verifyDOIMatches(trDOI, gkDOI, updatedDoi);
 								if (verified) 
 								{
-									gkDOI.getAttributeValuesList("modified");
-									gkDOI.addAttributeValue("modified", instanceEditGK);
+									gkDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
+									gkDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditGK);
 									gkDOI.setAttributeValue("doi", updatedDoi);
 									if (!testMode) {
-										dbaGkCentral.updateInstanceAttribute(gkDOI, "modified");
+										dbaGkCentral.updateInstanceAttribute(gkDOI, ReactomeJavaConstants.modified);
 										dbaGkCentral.updateInstanceAttribute(gkDOI, "doi");
 									}
 								} else {
@@ -120,7 +120,7 @@ public class UpdateDOIs {
 							logger.error("Could not find attribute in gk_central");
 						}
 						if (!testMode) {
-							dbaTestReactome.updateInstanceAttribute(trDOI, "modified");
+							dbaTestReactome.updateInstanceAttribute(trDOI, ReactomeJavaConstants.modified);
 							dbaTestReactome.updateInstanceAttribute(trDOI, "doi");
 						}
 					}
