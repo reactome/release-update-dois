@@ -1,6 +1,8 @@
 package org.reactome.release;
 
+import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.StatementResult;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -35,6 +37,40 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 
 	public Set<PathwayHierarchyUtilities.ReactomeEvent> getTopLevelPathways(Session graphDBSession) {
 		return uniProtReactomeEntry.getTopLevelPathways(graphDBSession);
+	}
+
+	public static List<NCBIEntry> getUniProtToNCBIGeneMap(Session graphDBSession) {
+		StatementResult result = graphDBSession.run(
+			String.join(System.lineSeparator(),
+				"MATCH (rgp:ReferenceGeneProduct)-[:referenceDatabase]->(rd:ReferenceDatabase)",
+				"MATCH (rgp)-[:referenceGene]->(rds:ReferenceDNASequence)",
+				"WHERE rd.displayName = 'UniProt' AND rds.databaseName = 'Main Gene'",
+				"RETURN rgp.dbId, rgp.displayName, rgp.identifier, rds.identifier",
+				"ORDER BY rgp.identifier;"
+			)
+		);
+
+		Map<UniProtReactomeEntry, Set<String>> uniprotToNCBIGene = new HashMap<>();
+		while (result.hasNext()) {
+			Record record = result.next();
+			long uniprotDbId = record.get("rgp.dbId").asLong();
+			String uniprotDisplayName = record.get("rgp.displayName").asString();
+			String uniprotAccession = record.get("rgp.identifier").asString();
+			String ncbiGeneID = record.get("rds.identifier").asString();
+
+			UniProtReactomeEntry uniprot = UniProtReactomeEntry.get(uniprotDbId, uniprotAccession, uniprotDisplayName);
+			Set<String> ncbiGeneIDs = uniprotToNCBIGene.computeIfAbsent(uniprot, k -> new HashSet<>());
+			ncbiGeneIDs.add(ncbiGeneID);
+		}
+
+		List<NCBIEntry> ncbiEntries = new ArrayList<>();
+		for (UniProtReactomeEntry uniprot : uniprotToNCBIGene.keySet()) {
+			ncbiEntries.add(
+				new NCBIEntry(uniprot, uniprotToNCBIGene.get(uniprot))
+			);
+		}
+		Collections.sort(ncbiEntries);
+		return ncbiEntries;
 	}
 
 	@Override
@@ -121,4 +157,6 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 			"\t</Link>"
 		).concat(System.lineSeparator());
 	}
+
+
 }
