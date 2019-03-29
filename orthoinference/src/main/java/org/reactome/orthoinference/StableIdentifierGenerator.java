@@ -1,5 +1,7 @@
 package org.reactome.orthoinference;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
 
@@ -11,17 +13,25 @@ import static org.gk.model.ReactomeJavaConstants.*;
  *  All PhysicalEntitys, ReactionlikeEvents and Pathways are routed to this class to generate their stable identifiers
  */
 public class StableIdentifierGenerator {
-
-    private static MySQLAdaptor dba;
-    private static GKInstance instanceEditInst;
+    private static final Logger logger = LogManager.getLogger();
     private static Map<String,Integer> seenOrthoIds = new HashMap<>();
-    private static String speciesAbbreviation = null;
 
-    public static GKInstance generateOrthologousStableId(GKInstance inferredInst, GKInstance originalInst) throws Exception {
+    private MySQLAdaptor dba;
+    private String speciesAbbreviation;
+
+    public StableIdentifierGenerator(MySQLAdaptor dba, String speciesAbbreviation) {
+        this.dba = dba;
+        this.speciesAbbreviation = speciesAbbreviation;
+    }
+
+    public GKInstance generateOrthologousStableId(GKInstance inferredInst, GKInstance originalInst) throws Exception {
 
         // All Human PhysicalEntitys and Events will have a StableIdentifier instance in the stableIdentifier attribute
         GKInstance stableIdentifierInst = (GKInstance) originalInst.getAttributeValue(stableIdentifier);
-
+        if (stableIdentifierInst == null) {
+            logger.fatal("No stable identifier instance found for " + originalInst + " -- terminating");
+            throw new RuntimeException("Could not find stable identifier instance");
+        }
         // For now, Human is hard-coded as the source species, so we replace the stableIdentifier source species based on that assumption
         String sourceIdentifier = (String) stableIdentifierInst.getAttributeValue(identifier);
         String targetIdentifier = sourceIdentifier.replace("HSA", speciesAbbreviation);
@@ -49,19 +59,5 @@ public class StableIdentifierGenerator {
         inferredInst.addAttributeValue(stableIdentifier, orthoStableIdentifierInst);
 
         return inferredInst;
-
-    }
-
-    // speciesAbbreviation is taken from the Species.json file. It is the 3-letter species code that makes up the StableIdentifier. eg: R-'MMU'-123456.
-    public static void setSpeciesAbbreviation(String speciesAbbreviationCopy) {
-        speciesAbbreviation = speciesAbbreviationCopy;
-    }
-
-    public static void setInstanceEdit(GKInstance instanceEditInstCopy) {
-        instanceEditInst = instanceEditInstCopy;
-    }
-
-    public static void setAdaptor(MySQLAdaptor dbAdaptor) {
-        dba = dbAdaptor;
     }
 }

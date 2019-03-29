@@ -50,6 +50,7 @@ public class EventsInferrer
 	private static GKInstance speciesInst;
 	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static List<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
+	private static StableIdentifierGenerator stableIdentifierGenerator;
 
 	@SuppressWarnings("unchecked")
 	public static void inferEvents(Properties props, String pathToConfig, String species) throws Exception
@@ -103,7 +104,9 @@ public class EventsInferrer
 		inferredFile.createNewFile();
 		ReactionInferrer.setEligibleFilename(eligibleFilename);
 		ReactionInferrer.setInferredFilename(inferredFilename);
-		StableIdentifierGenerator.setSpeciesAbbreviation((String) speciesObject.get("abbreviation"));
+
+
+		stableIdentifierGenerator = new StableIdentifierGenerator(dbAdaptor, (String) speciesObject.get("abbreviation"));
 
 		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
 		setInstanceEdits(personId);
@@ -183,6 +186,9 @@ public class EventsInferrer
 			try {
 				logger.info("Attempting to infer " + reactionInst);
 				ReactionInferrer.inferReaction(reactionInst);
+			} catch (RuntimeException e) {
+				e.printStackTrace();
+				return;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -193,6 +199,10 @@ public class EventsInferrer
 		resetVariables();
 		System.gc();
 		logger.info("Finished orthoinference of " + speciesName + ".");
+	}
+
+	public static StableIdentifierGenerator getStableIdentifierGenerator() {
+		return stableIdentifierGenerator;
 	}
 
 	private static void setReleaseDates(String dateOfRelease) 
@@ -237,7 +247,6 @@ public class EventsInferrer
 		SkipInstanceChecker.setAdaptor(dbAdaptor);
 		InstanceUtilities.setAdaptor(dbAdaptor);
 		OrthologousEntityGenerator.setAdaptor(dbAdaptor);
-		StableIdentifierGenerator.setAdaptor(dbAdaptor);
 		EWASInferrer.setAdaptor(dbAdaptor);
 		HumanEventsUpdater.setAdaptor(dbAdaptor);
 		
@@ -314,7 +323,6 @@ public class EventsInferrer
 		instanceEditInst = InstanceEditUtils.createInstanceEdit(dbAdaptor, personId, "org.reactome.orthoinference");
 		InstanceUtilities.setInstanceEdit(instanceEditInst);
 		OrthologousEntityGenerator.setInstanceEdit(instanceEditInst);
-		StableIdentifierGenerator.setInstanceEdit(instanceEditInst);
 		EWASInferrer.setInstanceEdit(instanceEditInst);
 		HumanEventsUpdater.setInstanceEdit(instanceEditInst);
 	}

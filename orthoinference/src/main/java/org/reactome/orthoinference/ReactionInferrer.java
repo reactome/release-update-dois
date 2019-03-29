@@ -90,7 +90,7 @@ public class ReactionInferrer {
 							}
 							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
 							// add a new inferred instance, the storeInstance method is just called here.
-							infReactionInst = StableIdentifierGenerator.generateOrthologousStableId(infReactionInst, reactionInst);
+							infReactionInst = EventsInferrer.getStableIdentifierGenerator().generateOrthologousStableId(infReactionInst, reactionInst);
 							dba.storeInstance(infReactionInst);
 							logger.info("\tInference complete -- " + infReactionInst + " inserted");
 							if (infReactionInst.getSchemClass().isValidAttribute(inferredFrom))
