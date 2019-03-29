@@ -33,10 +33,6 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return this.ncbiGeneIds;
 	}
 
-	public Set<PathwayHierarchyUtilities.ReactomeEvent> getEvents(Session graphDBSession) {
-		return uniProtReactomeEntry.getEvents(graphDBSession);
-	}
-
 	public Set<PathwayHierarchyUtilities.ReactomeEvent> getTopLevelPathways(Session graphDBSession) {
 		return uniProtReactomeEntry.getTopLevelPathways(graphDBSession);
 	}
