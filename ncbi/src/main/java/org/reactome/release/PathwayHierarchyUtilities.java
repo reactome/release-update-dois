@@ -46,7 +46,7 @@ public class PathwayHierarchyUtilities {
 			return uniprotAccessionToReactomeEvent;
 		}
 
-		System.out.println("Computing uniprot to reactome events " + LocalTime.now());
+		logger.info("Computing uniprot to reactome events");
 		Map<Long, ReactomeEvent> eventCache = fetchReactomeEventCache(graphDBSession);
 		Map<String, Set<Long>> uniprotAccessionToReactionLikeEventId = fetchUniProtAccessionToRLEId(graphDBSession);
 		Map<Long, Set<Long>> rleToPathwayId = fetchRLEIdToPathwayId(graphDBSession);
@@ -55,31 +55,30 @@ public class PathwayHierarchyUtilities {
 		AtomicInteger count = new AtomicInteger(0);
 		uniprotAccessionToReactomeEvent = new ConcurrentHashMap<>();
 		uniprotAccessionToReactionLikeEventId.keySet().parallelStream().forEach(uniprotAccession -> {
-			//System.out.println("Finding events for " + uniprotAccession + " " + LocalTime.now());
+			System.out.println("Finding events for " + uniprotAccession + " " + LocalTime.now());
 			Set<Long> reactionLikeEventIds =
 				uniprotAccessionToReactionLikeEventId.computeIfAbsent(uniprotAccession, k -> new HashSet<>());
 
 			// Add RLEs containing UniProt accession
-			//System.out.println("Finding RLEs for " + uniprotAccession + " " + LocalTime.now());
+			System.out.println("Finding RLEs for " + uniprotAccession + " " + LocalTime.now());
 			uniprotAccessionToReactomeEvent
 				.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
-				.addAll(reactionLikeEventIds.stream().map(id -> eventCache.get(id)).collect(Collectors.toSet()));
-			//System.out.println("Fininshed finding RLEs for " + uniprotAccession + " " + LocalTime.now());
+				.addAll(reactionLikeEventIds.stream().map(eventCache::get).collect(Collectors.toSet()));
+			System.out.println("Fininshed finding RLEs for " + uniprotAccession + " " + LocalTime.now());
 
-			//System.out.println("Finding pathways for " + uniprotAccession + " " + LocalTime.now());
+			System.out.println("Finding pathways for " + uniprotAccession + " " + LocalTime.now());
 			for (long reactionLikeEventId : reactionLikeEventIds) {
 				Set<Long> lowerLevelPathwayIds = rleToPathwayId.computeIfAbsent(reactionLikeEventId,
 																			  k -> new HashSet<>());
 
-				//System.out.println("Finding low level pathways for " + uniprotAccession + " " + LocalTime.now());
+				System.out.println("Finding low level pathways for " + uniprotAccession + " " + LocalTime.now());
 				// Add lower level pathways containing UniProt accession
 				uniprotAccessionToReactomeEvent
 					.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
-					.addAll(lowerLevelPathwayIds.stream().map(id -> eventCache.get(id)).collect(Collectors.toSet()));
-				//System.out.println("Finished finding low level pathways for " + uniprotAccession + " " + LocalTime
-				// .now());
+					.addAll(lowerLevelPathwayIds.stream().map(eventCache::get).collect(Collectors.toSet()));
+				System.out.println("Finished finding low level pathways for " + uniprotAccession + " " + LocalTime.now());
 
-				//System.out.println("Finding top level pathways for " + uniprotAccession + " " + LocalTime.now());
+				System.out.println("Finding top level pathways for " + uniprotAccession + " " + LocalTime.now());
 				// Add higher level pathways containing UniProt accession
 				uniprotAccessionToReactomeEvent
 					.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
@@ -87,23 +86,24 @@ public class PathwayHierarchyUtilities {
 						lowerLevelPathwayIds
 							.stream()
 							.flatMap(id -> findAncestorPathwayIds(id, pathwayHierarchy).stream())
-							.map(id -> eventCache.get(id))
+							.map(eventCache::get)
 							.collect(Collectors.toSet())
 					);
-				//System.out.println("Finished finding top level pathways for " + uniprotAccession + " " + LocalTime
-				// .now());
+				System.out.println("Finished finding top level pathways for " + uniprotAccession + " " + LocalTime.now());
 			}
-			//System.out.println("Finished finding pathways for " + uniprotAccession + " " + LocalTime.now());
-			//System.out.println("Finished finding events for " + uniprotAccession + " " + LocalTime.now());
+			System.out.println("Finished finding pathways for " + uniprotAccession + " " + LocalTime.now());
+			System.out.println("Finished finding events for " + uniprotAccession + " " + LocalTime.now());
 
 			if (count.getAndIncrement() % 10000 == 0) {
-				System.out.println("Processed events for " + count.get() + " out of "
-								   + uniprotAccessionToReactionLikeEventId.size() + " (" +
-								   String.format("%.2f", (100 * (double) count.get()) / uniprotAccessionToReactionLikeEventId.size()) + "%) " +
-								   LocalTime.now());
+				logger.info("Processed events for " + count.get() + " out of " +
+							uniprotAccessionToReactionLikeEventId.size() + " (" +
+							String.format(
+								"%.2f",
+								(100 * (double) count.get()) / uniprotAccessionToReactionLikeEventId.size()
+							) + "%) " + LocalTime.now());
 			}
 		});
-		//System.out.println("Finished computing uniprot to reactome events " + LocalTime.now());
+		logger.info("Finished computing uniprot to reactome events");
 
 		return uniprotAccessionToReactomeEvent;
 	}
@@ -114,7 +114,7 @@ public class PathwayHierarchyUtilities {
 			return uniprotAccessionToReactionLikeEventId;
 		}
 
-		System.out.println("Computing uniprot to RLE id " + LocalTime.now());
+		logger.info("Computing uniprot to RLE id");
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (rgp:ReferenceGeneProduct)<-[:referenceEntity|:referenceSequence|:hasModifiedResidue]-" +
@@ -135,7 +135,7 @@ public class PathwayHierarchyUtilities {
 				.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
 				.add(reactionLikeEventId);
 		};
-		System.out.println("Finished computing uniprot to RLE id " + LocalTime.now());
+		logger.info("Finished computing uniprot to RLE id");
 
 		return uniprotAccessionToReactionLikeEventId;
 	}
@@ -145,7 +145,7 @@ public class PathwayHierarchyUtilities {
 			return topLevelPathwayHierarchy;
 		}
 
-		System.out.println("Computing top level pathway hierarchy " + LocalTime.now());
+		logger.info("Computing top level pathway hierarchy");
 		Map<Long, Set<Long>> pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
 
 		topLevelPathwayHierarchy = new HashMap<>();
@@ -159,7 +159,7 @@ public class PathwayHierarchyUtilities {
 						.collect(Collectors.toList())
 				);
 		}
-		System.out.println("Finished computing top level pathway hierarchy " + LocalTime.now());
+		logger.info("Finished computing top level pathway hierarchy");
 		return topLevelPathwayHierarchy;
 	}
 
@@ -172,7 +172,7 @@ public class PathwayHierarchyUtilities {
 			throw new IllegalStateException("Neo4j driver session parameter is null");
 		}
 
-		System.out.println("Computing rle id to pathway id " + LocalTime.now());
+		logger.info("Computing rle id to pathway id");
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (rle:ReactionLikeEvent)<-[:hasEvent]-(p:Pathway)",
@@ -191,7 +191,7 @@ public class PathwayHierarchyUtilities {
 				.computeIfAbsent(reactionLikeEventId, k -> new HashSet<>())
 				.add(pathwayId);
 		};
-		System.out.println("Finished computing rle id to pathway id " + LocalTime.now());
+		logger.info("Finished computing rle id to pathway id");
 
 		return rleToPathwayId;
 	}
@@ -202,10 +202,10 @@ public class PathwayHierarchyUtilities {
 		}
 
 		if (graphDBSession == null) {
-			throw new IllegalStateException("Neo4j driver session parameter is null " + LocalTime.now());
+			throw new IllegalStateException("Neo4j driver session parameter is null");
 		}
 
-		System.out.println("Computing pathway hierarchy " + LocalTime.now());
+		logger.info("Computing pathway hierarchy");
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (p:Pathway)<-[:hasEvent]-(pp:Pathway)",
@@ -223,7 +223,7 @@ public class PathwayHierarchyUtilities {
 			Set<Long> parentPathwayIds = pathwayHierarchy.computeIfAbsent(pathwayId, k -> new HashSet<>());
 			parentPathwayIds.add(parentPathwayId);
 		};
-		System.out.println("Finished computing pathway hierarchy " + LocalTime.now());
+		logger.info("Finished computing pathway hierarchy");
 
 		return pathwayHierarchy;
 	}
@@ -233,7 +233,7 @@ public class PathwayHierarchyUtilities {
 			return topLevelPathwayIds;
 		}
 
-		System.out.println("Computing top level pathway ids " + LocalTime.now());
+		logger.info("Computing top level pathway ids");
 		Map<Long, Set<Long>> pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
 
 		topLevelPathwayIds = pathwayHierarchy
@@ -241,7 +241,7 @@ public class PathwayHierarchyUtilities {
 							.stream()
 							.flatMap(id -> findTopLevelPathwayIds(id, pathwayHierarchy).stream())
 							.collect(Collectors.toSet());
-		System.out.println("Finished computing top level pathway ids " + LocalTime.now());
+		logger.info("Finished computing top level pathway ids");
 		return topLevelPathwayIds;
 	}
 
@@ -306,7 +306,7 @@ public class PathwayHierarchyUtilities {
 			return eventCache;
 		}
 
-		System.out.println("Computing event cache " + LocalTime.now());
+		logger.info("Computing event cache");
 		eventCache = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (e:Event)",
@@ -323,7 +323,7 @@ public class PathwayHierarchyUtilities {
 				record.get("e.stId").asString()
 			)
 		));
-		System.out.println("Finished computing event cache " + LocalTime.now());
+		logger.info("Finished computing event cache");
 
 		return eventCache;
 	}
