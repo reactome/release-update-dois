@@ -47,11 +47,15 @@ public class NCBIGene {
 		);
 
 		// Append map contents
+		Set<String> proteinLines = new LinkedHashSet<>();
 		for (NCBIEntry ncbiEntry : ncbiEntries) {
 			for (String ncbiGeneId : ncbiEntry.getNcbiGeneIds()) {
-				String line = ncbiEntry.getUniprotAccession() + "\t" + ncbiGeneId + System.lineSeparator();
-				Files.write(filePath, line.getBytes(), StandardOpenOption.APPEND);
+				proteinLines.add(ncbiEntry.getUniprotAccession() + "\t" + ncbiGeneId + System.lineSeparator());
 			}
+		}
+
+		for (String line : proteinLines) {
+			Files.write(filePath, line.getBytes(), StandardOpenOption.APPEND);
 		}
 
 		logger.info("Finished writing proteins_version file");
@@ -92,20 +96,18 @@ public class NCBIGene {
 					continue;
 				}
 
+				Set<String> ncbiGeneXMLNodeStrings = new LinkedHashSet<>();
 				for (String ncbiGeneId : ncbiEntry.getNcbiGeneIds()) {
-					Files.write(
-						geneXMLFilePath,
-						ncbiEntry.getEntityLinkXML(ncbiGeneId, ncbiEntry.getUniprotAccession()).getBytes(),
-						StandardOpenOption.APPEND
-					);
+					ncbiGeneXMLNodeStrings.add(ncbiEntry.getEntityLinkXML(ncbiGeneId, ncbiEntry.getUniprotAccession()));
+
 
 					for (PathwayHierarchyUtilities.ReactomeEvent topLevelPathway : topLevelPathways) {
-						Files.write(
-							geneXMLFilePath,
-							ncbiEntry.getEventLinkXML(ncbiGeneId, topLevelPathway).getBytes(),
-							StandardOpenOption.APPEND
-						);
+						ncbiGeneXMLNodeStrings.add(ncbiEntry.getEventLinkXML(ncbiGeneId, topLevelPathway));
 					}
+				}
+
+				for (String ncbiGeneXMLNodeString : ncbiGeneXMLNodeStrings) {
+					Files.write(geneXMLFilePath, ncbiGeneXMLNodeString.getBytes(), StandardOpenOption.APPEND);
 				}
 
 				ncbiGeneLogger.info("Finished with " + ncbiEntry.getUniprotAccession());
