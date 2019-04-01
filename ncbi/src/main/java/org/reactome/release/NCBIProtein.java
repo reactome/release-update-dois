@@ -9,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class NCBIProtein {
@@ -29,12 +31,12 @@ public class NCBIProtein {
 			StandardOpenOption.APPEND
 		);
 
-		List<String> proteinFileLines =
+		Set<String> proteinFileLines =
 			ncbiEntries
 				.stream()
 				.map(NCBIEntry::getUniprotAccession)
 				.map(uniprotId -> String.join("\t", "query:", uniprotId, "[pacc]").concat(System.lineSeparator()))
-				.collect(Collectors.toList());
+				.collect(Collectors.toCollection(LinkedHashSet::new));
 		for (String proteinFileLine : proteinFileLines) {
 			Files.write(ncbiProteinFilePath, proteinFileLine.getBytes(), StandardOpenOption.APPEND);
 		}
