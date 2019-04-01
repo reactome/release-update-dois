@@ -47,7 +47,7 @@ public class Main {
 		NCBIProtein.writeNCBIProteinFile(ncbiEntries, outputDir, version);
 
 		logger.info("Writing UCSC files");
-		UCSC.writeUCSCFiles(graphDBSession);
+		UCSC.getInstance(outputDir, version).writeUCSCFiles(graphDBSession);
 
 		graphDBSession.close();
 		logger.info("Finished NCBI and UCSC step");

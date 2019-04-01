@@ -15,16 +15,25 @@ import java.util.stream.Collectors;
 public class UCSC {
 	private static final Logger logger = LogManager.getLogger();
 
-	private static Set<UniProtReactomeEntry> ucscUniProtReactomeEntries;
-	private static int version;
-	private static String outputDir;
+	private Set<UniProtReactomeEntry> ucscUniProtReactomeEntries;
+	private int version;
+	private String outputDir;
 
-	public static void writeUCSCFiles(Session graphDBSession) throws IOException {
+	public static UCSC getInstance(String outputDir, int version) {
+		return new UCSC(outputDir, version);
+	}
+
+	private UCSC(String outputDir, int version) {
+		this.outputDir = outputDir;
+		this.version = version;
+	}
+
+	public void writeUCSCFiles(Session graphDBSession) throws IOException {
 		writeUCSCEntityFile(graphDBSession);
 		writeUCSCEventFile(graphDBSession);
 	}
 
-	private static void writeUCSCEntityFile(Session graphDBSession) throws IOException {
+	private void writeUCSCEntityFile(Session graphDBSession) throws IOException {
 		Path ucscEntityFilePath = Paths.get(outputDir, "ucsc_entity" + version);
 		Files.deleteIfExists(ucscEntityFilePath);
 		Files.createFile(ucscEntityFilePath);
@@ -41,8 +50,7 @@ public class UCSC {
 		}
 	}
 
-	private static void writeUCSCEventFile(Session graphDBSession)
-		throws IOException {
+	private void writeUCSCEventFile(Session graphDBSession) throws IOException {
 		Path ucscEventFilePath = Paths.get(outputDir, "ucsc_events" + version);
 		Files.deleteIfExists(ucscEventFilePath);
 		Files.createFile(ucscEventFilePath);
@@ -84,7 +92,7 @@ public class UCSC {
 		}
 	}
 
-	private static Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
+	private Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
 		if (ucscUniProtReactomeEntries != null) {
 			return ucscUniProtReactomeEntries;
 		}
