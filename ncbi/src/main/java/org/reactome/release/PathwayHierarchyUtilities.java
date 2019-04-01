@@ -50,49 +50,25 @@ public class PathwayHierarchyUtilities {
 		Map<Long, ReactomeEvent> eventCache = fetchReactomeEventCache(graphDBSession);
 		Map<String, Set<Long>> uniprotAccessionToReactionLikeEventId = fetchUniProtAccessionToRLEId(graphDBSession);
 		Map<Long, Set<Long>> rleToPathwayId = fetchRLEIdToPathwayId(graphDBSession);
-		Map<Long, Set<Long>> pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
 
 		AtomicInteger count = new AtomicInteger(0);
 		uniprotAccessionToReactomeEvent = new ConcurrentHashMap<>();
 		uniprotAccessionToReactionLikeEventId.keySet().parallelStream().forEach(uniprotAccession -> {
-			System.out.println("Finding events for " + uniprotAccession + " " + LocalTime.now());
 			Set<Long> reactionLikeEventIds =
 				uniprotAccessionToReactionLikeEventId.computeIfAbsent(uniprotAccession, k -> new HashSet<>());
 
 			// Add RLEs containing UniProt accession
-			System.out.println("Finding RLEs for " + uniprotAccession + " " + LocalTime.now());
 			uniprotAccessionToReactomeEvent
 				.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
 				.addAll(reactionLikeEventIds.stream().map(eventCache::get).collect(Collectors.toSet()));
-			System.out.println("Fininshed finding RLEs for " + uniprotAccession + " " + LocalTime.now());
 
-			System.out.println("Finding pathways for " + uniprotAccession + " " + LocalTime.now());
 			for (long reactionLikeEventId : reactionLikeEventIds) {
-				Set<Long> lowerLevelPathwayIds = rleToPathwayId.computeIfAbsent(reactionLikeEventId,
+				Set<Long> pathwayIds = rleToPathwayId.computeIfAbsent(reactionLikeEventId,
 																			  k -> new HashSet<>());
-
-				System.out.println("Finding low level pathways for " + uniprotAccession + " " + LocalTime.now());
-				// Add lower level pathways containing UniProt accession
 				uniprotAccessionToReactomeEvent
-					.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
-					.addAll(lowerLevelPathwayIds.stream().map(eventCache::get).collect(Collectors.toSet()));
-				System.out.println("Finished finding low level pathways for " + uniprotAccession + " " + LocalTime.now());
-
-				System.out.println("Finding top level pathways for " + uniprotAccession + " " + LocalTime.now());
-				// Add higher level pathways containing UniProt accession
-				uniprotAccessionToReactomeEvent
-					.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
-					.addAll(
-						lowerLevelPathwayIds
-							.stream()
-							.flatMap(id -> findAncestorPathwayIds(id, pathwayHierarchy).stream())
-							.map(eventCache::get)
-							.collect(Collectors.toSet())
-					);
-				System.out.println("Finished finding top level pathways for " + uniprotAccession + " " + LocalTime.now());
+					.computeIfAbsent(uniprotAccession, k-> new HashSet<>())
+					.addAll(pathwayIds.stream().map(eventCache::get).collect(Collectors.toSet()));
 			}
-			System.out.println("Finished finding pathways for " + uniprotAccession + " " + LocalTime.now());
-			System.out.println("Finished finding events for " + uniprotAccession + " " + LocalTime.now());
 
 			if (count.getAndIncrement() % 10000 == 0) {
 				logger.info("Processed events for " + count.get() + " out of " +
@@ -140,29 +116,6 @@ public class PathwayHierarchyUtilities {
 		return uniprotAccessionToReactionLikeEventId;
 	}
 
-	public static Map<Long, Set<ReactomeEvent>> fetchTopLevelPathwayHierarchy(Session graphDBSession) {
-		if (topLevelPathwayHierarchy != null) {
-			return topLevelPathwayHierarchy;
-		}
-
-		logger.info("Computing top level pathway hierarchy");
-		Map<Long, Set<Long>> pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
-
-		topLevelPathwayHierarchy = new HashMap<>();
-		for (long pathwayId : pathwayHierarchy.keySet()) {
-			topLevelPathwayHierarchy
-				.computeIfAbsent(pathwayId, k -> new HashSet<>())
-				.addAll(
-					findTopLevelPathwayIds(pathwayId, pathwayHierarchy)
-						.stream()
-						.map(topLevelPathwayId -> fetchReactomeEventCache(graphDBSession).get(topLevelPathwayId))
-						.collect(Collectors.toList())
-				);
-		}
-		logger.info("Finished computing top level pathway hierarchy");
-		return topLevelPathwayHierarchy;
-	}
-
 	public static Map<Long, Set<Long>> fetchRLEIdToPathwayId(Session graphDBSession) {
 		if (rleToPathwayId != null) {
 			return rleToPathwayId;
@@ -175,7 +128,7 @@ public class PathwayHierarchyUtilities {
 		logger.info("Computing rle id to pathway id");
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
-				"MATCH (rle:ReactionLikeEvent)<-[:hasEvent]-(p:Pathway)",
+				"MATCH (rle:ReactionLikeEvent)<-[:hasEvent*]-(p:Pathway)",
 				"RETURN DISTINCT rle.dbId, p.dbId"
 			)
 		);
@@ -234,14 +187,19 @@ public class PathwayHierarchyUtilities {
 		}
 
 		logger.info("Computing top level pathway ids");
-		Map<Long, Set<Long>> pathwayHierarchy = fetchPathwayHierarchy(graphDBSession);
 
-		topLevelPathwayIds = pathwayHierarchy
-							.keySet()
-							.stream()
-							.flatMap(id -> findTopLevelPathwayIds(id, pathwayHierarchy).stream())
-							.collect(Collectors.toSet());
+		topLevelPathwayIds = graphDBSession.run(
+			String.join(System.lineSeparator(),
+				"MATCH (p:TopLevelPathway)",
+				"RETURN p.dbId"
+			)
+		)
+		.stream()
+		.map(record -> record.get("p.dbId").asLong())
+		.collect(Collectors.toSet());
+
 		logger.info("Finished computing top level pathway ids");
+
 		return topLevelPathwayIds;
 	}
 
@@ -261,22 +219,6 @@ public class PathwayHierarchyUtilities {
 		}
 
 		return topLevelPathways;
-	}
-
-	public static Set<Long> findAncestorPathwayIds(long pathwayId, Map<Long, Set<Long>> pathwayHierarchy) {
-		checkPathwayIdAndHiearchyAreValid(pathwayId, pathwayHierarchy);
-
-		Set<Long> ancestorPathwayIds = new HashSet<>();
-
-		Set<Long> parentPathwayIds = pathwayHierarchy.get(pathwayId);
-		if (parentPathwayIds != null && !parentPathwayIds.isEmpty()) {
-			for (Long parentPathwayId :  parentPathwayIds) {
-				ancestorPathwayIds.add(parentPathwayId);
-				ancestorPathwayIds.addAll(findAncestorPathwayIds(parentPathwayId, pathwayHierarchy));
-			}
-		}
-
-		return ancestorPathwayIds;
 	}
 
 	private static void checkPathwayIdAndHiearchyAreValid(long pathwayId, Map<Long, Set<Long>> pathwayHierarchy) {
