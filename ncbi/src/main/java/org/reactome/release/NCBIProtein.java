@@ -22,6 +22,11 @@ public class NCBIProtein {
 		Files.createFile(ncbiProteinFilePath);
 
 		Files.write(ncbiProteinFilePath, getProteinFileHeader().getBytes(), StandardOpenOption.APPEND);
+		Files.write(
+			ncbiProteinFilePath,
+			getProteinFileHeader().concat(System.lineSeparator()).getBytes(),
+			StandardOpenOption.APPEND
+		);
 
 		List<String> proteinFileLines =
 			ncbiEntries
