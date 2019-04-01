@@ -30,7 +30,7 @@ public class Main {
 
 		Session graphDBSession = getGraphDBDriver(props).session();
 
-		List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneMap(graphDBSession);
+		List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneEntries(graphDBSession);
 
 		NCBIGene.getInstance(ncbiEntries, outputDir, version).writeProteinFile();
 

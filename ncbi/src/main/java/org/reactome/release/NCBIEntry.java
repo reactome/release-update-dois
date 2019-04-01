@@ -43,7 +43,7 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return uniProtReactomeEntry.getTopLevelPathways(graphDBSession);
 	}
 
-	public static List<NCBIEntry> getUniProtToNCBIGeneMap(Session graphDBSession) {
+	public static List<NCBIEntry> getUniProtToNCBIGeneEntries(Session graphDBSession) {
 		logger.info("Generating UniProt accession to NCBI Gene mapping");
 
 		StatementResult result = graphDBSession.run(
