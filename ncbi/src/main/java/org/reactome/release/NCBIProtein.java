@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class NCBIProtein {
 	private static final Logger logger = LogManager.getLogger();
 
-	public static void writeNCBIProteinFile(String outputDir, int reactomeVersion, List<NCBIEntry> ncbiEntries)
+	public static void writeNCBIProteinFile(List<NCBIEntry> ncbiEntries, String outputDir, int reactomeVersion)
 		throws IOException {
 		Path ncbiProteinFilePath = getNCBIProteinFilePath(outputDir, reactomeVersion);
 		Files.deleteIfExists(ncbiProteinFilePath);

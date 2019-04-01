@@ -44,7 +44,7 @@ public class Main {
 			numGeneXMLFiles);
 
 		logger.info("Writing NCBI protein file");
-		NCBIProtein.writeNCBIProteinFile(outputDir, version, ncbiEntries);
+		NCBIProtein.writeNCBIProteinFile(ncbiEntries, outputDir, version);
 
 		logger.info("Writing UCSC files");
 		UCSC.writeUCSCFiles(graphDBSession);
