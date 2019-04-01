@@ -40,8 +40,8 @@ public class Main {
 		logger.info("Writing gene XML file(s)");
 		NCBIGene.getInstance(ncbiEntries, outputDir, version).writeGeneXMLFiles(
 			graphDBSession,
-
-			numGeneXMLFiles);
+			numGeneXMLFiles
+		);
 
 		logger.info("Writing NCBI protein file");
 		NCBIProtein.writeNCBIProteinFile(ncbiEntries, outputDir, version);
