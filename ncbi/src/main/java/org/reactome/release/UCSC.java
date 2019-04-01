@@ -51,12 +51,12 @@ public class UCSC {
 		logger.info("Writing UCSC Entity file");
 
 		Files.write(ucscEntityFilePath, ucscEntityHeader.getBytes(), StandardOpenOption.APPEND);
-		for (UniProtReactomeEntry uniProtReactomeEntry : getUniProtReactomeEntriesForUCSC(graphDBSession)) {
-			Files.write(
-				ucscEntityFilePath,
-				uniProtReactomeEntry.getAccession().concat(System.lineSeparator()).getBytes(),
-				StandardOpenOption.APPEND
-			);
+		Set<String> ucscEntityLines = getUniProtReactomeEntriesForUCSC(graphDBSession)
+			.stream()
+			.map(entry -> entry.getAccession().concat(System.lineSeparator()))
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+		for (String line : ucscEntityLines) {
+			Files.write(ucscEntityFilePath, line.getBytes(), StandardOpenOption.APPEND);
 		}
 
 		logger.info("Finished writing UCSC Entity file");
@@ -80,6 +80,8 @@ public class UCSC {
 		logger.info("Writing UCSC Event file");
 
 		Files.write(ucscEventFilePath, ucscEventsHeader.getBytes(), StandardOpenOption.APPEND);
+
+		Set<String> ucscEventLines = new LinkedHashSet<>();
 		for (UniProtReactomeEntry uniProtReactomeEntry : getUniProtReactomeEntriesForUCSC(graphDBSession)) {
 			Set<PathwayHierarchyUtilities.ReactomeEvent> reactomeEvents =
 				uniProtReactomeEntry.getEvents(graphDBSession);
@@ -95,18 +97,31 @@ public class UCSC {
 				continue;
 			}
 
-			for (PathwayHierarchyUtilities.ReactomeEvent reactomeEvent : reactomeEvents) {
-				String line = String.join("\t",
+			ucscEventLines.addAll(
+				reactomeEvents
+				.stream()
+				.map(event -> String.join(
+					"\t",
 					uniProtReactomeEntry.getAccession(),
-					reactomeEvent.getStableIdentifier(),
-					reactomeEvent.getName()
-				).concat(System.lineSeparator());
-
-				Files.write(ucscEventFilePath, line.getBytes(), StandardOpenOption.APPEND);
-			}
+					event.getStableIdentifier(),
+					event.getName()).concat(System.lineSeparator())
+				)
+				.collect(Collectors.toCollection(LinkedHashSet::new))
+			);
 		}
 
+
+		for (String line : ucscEventLines) {
+			Files.write(ucscEventFilePath, line.getBytes(), StandardOpenOption.APPEND);
+		}
 		logger.info("Finished writing UCSC Event file");
+	}
+
+	private Set<String> getUniProtAccessionsForUCSC(Session graphDBSession) {
+		return getUniProtReactomeEntriesForUCSC(graphDBSession)
+			.stream()
+			.map(UniProtReactomeEntry::getAccession)
+			.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	private Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
