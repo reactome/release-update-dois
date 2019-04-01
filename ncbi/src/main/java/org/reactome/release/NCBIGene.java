@@ -13,6 +13,7 @@ import java.util.*;
 
 public class NCBIGene {
 	private static final Logger logger = LogManager.getLogger();
+	private static final Logger ncbiGeneLogger = LogManager.getLogger("ncbiGeneLog");
 
 	private List<NCBIEntry> ncbiEntries;
 	private String outputDir;
@@ -79,7 +80,7 @@ public class NCBIGene {
 				StandardOpenOption.APPEND
 			);
 			for (NCBIEntry ncbiEntry: ncbiEntrySubList) {
-				logger.info("Working on " + ncbiEntry.getUniprotAccession());
+				ncbiGeneLogger.info("Working on " + ncbiEntry.getUniprotAccession());
 				Set<PathwayHierarchyUtilities.ReactomeEvent> topLevelPathways =
 					ncbiEntry.getTopLevelPathways(graphDBSession);
 				if (topLevelPathways.isEmpty()) {
@@ -107,7 +108,7 @@ public class NCBIGene {
 					}
 				}
 
-				logger.info("Finished with " + ncbiEntry.getUniprotAccession());
+				ncbiGeneLogger.info("Finished with " + ncbiEntry.getUniprotAccession());
 			}
 
 			Files.write(geneXMLFilePath, NCBIEntry.getCloseRootTag().getBytes(), StandardOpenOption.APPEND);
