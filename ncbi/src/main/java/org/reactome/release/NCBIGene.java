@@ -52,8 +52,7 @@ public class NCBIGene {
 		}
 	}
 
-	public void writeGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles)
-		throws IOException {
+	public void writeGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles) throws IOException {
 
 		Path geneErrorFilePath = getGeneErrorFilePath();
 		Files.deleteIfExists(geneErrorFilePath);

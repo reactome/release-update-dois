@@ -21,7 +21,6 @@ public class PathwayHierarchyUtilities {
 	private static Map<Long, Set<Long>> rleToPathwayId;
 	private static Map<Long, Set<Long>> pathwayHierarchy;
 	private static Set<Long> topLevelPathwayIds;
-	private static Map<Long, Set<ReactomeEvent>> topLevelPathwayHierarchy;
 	private static Map<Long, ReactomeEvent> eventCache;
 
 	public static Map<String, Set<ReactomeEvent>> fetchUniProtAccessionToTopLevelPathways(Session graphDBSession) {
