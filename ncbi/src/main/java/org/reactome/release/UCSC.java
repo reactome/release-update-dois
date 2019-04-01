@@ -117,13 +117,6 @@ public class UCSC {
 		logger.info("Finished writing UCSC Event file");
 	}
 
-	private Set<String> getUniProtAccessionsForUCSC(Session graphDBSession) {
-		return getUniProtReactomeEntriesForUCSC(graphDBSession)
-			.stream()
-			.map(UniProtReactomeEntry::getAccession)
-			.collect(Collectors.toCollection(LinkedHashSet::new));
-	}
-
 	private Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
 		if (ucscUniProtReactomeEntries != null) {
 			return ucscUniProtReactomeEntries;
