@@ -28,6 +28,8 @@ public class PathwayHierarchyUtilities {
 			return uniprotAccessionToTopLevelPathways;
 		}
 
+		logger.info("Computing UniProt to Top Level Pathways");
+
 		uniprotAccessionToTopLevelPathways =
 			fetchUniProtAccessionToReactomeEvents(graphDBSession).entrySet().stream().collect(Collectors.toMap(
 			Map.Entry::getKey,
@@ -37,6 +39,8 @@ public class PathwayHierarchyUtilities {
 					.collect(Collectors.toSet())
 		));
 
+		logger.info("Finished computing UniProt to Top Level Pathways");
+
 		return uniprotAccessionToTopLevelPathways;
 	}
 
@@ -45,7 +49,8 @@ public class PathwayHierarchyUtilities {
 			return uniprotAccessionToReactomeEvent;
 		}
 
-		logger.info("Computing uniprot to reactome events");
+		logger.info("Computing UniProt to Reactome events");
+
 		Map<Long, ReactomeEvent> eventCache = fetchReactomeEventCache(graphDBSession);
 		Map<String, Set<Long>> uniprotAccessionToReactionLikeEventId = fetchUniProtAccessionToRLEId(graphDBSession);
 		Map<Long, Set<Long>> rleToPathwayId = fetchRLEIdToPathwayId(graphDBSession);
@@ -78,7 +83,8 @@ public class PathwayHierarchyUtilities {
 							) + "%) " + LocalTime.now());
 			}
 		});
-		logger.info("Finished computing uniprot to reactome events");
+
+		logger.info("Finished computing UniProt to Reactome events");
 
 		return uniprotAccessionToReactomeEvent;
 	}
@@ -89,7 +95,8 @@ public class PathwayHierarchyUtilities {
 			return uniprotAccessionToReactionLikeEventId;
 		}
 
-		logger.info("Computing uniprot to RLE id");
+		logger.info("Computing UniProt to RLE id");
+
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (rgp:ReferenceGeneProduct)<-[:referenceEntity|:referenceSequence|:hasModifiedResidue]-" +
@@ -109,8 +116,9 @@ public class PathwayHierarchyUtilities {
 			uniprotAccessionToReactionLikeEventId
 				.computeIfAbsent(uniprotAccession, k -> new HashSet<>())
 				.add(reactionLikeEventId);
-		};
-		logger.info("Finished computing uniprot to RLE id");
+		}
+
+		logger.info("Finished computing UniProt to RLE id");
 
 		return uniprotAccessionToReactionLikeEventId;
 	}
@@ -124,7 +132,8 @@ public class PathwayHierarchyUtilities {
 			throw new IllegalStateException("Neo4j driver session parameter is null");
 		}
 
-		logger.info("Computing rle id to pathway id");
+		logger.info("Computing RLE id to Pathway id");
+
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (rle:ReactionLikeEvent)<-[:hasEvent*]-(p:Pathway)",
@@ -142,8 +151,8 @@ public class PathwayHierarchyUtilities {
 			rleToPathwayId
 				.computeIfAbsent(reactionLikeEventId, k -> new HashSet<>())
 				.add(pathwayId);
-		};
-		logger.info("Finished computing rle id to pathway id");
+		}
+		logger.info("Finished computing RLE id to Pathway id");
 
 		return rleToPathwayId;
 	}
@@ -157,7 +166,8 @@ public class PathwayHierarchyUtilities {
 			throw new IllegalStateException("Neo4j driver session parameter is null");
 		}
 
-		logger.info("Computing pathway hierarchy");
+		logger.info("Computing Pathway Hierarchy");
+
 		StatementResult statementResult = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (p:Pathway)<-[:hasEvent]-(pp:Pathway)",
@@ -174,8 +184,9 @@ public class PathwayHierarchyUtilities {
 
 			Set<Long> parentPathwayIds = pathwayHierarchy.computeIfAbsent(pathwayId, k -> new HashSet<>());
 			parentPathwayIds.add(parentPathwayId);
-		};
-		logger.info("Finished computing pathway hierarchy");
+		}
+
+		logger.info("Finished computing Pathway Hierarchy");
 
 		return pathwayHierarchy;
 	}
@@ -185,7 +196,7 @@ public class PathwayHierarchyUtilities {
 			return topLevelPathwayIds;
 		}
 
-		logger.info("Computing top level pathway ids");
+		logger.info("Computing Top Level Pathway ids");
 
 		topLevelPathwayIds = graphDBSession.run(
 			String.join(System.lineSeparator(),
@@ -197,7 +208,7 @@ public class PathwayHierarchyUtilities {
 		.map(record -> record.get("p.dbId").asLong())
 		.collect(Collectors.toSet());
 
-		logger.info("Finished computing top level pathway ids");
+		logger.info("Finished computing Top Level Pathway ids");
 
 		return topLevelPathwayIds;
 	}
@@ -223,12 +234,12 @@ public class PathwayHierarchyUtilities {
 	private static void checkPathwayIdAndHiearchyAreValid(long pathwayId, Map<Long, Set<Long>> pathwayHierarchy) {
 		// A pathway hierarchy must be provided to find a top level pathway
 		if (pathwayHierarchy == null || pathwayHierarchy.isEmpty()) {
-			throw new IllegalStateException("Pathway hierarchy has no values");
+			throw new IllegalStateException("Pathway Hierarchy has no values");
 		}
 
 		// The pathway id is invalid if does not exist in the hierarchy
 		if (!existsInHierarchy(pathwayId, pathwayHierarchy)) {
-			logger.warn("Pathway id " + pathwayId + " does not exist in the provided pathway hierarchy");
+			logger.warn("Pathway id " + pathwayId + " does not exist in the provided Pathway Hierarchy");
 		}
 	}
 
@@ -247,7 +258,8 @@ public class PathwayHierarchyUtilities {
 			return eventCache;
 		}
 
-		logger.info("Computing event cache");
+		logger.info("Computing Event cache");
+
 		eventCache = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (e:Event)",
@@ -264,7 +276,8 @@ public class PathwayHierarchyUtilities {
 				record.get("e.stId").asString()
 			)
 		));
-		logger.info("Finished computing event cache");
+
+		logger.info("Finished computing Event cache");
 
 		return eventCache;
 	}

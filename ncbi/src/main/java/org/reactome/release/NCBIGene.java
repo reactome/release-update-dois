@@ -34,6 +34,8 @@ public class NCBIGene {
 		Files.deleteIfExists(filePath);
 		Files.createFile(filePath);
 
+		logger.info("Writing proteins_version file");
+
 		// Write file header
 		Files.write(
 			filePath,
@@ -50,6 +52,8 @@ public class NCBIGene {
 				Files.write(filePath, line.getBytes(), StandardOpenOption.APPEND);
 			}
 		}
+
+		logger.info("Finished writing proteins_version file");
 	}
 
 	public void writeGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles) throws IOException {
@@ -58,6 +62,8 @@ public class NCBIGene {
 		Files.deleteIfExists(geneErrorFilePath);
 		Files.createFile(geneErrorFilePath);
 
+		logger.info("Writing gene XML file(s)");
+
 		int fileCount = 0;
 		for (List<NCBIEntry> ncbiEntrySubList : splitList(ncbiEntries, numGeneXMLFiles)) {
 			Path geneXMLFilePath = getGeneXMLFilePath(++fileCount);
@@ -65,6 +71,7 @@ public class NCBIGene {
 			Files.createFile(geneXMLFilePath);
 
 			logger.info("Generating " + geneXMLFilePath.getFileName());
+
 			Files.write(geneXMLFilePath, NCBIEntry.getXMLHeader().getBytes(), StandardOpenOption.APPEND);
 			Files.write(
 				geneXMLFilePath,
@@ -99,11 +106,14 @@ public class NCBIGene {
 						);
 					}
 				}
+
 				logger.info("Finished with " + ncbiEntry.getUniprotAccession());
 			}
 
 			Files.write(geneXMLFilePath, NCBIEntry.getCloseRootTag().getBytes(), StandardOpenOption.APPEND);
 		}
+
+		logger.info("Finished writing gene XML file(s)");
 	}
 
 	private List<List<NCBIEntry>> splitList(List<NCBIEntry> list, int numOfSubLists) {

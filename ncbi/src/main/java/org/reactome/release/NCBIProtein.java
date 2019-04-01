@@ -21,7 +21,8 @@ public class NCBIProtein {
 		Files.deleteIfExists(ncbiProteinFilePath);
 		Files.createFile(ncbiProteinFilePath);
 
-		Files.write(ncbiProteinFilePath, getProteinFileHeader().getBytes(), StandardOpenOption.APPEND);
+		logger.info("Writing NCBI protein file");
+
 		Files.write(
 			ncbiProteinFilePath,
 			getProteinFileHeader().concat(System.lineSeparator()).getBytes(),
@@ -39,6 +40,8 @@ public class NCBIProtein {
 		}
 
 		Files.write(ncbiProteinFilePath, getProteinFileFooter().getBytes(), StandardOpenOption.APPEND);
+
+		logger.info("Finished writing NCBI protein file");
 	}
 
 	private static Path getNCBIProteinFilePath(String outputDir, int reactomeVersion) {

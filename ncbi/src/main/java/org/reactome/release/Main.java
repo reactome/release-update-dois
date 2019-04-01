@@ -30,23 +30,18 @@ public class Main {
 
 		Session graphDBSession = getGraphDBDriver(props).session();
 
-		logger.info("Generating UniProt accession to NCBI Gene mapping");
 		List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneMap(graphDBSession);
 
-		logger.info("Writing proteins_version file");
 		NCBIGene.getInstance(ncbiEntries, outputDir, version).writeProteinFile();
 
 		int numGeneXMLFiles = Integer.parseInt(props.getProperty("numGeneXMLFiles", "1"));
-		logger.info("Writing gene XML file(s)");
 		NCBIGene.getInstance(ncbiEntries, outputDir, version).writeGeneXMLFiles(
 			graphDBSession,
 			numGeneXMLFiles
 		);
 
-		logger.info("Writing NCBI protein file");
 		NCBIProtein.writeNCBIProteinFile(ncbiEntries, outputDir, version);
 
-		logger.info("Writing UCSC files");
 		UCSC.getInstance(outputDir, version).writeUCSCFiles(graphDBSession);
 
 		graphDBSession.close();

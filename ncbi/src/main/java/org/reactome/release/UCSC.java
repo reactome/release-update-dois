@@ -29,8 +29,12 @@ public class UCSC {
 	}
 
 	public void writeUCSCFiles(Session graphDBSession) throws IOException {
+		logger.info("Writing UCSC files");
+
 		writeUCSCEntityFile(graphDBSession);
 		writeUCSCEventFile(graphDBSession);
+
+		logger.info("Finished writing UCSC files");
 	}
 
 	private void writeUCSCEntityFile(Session graphDBSession) throws IOException {
@@ -44,6 +48,8 @@ public class UCSC {
 			"Reactome Entity" +
 			System.lineSeparator() + System.lineSeparator();
 
+		logger.info("Writing UCSC Entity file");
+
 		Files.write(ucscEntityFilePath, ucscEntityHeader.getBytes(), StandardOpenOption.APPEND);
 		for (UniProtReactomeEntry uniProtReactomeEntry : getUniProtReactomeEntriesForUCSC(graphDBSession)) {
 			Files.write(
@@ -52,6 +58,8 @@ public class UCSC {
 				StandardOpenOption.APPEND
 			);
 		}
+
+		logger.info("Finished writing UCSC Entity file");
 	}
 
 	private void writeUCSCEventFile(Session graphDBSession) throws IOException {
@@ -68,6 +76,8 @@ public class UCSC {
 			System.lineSeparator() + System.lineSeparator() +
 			String.join("\t", "Reactome Entity", "Event ST_ID", "Event_name") +
 			System.lineSeparator() + System.lineSeparator();
+
+		logger.info("Writing UCSC Event file");
 
 		Files.write(ucscEventFilePath, ucscEventsHeader.getBytes(), StandardOpenOption.APPEND);
 		for (UniProtReactomeEntry uniProtReactomeEntry : getUniProtReactomeEntriesForUCSC(graphDBSession)) {
@@ -95,12 +105,16 @@ public class UCSC {
 				Files.write(ucscEventFilePath, line.getBytes(), StandardOpenOption.APPEND);
 			}
 		}
+
+		logger.info("Finished writing UCSC Event file");
 	}
 
 	private Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
 		if (ucscUniProtReactomeEntries != null) {
 			return ucscUniProtReactomeEntries;
 		}
+
+		logger.info("Fetching UniProt Reactome Entries for UCSC");
 
 		ucscUniProtReactomeEntries = graphDBSession.run(
 			String.join(System.lineSeparator(),
@@ -119,6 +133,8 @@ public class UCSC {
 			record.get("rgp.displayName").asString()
 		))
 		.collect(Collectors.toCollection(LinkedHashSet::new));
+
+		logger.info("Finished fetching UniProt Reactome Entries for UCSC");
 
 		return ucscUniProtReactomeEntries;
 	}

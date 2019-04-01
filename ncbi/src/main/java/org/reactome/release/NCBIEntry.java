@@ -1,5 +1,7 @@
 package org.reactome.release;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
@@ -8,6 +10,8 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 public class NCBIEntry implements Comparable<NCBIEntry> {
+	private static final Logger logger = LogManager.getLogger();
+
 	private static int linkId = 1;
 	private static final String rootTag = "LinkSet";
 
@@ -40,6 +44,8 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 	}
 
 	public static List<NCBIEntry> getUniProtToNCBIGeneMap(Session graphDBSession) {
+		logger.info("Generating UniProt accession to NCBI Gene mapping");
+
 		StatementResult result = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (rgp:ReferenceGeneProduct)-[:referenceDatabase]->(rd:ReferenceDatabase)",
@@ -70,6 +76,9 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 			);
 		}
 		Collections.sort(ncbiEntries);
+
+		logger.info("Finished generating UniProt accession to NCBI Gene mapping");
+
 		return ncbiEntries;
 	}
 
