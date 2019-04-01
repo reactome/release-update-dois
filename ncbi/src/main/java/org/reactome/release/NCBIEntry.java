@@ -44,7 +44,7 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 			String.join(System.lineSeparator(),
 				"MATCH (rgp:ReferenceGeneProduct)-[:referenceDatabase]->(rd:ReferenceDatabase)",
 				"MATCH (rgp)-[:referenceGene]->(rds:ReferenceDNASequence)",
-				"WHERE rd.displayName = 'UniProt' AND rds.databaseName = 'Main Gene'",
+				"WHERE rd.displayName = 'UniProt' AND rds.databaseName = 'NCBI Gene'",
 				"RETURN rgp.dbId, rgp.displayName, rgp.identifier, rds.identifier",
 				"ORDER BY rgp.identifier;"
 			)
@@ -157,6 +157,4 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 			"\t</Link>"
 		).concat(System.lineSeparator());
 	}
-
-
 }

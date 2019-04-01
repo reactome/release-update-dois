@@ -14,7 +14,7 @@ public class Main {
 	private static final Logger logger = LogManager.getLogger();
 
 	public static void main( String[] args ) throws IOException {
-		logger.info("Beginning Main step...");
+		logger.info("Beginning NCBI and UCSC step...");
 
 		String pathToResources = args.length > 0 ? args[0] : "ncbi/src/main/resources/sample_config.properties";
 		Properties props = new Properties();
@@ -30,7 +30,7 @@ public class Main {
 
 		Session graphDBSession = getGraphDBDriver(props).session();
 
-		logger.info("Generating UniProt accession to Main Gene mapping");
+		logger.info("Generating UniProt accession to NCBI Gene mapping");
 		List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneMap(graphDBSession);
 
 		logger.info("Writing proteins_version file");
@@ -50,7 +50,7 @@ public class Main {
 		UCSC.writeUCSCFiles(graphDBSession);
 
 		graphDBSession.close();
-		logger.info("Finished Main step");
+		logger.info("Finished NCBI and UCSC step");
 		System.exit(0);
 	}
 
