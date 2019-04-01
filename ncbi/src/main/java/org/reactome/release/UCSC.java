@@ -46,7 +46,11 @@ public class UCSC {
 
 		Files.write(ucscEntityFilePath, ucscEntityHeader.getBytes(), StandardOpenOption.APPEND);
 		for (UniProtReactomeEntry uniProtReactomeEntry : getUniProtReactomeEntriesForUCSC(graphDBSession)) {
-			Files.write(ucscEntityFilePath, uniProtReactomeEntry.getAccession().getBytes(), StandardOpenOption.APPEND);
+			Files.write(
+				ucscEntityFilePath,
+				uniProtReactomeEntry.getAccession().concat(System.lineSeparator()).getBytes(),
+				StandardOpenOption.APPEND
+			);
 		}
 	}
 
@@ -74,7 +78,8 @@ public class UCSC {
 					uniProtReactomeEntry.getDisplayName() +
 					" participates in Event(s) but no top Pathway can be found, " +
 					" i.e. there seem to be a pathway" +
-					" which contains or is an instance of itself.\n";
+					" which contains or is an instance of itself." +
+					System.lineSeparator();
 
 				Files.write(ucscErrorFilePath, errorMessage.getBytes(), StandardOpenOption.APPEND);
 				continue;
