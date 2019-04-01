@@ -35,12 +35,18 @@ public class NCBIGene {
 		Files.createFile(filePath);
 
 		// Write file header
-		Files.write(filePath, "UniProt ID\tGeneID\n\n".getBytes());
+		Files.write(
+			filePath,
+			"UniProt ID\tGene id"
+				.concat(System.lineSeparator())
+				.concat(System.lineSeparator())
+				.getBytes()
+		);
 
 		// Append map contents
 		for (NCBIEntry ncbiEntry : ncbiEntries) {
 			for (String ncbiGeneId : ncbiEntry.getNcbiGeneIds()) {
-				String line = ncbiEntry.getUniprotAccession() + "\t" + ncbiGeneId + "\n";
+				String line = ncbiEntry.getUniprotAccession() + "\t" + ncbiGeneId + System.lineSeparator();
 				Files.write(filePath, line.getBytes(), StandardOpenOption.APPEND);
 			}
 		}
