@@ -2,6 +2,7 @@ package org.reactome.release;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.neo4j.driver.v1.*;
 
 import java.io.IOException;
@@ -71,15 +72,9 @@ public class UCSC {
 		Files.deleteIfExists(ucscErrorFilePath);
 		Files.createFile(ucscErrorFilePath);
 
-		String ucscEventsHeader =
-			"URL for events: " + ReactomeConstants.PATHWAY_BROWSER_URL +
-			System.lineSeparator() + System.lineSeparator() +
-			String.join("\t", "Reactome Entity", "Event ST_ID", "Event_name") +
-			System.lineSeparator() + System.lineSeparator();
-
 		logger.info("Writing UCSC Event file");
 
-		Files.write(ucscEventFilePath, ucscEventsHeader.getBytes(), StandardOpenOption.APPEND);
+		Files.write(ucscEventFilePath, getUCSCEventsHeader().getBytes(), StandardOpenOption.APPEND);
 
 		Set<String> ucscEventLines = new LinkedHashSet<>();
 		for (UniProtReactomeEntry uniProtReactomeEntry : getUniProtReactomeEntriesForUCSC(graphDBSession)) {
@@ -115,6 +110,14 @@ public class UCSC {
 			Files.write(ucscEventFilePath, line.getBytes(), StandardOpenOption.APPEND);
 		}
 		logger.info("Finished writing UCSC Event file");
+	}
+
+	@NotNull
+	private String getUCSCEventsHeader() {
+		return "URL for events: " + ReactomeConstants.PATHWAY_BROWSER_URL +
+			   System.lineSeparator() + System.lineSeparator() +
+			   String.join("\t", "Reactome Entity", "Event ST_ID", "Event_name") +
+			   System.lineSeparator() + System.lineSeparator();
 	}
 
 	private Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
