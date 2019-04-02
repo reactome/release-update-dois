@@ -125,7 +125,7 @@ public class NCBIGene {
 
 		List<Set<String>> splitSets = new ArrayList<>();
 
-		Set<String> subSet = new HashSet<>();
+		Set<String> subSet = new LinkedHashSet<>();
 		int keyCount = 0;
 		for(String ncbiGeneXMLNodeString : set) {
 			subSet.add(ncbiGeneXMLNodeString);
@@ -134,7 +134,7 @@ public class NCBIGene {
 			// Sub set is "full" and the next sub set should be populated
 			if (keyCount == subListSize) {
 				splitSets.add(subSet);
-				subSet = new HashSet<>();
+				subSet = new LinkedHashSet<>();
 				keyCount = 0;
 
 				if (numberOfExtraKeys > 0) {
