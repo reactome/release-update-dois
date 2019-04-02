@@ -32,20 +32,25 @@ public class Main {
 
 		List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneEntries(graphDBSession);
 
+		// Write NCBI Gene related Protein File
 		NCBIGene.getInstance(ncbiEntries, outputDir, version).writeProteinFile();
 
+		// Write NCBI Gene Files (split into multiple files to conform with 15MB upload maximum)
 		int numGeneXMLFiles = Integer.parseInt(props.getProperty("numGeneXMLFiles", "1"));
 		NCBIGene.getInstance(ncbiEntries, outputDir, version).writeGeneXMLFiles(
 			graphDBSession,
 			numGeneXMLFiles
 		);
 
+		// Write NCBI Protein File
 		NCBIProtein.writeNCBIProteinFile(ncbiEntries, outputDir, version);
 
+		// Write UCSC Entity and Event Files
 		UCSC.getInstance(outputDir, version).writeUCSCFiles(graphDBSession);
 
 		graphDBSession.close();
 		logger.info("Finished NCBI and UCSC step");
+
 		System.exit(0);
 	}
 
