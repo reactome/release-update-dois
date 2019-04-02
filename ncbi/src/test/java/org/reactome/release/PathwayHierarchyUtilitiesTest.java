@@ -59,7 +59,7 @@ public class PathwayHierarchyUtilitiesTest {
 		Map<Long, Set<Long>> pathwayHierarchy = new HashMap<>();
 
 		expectedException.expect(IllegalStateException.class);
-		expectedException.expectMessage("hierarchy has no values");
+		expectedException.expectMessage("Hierarchy has no values");
 		PathwayHierarchyUtilities.findTopLevelPathwayIds(pathwayId, pathwayHierarchy);
 	}
 
