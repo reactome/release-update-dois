@@ -69,8 +69,33 @@ public class NCBIGene {
 
 		logger.info("Writing gene XML file(s)");
 
+		Set<String> ncbiGeneXMLNodeStrings = new LinkedHashSet<>();
+		for (NCBIEntry ncbiEntry : ncbiEntries) {
+			ncbiGeneLogger.info("Working on " + ncbiEntry.getUniprotAccession());
+
+			Set<PathwayHierarchyUtilities.ReactomeEvent> topLevelPathways = ncbiEntry.getTopLevelPathways(graphDBSession);
+			if (topLevelPathways.isEmpty()) {
+				String errorMessage = ncbiEntry.getUniprotDisplayName() +
+									  " participates in Event(s) but no top Pathway can be found, i.e. there seem to be a pathway" +
+									  " which contains or is an instance of itself.\n";
+
+				Files.write(geneErrorFilePath, errorMessage.getBytes(), StandardOpenOption.APPEND);
+				continue;
+			}
+
+			for (String ncbiGeneId : ncbiEntry.getNcbiGeneIds()) {
+				ncbiGeneXMLNodeStrings.add(ncbiEntry.getEntityLinkXML(ncbiGeneId, ncbiEntry.getUniprotAccession()));
+
+				for (PathwayHierarchyUtilities.ReactomeEvent topLevelPathway : topLevelPathways) {
+					ncbiGeneXMLNodeStrings.add(ncbiEntry.getEventLinkXML(ncbiGeneId, topLevelPathway));
+				}
+			}
+
+			ncbiGeneLogger.info("Finished with " + ncbiEntry.getUniprotAccession());
+		}
+
 		int fileCount = 0;
-		for (List<NCBIEntry> ncbiEntrySubList : splitList(ncbiEntries, numGeneXMLFiles)) {
+		for (Set<String> ncbiGeneXMLNodeStringsSubSet : splitSet(ncbiGeneXMLNodeStrings, numGeneXMLFiles)) {
 			Path geneXMLFilePath = getGeneXMLFilePath(++fileCount);
 			Files.deleteIfExists(geneXMLFilePath);
 			Files.createFile(geneXMLFilePath);
@@ -78,66 +103,38 @@ public class NCBIGene {
 			logger.info("Generating " + geneXMLFilePath.getFileName());
 
 			Files.write(geneXMLFilePath, NCBIEntry.getXMLHeader().getBytes(), StandardOpenOption.APPEND);
-			Files.write(
-				geneXMLFilePath,
-				NCBIEntry.getOpenRootTag().concat(System.lineSeparator()).getBytes(),
-				StandardOpenOption.APPEND
-			);
-			for (NCBIEntry ncbiEntry: ncbiEntrySubList) {
-				ncbiGeneLogger.info("Working on " + ncbiEntry.getUniprotAccession());
-				Set<PathwayHierarchyUtilities.ReactomeEvent> topLevelPathways =
-					ncbiEntry.getTopLevelPathways(graphDBSession);
-				if (topLevelPathways.isEmpty()) {
-					String errorMessage = ncbiEntry.getUniprotDisplayName() +
-					" participates in Event(s) but no top Pathway can be found, i.e. there seem to be a pathway" +
-					" which contains or is an instance of itself.\n";
-
-					Files.write(geneErrorFilePath, errorMessage.getBytes(), StandardOpenOption.APPEND);
-					continue;
-				}
-
-				Set<String> ncbiGeneXMLNodeStrings = new LinkedHashSet<>();
-				for (String ncbiGeneId : ncbiEntry.getNcbiGeneIds()) {
-					ncbiGeneXMLNodeStrings.add(ncbiEntry.getEntityLinkXML(ncbiGeneId, ncbiEntry.getUniprotAccession()));
-
-
-					for (PathwayHierarchyUtilities.ReactomeEvent topLevelPathway : topLevelPathways) {
-						ncbiGeneXMLNodeStrings.add(ncbiEntry.getEventLinkXML(ncbiGeneId, topLevelPathway));
-					}
-				}
-
-				for (String ncbiGeneXMLNodeString : ncbiGeneXMLNodeStrings) {
-					Files.write(geneXMLFilePath, ncbiGeneXMLNodeString.getBytes(), StandardOpenOption.APPEND);
-				}
-
-				ncbiGeneLogger.info("Finished with " + ncbiEntry.getUniprotAccession());
+			Files.write(geneXMLFilePath, NCBIEntry.getOpenRootTag().concat(System.lineSeparator()).getBytes(),
+					StandardOpenOption.APPEND);
+			for (String ncbiGeneXMLNodeString : ncbiGeneXMLNodeStringsSubSet) {
+				Files.write(geneXMLFilePath, ncbiGeneXMLNodeString.getBytes(), StandardOpenOption.APPEND);
 			}
 
 			Files.write(geneXMLFilePath, NCBIEntry.getCloseRootTag().getBytes(), StandardOpenOption.APPEND);
 		}
 
+
 		logger.info("Finished writing gene XML file(s)");
 	}
 
-	private List<List<NCBIEntry>> splitList(List<NCBIEntry> list, int numOfSubLists) {
-		int subListSize = list.size() / numOfSubLists ;
-		int numberOfExtraKeys = list.size() % numOfSubLists;
+	private List<Set<String>> splitSet(Set<String> set, int numOfSubLists) {
+		int subListSize = set.size() / numOfSubLists ;
+		int numberOfExtraKeys = set.size() % numOfSubLists;
 		if (numberOfExtraKeys > 0) {
 			subListSize += 1;
 		}
 
-		List<List<NCBIEntry>> splitLists = new ArrayList<>();
+		List<Set<String>> splitSets = new ArrayList<>();
 
-		List<NCBIEntry> subList = new ArrayList<>();
+		Set<String> subSet = new HashSet<>();
 		int keyCount = 0;
-		for(NCBIEntry ncbiEntry : list) {
-			subList.add(ncbiEntry);
+		for(String ncbiGeneXMLNodeString : set) {
+			subSet.add(ncbiGeneXMLNodeString);
 			keyCount += 1;
 
-			// Sub map is "full" and the next sub map should be populated
+			// Sub set is "full" and the next sub set should be populated
 			if (keyCount == subListSize) {
-				splitLists.add(subList);
-				subList = new ArrayList<>();
+				splitSets.add(subSet);
+				subSet = new HashSet<>();
 				keyCount = 0;
 
 				if (numberOfExtraKeys > 0) {
@@ -150,7 +147,7 @@ public class NCBIGene {
 			}
 		}
 
-		return splitLists;
+		return splitSets;
 	}
 
 	private Path getProteinFilePath() {
