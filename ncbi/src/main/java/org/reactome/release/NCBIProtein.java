@@ -31,19 +31,21 @@ public class NCBIProtein {
 			StandardOpenOption.APPEND
 		);
 
-		Set<String> proteinFileLines =
-			ncbiEntries
-				.stream()
-				.map(NCBIEntry::getUniprotAccession)
-				.map(uniprotId -> String.join("\t", "query:", uniprotId, "[pacc]").concat(System.lineSeparator()))
-				.collect(Collectors.toCollection(LinkedHashSet::new));
-		for (String proteinFileLine : proteinFileLines) {
+		for (String proteinFileLine : getProteinFileLines(ncbiEntries)) {
 			Files.write(ncbiProteinFilePath, proteinFileLine.getBytes(), StandardOpenOption.APPEND);
 		}
 
 		Files.write(ncbiProteinFilePath, getProteinFileFooter().getBytes(), StandardOpenOption.APPEND);
 
 		logger.info("Finished writing NCBI protein file");
+	}
+
+	private static Set<String> getProteinFileLines(List<NCBIEntry> ncbiEntries) {
+		return ncbiEntries
+			.stream()
+			.map(NCBIEntry::getUniprotAccession)
+			.map(uniprotId -> String.join("\t", "query:", uniprotId, "[pacc]").concat(System.lineSeparator()))
+			.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	private static Path getNCBIProteinFilePath(String outputDir, int reactomeVersion) {
