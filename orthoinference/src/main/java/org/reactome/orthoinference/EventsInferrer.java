@@ -191,6 +191,7 @@ public class EventsInferrer
 				return;
 			} catch (Exception e) {
 				e.printStackTrace();
+				return;
 			}
 		}
 		HumanEventsUpdater.setInferredEvent(ReactionInferrer.getInferredEvent());

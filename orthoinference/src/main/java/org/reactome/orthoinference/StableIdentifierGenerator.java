@@ -32,8 +32,8 @@ public class StableIdentifierGenerator {
         // All Human PhysicalEntitys and Events will have a StableIdentifier instance in the stableIdentifier attribute
         GKInstance stableIdentifierInst = (GKInstance) originalInst.getAttributeValue(stableIdentifier);
         if (stableIdentifierInst == null) {
-            logger.fatal("No stable identifier instance found for " + originalInst + " -- terminating");
-            throw new RuntimeException("Could not find stable identifier instance");
+            logger.fatal("No stable identifier instance found for " + originalInst);
+            throw new RuntimeException("No stable identifier instance found for " + originalInst);
         }
 
         // For now, Human is hard-coded as the source species, so we replace the stableIdentifier source species based on that assumption
@@ -52,16 +52,10 @@ public class StableIdentifierGenerator {
         // TODO: Performance check
         Collection<GKInstance> existingStableIdentifier = (Collection<GKInstance>) dba.fetchInstanceByAttribute("StableIdentifier", "identifier", "=", targetIdentifier);
 
-        GKInstance orthoStableIdentifierInst;
+        GKInstance orthoStableIdentifierInst = null;
         if (existingStableIdentifier.size() == 0) {
             // Create new StableIdentifier instance
-            orthoStableIdentifierInst = InstanceUtilities.createNewInferredGKInstance(stableIdentifierInst);
-            orthoStableIdentifierInst.addAttributeValue(identifier, targetIdentifier);
-            String identifierVersionNumber = "1";
-            orthoStableIdentifierInst.addAttributeValue(identifierVersion, identifierVersionNumber);
-            String orthoStableIdentifierName = targetIdentifier + "." + identifierVersionNumber;
-            orthoStableIdentifierInst.setDisplayName(orthoStableIdentifierName);
-            dba.storeInstance(orthoStableIdentifierInst);
+            orthoStableIdentifierInst = createOrthologousStableIdentifierInstance(stableIdentifierInst, orthoStableIdentifierInst, targetIdentifier);
         } else {
             orthoStableIdentifierInst = existingStableIdentifier.iterator().next();
         }
@@ -69,5 +63,16 @@ public class StableIdentifierGenerator {
         // Populate inferred instance with new StableIdentifier instance
         inferredInst.addAttributeValue(stableIdentifier, orthoStableIdentifierInst);
         return inferredInst;
+    }
+
+    private GKInstance createOrthologousStableIdentifierInstance(GKInstance stableIdentifierInst, GKInstance orthoStableIdentifierInst, String targetIdentifier) throws Exception {
+        orthoStableIdentifierInst = InstanceUtilities.createNewInferredGKInstance(stableIdentifierInst);
+        orthoStableIdentifierInst.addAttributeValue(identifier, targetIdentifier);
+        String identifierVersionNumber = "1";
+        orthoStableIdentifierInst.addAttributeValue(identifierVersion, identifierVersionNumber);
+        String orthoStableIdentifierName = targetIdentifier + "." + identifierVersionNumber;
+        orthoStableIdentifierInst.setDisplayName(orthoStableIdentifierName);
+        dba.storeInstance(orthoStableIdentifierInst);
+        return orthoStableIdentifierInst;
     }
 }

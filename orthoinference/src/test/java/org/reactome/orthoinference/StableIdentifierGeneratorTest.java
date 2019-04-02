@@ -3,7 +3,9 @@ package org.reactome.orthoinference;
 import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -14,10 +16,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({StableIdentifierGenerator.class, InstanceUtilities.class})
@@ -65,20 +63,15 @@ public class StableIdentifierGeneratorTest {
         stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst);
     }
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Test
     public void generateOrthologousStableIdRuntimeExceptionTest() throws Exception {
-
         Mockito.when(mockOriginalInst.getAttributeValue("stableIdentifier")).thenReturn(null);
 
-        try {
-            stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            assertTrue(e.getMessage().contains("Could not find stable identifier instance"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail();
-        }
-
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage("No stable identifier instance found for " + mockOriginalInst);
+        stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst);
     }
 }
