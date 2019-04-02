@@ -95,7 +95,7 @@ public class NCBIGene {
 		}
 
 		int fileCount = 0;
-		for (Set<String> ncbiGeneXMLNodeStringsSubSet : splitSet(ncbiGeneXMLNodeStrings, numGeneXMLFiles)) {
+		for (Set<String> ncbiGeneXMLNodeStringsSubSet : Utilities.splitSet(ncbiGeneXMLNodeStrings, numGeneXMLFiles)) {
 			Path geneXMLFilePath = getGeneXMLFilePath(++fileCount);
 			Files.deleteIfExists(geneXMLFilePath);
 			Files.createFile(geneXMLFilePath);
@@ -114,40 +114,6 @@ public class NCBIGene {
 
 
 		logger.info("Finished writing gene XML file(s)");
-	}
-
-	private List<Set<String>> splitSet(Set<String> set, int numOfSubSets) {
-		int subSetSize = set.size() / numOfSubSets ;
-		int numberOfExtraKeys = set.size() % numOfSubSets;
-		if (numberOfExtraKeys > 0) {
-			subSetSize += 1;
-		}
-
-		List<Set<String>> splitSets = new ArrayList<>();
-
-		Set<String> subSet = new LinkedHashSet<>();
-		int keyCount = 0;
-		for(String ncbiGeneXMLNodeString : set) {
-			subSet.add(ncbiGeneXMLNodeString);
-			keyCount += 1;
-
-			// Sub set is "full" and the next sub set should be populated
-			if (keyCount == subSetSize) {
-				splitSets.add(subSet);
-				subSet = new LinkedHashSet<>();
-				keyCount = 0;
-
-				if (numberOfExtraKeys > 0) {
-					numberOfExtraKeys--;
-
-					if (numberOfExtraKeys == 0) {
-						subSetSize--;
-					}
-				}
-			}
-		}
-
-		return splitSets;
 	}
 
 	private Path getProteinFilePath() {
