@@ -20,16 +20,8 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		);
 
 		if (accessionOrNameMismatched(uniProtReactomeEntry, uniprotAccession, uniprotDisplayName)) {
-			throw new IllegalArgumentException(
-				String.join(System.lineSeparator(),
-					"Cached UniProt Reactome Entry was " + uniProtReactomeEntry,
-					" but passed values were ",
-					String.join(System.lineSeparator(),
-						"Db id: " + dbId,
-						"Accession: " + uniprotAccession,
-						"Display name: " + uniprotDisplayName
-					)
-				)
+			throw new IllegalArgumentException(getExceptionMessage(
+				uniProtReactomeEntry, dbId, uniprotAccession, uniprotDisplayName)
 			);
 		}
 
@@ -40,6 +32,19 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 													 String uniprotAccession, String uniprotDisplayName) {
 		return !uniProtReactomeEntry.getAccession().equals(uniprotAccession) ||
 			   !uniProtReactomeEntry.getDisplayName().equals(uniprotDisplayName);
+	}
+
+	private static String getExceptionMessage(UniProtReactomeEntry uniProtReactomeEntry, long dbId,
+											  String uniprotAccession, String uniprotDisplayName) {
+		return String.join(System.lineSeparator(),
+			"Cached UniProt Reactome Entry was " + uniProtReactomeEntry,
+			" but passed values were ",
+			String.join(System.lineSeparator(),
+				"Db id: " + dbId,
+				"Accession: " + uniprotAccession,
+				"Display name: " + uniprotDisplayName
+			)
+		);
 	}
 
 	private UniProtReactomeEntry(long dbId, String accession, String displayName) {
