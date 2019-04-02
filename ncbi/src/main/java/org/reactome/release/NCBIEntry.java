@@ -129,12 +129,12 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return "</" + rootTag + ">";
 	}
 
-	public String getEntityLinkXML(String ncbiGene, String uniprotAccession) {
+	public String getEntityLinkXML(String ncbiGene) {
 		return getLinkXML(
 			ncbiGene,
 			"&entity.base.url;",
-			uniprotAccession,
-			"Reactome Entity:" + uniprotAccession
+			getUniprotAccession(),
+			"Reactome Entity:" + getUniprotAccession()
 		);
 	}
 

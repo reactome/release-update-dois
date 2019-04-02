@@ -84,7 +84,7 @@ public class NCBIGene {
 			}
 
 			for (String ncbiGeneId : ncbiEntry.getNcbiGeneIds()) {
-				ncbiGeneXMLNodeStrings.add(ncbiEntry.getEntityLinkXML(ncbiGeneId, ncbiEntry.getUniprotAccession()));
+				ncbiGeneXMLNodeStrings.add(ncbiEntry.getEntityLinkXML(ncbiGeneId));
 
 				for (ReactomeEvent topLevelPathway : topLevelPathways) {
 					ncbiGeneXMLNodeStrings.add(ncbiEntry.getEventLinkXML(ncbiGeneId, topLevelPathway));
