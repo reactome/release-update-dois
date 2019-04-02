@@ -116,11 +116,11 @@ public class NCBIGene {
 		logger.info("Finished writing gene XML file(s)");
 	}
 
-	private List<Set<String>> splitSet(Set<String> set, int numOfSubLists) {
-		int subListSize = set.size() / numOfSubLists ;
-		int numberOfExtraKeys = set.size() % numOfSubLists;
+	private List<Set<String>> splitSet(Set<String> set, int numOfSubSets) {
+		int subSetSize = set.size() / numOfSubSets ;
+		int numberOfExtraKeys = set.size() % numOfSubSets;
 		if (numberOfExtraKeys > 0) {
-			subListSize += 1;
+			subSetSize += 1;
 		}
 
 		List<Set<String>> splitSets = new ArrayList<>();
@@ -132,7 +132,7 @@ public class NCBIGene {
 			keyCount += 1;
 
 			// Sub set is "full" and the next sub set should be populated
-			if (keyCount == subListSize) {
+			if (keyCount == subSetSize) {
 				splitSets.add(subSet);
 				subSet = new LinkedHashSet<>();
 				keyCount = 0;
@@ -141,7 +141,7 @@ public class NCBIGene {
 					numberOfExtraKeys--;
 
 					if (numberOfExtraKeys == 0) {
-						subListSize--;
+						subSetSize--;
 					}
 				}
 			}
