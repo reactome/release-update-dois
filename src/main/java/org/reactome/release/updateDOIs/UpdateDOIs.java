@@ -125,7 +125,7 @@ public class UpdateDOIs {
 							dbaTestReactome.updateInstanceAttribute(trDOI, "doi");
 						}
 					}
-					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updated, notUpdated, doisTR.size());
+					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updated, notUpdated, doisTR.size(), REACTOME_DOI_PREFIX);
 				} else {
 					logger.info("No DOIs to update");
 				}
