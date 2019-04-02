@@ -73,7 +73,7 @@ public class NCBIGene {
 		for (NCBIEntry ncbiEntry : ncbiEntries) {
 			ncbiGeneLogger.info("Working on " + ncbiEntry.getUniprotAccession());
 
-			Set<PathwayHierarchyUtilities.ReactomeEvent> topLevelPathways = ncbiEntry.getTopLevelPathways(graphDBSession);
+			Set<ReactomeEvent> topLevelPathways = ncbiEntry.getTopLevelPathways(graphDBSession);
 			if (topLevelPathways.isEmpty()) {
 				String errorMessage = ncbiEntry.getUniprotDisplayName() +
 									  " participates in Event(s) but no top Pathway can be found, i.e. there seem to be a pathway" +
@@ -86,7 +86,7 @@ public class NCBIGene {
 			for (String ncbiGeneId : ncbiEntry.getNcbiGeneIds()) {
 				ncbiGeneXMLNodeStrings.add(ncbiEntry.getEntityLinkXML(ncbiGeneId, ncbiEntry.getUniprotAccession()));
 
-				for (PathwayHierarchyUtilities.ReactomeEvent topLevelPathway : topLevelPathways) {
+				for (ReactomeEvent topLevelPathway : topLevelPathways) {
 					ncbiGeneXMLNodeStrings.add(ncbiEntry.getEventLinkXML(ncbiGeneId, topLevelPathway));
 				}
 			}

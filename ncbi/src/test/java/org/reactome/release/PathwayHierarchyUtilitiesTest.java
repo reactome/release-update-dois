@@ -93,12 +93,4 @@ public class PathwayHierarchyUtilitiesTest {
 		assertThat(pathwayHierarchy.get(3L), contains(5L));
 		assertThat(pathwayHierarchy.get(4L), nullValue());
 	}
-
-	@Test
-	public void topLevelPathwayNameCorrection() {
-		PathwayHierarchyUtilities.ReactomeEvent reactomeEvent =
-			new PathwayHierarchyUtilities.ReactomeEvent(1L, "something to do with sugars", "R-HSA-123456");
-
-		assertThat(reactomeEvent.getName(), equalTo("Metabolism of sugars"));
-	}
 }

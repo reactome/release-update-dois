@@ -83,7 +83,7 @@ public class UCSC {
 
 		Set<String> ucscEventLines = new LinkedHashSet<>();
 		for (UniProtReactomeEntry uniProtReactomeEntry : getUniProtReactomeEntriesForUCSC(graphDBSession)) {
-			Set<PathwayHierarchyUtilities.ReactomeEvent> reactomeEvents =
+			Set<ReactomeEvent> reactomeEvents =
 				uniProtReactomeEntry.getEvents(graphDBSession);
 			if (reactomeEvents.isEmpty()) {
 				String errorMessage =

@@ -39,7 +39,7 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return this.ncbiGeneIds;
 	}
 
-	public Set<PathwayHierarchyUtilities.ReactomeEvent> getTopLevelPathways(Session graphDBSession) {
+	public Set<ReactomeEvent> getTopLevelPathways(Session graphDBSession) {
 		return uniProtReactomeEntry.getTopLevelPathways(graphDBSession);
 	}
 
@@ -138,7 +138,7 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		);
 	}
 
-	public String getEventLinkXML(String ncbiGene, PathwayHierarchyUtilities.ReactomeEvent pathway) {
+	public String getEventLinkXML(String ncbiGene, ReactomeEvent pathway) {
 		return getLinkXML(
 			ncbiGene,
 			"&event.base.url;",

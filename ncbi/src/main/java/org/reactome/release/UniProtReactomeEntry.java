@@ -11,8 +11,8 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 	private long dbId;
 	private String accession;
 	private String displayName;
-	private Set<PathwayHierarchyUtilities.ReactomeEvent> reactomeEvents;
-	private Set<PathwayHierarchyUtilities.ReactomeEvent> topLevelPathways;
+	private Set<ReactomeEvent> reactomeEvents;
+	private Set<ReactomeEvent> topLevelPathways;
 
 	public static UniProtReactomeEntry get(long dbId, String uniprotAccession, String uniprotDisplayName) {
 		UniProtReactomeEntry uniProtReactomeEntry = uniProtReactomeEntryMap.computeIfAbsent(
@@ -93,7 +93,7 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		this.displayName = displayName;
 	}
 
-	public Set<PathwayHierarchyUtilities.ReactomeEvent> getEvents(Session graphDBSession) {
+	public Set<ReactomeEvent> getEvents(Session graphDBSession) {
 		if (this.reactomeEvents == null) {
 			this.reactomeEvents = fetchEvents(graphDBSession);
 		}
@@ -101,7 +101,7 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		return this.reactomeEvents;
 	}
 
-	private Set<PathwayHierarchyUtilities.ReactomeEvent> fetchEvents(Session graphDBSession) {
+	public Set<ReactomeEvent> getTopLevelPathways(Session graphDBSession) {
 		return PathwayHierarchyUtilities.fetchUniProtAccessionToReactomeEvents(graphDBSession)
 			.computeIfAbsent(getAccession(), k -> new HashSet<>());
 	}
