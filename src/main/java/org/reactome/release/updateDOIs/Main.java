@@ -48,9 +48,7 @@ public class Main {
       authorIdTR = Integer.valueOf(props.getProperty("authorIdTR"));
       authorIdGK = Integer.valueOf(props.getProperty("authorIdGK"));
       int port = Integer.valueOf(props.getProperty("port"));
-      if (props.getProperty("testMode") == null) {
-        testMode = true;
-      } else {
+      if (props.getProperty("testMode") != null) {
         testMode = Boolean.valueOf(props.getProperty("testMode"));
       }
 

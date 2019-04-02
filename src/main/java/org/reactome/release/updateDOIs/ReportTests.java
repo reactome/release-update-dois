@@ -13,6 +13,7 @@ public class ReportTests {
 	
 	private static final Logger logger = LogManager.getLogger();
 	private static final Logger warningsLog = LogManager.getLogger("warningsLog");
+	private static final String REACTOME_DOI_PREFIX = "10.3180";
 	
 	// Compares the DB IDs and display names of the instances to be updated from Test Reactome and GK Central
 	public static boolean verifyDOIMatches( GKInstance trDOI, GKInstance gkDOI, String newDOI ) {
@@ -42,7 +43,7 @@ public class ReportTests {
 			{
 				String missedDoi = missed.split(":")[0];
 				String missedName = missed.split(":")[1];
-				String missedClean = missedDoi.replace("10.3180/", "");
+				String missedClean = missedDoi.replace(REACTOME_DOI_PREFIX + "/", "");
 				String missedStableId = missedClean.split("\\.")[0];
 				String missedStableIdVersion = missedClean.split("\\.")[1];
 				int resolved = 0;
