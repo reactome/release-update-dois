@@ -5,6 +5,7 @@ import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.SchemaClass;
 
 import java.io.FileInputStream;
 import java.util.*;
@@ -15,7 +16,7 @@ public class Main {
     private static final String PROTEIN_BINDING_ANNOTATION = "0005515";
     private static final List<String> speciesWithAlternateGOCompartment = new ArrayList<>(Arrays.asList("11676", "211044", "1491", "1392"));
     private static final List<String> microbialSpeciesToExclude = new ArrayList<>(Arrays.asList("813", "562", "491", "90371", "1280", "5811"));
-    private static List<String> goTerms = new ArrayList<String>(Arrays.asList("Cellular Component", "Molecular Function", "Biological Process"));
+    private static List<String> goCategories = new ArrayList<>(Arrays.asList("C", "M", "B"));
 
     public static void main(String[] args) throws Exception {
 
@@ -30,20 +31,79 @@ public class Main {
 
         MySQLAdaptor dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 
-        Collection<GKInstance> inferredReactionInstances = new ArrayList<GKInstance>();
-        Set<Long> inferredReactionDbIds = new HashSet<Long>();
-
         for (GKInstance reactionInst : (Collection<GKInstance>) dbAdaptor.fetchInstancesByClass("ReactionlikeEvent")) {
             
             if (!isInferred(reactionInst)) {
-                processProteins(reactionInst);
+                for (String goLetter : goCategories) {
+
+                    Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
+
+                    if (goLetter.equals("C") || (goLetter.equals("B") && catalystInstances.size() == 0)) {
+                        processProteins(reactionInst, goLetter);
+                    } else {
+                        for (GKInstance catalystInst : catalystInstances) {
+
+                            if (validCatalyst(catalystInst, goLetter)) {
+
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
-    private static void processProteins(GKInstance reactionInst) throws Exception {
+    private static boolean validCatalyst(GKInstance catalystInst, String goLetter) throws Exception {
 
-        List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
+        GKInstance physicalEntityInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
+        if (physicalEntityInst != null && physicalEntityInst.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
+            if (goLetter.equals("M")) {
+                List<GKInstance> activeUnitInstances = catalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit);
+                if (activeUnitInstances.size() == 0 && !multiInstancePhysicalEntity(physicalEntityInst.getSchemClass())) {
+                    return true;
+                } else if (activeUnitInstances.size() == 1) {
+                    SchemaClass activeUnitSchemaClass = (activeUnitInstances).get(0).getSchemClass();
+                    if (activeUnitSchemaClass.isa(ReactomeJavaConstants.Complex) || activeUnitSchemaClass.isa(ReactomeJavaConstants.Polymer)) {
+                        return false;
+                    }
+                    if (activeUnitSchemaClass.isa(ReactomeJavaConstants.EntitySet) && !onlyEWASMembers((activeUnitInstances).get(0))) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+                return true;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean onlyEWASMembers(GKInstance activeUnitInst) throws Exception {
+        Collection<GKInstance> memberInstances = activeUnitInst.getAttributeValuesList(ReactomeJavaConstants.hasMember);
+        if (memberInstances.size() > 0) {
+            for (GKInstance memberInst : memberInstances) {
+                if (!memberInst.getSchemClass().isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean multiInstancePhysicalEntity(SchemaClass physicalEntitySchemaClass) {
+        if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static void processProteins(GKInstance reactionInst, String goLetter) throws Exception {
+
+
+        List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<>();
         classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Pathway, new String[]{ReactomeJavaConstants.hasEvent}, new String[]{}));
         classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.ReactionlikeEvent, new String[]{ReactomeJavaConstants.input, ReactomeJavaConstants.output, ReactomeJavaConstants.catalystActivity}, new String[]{}));
         classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Reaction, new String[]{ReactomeJavaConstants.input, ReactomeJavaConstants.output, ReactomeJavaConstants.catalystActivity}, new String[]{}));
@@ -59,7 +119,7 @@ public class Main {
             GKInstance speciesInst = (GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.species);
             if (validEWAS(referenceEntityInst, speciesInst)) {
 
-                List<String> goAnnotationLine = new ArrayList<String>();
+                List<String> goAnnotationLine = new ArrayList<>();
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
                 if (taxonIdentifier != PROTEIN_BINDING_ANNOTATION && !speciesWithAlternateGOCompartment.contains(taxonIdentifier) && !microbialSpeciesToExclude.contains(taxonIdentifier)) {
                     //TODO: GO_CellularComponent check... is it needed?
