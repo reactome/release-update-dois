@@ -17,6 +17,7 @@ public class Main {
     private static final List<String> speciesWithAlternateGOCompartment = new ArrayList<>(Arrays.asList("11676", "211044", "1491", "1392"));
     private static final List<String> microbialSpeciesToExclude = new ArrayList<>(Arrays.asList("813", "562", "491", "90371", "1280", "5811"));
     private static List<String> goCategories = new ArrayList<>(Arrays.asList("C", "M", "B"));
+    private static Set<String> goaLines = new HashSet<>();
 
     public static void main(String[] args) throws Exception {
 
@@ -39,15 +40,17 @@ public class Main {
                     Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
 
                     if (goLetter.equals("C") || (goLetter.equals("B") && catalystInstances.size() == 0)) {
-                        processProteins(reactionInst, goLetter);
+                        Set<GKInstance> proteins = findProteins(reactionInst);
+                        processProteins(goLetter, proteins, reactionInst, null);
                     } else {
                         for (GKInstance catalystInst : catalystInstances) {
-
                             if (validCatalyst(catalystInst, goLetter)) {
+
                                 if (goLetter.equals("M")) {
                                     GKInstance activeUnitInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit);
                                     GKInstance entityInst = activeUnitInst != null ? activeUnitInst : (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
-                                    List<GKInstance> proteins = getMolecularFunctionProteins(entityInst);
+                                    Set<GKInstance> proteins = getMolecularFunctionProteins(entityInst);
+                                    processProteins(goLetter, proteins, reactionInst, catalystInst);
                                 } else {
                                     //TODO
                                 }
@@ -59,8 +62,23 @@ public class Main {
         }
     }
 
-    private static List<GKInstance> getMolecularFunctionProteins(GKInstance entityInst) throws Exception {
-        List<GKInstance> proteins = new ArrayList<>();
+    private static Set<GKInstance> findProteins(GKInstance reactionInst) throws Exception {
+        List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<>();
+        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Pathway, new String[]{ReactomeJavaConstants.hasEvent}, new String[]{}));
+        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.ReactionlikeEvent, new String[]{ReactomeJavaConstants.input, ReactomeJavaConstants.output, ReactomeJavaConstants.catalystActivity}, new String[]{}));
+        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Reaction, new String[]{ReactomeJavaConstants.input, ReactomeJavaConstants.output, ReactomeJavaConstants.catalystActivity}, new String[]{}));
+        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.CatalystActivity, new String[]{ReactomeJavaConstants.physicalEntity}, new String[]{}));
+        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Complex, new String[]{ReactomeJavaConstants.hasComponent}, new String[]{}));
+        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.EntitySet, new String[]{ReactomeJavaConstants.hasMember}, new String[]{}));
+        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Polymer, new String[]{ReactomeJavaConstants.repeatedUnit}, new String[]{}));
+
+        String[] outClasses = new String[]{ReactomeJavaConstants.EntityWithAccessionedSequence};
+        return InstanceUtilities.followInstanceAttributes(reactionInst, classesToFollow, outClasses);
+
+    }
+
+    private static Set<GKInstance> getMolecularFunctionProteins(GKInstance entityInst) throws Exception {
+        Set<GKInstance> proteins = new HashSet<>();
         if (!(entityInst.getSchemClass().isa(ReactomeJavaConstants.Complex) || entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer))) {
             if (entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet) && onlyEWASMembers(entityInst)) {
                 proteins.addAll(entityInst.getAttributeValuesList(ReactomeJavaConstants.hasMember));
@@ -118,50 +136,44 @@ public class Main {
         return false;
     }
 
-    private static void processProteins(GKInstance reactionInst, String goLetter) throws Exception {
+    private static void processProteins(String goLetter, Set<GKInstance> proteinInstances, GKInstance reactionInst, GKInstance catalystInst) throws Exception {
 
-
-        List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<>();
-        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Pathway, new String[]{ReactomeJavaConstants.hasEvent}, new String[]{}));
-        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.ReactionlikeEvent, new String[]{ReactomeJavaConstants.input, ReactomeJavaConstants.output, ReactomeJavaConstants.catalystActivity}, new String[]{}));
-        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Reaction, new String[]{ReactomeJavaConstants.input, ReactomeJavaConstants.output, ReactomeJavaConstants.catalystActivity}, new String[]{}));
-        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.CatalystActivity, new String[]{ReactomeJavaConstants.physicalEntity}, new String[]{}));
-        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Complex, new String[]{ReactomeJavaConstants.hasComponent}, new String[]{}));
-        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.EntitySet, new String[]{ReactomeJavaConstants.hasMember}, new String[]{}));
-        classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Polymer, new String[]{ReactomeJavaConstants.repeatedUnit}, new String[]{}));
-
-        String[] outClasses = new String[]{ReactomeJavaConstants.EntityWithAccessionedSequence};
-
-        for (GKInstance ewasInst : (Collection<GKInstance>) InstanceUtilities.followInstanceAttributes(reactionInst, classesToFollow, outClasses)) {
-            GKInstance referenceEntityInst = (GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
-            GKInstance speciesInst = (GKInstance) ewasInst.getAttributeValue(ReactomeJavaConstants.species);
-            if (validEWAS(referenceEntityInst, speciesInst)) {
-
-                List<String> goAnnotationLine = new ArrayList<>();
-                String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
-                if (taxonIdentifier != PROTEIN_BINDING_ANNOTATION && !speciesWithAlternateGOCompartment.contains(taxonIdentifier) && !microbialSpeciesToExclude.contains(taxonIdentifier)) {
-                    //TODO: GO_CellularComponent check... is it needed?
-                    //TODO: Compartment check... is it needed?
-                    GKInstance reactionStableIdentifierInst = (GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
-                    goAnnotationLine.add(uniprotDbString);
-                    goAnnotationLine.add(referenceEntityInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
-                    goAnnotationLine.add(getSecondaryIdentifier(referenceEntityInst));
-                    goAnnotationLine.add("");
-                    goAnnotationLine.add(getGOAccession(ewasInst));
-                    goAnnotationLine.add("REACTOME:" + reactionStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
-                    goAnnotationLine.add("TAS");
-                    goAnnotationLine.add("");
-                    goAnnotationLine.add("C");
-                    goAnnotationLine.add("");
-                    goAnnotationLine.add("");
-                    goAnnotationLine.add("protein");
-                    goAnnotationLine.add("taxon:" + taxonIdentifier);
+        for (GKInstance proteinInst : proteinInstances) {
+            GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
+            GKInstance speciesInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.species);
+            if (validPhysicalEntity(referenceEntityInst, speciesInst)) {
+                if (goLetter.equals("C")) {
+                    String goAnnotationLine = getGOCellularCompartmentLine(proteinInst, speciesInst, referenceEntityInst, reactionInst);
+                    goaLines.add(goAnnotationLine);
+                }
+                if (goLetter.equals("M")) {
                 }
             }
         }
+    }
 
-
-
+    private static String getGOCellularCompartmentLine(GKInstance proteinInst, GKInstance speciesInst, GKInstance referenceEntityInst, GKInstance reactionInst) throws Exception {
+        List<String> goAnnotationLine = new ArrayList<>();
+        String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
+        if (taxonIdentifier != PROTEIN_BINDING_ANNOTATION && !speciesWithAlternateGOCompartment.contains(taxonIdentifier) && !microbialSpeciesToExclude.contains(taxonIdentifier)) {
+            //TODO: GO_CellularComponent check... is it needed?
+            //TODO: Compartment check... is it needed?
+            GKInstance reactionStableIdentifierInst = (GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
+            goAnnotationLine.add(uniprotDbString);
+            goAnnotationLine.add(referenceEntityInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
+            goAnnotationLine.add(getSecondaryIdentifier(referenceEntityInst));
+            goAnnotationLine.add("");
+            goAnnotationLine.add(getGOAccession(proteinInst));
+            goAnnotationLine.add("REACTOME:" + reactionStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
+            goAnnotationLine.add("TAS");
+            goAnnotationLine.add("");
+            goAnnotationLine.add("C");
+            goAnnotationLine.add("");
+            goAnnotationLine.add("");
+            goAnnotationLine.add("protein");
+            goAnnotationLine.add("taxon:" + taxonIdentifier);
+        }
+        return String.join("\t", goAnnotationLine);
     }
 
     private static String getGOAccession(GKInstance ewasInst) throws Exception {
@@ -182,7 +194,7 @@ public class Main {
         }
     }
 
-    private static boolean validEWAS(GKInstance referenceEntityInst, GKInstance speciesInst) throws Exception {
+    private static boolean validPhysicalEntity(GKInstance referenceEntityInst, GKInstance speciesInst) throws Exception {
         if (referenceEntityInst != null && speciesInst != null) {
             GKInstance referenceDatabaseInst = (GKInstance) referenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase);
             if (referenceDatabaseInst != null && referenceDatabaseInst.getDisplayName().equals("UniProt") && speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference) != null) {
