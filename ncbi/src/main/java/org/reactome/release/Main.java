@@ -47,6 +47,8 @@ public class Main {
 
 		// Write UCSC Entity and Event Files
 		UCSC.getInstance(outputDir, version).writeUCSCFiles(graphDBSession);
+		// Write Europe PMC Profile and Link Files
+		EuropePMC.getInstance(outputDir, version).writeEuropePMCFiles(graphDBSession);
 
 		graphDBSession.close();
 		logger.info("Finished NCBI and UCSC step");
