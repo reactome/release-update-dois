@@ -44,13 +44,31 @@ public class Main {
                         for (GKInstance catalystInst : catalystInstances) {
 
                             if (validCatalyst(catalystInst, goLetter)) {
-
+                                if (goLetter.equals("M")) {
+                                    GKInstance activeUnitInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit);
+                                    GKInstance entityInst = activeUnitInst != null ? activeUnitInst : (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
+                                    List<GKInstance> proteins = getMolecularFunctionProteins(entityInst);
+                                } else {
+                                    //TODO
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private static List<GKInstance> getMolecularFunctionProteins(GKInstance entityInst) throws Exception {
+        List<GKInstance> proteins = new ArrayList<>();
+        if (!(entityInst.getSchemClass().isa(ReactomeJavaConstants.Complex) || entityInst.getSchemClass().isa(ReactomeJavaConstants.Polymer))) {
+            if (entityInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet) && onlyEWASMembers(entityInst)) {
+                proteins.addAll(entityInst.getAttributeValuesList(ReactomeJavaConstants.hasMember));
+            } else if (entityInst.getSchemClass().isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
+                proteins.add(entityInst);
+            }
+        }
+        return proteins;
     }
 
     private static boolean validCatalyst(GKInstance catalystInst, String goLetter) throws Exception {
