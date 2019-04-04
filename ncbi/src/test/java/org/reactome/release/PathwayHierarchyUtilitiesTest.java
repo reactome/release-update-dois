@@ -1,8 +1,6 @@
 package org.reactome.release;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.*;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.neo4j.driver.v1.Record;
@@ -12,8 +10,10 @@ import org.neo4j.driver.v1.Value;
 
 import java.util.*;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -23,9 +23,6 @@ public class PathwayHierarchyUtilitiesTest {
 	@Mock private StatementResult statementResult;
 	@Mock private Record record;
 	@Mock private Value value;
-
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
 
 	@Test
 	public void findTopLevelPathwayIdsWithGrandParentPathways() {
@@ -58,9 +55,13 @@ public class PathwayHierarchyUtilitiesTest {
 		long pathwayId = 1L;
 		Map<Long, Set<Long>> pathwayHierarchy = new HashMap<>();
 
-		expectedException.expect(IllegalStateException.class);
-		expectedException.expectMessage("Hierarchy has no values");
-		PathwayHierarchyUtilities.findTopLevelPathwayIds(pathwayId, pathwayHierarchy);
+		IllegalStateException thrown = assertThrows(
+			IllegalStateException.class,
+			() -> PathwayHierarchyUtilities.findTopLevelPathwayIds(pathwayId, pathwayHierarchy),
+			"Expected call to 'findTopLevelPathwayIds' to throw due to empty pathway hierarchy, but it didn't"
+		);
+
+		assertTrue(thrown.getMessage().contains("Hierarchy has no values"));
 	}
 
 	@Test

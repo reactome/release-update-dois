@@ -1,7 +1,6 @@
 package org.reactome.release;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
@@ -18,7 +17,7 @@ public class NCBIEntryTest {
 	private NCBIEntry entry2;
 	private ReactomeEvent event;
 
-	@Before
+	@BeforeEach
 	public void createFixtures() {
 		entry1 = new NCBIEntry(
 			1L,

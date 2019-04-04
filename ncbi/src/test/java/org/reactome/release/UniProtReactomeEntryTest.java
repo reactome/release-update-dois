@@ -1,9 +1,7 @@
 package org.reactome.release;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,15 +11,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UniProtReactomeEntryTest {
 	private UniProtReactomeEntry uniProtReactomeEntry;
 
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
-
-	@Before
+	@BeforeEach
 	public void createUniProtReactomeEntry() {
 		uniProtReactomeEntry = UniProtReactomeEntry.get(3L, "P12345", "UniProt:test UniProt");
 	}
@@ -60,15 +55,23 @@ public class UniProtReactomeEntryTest {
 
 	@Test
 	public void incorrectAccessionThrowsIllegalArgumentException() {
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage("not a proper UniProt Accession");
-		UniProtReactomeEntry.get(7L, "P123456", "UniProt:testing");
+		IllegalArgumentException thrown = assertThrows(
+			IllegalArgumentException.class,
+			() -> UniProtReactomeEntry.get(7L, "P123456", "UniProt:testing"),
+			"Expected call to 'UniProtReactomeEntry.get' to throw due to improper UniProt accession, but it didn't"
+		);
+
+		assertTrue(thrown.getMessage().contains("not a proper UniProt Accession"));
 	}
 
 	@Test
 	public void incorrectDisplayNameThrowsIllegalArgumentException() {
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage("not a proper UniProt Display Name");
-		UniProtReactomeEntry.get(8L, "P12345", "testing");
+		IllegalArgumentException thrown = assertThrows(
+			IllegalArgumentException.class,
+			() -> UniProtReactomeEntry.get(8L, "P12345", "testing"),
+			"Expected call to 'UniProtReactomeEntry.get' to throw due to improper UniProt display name, but it didn't"
+		);
+
+		assertTrue(thrown.getMessage().contains("not a proper UniProt Display Name"));
 	}
 }
