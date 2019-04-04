@@ -109,10 +109,6 @@
 				<filtering>true</filtering>
 			</resource>
 		</resources>
-
-		<filters>
-			<filter>src/main/resources/neo4j.properties</filter>
-		</filters>
 	</build>
 
 
