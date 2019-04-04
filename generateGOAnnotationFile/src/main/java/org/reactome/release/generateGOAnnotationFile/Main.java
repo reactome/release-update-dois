@@ -14,9 +14,10 @@ public class Main {
 
     private static final String uniprotDbString = "UniProtKB";
     private static final String PROTEIN_BINDING_ANNOTATION = "0005515";
+    private static final int MAX_RECURSION_LEVEL = 2;
     private static final List<String> speciesWithAlternateGOCompartment = new ArrayList<>(Arrays.asList("11676", "211044", "1491", "1392"));
     private static final List<String> microbialSpeciesToExclude = new ArrayList<>(Arrays.asList("813", "562", "491", "90371", "1280", "5811"));
-    private static List<String> goCategories = new ArrayList<>(Arrays.asList("C", "F"));
+    private static List<String> goCategories = new ArrayList<>(Arrays.asList("C", "F", "P"));
     private static Set<String> goaLines = new HashSet<>();
 
     public static void main(String[] args) throws Exception {
@@ -38,7 +39,7 @@ public class Main {
 
                     Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
 
-                    if (goLetter.equals("C") || (goLetter.equals("B") && catalystInstances.size() == 0)) {
+                    if (goLetter.equals("C") || (goLetter.equals("P") && catalystInstances.size() == 0)) {
                         Set<GKInstance> proteins = findProteins(reactionInst);
                         processProteins(goLetter, proteins, reactionInst, null);
                     } else {
@@ -155,9 +156,31 @@ public class Main {
                             goaLines.addAll(getGOMolecularFunctionLine(catalystInst, referenceEntityInst, taxonIdentifier, reactionInst));
                         }
                     }
+
+                    if (goLetter.equals("P")) {
+                        List<String> goBiologicalProcessAccessions = getGOBiologicalProcessAccessions(reactionInst, 0);
+                    }
                 }
             }
         }
+    }
+
+    private static List<String> getGOBiologicalProcessAccessions(GKInstance reactionInst, int recursion) throws Exception {
+        List<String> goBiologicalProcessAccessions = new ArrayList<>();
+        if (recursion <= MAX_RECURSION_LEVEL) {
+            Collection<GKInstance> goBiologicalProcessInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess);
+            if (goBiologicalProcessInstances.size() > 0) {
+                for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
+                    goBiologicalProcessAccessions.add(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
+                }
+            } else {
+                recursion++;
+                for (GKInstance hasEventReferralInst : (Collection<GKInstance>) reactionInst.getReferers(ReactomeJavaConstants.hasEvent)) {
+                    goBiologicalProcessAccessions.addAll(getGOBiologicalProcessAccessions(hasEventReferralInst, recursion));
+                }
+            }
+        }
+        return goBiologicalProcessAccessions;
     }
 
     private static List<String> getGOMolecularFunctionLine(GKInstance catalystInst, GKInstance referenceEntityInst, String taxonIdentifier, GKInstance reactionInst) throws Exception {
