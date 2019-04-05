@@ -4,13 +4,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.neo4j.driver.v1.Session;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class ReactomeEvent {
-	private static Map<Long, ReactomeEvent> eventCache;
+	private static Map<Session, Map<Long, ReactomeEvent>> eventCache = new HashMap<>();
 	private static Logger logger = LogManager.getLogger();
 
 	private long dbId;
@@ -23,14 +24,14 @@ public class ReactomeEvent {
 		this.stableIdentifier = stableIdentifier;
 	}
 
-	public static Map<Long, ReactomeEvent> fetchReactomeEventCache(Session graphDBSession) {
-		if (eventCache != null) {
-			return eventCache;
+	public static Map<Long, ReactomeEvent> fetchReactomeEventMap(Session graphDBSession) {
+		if (eventCache.containsKey(graphDBSession)) {
+			return eventCache.get(graphDBSession);
 		}
 
-		logger.info("Computing Event cache");
+		logger.info("Computing Event map");
 
-		eventCache = graphDBSession.run(
+		Map<Long, ReactomeEvent> eventMap = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (e:Event)",
 				"RETURN e.dbId, e.displayName, e.stId"
@@ -45,10 +46,11 @@ public class ReactomeEvent {
 				record.get("e.stId").asString()
 			)
 		));
+		eventCache.put(graphDBSession, eventMap);
 
-		logger.info("Finished computing Event cache");
+		logger.info("Finished computing Event map");
 
-		return eventCache;
+		return eventMap;
 	}
 
 	public long getDbId() {

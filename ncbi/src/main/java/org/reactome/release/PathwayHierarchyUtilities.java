@@ -12,13 +12,13 @@ import java.util.stream.Collectors;
 public class PathwayHierarchyUtilities {
 	private static final Logger logger = LogManager.getLogger();
 
-	private static Map<Long, Set<Long>> rleToPathwayId;
-	private static Map<Long, Set<Long>> pathwayHierarchy;
-	private static Set<Long> topLevelPathwayIds;
+	private static Map<Session, Map<Long, Set<Long>>> rleToPathwayIdCache = new HashMap<>();
+	private static Map<Session, Map<Long, Set<Long>>> pathwayHierarchyCache = new HashMap<>();
+	private static Map<Session, Set<Long>> topLevelPathwayIdsCache = new HashMap<>();
 
 	public static Map<Long, Set<Long>> fetchRLEIdToPathwayId(Session graphDBSession) {
-		if (rleToPathwayId != null) {
-			return rleToPathwayId;
+		if (rleToPathwayIdCache.containsKey(graphDBSession)) {
+			return rleToPathwayIdCache.get(graphDBSession);
 		}
 
 		if (graphDBSession == null) {
@@ -34,7 +34,7 @@ public class PathwayHierarchyUtilities {
 			)
 		);
 
-		rleToPathwayId = new HashMap<>();
+		Map<Long, Set<Long>> rleToPathwayId = new HashMap<>();
 		while (statementResult.hasNext()) {
 			Record record = statementResult.next();
 
@@ -45,14 +45,17 @@ public class PathwayHierarchyUtilities {
 				.computeIfAbsent(reactionLikeEventId, k -> new HashSet<>())
 				.add(pathwayId);
 		}
+
+		rleToPathwayIdCache.put(graphDBSession, rleToPathwayId);
+
 		logger.info("Finished computing RLE id to Pathway id");
 
 		return rleToPathwayId;
 	}
 
 	public static Map<Long, Set<Long>> fetchPathwayHierarchy(Session graphDBSession) {
-		if (pathwayHierarchy != null) {
-			return pathwayHierarchy;
+		if (pathwayHierarchyCache.containsKey(graphDBSession)) {
+			return pathwayHierarchyCache.get(graphDBSession);
 		}
 
 		if (graphDBSession == null) {
@@ -68,7 +71,7 @@ public class PathwayHierarchyUtilities {
 			)
 		);
 
-		pathwayHierarchy = new HashMap<>();
+		Map<Long, Set<Long>> pathwayHierarchy = new HashMap<>();
 		while (statementResult.hasNext()) {
 			Record record = statementResult.next();
 
@@ -79,19 +82,21 @@ public class PathwayHierarchyUtilities {
 			parentPathwayIds.add(parentPathwayId);
 		}
 
+		pathwayHierarchyCache.put(graphDBSession, pathwayHierarchy);
+
 		logger.info("Finished computing Pathway Hierarchy");
 
 		return pathwayHierarchy;
 	}
 
 	public static Set<Long> getTopLevelPathwayIds(Session graphDBSession) {
-		if (topLevelPathwayIds != null) {
-			return topLevelPathwayIds;
+		if (topLevelPathwayIdsCache.containsKey(graphDBSession)) {
+			return topLevelPathwayIdsCache.get(graphDBSession);
 		}
 
 		logger.info("Computing Top Level Pathway ids");
 
-		topLevelPathwayIds = graphDBSession.run(
+		Set<Long> topLevelPathwayIds = graphDBSession.run(
 			String.join(System.lineSeparator(),
 				"MATCH (p:TopLevelPathway)",
 				"RETURN p.dbId"
@@ -100,6 +105,8 @@ public class PathwayHierarchyUtilities {
 		.stream()
 		.map(record -> record.get("p.dbId").asLong())
 		.collect(Collectors.toSet());
+
+		topLevelPathwayIdsCache.put(graphDBSession, topLevelPathwayIds);
 
 		logger.info("Finished computing Top Level Pathway ids");
 
