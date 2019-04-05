@@ -217,5 +217,39 @@ public class EuropePMC {
 				indentString("</link>",1)
 			);
 		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o == this) {
+				return true;
+			}
+
+			if (!(o instanceof EuropePMCLink)) {
+				return false;
+			}
+
+			EuropePMCLink other = (EuropePMCLink) o;
+
+			return this.getPathwayDisplayName().equals(other.getPathwayDisplayName()) &&
+				   this.getPathwayStableId().equals(other.getPathwayStableId()) &&
+				   this.getPubMedIdentifier().equals(other.getPubMedIdentifier());
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(
+				getPathwayDisplayName(),
+				getPathwayStableId(),
+				getPubMedIdentifier()
+			);
+		}
+
+		@Override
+		public String toString() {
+			return "Europe PMC Link: " +
+				getPathwayDisplayName() +
+				" (" + getPathwayStableId() + ")" +
+				" PubMed " + getPubMedIdentifier();
+		}
 	}
 }
