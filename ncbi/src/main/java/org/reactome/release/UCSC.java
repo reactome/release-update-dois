@@ -2,16 +2,16 @@ package org.reactome.release;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.neo4j.driver.v1.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.reactome.release.Utilities.appendWithNewLine;
 
 public class UCSC {
 	private static final Logger logger = LogManager.getLogger();
@@ -43,24 +43,28 @@ public class UCSC {
 		Files.deleteIfExists(ucscEntityFilePath);
 		Files.createFile(ucscEntityFilePath);
 
-		String ucscEntityHeader =
-			"URL for entity_identifier: " + ReactomeConstants.UNIPROT_QUERY_URL +
-			System.lineSeparator() + System.lineSeparator() +
-			"Reactome Entity" +
-			System.lineSeparator() + System.lineSeparator();
-
 		logger.info("Writing UCSC Entity file");
 
-		Files.write(ucscEntityFilePath, ucscEntityHeader.getBytes(), StandardOpenOption.APPEND);
-		Set<String> ucscEntityLines = getUniProtReactomeEntriesForUCSC(graphDBSession)
-			.stream()
-			.map(entry -> entry.getAccession().concat(System.lineSeparator()))
-			.collect(Collectors.toCollection(LinkedHashSet::new));
-		for (String line : ucscEntityLines) {
-			Files.write(ucscEntityFilePath, line.getBytes(), StandardOpenOption.APPEND);
+		appendWithNewLine(getUCSCEntityHeader(), ucscEntityFilePath);
+		for (String line : getUCSCEntityLines(graphDBSession)) {
+			appendWithNewLine(line, ucscEntityFilePath);
 		}
 
 		logger.info("Finished writing UCSC Entity file");
+	}
+
+	private Set<String> getUCSCEntityLines(Session graphDBSession) {
+		return getUniProtReactomeEntriesForUCSC(graphDBSession)
+			.stream()
+			.map(UniProtReactomeEntry::getAccession)
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+
+	private String getUCSCEntityHeader() {
+		return "URL for entity_identifier: " + ReactomeConstants.UNIPROT_QUERY_URL +
+			System.lineSeparator() + System.lineSeparator() +
+			"Reactome Entity" +
+			System.lineSeparator() + System.lineSeparator();
 	}
 
 	private void writeUCSCEventFile(Session graphDBSession) throws IOException {
@@ -74,50 +78,62 @@ public class UCSC {
 
 		logger.info("Writing UCSC Event file");
 
-		Files.write(ucscEventFilePath, getUCSCEventsHeader().getBytes(), StandardOpenOption.APPEND);
+		appendWithNewLine(getUCSCEventsHeader(), ucscEventFilePath);
 
-		Set<String> ucscEventLines = new LinkedHashSet<>();
-		for (UniProtReactomeEntry uniProtReactomeEntry : getUniProtReactomeEntriesForUCSC(graphDBSession)) {
-			Set<ReactomeEvent> reactomeEvents =
-				uniProtReactomeEntry.getEvents(graphDBSession);
-			if (reactomeEvents.isEmpty()) {
-				String errorMessage =
-					uniProtReactomeEntry.getDisplayName() +
-					" participates in Event(s) but no top Pathway can be found, " +
-					" i.e. there seem to be a pathway" +
-					" which contains or is an instance of itself." +
-					System.lineSeparator();
+		Map<UniProtReactomeEntry, Set<String>> uniProtReactomeEntriesToUCSCEventLines =
+			getUniProtReactomeEntriesToUCSCEventLines(graphDBSession);
 
-				Files.write(ucscErrorFilePath, errorMessage.getBytes(), StandardOpenOption.APPEND);
+		for (UniProtReactomeEntry uniProtReactomeEntry : uniProtReactomeEntriesToUCSCEventLines.keySet()) {
+			Set<String> ucscLines = uniProtReactomeEntriesToUCSCEventLines.get(uniProtReactomeEntry);
+
+			if (ucscLines.isEmpty()) {
+				appendWithNewLine(getNoEventsErrorMessage(uniProtReactomeEntry), ucscErrorFilePath);
 				continue;
 			}
 
-			ucscEventLines.addAll(
-				reactomeEvents
-				.stream()
-				.map(event -> String.join(
-					"\t",
-					uniProtReactomeEntry.getAccession(),
-					event.getStableIdentifier(),
-					event.getName()).concat(System.lineSeparator())
-				)
-				.collect(Collectors.toCollection(LinkedHashSet::new))
-			);
-		}
-
-
-		for (String line : ucscEventLines) {
-			Files.write(ucscEventFilePath, line.getBytes(), StandardOpenOption.APPEND);
+			for (String ucscLine : ucscLines) {
+				appendWithNewLine(ucscLine, ucscEventFilePath);
+			}
 		}
 		logger.info("Finished writing UCSC Event file");
 	}
 
-	@NotNull
 	private String getUCSCEventsHeader() {
 		return "URL for events: " + ReactomeConstants.PATHWAY_BROWSER_URL +
-			   System.lineSeparator() + System.lineSeparator() +
-			   String.join("\t", "Reactome Entity", "Event ST_ID", "Event_name") +
-			   System.lineSeparator() + System.lineSeparator();
+			System.lineSeparator() + System.lineSeparator() +
+			String.join("\t", "Reactome Entity", "Event ST_ID", "Event_name") +
+			System.lineSeparator() + System.lineSeparator();
+	}
+
+	private Map<UniProtReactomeEntry, Set<String>> getUniProtReactomeEntriesToUCSCEventLines(Session graphDBSession) {
+		return getUniProtReactomeEntriesForUCSC(graphDBSession)
+			.stream()
+			.collect(Collectors.toMap(
+				uniProtReactomeEntry -> uniProtReactomeEntry,
+				uniProtReactomeEntry -> getUCSCEventLines(uniProtReactomeEntry, graphDBSession)
+			));
+	}
+
+	private Set<String> getUCSCEventLines(UniProtReactomeEntry uniProtReactomeEntry, Session graphDBSession) {
+		return uniProtReactomeEntry
+			.getEvents(graphDBSession)
+			.stream()
+			.map(event ->
+				String.join(
+					"\t",
+					uniProtReactomeEntry.getAccession(),
+					event.getStableIdentifier(),
+					event.getName()
+				)
+			)
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+
+	private String getNoEventsErrorMessage(UniProtReactomeEntry uniProtReactomeEntry) {
+		return uniProtReactomeEntry.getDisplayName() +
+			" participates in Event(s) but no top Pathway can be found, " +
+			" i.e. there seem to be a pathway" +
+			" which contains or is an instance of itself.";
 	}
 
 	private Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {

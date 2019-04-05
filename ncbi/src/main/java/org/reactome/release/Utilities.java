@@ -1,9 +1,10 @@
 package org.reactome.release;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
 
 public class Utilities {
 
@@ -39,5 +40,19 @@ public class Utilities {
 		}
 
 		return splitSets;
+	}
+
+	public static void appendWithNewLine(String lineToAppend, Path filePath) throws IOException {
+		Files.write(
+			filePath,
+			lineToAppend.concat(System.lineSeparator()).getBytes(),
+			StandardOpenOption.APPEND
+		);
+	}
+
+	public static void appendWithNewLine(Iterable<String> linesToAppend, Path filePath) throws IOException {
+		for (String lineToAppend : linesToAppend) {
+			appendWithNewLine(lineToAppend, filePath);
+		}
 	}
 }
