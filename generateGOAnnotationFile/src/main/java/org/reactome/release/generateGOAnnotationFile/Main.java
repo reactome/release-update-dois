@@ -7,16 +7,19 @@ import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.SchemaClass;
 
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.util.*;
 
 public class Main {
 
     private static final String uniprotDbString = "UniProtKB";
     private static final String PROTEIN_BINDING_ANNOTATION = "0005515";
+    private static final int MAX_RECURSION_LEVEL = 2;
     private static final List<String> speciesWithAlternateGOCompartment = new ArrayList<>(Arrays.asList("11676", "211044", "1491", "1392"));
     private static final List<String> microbialSpeciesToExclude = new ArrayList<>(Arrays.asList("813", "562", "491", "90371", "1280", "5811"));
-    private static List<String> goCategories = new ArrayList<>(Arrays.asList("C", "F"));
+    private static List<String> goCategories = new ArrayList<>(Arrays.asList("C", "F", "P"));
     private static Set<String> goaLines = new HashSet<>();
 
     public static void main(String[] args) throws Exception {
@@ -38,27 +41,63 @@ public class Main {
 
                     Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
 
-                    if (goLetter.equals("C") || (goLetter.equals("B") && catalystInstances.size() == 0)) {
+                    if (goLetter.equals("C") || (goLetter.equals("P") && catalystInstances.size() == 0)) {
                         Set<GKInstance> proteins = findProteins(reactionInst);
                         processProteins(goLetter, proteins, reactionInst, null);
                     } else {
                         for (GKInstance catalystInst : catalystInstances) {
                             if (validCatalyst(catalystInst, goLetter)) {
-
+                                Set<GKInstance> proteins = new HashSet<>();
                                 if (goLetter.equals("F")) {
                                     GKInstance activeUnitInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit);
                                     GKInstance entityInst = activeUnitInst != null ? activeUnitInst : (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
-                                    Set<GKInstance> proteins = getMolecularFunctionProteins(entityInst);
-                                    processProteins(goLetter, proteins, reactionInst, catalystInst);
-                                } else {
-                                    //TODO
+                                    proteins = getMolecularFunctionProteins(entityInst);
+                                } else if (goLetter.equals("P")) {
+                                    proteins = getBiologicalProcessProteins((GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity));
                                 }
+                                processProteins(goLetter, proteins, reactionInst, catalystInst);
                             }
                         }
                     }
                 }
             }
         }
+
+        List<String> sortedGoaLines = new ArrayList<>(goaLines);
+        Collections.sort(sortedGoaLines);
+        BufferedWriter br = new BufferedWriter((new FileWriter("gene_association.reactome")));
+        br.write("!gaf-version: 2.1\n");
+        for (String goaLine : sortedGoaLines) {
+            br.append(goaLine + "\n");
+        }
+        br.close();
+    }
+
+    private static Set<GKInstance> getBiologicalProcessProteins(GKInstance physicalEntityInst) throws Exception {
+        Set<GKInstance> physicalEntityInstances = new HashSet<>();
+        if (multiInstancePhysicalEntity(physicalEntityInst.getSchemClass())) {
+            physicalEntityInstances.addAll(getMultiInstanceSubInstances(physicalEntityInst));
+        } else if (physicalEntityInst.getSchemClass().isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
+            physicalEntityInstances.add(physicalEntityInst);
+        }
+        return physicalEntityInstances;
+    }
+
+    private static Set<GKInstance> getMultiInstanceSubInstances(GKInstance physicalEntityInst) throws Exception {
+        SchemaClass physicalEntitySchemaClass = physicalEntityInst.getSchemClass();
+        String subunitType = null;
+        Set<GKInstance> subInstanceProteins = new HashSet<>();
+        if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex)) {
+            subunitType = ReactomeJavaConstants.hasComponent;
+        } else if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer)) {
+            subunitType = ReactomeJavaConstants.repeatedUnit;
+        } else if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet)) {
+            subunitType = ReactomeJavaConstants.hasMember;
+        }
+        for (GKInstance subunitInst : (Collection<GKInstance>) physicalEntityInst.getAttributeValuesList(subunitType)) {
+            subInstanceProteins.addAll(getBiologicalProcessProteins(subunitInst));
+        }
+        return subInstanceProteins;
     }
 
 
@@ -155,9 +194,64 @@ public class Main {
                             goaLines.addAll(getGOMolecularFunctionLine(catalystInst, referenceEntityInst, taxonIdentifier, reactionInst));
                         }
                     }
+
+                    if (goLetter.equals("P")) {
+                        List<Map<String,String>> goBiologicalProcessAccessions = getGOBiologicalProcessAccessions(reactionInst, 0);
+                        if (goBiologicalProcessAccessions != null) {
+                            for (Map<String, String> biologicalProcess : goBiologicalProcessAccessions) {
+                                goaLines.add(getGOBiologicalProcessLine(referenceEntityInst, reactionInst, taxonIdentifier, biologicalProcess));
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private static String getGOBiologicalProcessLine(GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier, Map<String, String> biologicalProcessAccession) throws Exception {
+        List<String> goAnnotationLine = new ArrayList<>();
+        goAnnotationLine.add(uniprotDbString);
+        goAnnotationLine.add(referenceEntityInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
+        goAnnotationLine.add(getSecondaryIdentifier(referenceEntityInst));
+        goAnnotationLine.add("");
+        goAnnotationLine.add(biologicalProcessAccession.get("accession"));
+        goAnnotationLine.add(biologicalProcessAccession.get("event"));
+        goAnnotationLine.add("TAS");
+        goAnnotationLine.add("");
+        goAnnotationLine.add("P");
+        goAnnotationLine.add("");
+        goAnnotationLine.add("");
+        goAnnotationLine.add("protein");
+        goAnnotationLine.add("taxon:" + taxonIdentifier);
+        return String.join("\t", goAnnotationLine);
+
+
+
+    }
+
+    private static List<Map<String, String>> getGOBiologicalProcessAccessions(GKInstance reactionInst, int recursion) throws Exception {
+        List<Map<String, String>> goBiologicalProcessAccessions = new ArrayList<>();
+        if (recursion <= MAX_RECURSION_LEVEL) {
+            Collection<GKInstance> goBiologicalProcessInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess);
+            if (goBiologicalProcessInstances.size() > 0) {
+                for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
+                    Map<String, String> goBiologicalProcessAccession = new HashMap<>();
+                    goBiologicalProcessAccession.put("accession", "GO:" + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
+                    GKInstance eventStableIdentifierInst = (GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
+                    goBiologicalProcessAccession.put("event", "REACTOME:" + eventStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
+                    goBiologicalProcessAccessions.add(goBiologicalProcessAccession);
+                }
+            } else {
+                recursion++;
+                Collection<GKInstance> hasEventReferralInstances = (Collection<GKInstance>) reactionInst.getReferers(ReactomeJavaConstants.hasEvent);
+                if (hasEventReferralInstances != null) {
+                    for (GKInstance hasEventReferralInst : hasEventReferralInstances) {
+                        goBiologicalProcessAccessions.addAll(getGOBiologicalProcessAccessions(hasEventReferralInst, recursion));
+                    }
+                }
+            }
+        }
+        return goBiologicalProcessAccessions;
     }
 
     private static List<String> getGOMolecularFunctionLine(GKInstance catalystInst, GKInstance referenceEntityInst, String taxonIdentifier, GKInstance reactionInst) throws Exception {
