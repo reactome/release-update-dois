@@ -9,10 +9,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.reactome.release.Utilities.appendWithNewLine;
 
 public class EuropePMC {
 	private static final Logger logger = LogManager.getLogger();
@@ -65,7 +67,6 @@ public class EuropePMC {
 	}
 
 	private void writeEuropePMCProfileFile() throws IOException {
-
 		Path europePMCProfileFilePath = getEuropePMCProfileFilePath();
 
 		Files.deleteIfExists(europePMCProfileFilePath);
@@ -73,11 +74,7 @@ public class EuropePMC {
 
 		logger.info("Writing Europe PMC Profile file");
 
-		Files.write(
-			europePMCProfileFilePath,
-			getEuropePMCProfileXML().getBytes(),
-			StandardOpenOption.APPEND
-		);
+		appendWithNewLine(getEuropePMCProfileXML(), europePMCProfileFilePath);
 
 		logger.info("Finished writing Europe PMC Profile file");
 	}
@@ -104,24 +101,13 @@ public class EuropePMC {
 
 		logger.info("Writing Europe PMC Link file");
 
-		Files.write(
-			europePMCLinkFilePath,
-			getXMLDeclaration().concat(System.lineSeparator()).getBytes(),
-			StandardOpenOption.APPEND
-		);
-		Files.write(
-			europePMCLinkFilePath,
-			getOpenRootTag().concat(System.lineSeparator()).getBytes(),
-			StandardOpenOption.APPEND
-		);
+		appendWithNewLine(getXMLDeclaration(), europePMCLinkFilePath);
+		appendWithNewLine(getOpenRootTag(), europePMCLinkFilePath);
+
 		for (EuropePMCLink europePMCLink : fetchEuropePMCLinks(graphDBSession)) {
-			Files.write(
-				europePMCLinkFilePath,
-				europePMCLink.getLinkXML().concat(System.lineSeparator()).getBytes(),
-				StandardOpenOption.APPEND
-			);
+			appendWithNewLine(europePMCLink.getLinkXML(), europePMCLinkFilePath);
 		}
-		Files.write(europePMCLinkFilePath, getCloseRootTag().getBytes(), StandardOpenOption.APPEND);
+		appendWithNewLine(getCloseRootTag(), europePMCLinkFilePath);
 
 		logger.info("Finished writing Europe PMC Link file");
 	}

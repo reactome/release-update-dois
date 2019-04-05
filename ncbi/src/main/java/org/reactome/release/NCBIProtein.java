@@ -8,11 +8,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.reactome.release.Utilities.appendWithNewLine;
 
 public class NCBIProtein {
 	private static final Logger logger = LogManager.getLogger();
@@ -25,17 +26,13 @@ public class NCBIProtein {
 
 		logger.info("Writing NCBI protein file");
 
-		Files.write(
-			ncbiProteinFilePath,
-			getProteinFileHeader().concat(System.lineSeparator()).getBytes(),
-			StandardOpenOption.APPEND
-		);
+		appendWithNewLine(getProteinFileHeader(), ncbiProteinFilePath);
 
 		for (String proteinFileLine : getProteinFileLines(ncbiEntries)) {
-			Files.write(ncbiProteinFilePath, proteinFileLine.getBytes(), StandardOpenOption.APPEND);
+			appendWithNewLine(proteinFileLine, ncbiProteinFilePath);
 		}
 
-		Files.write(ncbiProteinFilePath, getProteinFileFooter().getBytes(), StandardOpenOption.APPEND);
+		appendWithNewLine(getProteinFileFooter(), ncbiProteinFilePath);
 
 		logger.info("Finished writing NCBI protein file");
 	}

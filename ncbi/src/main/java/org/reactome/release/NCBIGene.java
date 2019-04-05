@@ -11,6 +11,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
+import static org.reactome.release.Utilities.appendWithNewLine;
+
 public class NCBIGene {
 	private static final Logger logger = LogManager.getLogger();
 	private static final Logger ncbiGeneLogger = LogManager.getLogger("ncbiGeneLog");
@@ -55,7 +57,7 @@ public class NCBIGene {
 		}
 
 		for (String line : proteinLines) {
-			Files.write(filePath, line.getBytes(), StandardOpenOption.APPEND);
+			appendWithNewLine(line, filePath);
 		}
 
 		logger.info("Finished writing proteins_version file");
@@ -102,16 +104,14 @@ public class NCBIGene {
 
 			logger.info("Generating " + geneXMLFilePath.getFileName());
 
-			Files.write(geneXMLFilePath, NCBIEntry.getXMLHeader().getBytes(), StandardOpenOption.APPEND);
-			Files.write(geneXMLFilePath, NCBIEntry.getOpenRootTag().concat(System.lineSeparator()).getBytes(),
-					StandardOpenOption.APPEND);
+			appendWithNewLine(NCBIEntry.getXMLHeader(), geneXMLFilePath);
+			appendWithNewLine(NCBIEntry.getOpenRootTag(), geneXMLFilePath);
 			for (String ncbiGeneXMLNodeString : ncbiGeneXMLNodeStringsSubSet) {
-				Files.write(geneXMLFilePath, ncbiGeneXMLNodeString.getBytes(), StandardOpenOption.APPEND);
+				appendWithNewLine(ncbiGeneXMLNodeString, geneXMLFilePath);
 			}
 
-			Files.write(geneXMLFilePath, NCBIEntry.getCloseRootTag().getBytes(), StandardOpenOption.APPEND);
+			appendWithNewLine(NCBIEntry.getCloseRootTag(), geneXMLFilePath);
 		}
-
 
 		logger.info("Finished writing gene XML file(s)");
 	}
