@@ -43,7 +43,7 @@ public class Main {
 		);
 
 		// Write NCBI Protein File
-		NCBIProtein.writeNCBIProteinFile(ncbiEntries, outputDir, version);
+		NCBIProtein.getInstance(ncbiEntries, outputDir, version).writeNCBIProteinFile();
 
 		// Write UCSC Entity and Event Files
 		UCSC.getInstance(outputDir, version).writeUCSCFiles(graphDBSession);

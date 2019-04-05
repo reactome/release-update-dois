@@ -18,9 +18,23 @@ import static org.reactome.release.Utilities.appendWithNewLine;
 public class NCBIProtein {
 	private static final Logger logger = LogManager.getLogger();
 
-	public static void writeNCBIProteinFile(List<NCBIEntry> ncbiEntries, String outputDir, int reactomeVersion)
+	private List<NCBIEntry> ncbiEntries;
+	private String outputDir;
+	private int reactomeVersion;
+
+	public static NCBIProtein getInstance(List<NCBIEntry> ncbiEntries, String outputDir, int reactomeVersion) {
+		return new NCBIProtein(ncbiEntries, outputDir, reactomeVersion);
+	}
+
+	private NCBIProtein(List<NCBIEntry> ncbiEntries, String outputDir, int reactomeVersion) {
+		this.ncbiEntries = ncbiEntries;
+		this.outputDir = outputDir;
+		this.reactomeVersion = reactomeVersion;
+	}
+
+	public void writeNCBIProteinFile()
 		throws IOException {
-		Path ncbiProteinFilePath = getNCBIProteinFilePath(outputDir, reactomeVersion);
+		Path ncbiProteinFilePath = getNCBIProteinFilePath();
 		Files.deleteIfExists(ncbiProteinFilePath);
 		Files.createFile(ncbiProteinFilePath);
 
@@ -28,7 +42,7 @@ public class NCBIProtein {
 
 		appendWithNewLine(getProteinFileHeader(), ncbiProteinFilePath);
 
-		for (String proteinFileLine : getProteinFileLines(ncbiEntries)) {
+		for (String proteinFileLine : getProteinFileLines()) {
 			appendWithNewLine(proteinFileLine, ncbiProteinFilePath);
 		}
 
@@ -37,7 +51,7 @@ public class NCBIProtein {
 		logger.info("Finished writing NCBI protein file");
 	}
 
-	private static Set<String> getProteinFileLines(List<NCBIEntry> ncbiEntries) {
+	private Set<String> getProteinFileLines() {
 		return ncbiEntries
 			.stream()
 			.map(NCBIEntry::getUniprotAccession)
@@ -45,11 +59,11 @@ public class NCBIProtein {
 			.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
-	private static Path getNCBIProteinFilePath(String outputDir, int reactomeVersion) {
+	private Path getNCBIProteinFilePath() {
 		return Paths.get(outputDir, "protein_reactome" + reactomeVersion + ".ft");
 	}
 
-	private static String getProteinFileHeader() {
+	private String getProteinFileHeader() {
 		return String.join(System.lineSeparator(),
 			getProteinFileSeparator(),
 			"prid:\t4914",
@@ -61,7 +75,7 @@ public class NCBIProtein {
 		);
 	}
 
-	private static String getProteinFileFooter() {
+	private String getProteinFileFooter() {
 		return String.join(System.lineSeparator(),
 			"base:\t&base;",
 			"rule:\t&lo.pacc;",
@@ -69,7 +83,7 @@ public class NCBIProtein {
 		);
 	}
 
-	private static String getProteinFileSeparator() {
+	private String getProteinFileSeparator() {
 		final int TIMES_TO_REPEAT = 56;
 		return StringUtils.repeat('-', TIMES_TO_REPEAT);
 	}
