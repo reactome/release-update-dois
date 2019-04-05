@@ -35,6 +35,40 @@ public class NCBIEntryTest {
 	}
 
 	@Test
+	public void noNCBIEntriesForEmptyDatabase() {
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+
+		List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneEntries(dummyGraphDBServer.getSession());
+
+		assertThat(ncbiEntries, is(empty()));
+	}
+
+
+	@Test
+	public void retrievesNCBIEntryFromDummyGraphDB() {
+		final long UNIPROT_DB_ID = 69487L;
+		final String UNIPROT_ACCESSION = "P04637";
+		final String UNIPROT_DISPLAY_NAME = "UniProt:P04637 TP53";
+		final String NCBI_GENE_ID = "5339";
+
+		NCBIEntry expectedNCBIEntry = new NCBIEntry(
+			UNIPROT_DB_ID,
+			UNIPROT_ACCESSION,
+			UNIPROT_DISPLAY_NAME,
+			new HashSet<>(Collections.singletonList(NCBI_GENE_ID))
+		);
+
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+		dummyGraphDBServer.populateDummyGraphDB();
+
+		List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneEntries(dummyGraphDBServer.getSession());
+
+		assertThat(ncbiEntries, contains(expectedNCBIEntry));
+	}
+
+	@Test
 	public void sortsByUniProtAccessionAscendingly() {
 		List<NCBIEntry> ncbiEntries = new ArrayList<>();
 		ncbiEntries.add(entry1);
