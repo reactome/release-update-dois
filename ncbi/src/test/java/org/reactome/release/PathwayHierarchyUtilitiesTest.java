@@ -54,6 +54,69 @@ public class PathwayHierarchyUtilitiesTest {
 	@Test
 	public void emptyRLEIdToPathwayIdMapFromEmptyDatabase() {
 		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+
+		Map<Long, Set<Long>> rleIdToPathwayId =
+			PathwayHierarchyUtilities.fetchRLEIdToPathwayId(dummyGraphDBServer.getSession());
+
+		assertThat(rleIdToPathwayId, is(anEmptyMap()));
+	}
+
+	@Test
+	public void retrievesRLEIdToPathwayIdFromDummyGraphDatabase() {
+		final long REACTION_ID = 5693609L;
+		final long PARENT_PATHWAY_ID = 69541L;
+		final long TOP_PARENT_PATHWAY_ID = 1640170L;
+
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+		dummyGraphDBServer.populateDummyGraphDB();
+
+		Map<Long, Set<Long>> rleIdToPathwayId =
+			PathwayHierarchyUtilities.fetchRLEIdToPathwayId(dummyGraphDBServer.getSession());
+		Set<Long> parentPathwayIds = rleIdToPathwayId.get(REACTION_ID);
+
+		assertThat(parentPathwayIds, hasItems(PARENT_PATHWAY_ID, TOP_PARENT_PATHWAY_ID));
+	}
+
+	@Test
+	public void emptyPathwayHierarchyFromEmptyDatabase() {
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+
+		Map<Long, Set<Long>> pathwayHierarchy =
+			PathwayHierarchyUtilities.fetchPathwayHierarchy(dummyGraphDBServer.getSession());
+
+		assertThat(pathwayHierarchy, is(anEmptyMap()));
+	}
+
+	@Test
+	public void retrievesPathwayHierarchyFromDummyGraphDatabase() {
+		final long CHILD_EVENT_ID = 5693609L;
+		final long PARENT_EVENT_ID = 69541L;
+
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+		dummyGraphDBServer.populateDummyGraphDB();
+
+		Map<Long, Set<Long>> pathwayHierarchy =
+			PathwayHierarchyUtilities.fetchPathwayHierarchy(dummyGraphDBServer.getSession());
+		Set<Long> parentPathwayIds = pathwayHierarchy.get(CHILD_EVENT_ID);
+
+		assertThat(parentPathwayIds, contains(Collections.singletonList(PARENT_EVENT_ID)));
+	}
+
+	@Test
+	public void noTopLevelPathwayIdsFromEmptyDatabase() {
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+
+		Set<Long> topLevelPathwayIds =
+			PathwayHierarchyUtilities.getTopLevelPathwayIds(dummyGraphDBServer.getSession());
+
+		assertThat(topLevelPathwayIds, is(empty()));
+	}
+
 	@Test
 	public void retrievesTopLevelPathwayIdsFromDummyGraphDatabase() {
 		final long TOP_LEVEL_PATHWAY_ID = 1640170L;
