@@ -75,5 +75,40 @@ public class UniProtReactomeEntryTest {
 
 		assertThat(thrown.getMessage(), containsString("not a proper UniProt Display Name"));
 	}
+
+
+	@Test
+	public void emptyUniProtToReactomeEventsMapFromEmptyDatabase() {
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+
+		Map<String, Set<ReactomeEvent>> uniProtToReactomeEvents =
+			UniProtReactomeEntry.fetchUniProtAccessionToReactomeEvents(dummyGraphDBServer.getSession());
+
+		assertThat(uniProtToReactomeEvents, is(anEmptyMap()));
+	}
+
+	@Test
+	public void correctUniProtToReactomeEventsMapRetrieved() {
+		final
+
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+		dummyGraphDBServer.populateDummyGraphDB();
+
+		Map<String, Set<ReactomeEvent>> uniProtToReactomeEvents =
+			UniProtReactomeEntry.fetchUniProtAccessionToReactomeEvents(dummyGraphDBServer.getSession());
+
+		assertThat(uniProtToReactomeEvents, aMapWithSize(1));
+
+		Set<ReactomeEvent> eventsAttachedToUniProtInstance = uniProtToReactomeEvents.get("P04637");
+		assertThat(eventsAttachedToUniProtInstance, hasSize(7));
+
+		assertThat(
+			eventsAttachedToUniProtInstance,
+			hasItem(
+				new ReactomeEvent(1640170, "Cell Cycle", "R-HSA-1640170")
+			)
+		);
 	}
 }
