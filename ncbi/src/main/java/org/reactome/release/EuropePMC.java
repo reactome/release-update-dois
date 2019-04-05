@@ -84,9 +84,17 @@ public class EuropePMC {
 			getXMLDeclaration(),
 			"<providers>",
 			indentString("<provider>", 1),
-			indentString("<id>4914</id>",2),
+			indentString("<id>1903</id>",2),
 			indentString("<resourceName>Reactome</resourceName>", 2),
-			indentString("<description>Reactome Pathway Stable Identifiers literature references</description>", 2),
+			indentString(
+				"<description>" +
+					"Reactome is a free, open-source, curated and peer-reviewed pathway database. " +
+					"Our goal is to provide intuitive bioinformatics tools for the visualization, " +
+					"interpretation and analysis of pathway knowledge to support basic research, genome analysis, " +
+					"modeling, systems biology and education." +
+				"</description>",
+				2
+			),
 			indentString("<email>help@reactome.org</email>", 2),
 			indentString("</provider>", 1),
 			"</providers>"
