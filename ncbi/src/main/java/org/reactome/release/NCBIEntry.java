@@ -109,6 +109,11 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return Objects.hash(getUniprotAccession(), getUniprotDisplayName(), getNcbiGeneIds());
 	}
 
+	@Override
+	public String toString() {
+		return this.getUniprotDisplayName() + " with NCBI Gene ids " + this.getNcbiGeneIds();
+	}
+
 	public static String getXMLHeader() {
 		return String.join(System.lineSeparator(),
 			"<?xml version=\"1.0\"?>",
