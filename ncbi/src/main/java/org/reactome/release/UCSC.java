@@ -136,7 +136,7 @@ public class UCSC {
 			" which contains or is an instance of itself.";
 	}
 
-	private Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
+	Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
 		if (ucscUniProtReactomeEntries != null) {
 			return ucscUniProtReactomeEntries;
 		}
