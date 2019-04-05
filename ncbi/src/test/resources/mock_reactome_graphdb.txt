@@ -1,17 +1,29 @@
-CREATE (rgp1:ReferenceGeneProduct { dbId:69487, displayName:"UniProt:P04637 TP53", identifier:"P04637" })
-CREATE (ewas1:EntityWithAccessionedSequence {dbId:69488, displayName:"TP53 [nucleoplasm]", stId:"R-HSA-69488", speciesName:"Homo sapiens"})
-CREATE (c1:Complex {dbId:3209194, displayName:"TP53 Tetramer [nucleoplasm]", stId:"R-HSA-3209194", speciesName:"Homo sapiens"})
-CREATE (r1:Reaction {dbId:5693609, displayName:"ATM phosphorylates TP53 at S15", stId:"R-HSA-5693609", speciesName:"Homo sapiens"})
-CREATE (p1:Pathway {dbId:69541, displayName:"Stabilization of p53", stId:"R-HSA-69541", speciesName:"Homo sapiens"})
-CREATE (p2:Pathway {dbId:69563, displayName:"p53-Dependent G1 DNA Damage Response", stId:"R-HSA-69563", speciesName:"Homo sapiens"})
-CREATE (p3:Pathway {dbId:69580, displayName:"p53-Dependent G1/S DNA damage checkpoint", stId:"R-HSA-69580", speciesName:"Homo sapiens"})
-CREATE (p4:Pathway {dbId:69615, displayName:"G1/S DNA Damage Checkpoints", stId:"R-HSA-69615", speciesName:"Homo sapiens"})
-CREATE (p5:Pathway {dbId:69620, displayName:"Cell Cycle Checkpoints", stId:"R-HSA-69620", speciesName:"Homo sapiens"})
-CREATE (p6:Pathway {dbId:1640170, displayName:"Cell Cycle", stId:"R-HSA-1640170", speciesName:"Homo sapiens"})
-CREATE (lr1:LiteratureReference {dbId:69564, displayName:"Mdm2 promotes the rapid degradation of p53.",
+MERGE (rd1:ReferenceDatabase { dbId:2, displayName:"UniProt" })
+MERGE (rds1:ReferenceDNASequence { dbId:10618550, databaseName:"NCBI Gene", identifier:"5339" })
+MERGE (rgp1:ReferenceGeneProduct { dbId:69487, displayName:"UniProt:P04637 TP53", identifier:"P04637" })
+MERGE (ewas1:EntityWithAccessionedSequence {dbId:69488, displayName:"TP53 [nucleoplasm]", stId:"R-HSA-69488", speciesName:"Homo sapiens"})
+MERGE (c1:Complex {dbId:3209194, displayName:"TP53 Tetramer [nucleoplasm]", stId:"R-HSA-3209194", speciesName:"Homo sapiens"})
+MERGE (r1:Reaction:ReactionLikeEvent:Event {dbId:5693609, displayName:"ATM phosphorylates TP53 at S15",
+stId:"R-HSA-5693609",
+speciesName:"Homo sapiens"})
+MERGE (p1:Pathway:Event {dbId:69541, displayName:"Stabilization of p53", stId:"R-HSA-69541", speciesName:"Homo
+sapiens"})
+MERGE (p2:Pathway:Event {dbId:69563, displayName:"p53-Dependent G1 DNA Damage Response", stId:"R-HSA-69563",
+speciesName:"Homo sapiens"})
+MERGE (p3:Pathway:Event {dbId:69580, displayName:"p53-Dependent G1/S DNA damage checkpoint", stId:"R-HSA-69580",
+speciesName:"Homo sapiens"})
+MERGE (p4:Pathway:Event {dbId:69615, displayName:"G1/S DNA Damage Checkpoints", stId:"R-HSA-69615", speciesName:"Homo
+sapiens"})
+MERGE (p5:Pathway:Event {dbId:69620, displayName:"Cell Cycle Checkpoints", stId:"R-HSA-69620", speciesName:"Homo
+sapiens"})
+MERGE (p6:Pathway:Event {dbId:1640170, displayName:"Cell Cycle", stId:"R-HSA-1640170", speciesName:"Homo sapiens"})
+MERGE (lr1:LiteratureReference {dbId:69564, displayName:"Mdm2 promotes the rapid degradation of p53.",
 pubMedIdentifier:9153395})
-CREATE (p2)-[:literatureReference]->(lr1)
-CREATE (p6)-[:hasEvent]->(p5)-[:hasEvent]->(p4)-[:hasEvent]->(p3)-[:hasEvent]->(p2)-[:hasEvent]->(p1)-[:hasEvent]->(r1)
-CREATE (r1)-[:input]->(c1)
-CREATE (c1)-[:hasComponent]->(ewas1)
-CREATE (ewas1)-[:referenceEntity]->(rgp1)
+MERGE (p2)-[:literatureReference]->(lr1)
+MERGE (p6)-[:hasEvent]->(p5)-[:hasEvent]->(p4)-[:hasEvent]->(p3)-[:hasEvent]->(p2)-[:hasEvent]->(p1)-[:hasEvent]->(r1)
+MERGE (r1)-[:input]->(c1)
+MERGE (c1)-[:hasComponent]->(ewas1)
+MERGE (ewas1)-[:referenceEntity]->(rgp1)
+MERGE (rgp1)-[:referenceGene]->(rds1)
+MERGE (rgp1)-[:referenceDatabase]->(rd1)
+
