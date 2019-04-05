@@ -3,13 +3,10 @@ package org.reactome.release;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,7 +28,10 @@ public class UniProtReactomeEntryTest {
 
 	@Test
 	public void differentUniProtObjectsWithDifferentValuesNotEqual() {
-		assertNotEquals(uniProtReactomeEntry, UniProtReactomeEntry.get(4L, "Q54321", "UniProt:another test UniProt"));
+		assertThat(
+			uniProtReactomeEntry,
+			is(not(equalTo(UniProtReactomeEntry.get(4L, "Q54321", "UniProt:another test UniProt"))))
+		);
 	}
 
 	@Test
@@ -50,6 +50,7 @@ public class UniProtReactomeEntryTest {
 	public void tenCharacterAccessionIsAccepted() {
 		final String ACCESSION = "P123456789";
 		UniProtReactomeEntry uniprot = UniProtReactomeEntry.get(6L, ACCESSION, "UniProt:test");
+
 		assertThat(uniprot.getAccession() , equalTo(ACCESSION));
 	}
 
@@ -61,7 +62,7 @@ public class UniProtReactomeEntryTest {
 			"Expected call to 'UniProtReactomeEntry.get' to throw due to improper UniProt accession, but it didn't"
 		);
 
-		assertTrue(thrown.getMessage().contains("not a proper UniProt Accession"));
+		assertThat(thrown.getMessage(), containsString("not a proper UniProt Accession"));
 	}
 
 	@Test
@@ -72,6 +73,7 @@ public class UniProtReactomeEntryTest {
 			"Expected call to 'UniProtReactomeEntry.get' to throw due to improper UniProt display name, but it didn't"
 		);
 
-		assertTrue(thrown.getMessage().contains("not a proper UniProt Display Name"));
+		assertThat(thrown.getMessage(), containsString("not a proper UniProt Display Name"));
+	}
 	}
 }

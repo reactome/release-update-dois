@@ -5,7 +5,7 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 
 public class NCBIEntryTest {
@@ -47,11 +47,11 @@ public class NCBIEntryTest {
 
 	@Test
 	public void getEventLinkXML() {
-		final String ncbiGeneId = "12345";
+		final String NCBI_GENE_ID = "12345";
 
-		String eventLinkXML = entry1.getEventLinkXML(ncbiGeneId, event);
+		String eventLinkXML = entry1.getEventLinkXML(NCBI_GENE_ID, event);
 
-		assertThat(eventLinkXML, containsString("<ObjId>" + ncbiGeneId + "</ObjId>"));
+		assertThat(eventLinkXML, containsString("<ObjId>" + NCBI_GENE_ID + "</ObjId>"));
 		assertThat(eventLinkXML, containsString("<Base>&event.base.url;</Base>"));
 		assertThat(eventLinkXML, containsString("<Rule>" + eventStId + "</Rule>"));
 		assertThat(eventLinkXML, containsString("<UrlName>Reactome Event:" + eventName));
@@ -59,11 +59,11 @@ public class NCBIEntryTest {
 
 	@Test
 	public void getEntityLinkXML() {
-		final String ncbiGeneId = "12345";
+		final String NCBI_GENE_ID = "12345";
 
-		String entityLinkXML = entry1.getEntityLinkXML(ncbiGeneId);
+		String entityLinkXML = entry1.getEntityLinkXML(NCBI_GENE_ID);
 
-		assertThat(entityLinkXML, containsString("<ObjId>" + ncbiGeneId + "</ObjId>"));
+		assertThat(entityLinkXML, containsString("<ObjId>" + NCBI_GENE_ID + "</ObjId>"));
 		assertThat(entityLinkXML, containsString("<Base>&entity.base.url;</Base>"));
 		assertThat(entityLinkXML, containsString("<Rule>" + uniprotAccessions[0] + "</Rule>"));
 		assertThat(entityLinkXML, containsString("<UrlName>Reactome Entity:" + uniprotAccessions[0]));

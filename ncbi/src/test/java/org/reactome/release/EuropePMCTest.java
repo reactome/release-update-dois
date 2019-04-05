@@ -1,54 +1,38 @@
 package org.reactome.release;
 
 import org.junit.jupiter.api.*;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.harness.ServerControls;
-import org.neo4j.harness.TestServerBuilders;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EuropePMCTest {
-	private ServerControls embeddedDatabaseServer;
-	private Session session;
-
-	@BeforeEach
-	void initializeNeo4j() {
-		this.embeddedDatabaseServer = TestServerBuilders
-			.newInProcessBuilder()
-			.newServer();
-
-		this.session = GraphDatabase.driver(embeddedDatabaseServer.boltURI()).session();
-	}
 
 	@Test
 	public void emptySetOfEuropePMCLinksFromEmptyDatabase() {
-		Set<EuropePMC.EuropePMCLink> europePMCLinks = EuropePMC.fetchEuropePMCLinks(session);
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+
+		Set<EuropePMC.EuropePMCLink> europePMCLinks = EuropePMC.fetchEuropePMCLinks(dummyGraphDBServer.getSession());
 
 		assertThat(europePMCLinks, is(empty()));
 	}
 
 	@Test
 	public void singleEuropePMCLinkFromMockGraphDB() {
-		populateMockGraphDB(session);
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+		dummyGraphDBServer.populateDummyGraphDB();
+
 		EuropePMC.EuropePMCLink expectedEuropePMCLink = new EuropePMC.EuropePMCLink(
 			"p53-Dependent G1 DNA Damage Response",
 			"R-HSA-69563",
 			"9153395"
 		);
 
-		Set<EuropePMC.EuropePMCLink> europePMCLinks = EuropePMC.fetchEuropePMCLinks(session);
+		Set<EuropePMC.EuropePMCLink> europePMCLinks = EuropePMC.fetchEuropePMCLinks(dummyGraphDBServer.getSession());
 
 		assertThat(europePMCLinks, contains(expectedEuropePMCLink));
 	}
@@ -81,26 +65,15 @@ public class EuropePMCTest {
 		assertThat(thrown.getMessage(), containsString("is not numeric"));
 	}
 
-	private void populateMockGraphDB(Session session) {
-		List<String> cypherStatements = new ArrayList<>();
+	@Test
+	public void identicalObjectsAreEqual() {
+		final String DISPLAY_NAME = "Pathway name";
+		final String STABLE_ID = "R-HSA-12345";
+		final String PUBMED_ID = "7654321";
 
-		try {
-			cypherStatements =
-				Files.readAllLines(Paths.get(
-					Objects.requireNonNull(
-						getClass()
-						.getClassLoader()
-						.getResource("mock_reactome_graphdb.txt")
-					)
-					.getPath()
-				));
-		} catch (IOException e) {
-			fail();
-		}
+		EuropePMC.EuropePMCLink europePMCLink1 = new EuropePMC.EuropePMCLink(DISPLAY_NAME, STABLE_ID, PUBMED_ID);
+		EuropePMC.EuropePMCLink europePMCLink2 = new EuropePMC.EuropePMCLink(DISPLAY_NAME, STABLE_ID, PUBMED_ID);
 
-		StringBuilder query = new StringBuilder();
-		cypherStatements.forEach(line -> query.append(line).append(System.lineSeparator()));
-
-		session.run(query.toString());
+		assertThat(europePMCLink1, equalTo(europePMCLink2));
 	}
 }

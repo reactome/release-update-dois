@@ -1,37 +1,24 @@
 package org.reactome.release;
 
 import org.junit.jupiter.api.*;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.neo4j.driver.v1.Record;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Value;
 
 import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
 
 public class PathwayHierarchyUtilitiesTest {
-	@Mock private Session graphDBSession;
-	@Mock private StatementResult statementResult;
-	@Mock private Record record;
-	@Mock private Value value;
+
 
 	@Test
 	public void findTopLevelPathwayIdsWithGrandParentPathways() {
-		long pathwayId = 1L;
+		final long PATHWAY_ID = 1L;
 		Map<Long, Set<Long>> pathwayHierarchy = new HashMap<>();
 		pathwayHierarchy.put(1L, new HashSet<>(Arrays.asList(2L, 3L)));
 		pathwayHierarchy.put(2L, new HashSet<>(Arrays.asList(4L, 5L)));
 
-		Set<Long> topLevelPathwayIds = PathwayHierarchyUtilities.findTopLevelPathwayIds(pathwayId, pathwayHierarchy);
+		Set<Long> topLevelPathwayIds = PathwayHierarchyUtilities.findTopLevelPathwayIds(PATHWAY_ID, pathwayHierarchy);
 
 		// The top level pathways for id of "1" should be "3" (parent pathway) and
 		// "4" and "5" (grandparent pathways through intermediate parent pathway "2")
@@ -40,58 +27,44 @@ public class PathwayHierarchyUtilitiesTest {
 
 	@Test
 	public void findTopLevelPathwayIdsWithNoParents() {
-		long pathwayId = 1L;
+		final long PATHWAY_ID = 1L;
 		Map<Long, Set<Long>> pathwayHierarchy = new HashMap<>();
-		pathwayHierarchy.put(1L, new HashSet<>());
+		pathwayHierarchy.put(PATHWAY_ID, new HashSet<>());
 
-		Set<Long> topLevelPathwayIds = PathwayHierarchyUtilities.findTopLevelPathwayIds(pathwayId, pathwayHierarchy);
+		Set<Long> topLevelPathwayIds = PathwayHierarchyUtilities.findTopLevelPathwayIds(PATHWAY_ID, pathwayHierarchy);
 
 		// If the pathway has no parents in the pathway hierarchy, it is a top level pathway
-		assertThat(topLevelPathwayIds, is(new HashSet<>(Collections.singletonList(1L))));
+		assertThat(topLevelPathwayIds, is(new HashSet<>(Collections.singletonList(PATHWAY_ID))));
 	}
 
 	@Test
 	public void findTopLevelPathwayIdsWithEmptyPathwayHierarchy() throws IllegalStateException {
-		long pathwayId = 1L;
+		final long PATHWAY_ID = 1L;
 		Map<Long, Set<Long>> pathwayHierarchy = new HashMap<>();
 
 		IllegalStateException thrown = assertThrows(
 			IllegalStateException.class,
-			() -> PathwayHierarchyUtilities.findTopLevelPathwayIds(pathwayId, pathwayHierarchy),
+			() -> PathwayHierarchyUtilities.findTopLevelPathwayIds(PATHWAY_ID, pathwayHierarchy),
 			"Expected call to 'findTopLevelPathwayIds' to throw due to empty pathway hierarchy, but it didn't"
 		);
 
-		assertTrue(thrown.getMessage().contains("Hierarchy has no values"));
+		assertThat(thrown.getMessage(), containsString("Hierarchy has no values"));
 	}
 
 	@Test
-	public void fetchPathwayHierarchy() {
-		MockitoAnnotations.initMocks(this);
+	public void emptyRLEIdToPathwayIdMapFromEmptyDatabase() {
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+	@Test
+	public void retrievesTopLevelPathwayIdsFromDummyGraphDatabase() {
+		final long TOP_LEVEL_PATHWAY_ID = 1640170L;
 
-		when(graphDBSession.run(any(String.class))).thenReturn(statementResult);
-		when(statementResult.hasNext()).thenReturn(
-			true, true,
-			true, true,
-			true, true,
-			true, true,
-			false);
-		when(statementResult.next()).thenReturn(record);
-		when(record.get(any(String.class))).thenReturn(value);
-		when(value.asLong()).thenReturn(
-			1L, 2L,
-			1L, 3L,
-			2L, 4L,
-			3L, 5L
-		);
+		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
+		dummyGraphDBServer.initializeNeo4j();
+		dummyGraphDBServer.populateDummyGraphDB();
 
-		Map<Long, Set<Long>> pathwayHierarchy = PathwayHierarchyUtilities.fetchPathwayHierarchy(graphDBSession);
+		Set<Long> topLevelPathwayIds =
+			PathwayHierarchyUtilities.getTopLevelPathwayIds(dummyGraphDBServer.getSession());
 
-		assertThat(pathwayHierarchy.get(1L), hasSize(2));
-		assertThat(pathwayHierarchy.get(1L), contains(2L, 3L));
-		assertThat(pathwayHierarchy.get(2L), hasSize(1));
-		assertThat(pathwayHierarchy.get(2L), contains(4L));
-		assertThat(pathwayHierarchy.get(3L), hasSize(1));
-		assertThat(pathwayHierarchy.get(3L), contains(5L));
-		assertThat(pathwayHierarchy.get(4L), nullValue());
+		assertThat(topLevelPathwayIds, contains(Collections.singletonList(TOP_LEVEL_PATHWAY_ID)));
 	}
 }

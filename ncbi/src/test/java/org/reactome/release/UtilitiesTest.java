@@ -28,6 +28,7 @@ public class UtilitiesTest {
 		Set<String> stringSet = getDummyStringSet();
 
 		List<Set<String>> listOfStringSubSets = Utilities.splitSet(stringSet, 3);
+
 		assertThat(listOfStringSubSets, hasSize(3));
 		assertThat(listOfStringSubSets.get(0), hasSize(3));
 		assertThat(listOfStringSubSets.get(1), hasSize(3));

@@ -10,8 +10,11 @@ public class ReactomeEventTest {
 
 	@Test
 	public void reactomeEventNameCorrection() {
+		final long DUMMY_DB_ID = 1L;
+		final String DUMMY_STABLE_ID = "R-HSA-123456";
+
 		ReactomeEvent reactomeEvent =
-			new ReactomeEvent(1L, "something to do with sugars", "R-HSA-123456");
+			new ReactomeEvent(DUMMY_DB_ID, "something to do with sugars", DUMMY_STABLE_ID);
 
 		assertThat(reactomeEvent.getName(), equalTo("Metabolism of sugars"));
 	}
