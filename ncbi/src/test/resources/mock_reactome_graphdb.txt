@@ -16,7 +16,8 @@ MERGE (p4:Pathway:Event {dbId:69615, displayName:"G1/S DNA Damage Checkpoints", 
 sapiens"})
 MERGE (p5:Pathway:Event {dbId:69620, displayName:"Cell Cycle Checkpoints", stId:"R-HSA-69620", speciesName:"Homo
 sapiens"})
-MERGE (p6:Pathway:Event {dbId:1640170, displayName:"Cell Cycle", stId:"R-HSA-1640170", speciesName:"Homo sapiens"})
+MERGE (p6:Pathway:Event:TopLevelPathway {dbId:1640170, displayName:"Cell Cycle", stId:"R-HSA-1640170", speciesName:"Homo
+ sapiens"})
 MERGE (lr1:LiteratureReference {dbId:69564, displayName:"Mdm2 promotes the rapid degradation of p53.",
 pubMedIdentifier:9153395})
 MERGE (p2)-[:literatureReference]->(lr1)
