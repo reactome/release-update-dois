@@ -22,7 +22,7 @@ public class PathwayHierarchyUtilitiesTest {
 
 		// The top level pathways for id of "1" should be "3" (parent pathway) and
 		// "4" and "5" (grandparent pathways through intermediate parent pathway "2")
-		assertThat(topLevelPathwayIds, is(new HashSet<>(Arrays.asList(3L, 4L, 5L))));
+		assertThat(topLevelPathwayIds, contains(3L, 4L, 5L));
 	}
 
 	@Test
@@ -34,7 +34,7 @@ public class PathwayHierarchyUtilitiesTest {
 		Set<Long> topLevelPathwayIds = PathwayHierarchyUtilities.findTopLevelPathwayIds(PATHWAY_ID, pathwayHierarchy);
 
 		// If the pathway has no parents in the pathway hierarchy, it is a top level pathway
-		assertThat(topLevelPathwayIds, is(new HashSet<>(Collections.singletonList(PATHWAY_ID))));
+		assertThat(topLevelPathwayIds, contains(PATHWAY_ID));
 	}
 
 	@Test
