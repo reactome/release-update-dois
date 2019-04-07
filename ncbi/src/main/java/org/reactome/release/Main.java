@@ -13,6 +13,28 @@ import java.util.*;
 public class Main {
 	private static final Logger logger = LogManager.getLogger();
 
+	/**
+	 * Queries the Reactome Neo4J Graph Database for the current release version and
+	 * generates export files.  The files generated are:
+	 * NCBI Gene XML
+	 *     "Link" XML nodes describing NCBI Gene Identifier relationships to either UniProt entries or Top Level
+	 *     Pathways in Reactome
+	 * NCBI Gene Protein File (not uploaded to NCBI)
+	 *     Tab delimited file of UniProt accession to NCBI Gene identifiers in Reactome
+	 * NCBI Protein File
+	 *     Entries of all UniProt accessions in Reactome associated with an NCBI Gene Identifier (file only contains
+	 *     UniProt accessions)
+	 * UCSC Entity File
+	 *     Entires of all human, rat, and mouse UniProt accessions in Reactome
+	 * UCSC Entity File
+	 *     UniProt accessions (human, rat, and mouse) mapped to the events in which they participate in Reactome
+	 * Europe PMC Profile File
+	 *     Short XML file identifying Reactome as a data provider to Europe PMC
+	 * Europe PMC Link File
+	 *     "Link" XML nodes describing Reactome Pathways connected to PubMed literature references
+	 * @param args Command line arguments for the post-release data files export
+	 * @throws IOException Thrown if unable to create output directory or write files
+	 */
 	public static void main( String[] args ) throws IOException {
 		logger.info("Beginning NCBI and UCSC step...");
 
@@ -56,6 +78,11 @@ public class Main {
 		System.exit(0);
 	}
 
+	/**
+	 * Parses connections options and returns the a Neo4J Driver object for the graph database
+	 * @param props Properties object with graph database connection information
+	 * @return Driver for the graph database being run by the Neo4J server
+	 */
 	private static Driver getGraphDBDriver(Properties props) {
 		String host = props.getProperty("host","localhost");
 		String port = props.getProperty("port", Integer.toString(7687));
