@@ -29,7 +29,6 @@ public class DummyGraphDBServer {
 
 	public void initializeNeo4j() {
 		this.embeddedDatabaseServer = TestServerBuilders.newInProcessBuilder().newServer();
-
 		this.session = GraphDatabase.driver(embeddedDatabaseServer.boltURI()).session();
 	}
 
@@ -53,7 +52,7 @@ public class DummyGraphDBServer {
 		StringBuilder query = new StringBuilder();
 		cypherStatements.forEach(line -> query.append(line).append(System.lineSeparator()));
 
-		session.run(query.toString());
+		getSession().run(query.toString());
 	}
 
 	public Session getSession() {
