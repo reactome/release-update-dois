@@ -12,33 +12,54 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class UniProtReactomeEntryTest {
 	private UniProtReactomeEntry uniProtReactomeEntry;
+	private final String DUMMY_UNIPROT_ACCESSION = "O65432";
+	private final String DUMMY_UNIPROT_DISPLAY_NAME = "UniProt:another test UniProt";
 
 	@BeforeEach
 	public void createUniProtReactomeEntry() {
-		uniProtReactomeEntry = UniProtReactomeEntry.get(3L, "P12345", "UniProt:test UniProt");
+		final long UNIPROT_DB_ID = 3L;
+		final String UNIPROT_ACCESSION = "P12345";
+		final String UNIPROT_DISPLAY_NAME = "UniProt:" + UNIPROT_ACCESSION;
+
+		uniProtReactomeEntry = UniProtReactomeEntry.get(UNIPROT_DB_ID, UNIPROT_ACCESSION, UNIPROT_DISPLAY_NAME);
 	}
 
 	@Test
 	public void sameUniProtObjectIsEqual() {
 		assertThat(
 			uniProtReactomeEntry,
-			sameInstance(UniProtReactomeEntry.get(3L, "P12345", "UniProt:test UniProt"))
+			sameInstance(
+				UniProtReactomeEntry.get(
+					uniProtReactomeEntry.getDbId(),
+					uniProtReactomeEntry.getAccession(),
+					uniProtReactomeEntry.getDisplayName()
+				)
+			)
 		);
 	}
 
 	@Test
 	public void differentUniProtObjectsWithDifferentValuesNotEqual() {
+		final String DIFFERENT_ACCESSION = "Q54321";
+		final String DIFFERENT_DISPLAY_NAME = "UniProt:" + DIFFERENT_ACCESSION;
+
 		assertThat(
 			uniProtReactomeEntry,
-			is(not(equalTo(UniProtReactomeEntry.get(4L, "Q54321", "UniProt:another test UniProt"))))
+			is(not(equalTo(UniProtReactomeEntry.get(4L, DIFFERENT_ACCESSION, DIFFERENT_DISPLAY_NAME))))
 		);
 	}
 
 	@Test
 	public void sortsByUniProtAccessionAscendingly() {
+		final String ACCESSION_THAT_SHOULD_BE_FIRST = "A01234";
+
 		List<UniProtReactomeEntry> uniProtReactomeEntries = new ArrayList<>();
 		uniProtReactomeEntries.add(uniProtReactomeEntry);
-		UniProtReactomeEntry uniProtReactomeEntry2 = UniProtReactomeEntry.get(5L, "A01234", "UniProt:A01234");
+		UniProtReactomeEntry uniProtReactomeEntry2 = UniProtReactomeEntry.get(
+			5L,
+			ACCESSION_THAT_SHOULD_BE_FIRST,
+			DUMMY_UNIPROT_DISPLAY_NAME
+		);
 		uniProtReactomeEntries.add(uniProtReactomeEntry2);
 
 		Collections.sort(uniProtReactomeEntries);
@@ -49,16 +70,18 @@ public class UniProtReactomeEntryTest {
 	@Test
 	public void tenCharacterAccessionIsAccepted() {
 		final String ACCESSION = "P123456789";
-		UniProtReactomeEntry uniprot = UniProtReactomeEntry.get(6L, ACCESSION, "UniProt:test");
+		UniProtReactomeEntry uniprot = UniProtReactomeEntry.get(6L, ACCESSION, DUMMY_UNIPROT_DISPLAY_NAME);
 
 		assertThat(uniprot.getAccession() , equalTo(ACCESSION));
 	}
 
 	@Test
 	public void incorrectAccessionThrowsIllegalArgumentException() {
+		final String INCORRECT_ACCESSION = "P123456"; // 7 character accession is illegal in UniProt
+
 		IllegalArgumentException thrown = assertThrows(
 			IllegalArgumentException.class,
-			() -> UniProtReactomeEntry.get(7L, "P123456", "UniProt:testing"),
+			() -> UniProtReactomeEntry.get(7L, INCORRECT_ACCESSION, DUMMY_UNIPROT_DISPLAY_NAME),
 			"Expected call to 'UniProtReactomeEntry.get' to throw due to improper UniProt accession, but it didn't"
 		);
 
@@ -67,9 +90,11 @@ public class UniProtReactomeEntryTest {
 
 	@Test
 	public void incorrectDisplayNameThrowsIllegalArgumentException() {
+		final String INCORRECT_DISPLAY_NAME = "testing"; // Display name must begin with "UniProt:"
+
 		IllegalArgumentException thrown = assertThrows(
 			IllegalArgumentException.class,
-			() -> UniProtReactomeEntry.get(8L, "P12345", "testing"),
+			() -> UniProtReactomeEntry.get(8L, DUMMY_UNIPROT_ACCESSION, INCORRECT_DISPLAY_NAME),
 			"Expected call to 'UniProtReactomeEntry.get' to throw due to improper UniProt display name, but it didn't"
 		);
 
@@ -90,7 +115,9 @@ public class UniProtReactomeEntryTest {
 
 	@Test
 	public void correctUniProtToReactomeEventsMapRetrieved() {
-		final
+		final long EVENT_DB_ID = 1640170L;
+		final String EVENT_DISPLAY_NAME = "Cell Cycle";
+		final String EVENT_STABLE_ID = "R-HSA-1640170";
 
 		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
 		dummyGraphDBServer.initializeNeo4j();
@@ -104,11 +131,7 @@ public class UniProtReactomeEntryTest {
 		Set<ReactomeEvent> eventsAttachedToUniProtInstance = uniProtToReactomeEvents.get("P04637");
 		assertThat(eventsAttachedToUniProtInstance, hasSize(7));
 
-		assertThat(
-			eventsAttachedToUniProtInstance,
-			hasItem(
-				new ReactomeEvent(1640170, "Cell Cycle", "R-HSA-1640170")
-			)
-		);
+		ReactomeEvent expectedEvent = new ReactomeEvent(EVENT_DB_ID, EVENT_DISPLAY_NAME, EVENT_STABLE_ID);
+		assertThat(eventsAttachedToUniProtInstance, hasItem(expectedEvent));
 	}
 }
