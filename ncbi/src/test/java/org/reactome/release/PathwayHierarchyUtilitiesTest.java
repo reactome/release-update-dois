@@ -92,8 +92,8 @@ public class PathwayHierarchyUtilitiesTest {
 
 	@Test
 	public void retrievesPathwayHierarchyFromDummyGraphDatabase() {
-		final long CHILD_EVENT_ID = 5693609L;
-		final long PARENT_EVENT_ID = 69541L;
+		final long CHILD_PATHWAY_ID = 69620L;
+		final long PARENT_PATHWAY_ID = 1640170L;
 
 		DummyGraphDBServer dummyGraphDBServer = DummyGraphDBServer.getInstance();
 		dummyGraphDBServer.initializeNeo4j();
@@ -101,9 +101,9 @@ public class PathwayHierarchyUtilitiesTest {
 
 		Map<Long, Set<Long>> pathwayHierarchy =
 			PathwayHierarchyUtilities.fetchPathwayHierarchy(dummyGraphDBServer.getSession());
-		Set<Long> parentPathwayIds = pathwayHierarchy.get(CHILD_EVENT_ID);
+		Set<Long> parentPathwayIds = pathwayHierarchy.get(CHILD_PATHWAY_ID);
 
-		assertThat(parentPathwayIds, contains(Collections.singletonList(PARENT_EVENT_ID)));
+		assertThat(parentPathwayIds, contains(PARENT_PATHWAY_ID));
 	}
 
 	@Test
