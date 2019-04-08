@@ -26,6 +26,7 @@ import static org.reactome.release.Utilities.appendWithNewLine;
 public class EuropePMC {
 	private static final Logger logger = LogManager.getLogger();
 	private static final String rootTag = "links";
+	private static final int reactomeProviderID = 1903;
 
 	private String outputDir;
 	private int reactomeVersion;
@@ -115,7 +116,7 @@ public class EuropePMC {
 			getXMLDeclaration(),
 			"<providers>",
 			indentString("<provider>", 1),
-			indentString("<id>1903</id>",2),
+			indentString("<id>" + reactomeProviderID + "</id>",2),
 			indentString("<resourceName>Reactome</resourceName>", 2),
 			indentString(
 				"<description>" +
@@ -213,7 +214,6 @@ public class EuropePMC {
 	 * @author jweiser
 	 */
 	public static class EuropePMCLink {
-		private static final int reactomeProviderID = 4914;
 		private String pathwayDisplayName;
 		private String pathwayStableId;
 		private String pubMedIdentifier;
