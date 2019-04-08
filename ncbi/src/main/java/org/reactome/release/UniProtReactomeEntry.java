@@ -13,6 +13,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * Class for describing UniProt entries in Reactome and their associated Reactome Events (i.e. Pathways and Reaction
+ * Like Events).
+ * @author jweiser
+ */
 public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 	private static Map<Long, UniProtReactomeEntry> uniProtReactomeEntryMap = new HashMap<>();
 
@@ -29,26 +34,49 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 	private Set<ReactomeEvent> reactomeEvents;
 	private Set<ReactomeEvent> topLevelPathways;
 
-	public static UniProtReactomeEntry get(long dbId, String uniprotAccession, String uniprotDisplayName) {
+	/**
+	 * Creates/retrieves UniProtReactomeEntry object
+	 * @param uniprotDbId UniProt instance database identifier in Reactome
+	 * @param uniprotAccession UniProt instance accession (e.g. "P01234")
+	 * @param uniprotDisplayName UniProt instance display name in Reactome (e.g. "UniProt:P01234 GENE_NAME")
+	 * @return UniProtReactomeEntry describing UniProt instance
+	 */
+	public static UniProtReactomeEntry get(long uniprotDbId, String uniprotAccession, String uniprotDisplayName) {
 		UniProtReactomeEntry uniProtReactomeEntry = uniProtReactomeEntryMap.computeIfAbsent(
-			dbId, k -> new UniProtReactomeEntry(dbId, uniprotAccession, uniprotDisplayName)
+			uniprotDbId, k -> new UniProtReactomeEntry(uniprotDbId, uniprotAccession, uniprotDisplayName)
 		);
 
 		if (accessionOrNameMismatched(uniProtReactomeEntry, uniprotAccession, uniprotDisplayName)) {
 			throw new IllegalArgumentException(getExceptionMessage(
-				uniProtReactomeEntry, dbId, uniprotAccession, uniprotDisplayName)
+				uniProtReactomeEntry, uniprotDbId, uniprotAccession, uniprotDisplayName)
 			);
 		}
 
 		return uniProtReactomeEntry;
 	}
 
+	/**
+	 * Checks if the UniProt accession or display name of the UniProtReactomeEntry does not match the expected values
+	 * @param uniProtReactomeEntry UniProtReactomeEntry to check for mis-matches
+	 * @param uniprotAccession Expected UniProt accession
+	 * @param uniprotDisplayName Expected UniProt display name
+	 * @return <code>true</code> if either the accession or display name of the UniProtReactomeEntry object does not
+	 * match the expected values and <code>false</code> otherwise
+	 */
 	private static boolean accessionOrNameMismatched(UniProtReactomeEntry uniProtReactomeEntry,
 													 String uniprotAccession, String uniprotDisplayName) {
 		return !uniProtReactomeEntry.getAccession().equals(uniprotAccession) ||
 			   !uniProtReactomeEntry.getDisplayName().equals(uniprotDisplayName);
 	}
 
+	/**
+	 * Generates the exception message for a UniProtReactomeEntry that has unexpected values
+	 * @param uniProtReactomeEntry UniProtReactomeEntry with unexpected values
+	 * @param dbId Expected UniProt instance Reactome database identifier
+	 * @param uniprotAccession Expected UniProt accession
+	 * @param uniprotDisplayName Expected UniProt display name
+	 * @return Exception message for mis-matching values of a UniProtReactomeEntry and other expected values
+	 */
 	private static String getExceptionMessage(UniProtReactomeEntry uniProtReactomeEntry, long dbId,
 											  String uniprotAccession, String uniprotDisplayName) {
 		return String.join(System.lineSeparator(),
@@ -62,12 +90,24 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		);
 	}
 
+	/**
+	 * Creates UniProtReactomeEntry object for dbId, UniProt accession, and UniProt display name
+	 * @param dbId UniProt database identifier in Reactome
+	 * @param accession UniProt accession
+	 * @param displayName UniProt display name
+	 */
 	private UniProtReactomeEntry(long dbId, String accession, String displayName) {
 		setDbId(dbId);
 		setAccession(accession);
 		setDisplayName(displayName);
 	}
 
+	/**
+	 * Retrieves, from the graph database, a Map of UniProt accession to the set of Top Level Pathways in which each
+	 * UniProt accession participates
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Map of UniProt accession to set of Reactome Events representing top level pathways in Reactome
+	 */
 	public static Map<String, Set<ReactomeEvent>> fetchUniProtAccessionToTopLevelPathways(Session graphDBSession) {
 		if (uniprotAccessionToTopLevelPathwaysCache.containsKey(graphDBSession)) {
 			return uniprotAccessionToTopLevelPathwaysCache.get(graphDBSession);
@@ -94,6 +134,12 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		return uniprotAccessionToTopLevelPathways;
 	}
 
+	/**
+	 * Retrieves, from the graph database, a Map of UniProt accession to the set of events (both Pathways and
+	 * Reaction Like Events in which each UniProt accession participates
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Map of UniProt accession to set of Reactome Events in Reactome
+	 */
 	public static Map<String, Set<ReactomeEvent>> fetchUniProtAccessionToReactomeEvents(Session graphDBSession) {
 		if (uniprotAccessionToReactomeEventCache.containsKey(graphDBSession)) {
 			return uniprotAccessionToReactomeEventCache.get(graphDBSession);
@@ -141,6 +187,12 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		return uniprotAccessionToReactomeEvent;
 	}
 
+	/**
+	 * Retrieves, from the graph database, a Map of UniProt accession to the set of identifiers for Reaction Like Events
+	 * in which each UniProt accession participates
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Map of UniProt accession to set of database identifiers for Reaction Like Events in Reactome
+	 */
 	private static Map<String, Set<Long>> fetchUniProtAccessionToRLEId(Session graphDBSession) {
 		if (uniprotAccessionToReactionLikeEventIdCache.containsKey(graphDBSession)) {
 			return uniprotAccessionToReactionLikeEventIdCache.get(graphDBSession);
@@ -176,20 +228,45 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		return uniprotAccessionToReactionLikeEventId;
 	}
 
+	/**
+	 * Retrieves the database identifier in the Reactome database for the UniProt entry represented by the
+	 * UniProtReactomeEntry instance
+	 * @return Database identifier of UniProt entry in Reactome
+	 */
 	public long getDbId() { return this.dbId; }
 
+	/**
+	 * Retrieves the accession for the UniProt entry represented by the UniProtReactomeEntry instance
+	 * @return UniProt accession value
+	 */
 	public String getAccession() {
 		return this.accession;
 	}
 
+	/**
+	 * Retrieves the display name in the Reactome database for the UniProt entry represented by the
+	 * UniProtReactomeEntry instance
+	 * @return Display name of UniProt entry in Reactome
+	 */
 	public String getDisplayName() {
 		return this.displayName;
 	}
 
+	/**
+	 * Sets the UniProt database identifier, from the Reactome database, for the UniProtReactomeEntry instance
+	 * @param dbId Database identifier
+	 */
 	private void setDbId(long dbId) {
 		this.dbId = dbId;
 	}
 
+	/**
+	 * Sets the UniProt accession for the UniProtReactomeEntry instance
+	 * @param accession UniProt accession
+	 * @throws NullPointerException Thrown if the UniProt accession in null
+	 * @throws IllegalArgumentException Thrown if the UniProt accession is not a properly formatted accession (i.e.
+	 * a 6 or 10 character String)
+	 */
 	private void setAccession(String accession) {
 		final List<Integer> ACCEPTED_UNIPROT_ACCESSION_LENGTHS = Arrays.asList(6, 10);
 		if (accession == null) {
@@ -205,6 +282,12 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		this.accession = accession;
 	}
 
+	/**
+	 * Sets the UniProt display name, from the Reactome database, for the UniProtReactomeEntry instance
+	 * @param displayName UniProt display name
+	 * @throws NullPointerException Thrown if the UniProt display name in null
+	 * @throws IllegalArgumentException Thrown if the UniProt display name does not begin with the prefix "UniProt:"
+	 */
 	private void setDisplayName(String displayName) {
 		final String DISPLAY_NAME_PREFIX = "UniProt:";
 
@@ -221,6 +304,12 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		this.displayName = displayName;
 	}
 
+	/**
+	 * Retrieves, from the graph database, the set of events (both Pathways and
+	 * Reaction Like Events in which the UniProtReactomeEntry participates
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Set of Reactome Events in Reactome
+	 */
 	public Set<ReactomeEvent> getEvents(Session graphDBSession) {
 		if (this.reactomeEvents == null) {
 			this.reactomeEvents = fetchUniProtAccessionToReactomeEvents(graphDBSession)
@@ -230,6 +319,12 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		return this.reactomeEvents;
 	}
 
+	/**
+	 * Retrieves, from the graph database, the set of Top Level Pathways in which
+	 * the UniProtReactomeEntry participates
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Set of Reactome Events representing top level pathways in Reactome
+	 */
 	public Set<ReactomeEvent> getTopLevelPathways(Session graphDBSession) {
 		if (this.topLevelPathways == null) {
 			this.topLevelPathways = fetchUniProtAccessionToTopLevelPathways(graphDBSession)
@@ -239,11 +334,22 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 		return this.topLevelPathways;
 	}
 
+	/**
+	 * Compares UniProt accession values of this object and parameter
+	 * @param o UniProtReactomeEntry object to compare
+	 * @return Value of String compare between this UniProt accession and the parameter's UniProt accession
+	 */
 	@Override
 	public int compareTo(@Nonnull UniProtReactomeEntry o) {
 		return this.getAccession().compareTo(o.getAccession());
 	}
 
+	/**
+	 * Checks equality based on object type and value of UniProt db id, accession, and display name
+	 * @param o Object to check for equality with the calling UniProtReactomeEntry.
+	 * @return <code>true</code> if the same object or a UniProtReactomeEntry object with the same UniProt db id,
+	 * accession, and display name.  Returns <code>false</code> otherwise.
+	 */
 	@Override
 	public boolean equals(Object o) {
 		if (o == this) {
@@ -259,11 +365,19 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 			   ((UniProtReactomeEntry) o).getDisplayName().equals(this.getDisplayName());
 	}
 
+	/**
+	 * Retrieves a hash code based on the object's set fields
+	 * @return Hash code of UniProtReactomeEntry object
+	 */
 	@Override
 	public int hashCode() {
 		return Objects.hash(getDbId(), getAccession(), getDisplayName());
 	}
 
+	/**
+	 * Retrieves a String representation of the defining data of the UniProtReactomeEntry object
+	 * @return String representation of UniProtReactomeEntry object
+	 */
 	@Override
 	public String toString() {
 		return "UniProtReactomeEntry: " + System.lineSeparator() +
