@@ -40,7 +40,7 @@ public class Main {
 	 * @throws IOException Thrown if unable to create output directory or write files
 	 */
 	public static void main( String[] args ) throws IOException {
-		logger.info("Beginning NCBI and UCSC step...");
+		logger.info("Beginning NCBI, UCSC, and Europe PMC export step...");
 
 		String pathToResources = args.length > 0 ? args[0] : "ncbi/src/main/resources/sample_config.properties";
 		Properties props = new Properties();
@@ -77,7 +77,7 @@ public class Main {
 		EuropePMC.getInstance(outputDir, version).writeEuropePMCFiles(graphDBSession);
 
 		graphDBSession.close();
-		logger.info("Finished NCBI and UCSC step");
+		logger.info("Finished NCBI, UCSC, and Europe PMC export step");
 
 		System.exit(0);
 	}
