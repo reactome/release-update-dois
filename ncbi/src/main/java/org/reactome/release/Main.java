@@ -10,6 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * Generates post-release export files for NCBI, UCSC and Europe PMC.
+ * @author jweiser
+ */
 public class Main {
 	private static final Logger logger = LogManager.getLogger();
 
