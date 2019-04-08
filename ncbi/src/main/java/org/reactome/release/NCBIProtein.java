@@ -55,7 +55,7 @@ public class NCBIProtein {
 		return ncbiEntries
 			.stream()
 			.map(NCBIEntry::getUniprotAccession)
-			.map(uniprotId -> String.join("\t", "query:", uniprotId, "[pacc]").concat(System.lineSeparator()))
+			.map(uniprotId -> String.join("\t", "query:", uniprotId, "[pacc]"))
 			.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 

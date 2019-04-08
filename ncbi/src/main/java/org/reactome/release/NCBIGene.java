@@ -52,7 +52,7 @@ public class NCBIGene {
 		Set<String> proteinLines = new LinkedHashSet<>();
 		for (NCBIEntry ncbiEntry : ncbiEntries) {
 			for (String ncbiGeneId : ncbiEntry.getNcbiGeneIds()) {
-				proteinLines.add(ncbiEntry.getUniprotAccession() + "\t" + ncbiGeneId + System.lineSeparator());
+				proteinLines.add(ncbiEntry.getUniprotAccession() + "\t" + ncbiGeneId);
 			}
 		}
 
