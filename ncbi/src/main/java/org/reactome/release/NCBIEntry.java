@@ -13,7 +13,6 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 	private static final Logger logger = LogManager.getLogger();
 
 	private static int linkId = 1;
-	private static final String rootTag = "LinkSet";
 
 	private UniProtReactomeEntry uniProtReactomeEntry;
 	private Set<String> ncbiGeneIds;
@@ -114,26 +113,11 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return this.getUniprotDisplayName() + " with NCBI Gene ids " + this.getNcbiGeneIds();
 	}
 
-	public static String getXMLHeader() {
-		return String.join(System.lineSeparator(),
-			"<?xml version=\"1.0\"?>",
-			"<!DOCTYPE LinkSet PUBLIC \"-//NLM//DTD LinkOut 1.0//EN\"",
-			"\"http://www.ncbi.nlm.nih.gov/entrez/linkout/doc/LinkOut.dtd\"",
-			"[",
-			"<!ENTITY entity.base.url \"" + ReactomeConstants.UNIPROT_QUERY_URL + "\">",
-			"<!ENTITY event.base.url \"" + ReactomeConstants.PATHWAY_BROWSER_URL + "\">",
-			"]>"
-		).concat(System.lineSeparator());
-	}
-
-	public static String getOpenRootTag() {
-		return "<" + rootTag + ">";
-	}
-
-	public static String getCloseRootTag() {
-		return "</" + rootTag + ">";
-	}
-
+	/**
+	 * Returns the XML String describing the relationship between the object's UniProt entry and an NCBI Gene
+	 * @param ncbiGene NCBI Gene identifier
+	 * @return XML String for NCBI Gene Entity Link
+	 */
 	public String getEntityLinkXML(String ncbiGene) {
 		return getLinkXML(
 			ncbiGene,

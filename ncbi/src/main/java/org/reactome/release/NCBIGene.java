@@ -17,6 +17,8 @@ public class NCBIGene {
 	private static final Logger logger = LogManager.getLogger();
 	private static final Logger ncbiGeneLogger = LogManager.getLogger("ncbiGeneLog");
 
+	private static final String rootTag = "LinkSet";
+
 	private List<NCBIEntry> ncbiEntries;
 	private String outputDir;
 	private int reactomeVersion;
@@ -64,7 +66,6 @@ public class NCBIGene {
 	}
 
 	public void writeGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles) throws IOException {
-
 		Path geneErrorFilePath = getGeneErrorFilePath();
 		Files.deleteIfExists(geneErrorFilePath);
 		Files.createFile(geneErrorFilePath);
@@ -104,13 +105,13 @@ public class NCBIGene {
 
 			logger.info("Generating " + geneXMLFilePath.getFileName());
 
-			appendWithNewLine(NCBIEntry.getXMLHeader(), geneXMLFilePath);
-			appendWithNewLine(NCBIEntry.getOpenRootTag(), geneXMLFilePath);
+			appendWithNewLine(getXMLHeader(), geneXMLFilePath);
+			appendWithNewLine(getOpenRootTag(), geneXMLFilePath);
 			for (String ncbiGeneXMLNodeString : ncbiGeneXMLNodeStringsSubSet) {
 				appendWithNewLine(ncbiGeneXMLNodeString, geneXMLFilePath);
 			}
 
-			appendWithNewLine(NCBIEntry.getCloseRootTag(), geneXMLFilePath);
+			appendWithNewLine(getCloseRootTag(), geneXMLFilePath);
 		}
 
 		logger.info("Finished writing gene XML file(s)");
@@ -127,5 +128,25 @@ public class NCBIGene {
 
 	private Path getGeneErrorFilePath() {
 		return Paths.get(outputDir, "geneentrez_" + reactomeVersion + ".err");
+	}
+
+	public static String getXMLHeader() {
+		return String.join(System.lineSeparator(),
+						   "<?xml version=\"1.0\"?>",
+						   "<!DOCTYPE LinkSet PUBLIC \"-//NLM//DTD LinkOut 1.0//EN\"",
+						   "\"http://www.ncbi.nlm.nih.gov/entrez/linkout/doc/LinkOut.dtd\"",
+						   "[",
+						   "<!ENTITY entity.base.url \"" + ReactomeConstants.UNIPROT_QUERY_URL + "\">",
+						   "<!ENTITY event.base.url \"" + ReactomeConstants.PATHWAY_BROWSER_URL + "\">",
+						   "]>"
+		).concat(System.lineSeparator());
+	}
+
+	public static String getOpenRootTag() {
+		return "<" + rootTag + ">";
+	}
+
+	public static String getCloseRootTag() {
+		return "</" + rootTag + ">";
 	}
 }
