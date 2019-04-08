@@ -10,6 +10,10 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+/**
+ * Class for describing Events (Pathways and Reaction Like Events) in Reactome.
+ * @author jweiser
+ */
 public class ReactomeEvent {
 	private static Map<Session, Map<Long, ReactomeEvent>> eventCache = new HashMap<>();
 	private static Logger logger = LogManager.getLogger();
@@ -24,6 +28,12 @@ public class ReactomeEvent {
 		this.stableIdentifier = stableIdentifier;
 	}
 
+	/**
+	 * Retrieves, from the graph database, the map of event database identifiers (both Pathways and
+	 * Reaction Like Events) to the ReactomeEvent object representing each event
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Map of Reactome Event database identifiers in Reactome to their ReactomeEvent objects
+	 */
 	public static Map<Long, ReactomeEvent> fetchReactomeEventMap(Session graphDBSession) {
 		if (eventCache.containsKey(graphDBSession)) {
 			return eventCache.get(graphDBSession);
@@ -53,14 +63,28 @@ public class ReactomeEvent {
 		return eventMap;
 	}
 
+	/**
+	 * Retrieves the Reactome database identifier for the represented event
+	 * @return Reactome event database identifier
+	 */
 	public long getDbId() {
 		return this.dbId;
 	}
 
+	/**
+	 * Retrieves the Reactome display name for the represented event.  The name is standardized before being returned.
+	 * @return Reactome event display name
+	 */
 	public String getName() {
 		return fixName(this.name);
 	}
 
+	/**
+	 * Transforms Reactome event names that contain key words or phrases to standardized names
+	 * @param name Name to be considered for standardization
+	 * @return Standardized Reactome event display name if it contains pre-set words or phrases or the name passed as
+	 * a parameter, otherwise.
+	 */
 	private String fixName(String name) {
 		Map<String, String> patternToReplacement = new TreeMap<>();
 		patternToReplacement.put("amino acids", "Metabolism of nitrogenous molecules");
@@ -80,10 +104,20 @@ public class ReactomeEvent {
 			.orElse(name); // Default to original name if no replacement
 	}
 
+	/**
+	 * Retrieves the Reactome Stable Identifier for the represented event
+	 * @return Reactome event Stable Identifier
+	 */
 	public String getStableIdentifier() {
 		return stableIdentifier;
 	}
 
+	/**
+	 * Checks equality based on object type and value of event db id, display name and stable identifier
+	 * @param o Object to check for equality with the calling ReactomeEvent
+	 * @return <code>true</code> if the same object or a ReactomeEvent object with the same db id, display name,
+	 * and stable identifier.  Returns <code>false</code> otherwise.
+	 */
 	@Override
 	public boolean equals(Object o) {
 		if (o == this) {
@@ -101,11 +135,19 @@ public class ReactomeEvent {
 				getStableIdentifier().equals(oRE.getStableIdentifier());
 	}
 
+	/**
+	 * Retrieves a hash code based on the object's set fields
+	 * @return Hash code of ReactomeEvent object
+	 */
 	@Override
 	public int hashCode() {
 		return Objects.hash(getDbId(), getName(), getStableIdentifier());
 	}
 
+	/**
+	 * Retrieves a String representation of the defining data of the ReactomeEvent object
+	 * @return String representation of ReactomeEvent object
+	 */
 	@Override
 	public String toString() {
 		return String.join("\t",
