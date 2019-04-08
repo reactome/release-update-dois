@@ -42,7 +42,13 @@ public class Main {
 	public static void main( String[] args ) throws IOException {
 		logger.info("Beginning NCBI, UCSC, and Europe PMC export step...");
 
-		String pathToResources = args.length > 0 ? args[0] : "ncbi/src/main/resources/sample_config.properties";
+		String pathToResources =
+			args.length > 0 ?
+			args[0] :
+			Objects.requireNonNull(
+				Main.class.getClassLoader().getResource("sample_config.properties")
+			).getPath();
+
 		Properties props = new Properties();
 		try {
 			props.load(new FileInputStream(pathToResources));
