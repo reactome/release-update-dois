@@ -197,7 +197,7 @@ public class EuropePMC {
 	 * @return Path object for Europe PMC Profile File
 	 */
 	private Path getEuropePMCProfileFilePath() {
-		return Paths.get(outputDir, "europe_pmc_profile_reactome_" + reactomeVersion);
+		return Paths.get(outputDir, "europe_pmc_profile_reactome_" + reactomeVersion + ".xml");
 	}
 
 	/**
@@ -205,7 +205,7 @@ public class EuropePMC {
 	 * @return Path object for Europe PMC Link File
 	 */
 	private Path getEuropePMCLinkFilePath() {
-		return Paths.get(outputDir, "europe_pmc_links_reactome_" + reactomeVersion);
+		return Paths.get(outputDir, "europe_pmc_links_reactome_" + reactomeVersion + ".xml");
 	}
 
 	/**
