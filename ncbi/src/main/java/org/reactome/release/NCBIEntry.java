@@ -9,6 +9,13 @@ import org.neo4j.driver.v1.StatementResult;
 import javax.annotation.Nonnull;
 import java.util.*;
 
+/**
+ * This class describes the relationship between a UniProt entry in Reactome
+ * and its associated NCBI Gene identifiers.  It can generate the NCBI Gene
+ * XML node for the relationship of UniProt and NCBI Gene as well as Reactome Pathways
+ * (in which the UniProt entry participates) and NCBI Gene.
+ * @author jweiser
+ */
 public class NCBIEntry implements Comparable<NCBIEntry> {
 	private static final Logger logger = LogManager.getLogger();
 
@@ -22,8 +29,8 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		this.ncbiGeneIds = ncbiGeneIds;
 	}
 
-	public NCBIEntry(long dbId, String uniprotAccession, String uniprotDisplayName, Set<String> ncbiGeneIds) {
-		this(UniProtReactomeEntry.get(dbId, uniprotAccession, uniprotDisplayName), ncbiGeneIds);
+	public NCBIEntry(long uniprotDbId, String uniprotAccession, String uniprotDisplayName, Set<String> ncbiGeneIds) {
+		this(UniProtReactomeEntry.get(uniprotDbId, uniprotAccession, uniprotDisplayName), ncbiGeneIds);
 	}
 
 	public String getUniprotAccession() {
@@ -38,10 +45,21 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return this.ncbiGeneIds;
 	}
 
+	/**
+	 * Retrieves the top level pathways of the events in which the NCBI Entry's UniProt entry participates
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Set of Reactome Events which are the top level pathways
+	 */
 	public Set<ReactomeEvent> getTopLevelPathways(Session graphDBSession) {
 		return uniProtReactomeEntry.getTopLevelPathways(graphDBSession);
 	}
 
+	/**
+	 * Retrieves the list of NCBI Entry objects from UniProt entries in the Reactome graph database
+	 * which have NCBI Gene identifiers
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return List of NCBI Entry objects
+	 */
 	public static List<NCBIEntry> getUniProtToNCBIGeneEntries(Session graphDBSession) {
 		logger.info("Generating UniProt accession to NCBI Gene mapping");
 
@@ -81,11 +99,22 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		return ncbiEntries;
 	}
 
+	/**
+	 * Compares UniProt accession values of this object and parameter
+	 * @param o NCBIEntry object to compare
+	 * @return Value of String compare between this UniProt accession and the parameter's UniProt accession
+	 */
 	@Override
 	public int compareTo(@Nonnull NCBIEntry o) {
 		return this.getUniprotAccession().compareTo(o.getUniprotAccession());
 	}
 
+	/**
+	 * Checks equality based on object type and value of UniProt accession, UniProt display name, and NCBI Gene ids
+	 * @param o Object to check for equality with the calling NCBI Entry object.
+	 * @return <code>true</code> if the same object or an NCBI Entry object with the same UniProt accession,
+	 * UniProt display name, and NCBI Gene ids.  Returns <code>false</code> otherwise.
+	 */
 	@Override
 	public boolean equals(Object o) {
 		if (o == this) {
@@ -103,11 +132,19 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 			   other.getNcbiGeneIds().equals(this.getNcbiGeneIds());
 	}
 
+	/**
+	 * Retrieves a hash code based on the object's set fields
+	 * @return Hash code of NCBI Entry object
+	 */
 	@Override
 	public int hashCode() {
 		return Objects.hash(getUniprotAccession(), getUniprotDisplayName(), getNcbiGeneIds());
 	}
 
+	/**
+	 * Retrieves a String representation of the defining data of the NCBI Entry object
+	 * @return String representation of NCBI Entry object
+	 */
 	@Override
 	public String toString() {
 		return this.getUniprotDisplayName() + " with NCBI Gene ids " + this.getNcbiGeneIds();
@@ -127,6 +164,12 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 		);
 	}
 
+	/**
+	 * Returns the XML String describing the relationship between a Reactome pathway and an NCBI Gene
+	 * @param ncbiGene NCBI Gene identifier
+	 * @param pathway Reactome Event representing a pathway
+	 * @return XML String for NCBI Gene Entity Link
+	 */
 	public String getEventLinkXML(String ncbiGene, ReactomeEvent pathway) {
 		return getLinkXML(
 			ncbiGene,
