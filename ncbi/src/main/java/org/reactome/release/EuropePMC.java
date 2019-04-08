@@ -301,7 +301,7 @@ public class EuropePMC {
 		 * @return Pathway URL as String
 		 */
 		private String getPathwayURL() {
-			return "https://reactome.org/PathwayBrowser/#/" + getPathwayStableId();
+			return ReactomeConstants.PATHWAY_BROWSER_URL + getPathwayStableId();
 		}
 
 		/**
