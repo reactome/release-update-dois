@@ -13,6 +13,14 @@ import java.util.*;
 
 import static org.reactome.release.Utilities.appendWithNewLine;
 
+/**
+ * File generator for NCBI Gene.  This class has logic for producing a file for
+ * NCBI Gene XML, describing the relationship between NCBI Gene identifiers and
+ * Reactome UniProt entries as well as their top level pathways.
+ * It also can create a file for NCBI Protein, describing the relationship between
+ * NCBI Gene identifiers and Reactome UniProt entries in a simple tab delimited format.
+ * @author jweiser
+ */
 public class NCBIGene {
 	private static final Logger logger = LogManager.getLogger();
 	private static final Logger ncbiGeneLogger = LogManager.getLogger("ncbiGeneLog");
@@ -33,6 +41,11 @@ public class NCBIGene {
 		this.reactomeVersion = reactomeVersion;
 	}
 
+	/**
+	 * Writes NCBI Protein tab-delimited file describing the UniProt to NCBI Gene identifier relationships in
+	 * Reactome to a pre-set output directory
+	 * @throws IOException Thrown if creating or appending for file fails
+	 */
 	public void writeProteinFile() throws IOException {
 		Path filePath = getProteinFilePath();
 
@@ -65,6 +78,13 @@ public class NCBIGene {
 		logger.info("Finished writing proteins_version file");
 	}
 
+	/**
+	 * Writes NCBI Gene XML files describing the relationships between NCBI Gene identifiers and UniProt entries as
+	 * well as their Reactome pathways to pre-set output directory
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @param numGeneXMLFiles Number of files to divide the Gene XML entries among
+	 * @throws IOException Thrown if creating or appending for any file fails
+	 */
 	public void writeGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles) throws IOException {
 		Path geneErrorFilePath = getGeneErrorFilePath();
 		Files.deleteIfExists(geneErrorFilePath);
@@ -130,6 +150,10 @@ public class NCBIGene {
 		return Paths.get(outputDir, "geneentrez_" + reactomeVersion + ".err");
 	}
 
+	/**
+	 * Returns the XML header for the NCBI Gene file containing the Reactome entity and event base URLs
+	 * @return XML header as String
+	 */
 	public static String getXMLHeader() {
 		return String.join(System.lineSeparator(),
 						   "<?xml version=\"1.0\"?>",
@@ -142,10 +166,18 @@ public class NCBIGene {
 		).concat(System.lineSeparator());
 	}
 
+	/**
+	 * Returns the opening XML root level tag for the NCBI Gene file
+	 * @return XML opening root level tag as String
+	 */
 	public static String getOpenRootTag() {
 		return "<" + rootTag + ">";
 	}
 
+	/**
+	 * Returns the closing XML root level tag for the NCBI Gene file
+	 * @return XML closing root level tag as String
+	 */
 	public static String getCloseRootTag() {
 		return "</" + rootTag + ">";
 	}
