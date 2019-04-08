@@ -327,9 +327,8 @@ public class EuropePMC {
 		/**
 		 * Checks equality based on object type and value of pathway display name, stable id, and PubMed identifier
 		 * @param o Object to check for equality with the calling Europe PMC Link object.
-		 * @return True if the same object or a Europe PMC Link object with the same pathway display name,
-		 * stable, id
-		 * and PubMed identifier.  Returns false otherwise.
+		 * @return <code>true</code> if the same object or a Europe PMC Link object with the same pathway display name,
+		 * stable, id and PubMed identifier.  Returns <code>false</code> otherwise.
 		 */
 		@Override
 		public boolean equals(Object o) {
