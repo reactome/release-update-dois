@@ -110,7 +110,9 @@ public class UCSC {
 			.stream()
 			.collect(Collectors.toMap(
 				uniProtReactomeEntry -> uniProtReactomeEntry,
-				uniProtReactomeEntry -> getUCSCEventLines(uniProtReactomeEntry, graphDBSession)
+				uniProtReactomeEntry -> getUCSCEventLines(uniProtReactomeEntry, graphDBSession),
+				(oldValue, newValue) -> newValue,
+				TreeMap::new
 			));
 	}
 
