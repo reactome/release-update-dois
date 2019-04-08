@@ -13,6 +13,13 @@ import java.util.stream.Collectors;
 
 import static org.reactome.release.Utilities.appendWithNewLine;
 
+/**
+ * File generator for UCSC.  This class has logic for producing a file for
+ * UCSC Entity, enumerating the UniProt entries (human, mouse, and rat) in Reactome and
+ * UCSC Event, describing the relationship between UniProt entries (human, mouse, and rat)
+ * in Reactome and the events in which they participate.
+ * @author jweiser
+ */
 public class UCSC {
 	private static final Logger logger = LogManager.getLogger();
 
@@ -29,6 +36,12 @@ public class UCSC {
 		this.version = version;
 	}
 
+	/**
+	 * Writes UCSC files describing the relationships of UniProt entries in Reactome as
+	 * well as their Reactome pathways to pre-set output directory
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @throws IOException Thrown if creating or appending for any file fails
+	 */
 	public void writeUCSCFiles(Session graphDBSession) throws IOException {
 		logger.info("Writing UCSC files");
 
@@ -38,6 +51,11 @@ public class UCSC {
 		logger.info("Finished writing UCSC files");
 	}
 
+	/**
+	 * Writes UCSC Entity file describing UniProt entries in Reactome to pre-set output directory
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @throws IOException Thrown if creating or appending for file fails
+	 */
 	private void writeUCSCEntityFile(Session graphDBSession) throws IOException {
 		Path ucscEntityFilePath = Paths.get(outputDir, "ucsc_entity" + version);
 		Files.deleteIfExists(ucscEntityFilePath);
@@ -53,6 +71,23 @@ public class UCSC {
 		logger.info("Finished writing UCSC Entity file");
 	}
 
+	/**
+	 * Retrieves header describing the UCSC Entity File
+	 * @return Header for UCSC Entity file as String
+	 */
+	private String getUCSCEntityHeader() {
+		return "URL for entity_identifier: " + ReactomeConstants.UNIPROT_QUERY_URL +
+			   System.lineSeparator() + System.lineSeparator() +
+			   "Reactome Entity" +
+			   System.lineSeparator() + System.lineSeparator();
+	}
+
+	/**
+	 * Retrieves lines for the UCSC Entity File containing the accessions of all UniProt instances
+	 * in Reactome with an EWAS of species human, rat, or mouse
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Set of Strings containing the lines for the UCSC Entity File
+	 */
 	private Set<String> getUCSCEntityLines(Session graphDBSession) {
 		return getUniProtReactomeEntriesForUCSC(graphDBSession)
 			.stream()
@@ -60,13 +95,12 @@ public class UCSC {
 			.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
-	private String getUCSCEntityHeader() {
-		return "URL for entity_identifier: " + ReactomeConstants.UNIPROT_QUERY_URL +
-			System.lineSeparator() + System.lineSeparator() +
-			"Reactome Entity" +
-			System.lineSeparator() + System.lineSeparator();
-	}
-
+	/**
+	 * Writes UCSC Event file describing UniProt entries in Reactome and the Events in which they participate
+	 * to pre-set output directory
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @throws IOException Thrown if creating or appending for file fails
+	 */
 	private void writeUCSCEventFile(Session graphDBSession) throws IOException {
 		Path ucscEventFilePath = Paths.get(outputDir, "ucsc_events" + version);
 		Files.deleteIfExists(ucscEventFilePath);
@@ -95,9 +129,14 @@ public class UCSC {
 				appendWithNewLine(ucscLine, ucscEventFilePath);
 			}
 		}
+
 		logger.info("Finished writing UCSC Event file");
 	}
 
+	/**
+	 * Retrieves header describing the UCSC Event File
+	 * @return Header for UCSC Event file as String
+	 */
 	private String getUCSCEventsHeader() {
 		return "URL for events: " + ReactomeConstants.PATHWAY_BROWSER_URL +
 			System.lineSeparator() + System.lineSeparator() +
@@ -105,6 +144,11 @@ public class UCSC {
 			System.lineSeparator() + System.lineSeparator();
 	}
 
+	/**
+	 * Retrieves Map of Reactome UniProt instance to lines for UCSC Event File for that UniProt instance
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Map of UniProt Reactome Entry to Set of Strings containing UCSC Event Lines
+	 */
 	private Map<UniProtReactomeEntry, Set<String>> getUniProtReactomeEntriesToUCSCEventLines(Session graphDBSession) {
 		return getUniProtReactomeEntriesForUCSC(graphDBSession)
 			.stream()
@@ -116,6 +160,13 @@ public class UCSC {
 			));
 	}
 
+	/**
+	 * Retrieves lines, describing UniProt to Reactome Event relationships (including event stable identifier and
+	 * display name), to include in the UCSC Event file for a given UniProt instance
+	 * @param uniProtReactomeEntry UniProt instance in Reactome
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Set of UniProt Reactome Entry objects
+	 */
 	private Set<String> getUCSCEventLines(UniProtReactomeEntry uniProtReactomeEntry, Session graphDBSession) {
 		return uniProtReactomeEntry
 			.getEvents(graphDBSession)
@@ -131,6 +182,11 @@ public class UCSC {
 			.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
+	/**
+	 * Generates error message when a UniProt instance has no Reactome Events found in which it participates
+	 * @param uniProtReactomeEntry UniProt instance in Reactome
+	 * @return Error message for UniProt instance
+	 */
 	private String getNoEventsErrorMessage(UniProtReactomeEntry uniProtReactomeEntry) {
 		return uniProtReactomeEntry.getDisplayName() +
 			" participates in Event(s) but no top Pathway can be found, " +
@@ -138,6 +194,11 @@ public class UCSC {
 			" which contains or is an instance of itself.";
 	}
 
+	/**
+	 * Retrieves all UniProt instances in Reactome with an EWAS of species human, rat, or mouse
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Set of UniProt Reactome Entry objects
+	 */
 	Set<UniProtReactomeEntry> getUniProtReactomeEntriesForUCSC(Session graphDBSession) {
 		if (ucscUniProtReactomeEntries != null) {
 			return ucscUniProtReactomeEntries;
