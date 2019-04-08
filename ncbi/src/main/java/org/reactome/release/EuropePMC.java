@@ -16,6 +16,13 @@ import java.util.stream.Collectors;
 
 import static org.reactome.release.Utilities.appendWithNewLine;
 
+/**
+ * File generator for Europe PMC.  This class will produce files for
+ * Europe PMC profile XML describing Reactome as a data provider and
+ * Europe PMC link XML describing Reactome pathways annotated directly
+ * (i.e. not on parent or child pathways) with PubMed literature references.
+ * @author jweiser
+ */
 public class EuropePMC {
 	private static final Logger logger = LogManager.getLogger();
 	private static final String rootTag = "links";
@@ -23,6 +30,11 @@ public class EuropePMC {
 	private String outputDir;
 	private int reactomeVersion;
 
+	/**
+	 * Returns a new instance of the Europe PMC File Generator
+	 * @param outputDir Directory path for output files
+	 * @param reactomeVersion Release version of Reactome
+	 */
 	public static EuropePMC getInstance(String outputDir, int reactomeVersion) {
 		return new EuropePMC(outputDir, reactomeVersion);
 	}
@@ -32,6 +44,11 @@ public class EuropePMC {
 		this.reactomeVersion = reactomeVersion;
 	}
 
+	/**
+	 * Queries graph database for all human pathways with literature references
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return Set of Europe PMC Link objects describing the pathway to literature reference annotations
+	 */
 	public static Set<EuropePMCLink> fetchEuropePMCLinks(Session graphDBSession) {
 		logger.info("Fetching Europe PMC Links from Reactome Pathways");
 
@@ -57,6 +74,11 @@ public class EuropePMC {
 		return europePMCLinks;
 	}
 
+	/**
+	 * Writes Europe PMC profile and link files to pre-set output directory
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @throws IOException Thrown if creating or appending for either file fails
+	 */
 	public void writeEuropePMCFiles(Session graphDBSession) throws IOException {
 		logger.info("Writing Europe PMC files");
 
@@ -66,6 +88,11 @@ public class EuropePMC {
 		logger.info("Finished writing Europe PMC files");
 	}
 
+	/**
+	 * Writes Europe PMC profile file to pre-set output directory.  Content describes Reactome, is static, and
+	 * is pre-defined.
+	 * @throws IOException Thrown if creating or appending for file fails
+	 */
 	private void writeEuropePMCProfileFile() throws IOException {
 		Path europePMCProfileFilePath = getEuropePMCProfileFilePath();
 
@@ -79,6 +106,10 @@ public class EuropePMC {
 		logger.info("Finished writing Europe PMC Profile file");
 	}
 
+	/**
+	 * Produces Europe PMC profile XML content
+	 * @return XML string describing Reactome as a data provider to Europe PMC
+	 */
 	private String getEuropePMCProfileXML() {
 		return String.join(System.lineSeparator(),
 			getXMLDeclaration(),
@@ -101,6 +132,12 @@ public class EuropePMC {
 		);
 	}
 
+	/**
+	 * Writes Europe PMC link file to pre-set output directory.  Pathway and literature reference data retrieved from
+	 * the graph database.
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @throws IOException Thrown if creating or appending for either file fails
+	 */
 	private void writeEuropePMCLinkFile(Session graphDBSession) throws IOException {
 		Path europePMCLinkFilePath = getEuropePMCLinkFilePath();
 
@@ -120,54 +157,110 @@ public class EuropePMC {
 		logger.info("Finished writing Europe PMC Link file");
 	}
 
+	/**
+	 * Standard XML declaration header
+	 * @return XML declaration as String
+	 */
 	private String getXMLDeclaration() {
 		return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>";
 	}
 
+	/**
+	 * Opening XML tag of Europe PMC link file
+	 * @return Opening XML tag as String
+	 */
 	private String getOpenRootTag() {
 		return "<" + rootTag + ">";
 	}
 
+	/**
+	 * Closing XML tag of Europe PMC link file
+	 * @return Closing XML tag as String
+	 */
 	private String getCloseRootTag() {
 		return "</" + rootTag + ">";
 	}
 
+	/**
+	 * Indents String by given number of tabs
+	 * @param string String to indent
+	 * @param numberOfIndents Number of times to indent string
+	 * @return Tab-indented string
+	 */
 	private static String indentString(String string, int numberOfIndents) {
 		return StringUtils.repeat("\t", numberOfIndents).concat(string);
 	}
 
+	/**
+	 * Returns Path for Europe PMC Profile File based on pre-set output directory and Reactome version
+	 * @return Path object for Europe PMC Profile File
+	 */
 	private Path getEuropePMCProfileFilePath() {
 		return Paths.get(outputDir, "europe_pmc_profile_reactome_" + reactomeVersion);
 	}
 
+	/**
+	 * Returns Path for Europe PMC Link File based on pre-set output directory and Reactome version
+	 * @return Path object for Europe PMC Link File
+	 */
 	private Path getEuropePMCLinkFilePath() {
 		return Paths.get(outputDir, "europe_pmc_links_reactome_" + reactomeVersion);
 	}
 
+	/**
+	 * Class to hold the relationship between a Reactome pathway and a literature reference.  The class can generate
+	 * a Europe PMC Link XML Node based on this relationship to be used in the exported Europe PMC Link File.
+	 * @author jweiser
+	 */
 	public static class EuropePMCLink {
 		private static final int reactomeProviderID = 4914;
 		private String pathwayDisplayName;
 		private String pathwayStableId;
 		private String pubMedIdentifier;
 
+		/**
+		 * Creates Europe PMC Link object with pathway display name, stable id, and PubMed literature reference
+		 * numeric identifier.
+		 * @param pathwayDisplayName Reactome Pathway Display Name
+		 * @param pathwayStableId Reactome Pathway Stable Identifier (i.e. R-HSA-XXXXXX)
+		 * @param pubMedIdentifier PubMed literature reference numeric identifier
+		 */
 		public EuropePMCLink(String pathwayDisplayName, String pathwayStableId, String pubMedIdentifier) {
 			setPathwayDisplayName(pathwayDisplayName);
 			setPathwayStableId(pathwayStableId);
 			setPubMedIdentifier(pubMedIdentifier);
 		}
 
+		/**
+		 * Retrieves the Reactome Pathway Display Name for the Link annotation
+		 * @return Reactome Pathway Display Name
+		 */
 		public String getPathwayDisplayName() {
 			return pathwayDisplayName;
 		}
 
+		/**
+		 * Sets the Reactome Pathway Display Name
+		 * @param pathwayDisplayName Reactome Pathway Display Name
+		 */
 		private void setPathwayDisplayName(String pathwayDisplayName) {
 			this.pathwayDisplayName = pathwayDisplayName;
 		}
 
+		/**
+		 * Retrieves the Reactome Pathway Stable Identifier for the Link annotation
+		 * @return Reactome Pathway Stable Identifier
+		 */
 		public String getPathwayStableId() {
 			return pathwayStableId;
 		}
 
+		/**
+		 * Sets Reactome Pathway Stable identifier as long as it begins with "R-HSA" indicating it is a human pathway
+		 * @param pathwayStableId Reactome Pathway Stable Identifier
+		 * @throws IllegalArgumentException Throws IllegalArgumentException if the pathway stable id doesn't begin
+		 * with "R-HSA"
+		 */
 		private void setPathwayStableId(String pathwayStableId) {
 			if (!pathwayStableId.startsWith("R-HSA")) {
 				throw new IllegalArgumentException(
@@ -179,10 +272,20 @@ public class EuropePMC {
 			this.pathwayStableId = pathwayStableId;
 		}
 
+		/**
+		 * Retrieves the PubMed identifier for the Link annotation
+		 * @return PubMed identifier as String
+		 */
 		public String getPubMedIdentifier() {
 			return pubMedIdentifier;
 		}
 
+		/**
+		 * Sets PubMed literature identifier as long as it is numeric
+		 * @param pubMedIdentifier PubMed literature identifier
+		 * @throws IllegalArgumentException Throws IllegalArgumentException if the PubMed literature reference isn't
+		 * numeric
+		 */
 		private void setPubMedIdentifier(String pubMedIdentifier) {
 			if (!pubMedIdentifier.matches("\\d+")) {
 				throw new IllegalArgumentException(
@@ -193,10 +296,19 @@ public class EuropePMC {
 			this.pubMedIdentifier = pubMedIdentifier;
 		}
 
+		/**
+		 * URL representing the Link XML annotation's Reactome Pathway
+		 * @return Pathway URL as String
+		 */
 		private String getPathwayURL() {
 			return "https://reactome.org/PathwayBrowser/#/" + getPathwayStableId();
 		}
 
+		/**
+		 * Link XML based on pre-set Reactome's Europe PMC provider id and the annotation's pathway name, URL, and
+		 * PubMed literature identifier
+		 * @return Link XML tag as String
+		 */
 		public String getLinkXML() {
 			return String.join(System.lineSeparator(),
 				indentString("<link providerId=\"" + reactomeProviderID + "\">", 1),
@@ -212,6 +324,13 @@ public class EuropePMC {
 			);
 		}
 
+		/**
+		 * Checks equality based on object type and value of pathway display name, stable id, and PubMed identifier
+		 * @param o Object to check for equality with the calling Europe PMC Link object.
+		 * @return True if the same object or a Europe PMC Link object with the same pathway display name,
+		 * stable, id
+		 * and PubMed identifier.  Returns false otherwise.
+		 */
 		@Override
 		public boolean equals(Object o) {
 			if (o == this) {
@@ -229,6 +348,10 @@ public class EuropePMC {
 				   this.getPubMedIdentifier().equals(other.getPubMedIdentifier());
 		}
 
+		/**
+		 * Retrieves a hash code based on the object's set fields
+		 * @return Hash code of Europe PMC Link object
+		 */
 		@Override
 		public int hashCode() {
 			return Objects.hash(
@@ -238,6 +361,10 @@ public class EuropePMC {
 			);
 		}
 
+		/**
+		 * Retrieves a String representation of the defining data of the Europe PMC Link object
+		 * @return String representation of Europe PMC Link object
+		 */
 		@Override
 		public String toString() {
 			return "Europe PMC Link: " +
