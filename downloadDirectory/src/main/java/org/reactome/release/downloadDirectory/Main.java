@@ -113,17 +113,7 @@ public class Main {
 				e.printStackTrace();
 			}
 		}
-		if (stepsToRun.contains("ReactomeBookPDF") || stepsToRun.contains("ReactomeBookRTF"))
-		{
-			// This step currently calls the Perl scripts that generate the ReactomeBookPDF and ReactomeBookRTF
-			//Outputs: TheReactomeBook.pdf.zip, TheReactomeBook.rtf.zip
-			try {
-				ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir, stepsToRun.contains("ReactomeBookPDF"), stepsToRun.contains("ReactomeBookRTF"));
-			} catch (Exception e) {
-				failedSteps.add("ReactomeBook");
-				e.printStackTrace();
-			}
-		}
+
 		if (stepsToRun.contains("FetchTestReactomeOntologyFiles"))
 		{
 			// This step, (formerly fetchEmptyProject), takes the blob output from the Ontology.ontology and parses it into 3 files
@@ -135,17 +125,7 @@ public class Main {
 				e.printStackTrace();
 			}
 		}
-//		if (stepsToRun.contains("CreateReleaseTarball"))
-//		{
-//			// This step clones the Release repo from github, and generates an archive tarball from it and other files on the release server. Currently just runs make_release_tarball.pl.
-//			// Output: reactome.tar.gz
-//			try {
-//				CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
-//			} catch (Exception e) {
-//				failedSteps.add("CreateReleaseTarball");
-//				e.printStackTrace();
-//			}
-//		}
+
 		if (stepsToRun.contains("PathwaySummationMappingFile"))
 		{
 			// This step takes all Human Pathway and creates a tab-separated file with columns containing the stableIdentifier, name, and summation of the instance
