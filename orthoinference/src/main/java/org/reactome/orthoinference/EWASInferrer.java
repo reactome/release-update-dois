@@ -165,7 +165,7 @@ public class EWASInferrer {
 						if (residueIdenticals.get(cacheKey) != null) {
 							infModifiedResidueInst = residueIdenticals.get(cacheKey);
 						} else {
-							infModifiedResidueInst = InstanceUtilities.checkForIdenticalInstances(infModifiedResidueInst);
+							infModifiedResidueInst = InstanceUtilities.checkForIdenticalInstances(infModifiedResidueInst, null);
 							residueIdenticals.put(cacheKey, infModifiedResidueInst);
 						}
 						infModifiedResidueInstances.add((GKInstance) infModifiedResidueInst);
@@ -176,7 +176,7 @@ public class EWASInferrer {
 					if (ewasIdenticals.get(cacheKey) != null) {
 						infEWASInst = ewasIdenticals.get(cacheKey);
 					} else {
-						infEWASInst = InstanceUtilities.checkForIdenticalInstances(infEWASInst);
+						infEWASInst = InstanceUtilities.checkForIdenticalInstances(infEWASInst, ewasInst);
 						ewasIdenticals.put(cacheKey, infEWASInst);
 					}
 
@@ -214,7 +214,7 @@ public class EWASInferrer {
 			referenceDNAInst.addAttributeValue(referenceDatabase, ensgDbInst);
 			referenceDNAInst.addAttributeValue(species, speciesInst);
 			referenceDNAInst.setAttributeValue(_displayName, "ENSEMBL:" + ensgId);
-			referenceDNAInst = InstanceUtilities.checkForIdenticalInstances(referenceDNAInst);
+			referenceDNAInst = InstanceUtilities.checkForIdenticalInstances(referenceDNAInst, null);
 			referenceDNAInstances.add(referenceDNAInst);
 			if (altRefDbExists)
 			{
@@ -230,7 +230,7 @@ public class EWASInferrer {
 				alternateRefDNAInst.addAttributeValue(referenceDatabase, alternateDbInst);
 				alternateRefDNAInst.addAttributeValue(species, speciesInst);
 				alternateRefDNAInst.setAttributeValue(_displayName, alternateDbInst.getAttributeValue(name) + ":" + ensgId);
-				alternateRefDNAInst = InstanceUtilities.checkForIdenticalInstances(alternateRefDNAInst);
+				alternateRefDNAInst = InstanceUtilities.checkForIdenticalInstances(alternateRefDNAInst, null);
 				referenceDNAInstances.add(alternateRefDNAInst);
 			}
 		}
@@ -334,7 +334,7 @@ public class EWASInferrer {
 		alternateDbInst.addAttributeValue(url, altRefDbJSON.get("url"));
 		alternateDbInst.addAttributeValue(accessUrl, altRefDbJSON.get("access"));
 		alternateDbInst.setAttributeValue(_displayName, ((JSONArray) altRefDbJSON.get("dbname")).get(0));
-		alternateDbInst = InstanceUtilities.checkForIdenticalInstances(alternateDbInst);
+		alternateDbInst = InstanceUtilities.checkForIdenticalInstances(alternateDbInst, null);
 		if (altRefDbJSON.get("alt_id") != null)
 		{
 			altRefDbId = (String) altRefDbJSON.get("alt_id");

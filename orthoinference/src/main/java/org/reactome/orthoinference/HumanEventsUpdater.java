@@ -138,6 +138,7 @@ public class HumanEventsUpdater {
 					}
 					infHasEventReferralInst.setDisplayName(hasEventReferralInst.getDisplayName());
 					inferredEventIdenticals.put(hasEventReferralInst, infHasEventReferralInst);
+					infHasEventReferralInst = EventsInferrer.getStableIdentifierGenerator().generateOrthologousStableId(infHasEventReferralInst, hasEventReferralInst);
 					dba.storeInstance(infHasEventReferralInst);
 					
 					// This was replaced with addAttributeValueIfNecessary due to a bug where a Pathway instance's 'OrthologousEvent' attribute was being replaced,
