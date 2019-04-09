@@ -169,15 +169,14 @@ public class Main {
 			}
 		}
 		// These file copy commands now use absolute paths instead of relative ones
-		if (stepsToRun.contains("gene_association.reactome"))
+		if (stepsToRun.contains("GenerateGOAnnotationFile"))
 		{
 			// This step copies the gene_association.reactome file generated during the goa_prepare step of Release to the download_directory folder
 			// Output: gene_association.reactome
-			logger.info("Copying gene_association.reactome to release directory");
 			try {
-				Files.copy(Paths.get(releaseDirAbsolute + "goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "/gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
+				GenerateGOAnnotationFile.execute(dbAdaptor, releaseNumber);
 			} catch (Exception e) {
-				failedSteps.add("gene_association.reactome");
+				failedSteps.add("GenerateGOAnnotationFile");
 				e.printStackTrace();
 			}
 		}
