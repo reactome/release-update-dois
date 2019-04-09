@@ -1,4 +1,4 @@
-package org.reactome.release.test.chebiupdate;
+package org.reactome.release.chebiupdate;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -35,7 +35,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.reactome.release.chebiupdate.ChebiUpdater;
 import org.reactome.release.common.database.InstanceEditUtils;
 
 import uk.ac.ebi.chebi.webapps.chebiWS.client.ChebiWebServiceClient;
@@ -46,7 +45,7 @@ import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"org.apache.logging.log4j.*", "uk.ac.ebi.*", "javax.management.*", "javax.script.*", 
 			"javax.xml.*", "com.sun.org.apache.xerces.*", "org.xml.sax.*", "com.sun.xml.*", "org.w3c.dom.*", "org.mockito.*"})
-@PrepareForTest({InstanceEditUtils.class, ChebiUpdater.class})
+@PrepareForTest({InstanceEditUtils.class, ChebiUpdater.class, ChebiDataRetriever.class})
 public class ChebiUpdaterTest
 {
 	private static final long PERSON_ID = 12345L;
@@ -148,7 +147,7 @@ public class ChebiUpdaterTest
 		
 		when(chebiRefDB.getDBID()).thenReturn(123456L);
 		when(adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI")).thenReturn(Arrays.asList(chebiRefDB)) ;
-
+		PowerMockito.whenNew(ChebiWebServiceClient.class).withAnyArguments().thenReturn(chebiClient);
 	}
 	
 	@Test
@@ -174,14 +173,14 @@ public class ChebiUpdaterTest
 			when(chebiClient.getCompleteEntity("778899")).thenReturn(chebiEntity1);
 			
 			when(molecule1.getAttributeValue("identifier")).thenReturn("112233");
-			when(molecule1.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME1")));
+			when(molecule1.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("NAME1")));
 			when(molecule1.getAttributeValue("formula")).thenReturn("H3");
 			when(molecule1.getDBID()).thenReturn(123L);
 			when(molecule1.getSchemClass()).thenReturn(refMolSchemaClass);
 			when(adaptor.fetchInstance(123L)).thenReturn(molecule1);
 			
 			when(molecule2.getAttributeValue("identifier")).thenReturn("332211");
-			when(molecule2.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME2")));
+			when(molecule2.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("NAME2")));
 			when(molecule2.getDBID()).thenReturn(456L);
 			when(molecule2.getSchemClass()).thenReturn(refMolSchemaClass);
 			when(adaptor.fetchInstance(456L)).thenReturn(molecule2);
@@ -189,17 +188,17 @@ public class ChebiUpdaterTest
 			when(molecule3.getAttributeValue("identifier")).thenReturn("445566");
 			
 			when(molecule4.getAttributeValue("identifier")).thenReturn("778899");
-			when(molecule4.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME1")));
+			when(molecule4.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("NAME1")));
 			when(molecule4.getAttributeValue("formula")).thenReturn("H2");
 			when(molecule4.getSchemClass()).thenReturn(refMolSchemaClass);
 			when(molecule4.getDBID()).thenReturn(444L);
 			when(adaptor.fetchInstance(444L)).thenReturn(molecule4);
 			
-			when(refEnt1.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("OTHERNAME", "NAME1", "BLAH")));
+			when(refEnt1.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("OTHERNAME", "NAME1", "BLAH")));
 			when(refEnt1.getSchemClass()).thenReturn(simpleEntitySchemaClass);
-			when(refEnt2.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("TEST", "NAME2")));
+			when(refEnt2.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("TEST", "NAME2")));
 			when(refEnt2.getSchemClass()).thenReturn(simpleEntitySchemaClass);
-			when(refEnt3.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME-2", "ASDFQ@#$FASFASDF","NOPE")));
+			when(refEnt3.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("NAME-2", "ASDFQ@#$FASFASDF","NOPE")));
 			when(refEnt3.getSchemClass()).thenReturn(chemicalDrugSchemaClass);
 			
 			when(refEnt1.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
@@ -212,6 +211,20 @@ public class ChebiUpdaterTest
 			when(molecule1.getReferers("referenceEntity")).thenReturn(referrers1);
 			when(molecule2.getReferers("referenceEntity")).thenReturn(referrers2);
 			Collection<GKInstance> molecules = Arrays.asList(molecule1, molecule2, molecule3, molecule4);
+			GKInstance createdInstEd = Mockito.mock(GKInstance.class);
+			when(createdInstEd.getAttributeValue(ReactomeJavaConstants.author)).thenReturn(person);
+			for (GKInstance molecule : molecules)
+			{
+				when(molecule.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstEd);
+			}
+			for (GKInstance ref : referrers1)
+			{
+				when(ref.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstEd);
+			}
+			for (GKInstance ref : referrers2)
+			{
+				when(ref.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstEd);
+			}
 			when(adaptor.fetchInstanceByAttribute("ReferenceMolecule", "referenceDatabase", "=", "123456")).thenReturn(molecules);
 			
 			updator.updateChebiReferenceMolecules();
@@ -244,32 +257,32 @@ public class ChebiUpdaterTest
 		when(chebiEntity2.getFormulae()).thenReturn(Arrays.asList( d ));
 
 		when(molecule1.getAttributeValue("identifier")).thenReturn("112233");
-		when(molecule1.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME1")));
+		when(molecule1.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("NAME1")));
 		when(molecule1.getAttributeValue("formula")).thenReturn("H3");
 		when(molecule1.getDBID()).thenReturn(123L);
 		when(molecule1.getSchemClass()).thenReturn(refMolSchemaClass);
 		when(adaptor.fetchInstance(123L)).thenReturn(molecule1);
 		
 		when(molecule2.getAttributeValue("identifier")).thenReturn("332211");
-		when(molecule2.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME2")));
+		when(molecule2.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("NAME2")));
 		when(molecule2.getDBID()).thenReturn(456L);
 		when(molecule2.getSchemClass()).thenReturn(refMolSchemaClass);
 		when(adaptor.fetchInstance(456L)).thenReturn(molecule2);
 
 		
-		when(refEnt1.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("OTHERNAME", "NAME1", "BLAH")));
+		when(refEnt1.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("OTHERNAME", "NAME1", "BLAH")));
 		when(refEnt1.getSchemClass()).thenReturn(simpleEntitySchemaClass);
 		when(refEnt1.getDBID()).thenReturn(1111L);
-		when(refEnt2.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("TEST", "NAME2")));
+		when(refEnt2.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("TEST", "NAME2")));
 		when(refEnt2.getSchemClass()).thenReturn(simpleEntitySchemaClass);
 		when(refEnt2.getDBID()).thenReturn(2222L);
-		when(refEnt3.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("NAME-2", "ASDFQ@#$FASFASDF","NOPE")));
+		when(refEnt3.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("NAME-2", "ASDFQ@#$FASFASDF","NOPE")));
 		when(refEnt3.getDBID()).thenReturn(3333L);
-		when(refEnt4.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("BLAH4", "more blah")));
+		when(refEnt4.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("BLAH4", "more blah")));
 		when(refEnt4.getDBID()).thenReturn(4444L);
-		when(refEnt5.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("5BLAH", "more blah")));
+		when(refEnt5.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("5BLAH", "more blah")));
 		when(refEnt5.getDBID()).thenReturn(5555L);
-		when(refEnt6.getAttributeValuesList("name")).thenReturn(new ArrayList<String>(Arrays.asList("BL_6_AH", "more blah")));
+		when(refEnt6.getAttributeValuesList("name")).thenReturn(new ArrayList<>(Arrays.asList("BL_6_AH", "more blah")));
 		when(refEnt6.getDBID()).thenReturn(6666L);
 
 		when(refEnt1.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstance);
@@ -284,6 +297,22 @@ public class ChebiUpdaterTest
 		when(molecule1.getReferers("referenceEntity")).thenReturn(referrers1);
 		when(molecule2.getReferers("referenceEntity")).thenReturn(referrers2);
 		Collection<GKInstance> molecules = Arrays.asList(molecule1, molecule2);
+
+		GKInstance createdInstEd = Mockito.mock(GKInstance.class);
+		when(createdInstEd.getAttributeValue(ReactomeJavaConstants.author)).thenReturn(person);
+		for (GKInstance molecule : molecules)
+		{
+			when(molecule.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstEd);
+		}
+		for (GKInstance ref : referrers1)
+		{
+			when(ref.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstEd);
+		}
+		for (GKInstance ref : referrers2)
+		{
+			when(ref.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstEd);
+		}
+		
 		when(adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.referenceDatabase, "=", "123456")).thenReturn(molecules);
 		//adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, "=", newChebiID);
 		when(adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, "=", "332211")).thenReturn(Arrays.asList(molecule2));
@@ -302,10 +331,20 @@ public class ChebiUpdaterTest
 		AttributeQueryRequest mockAQR = Mockito.mock(AttributeQueryRequest.class);
 		PowerMockito.whenNew(AttributeQueryRequest.class).withAnyArguments().thenReturn(mockAQR);
 		
-		Set<GKInstance> result1 = new HashSet<GKInstance>();
+		Set<GKInstance> result1 = new HashSet<>();
 		result1.add(molecule1);
-		Set<GKInstance> result2 = new HashSet<GKInstance>();
+		Set<GKInstance> result2 = new HashSet<>();
 		result2.add(molecule2);
+		
+		Collection<GKInstance> molecules = Arrays.asList(molecule1, molecule2);
+
+		GKInstance createdInstEd = Mockito.mock(GKInstance.class);
+		when(createdInstEd.getAttributeValue(ReactomeJavaConstants.author)).thenReturn(person);
+		for (GKInstance molecule : molecules)
+		{
+			when(molecule.getAttributeValue(ReactomeJavaConstants.created)).thenReturn(createdInstEd);
+		}
+		
 		when(adaptor._fetchInstance(ArgumentMatchers.anyList())).thenReturn( result1 ).thenReturn( result2 );
 		
 		updator.checkForDuplicates();

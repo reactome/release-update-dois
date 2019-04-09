@@ -18,11 +18,8 @@ public class OrthopairFileGenerator {
     public static void createProteinHomologyFile(String sourceTargetProteinMappingFilename, Map<String,Set<String>> speciesProteinHomologs ) throws IOException {
 
         logger.info("\tGenerating " + sourceTargetProteinMappingFilename);
-        File sourceTargetProteinMappingFile = new File(sourceTargetProteinMappingFilename);
-        if (sourceTargetProteinMappingFile.exists()) {
-            sourceTargetProteinMappingFile.delete();
-        }
-        sourceTargetProteinMappingFile.createNewFile();
+
+        Files.deleteIfExists(Paths.get(sourceTargetProteinMappingFilename));
 
         List<String> sourceProteinIds = new ArrayList<>(speciesProteinHomologs.keySet());
         Collections.sort(sourceProteinIds);
@@ -30,7 +27,7 @@ public class OrthopairFileGenerator {
             String targetProteinIds = getTargetProteinsAsString(speciesProteinHomologs.get(sourceProteinId));
             String proteinOrthologLine = getProteinId(sourceProteinId);
             proteinOrthologLine += "\t" + targetProteinIds + "\n";
-            Files.write(Paths.get(sourceTargetProteinMappingFilename), proteinOrthologLine.getBytes(), StandardOpenOption.APPEND);
+            Files.write(Paths.get(sourceTargetProteinMappingFilename), proteinOrthologLine.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         }
     }
 
@@ -38,17 +35,12 @@ public class OrthopairFileGenerator {
     public static void createSpeciesGeneProteinFile(String speciesKey, String targetGeneProteinMappingFilename, JSONObject speciesJSON, Map<String,Set<String>> speciesGeneProteinMap) throws IOException {
 
         logger.info("\tGenerating " + targetGeneProteinMappingFilename);
-        File targetGeneProteinMappingFile = new File (targetGeneProteinMappingFilename);
-        if (targetGeneProteinMappingFile.exists()) {
-            targetGeneProteinMappingFile.delete();
-        }
-
+        Files.deleteIfExists(Paths.get(targetGeneProteinMappingFilename));
         Map<String, Set<String>> altIdToEnsemblMap = new HashMap<>();
         if (altIdMappingExists(speciesJSON)) {
             logger.info("\tAlternate ID-Ensembl ID mapping required");
             altIdToEnsemblMap = AlternateIdMapper.getAltIdMappingFile(speciesKey, speciesJSON.get("alt_id_file").toString());
         }
-        targetGeneProteinMappingFile.createNewFile();
 
         List<String> targetGeneProteinLines = new ArrayList<>();
         for (String targetGeneId : speciesGeneProteinMap.keySet()) {
@@ -56,7 +48,6 @@ public class OrthopairFileGenerator {
             String geneSource = geneSplit[0];
             String geneId = geneSplit[geneSplit.length - 1];
             String targetProteinIds = getTargetProteinsAsString(speciesGeneProteinMap.get(targetGeneId));
-            List<String> cleanTargetProteinIds = new ArrayList<>();
             if (!targetProteinIds.isEmpty()) {
                 if (!geneSource.startsWith("Ensembl") && altIdMappingExists(speciesJSON)) {
                     if (altIdToEnsemblMap.get(geneId) != null) {
@@ -71,7 +62,7 @@ public class OrthopairFileGenerator {
         }
         Collections.sort(targetGeneProteinLines);
         for (String targetGeneProteinLine : targetGeneProteinLines) {
-            Files.write(Paths.get(targetGeneProteinMappingFilename), targetGeneProteinLine.getBytes(), StandardOpenOption.APPEND);
+            Files.write(Paths.get(targetGeneProteinMappingFilename), targetGeneProteinLine.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         }
     }
 

@@ -147,25 +147,6 @@
 		"group":"Vertebrate",
 		"compara":"core"
 	},
-	"osat":{
-		"name":[
-			"Oryza sativa"
-		],
-		"mart_group":"osativa_eg_gene",
-		"mart_url":"http://plants.ensembl.org/biomart/martservice",
-		"refdb":{
-			"dbname":[
-				"ENSEMBL",
-				"Ensembl",
-				"ENSEMBL_Oryza_sativa_PROTEIN"
-			],
-			"access":"http://plants.ensembl.org/Oryza_sativa/Transcript/ProteinSummary?peptide=###ID###",
-			"url":"http://plants.ensembl.org/Oryza_sativa/Info/Index",
-			"ensg_access":"http://plants.ensembl.org/Oryza_sativa/geneview?gene=###ID###&db=core"
-		},
-		"mart_virtual_schema":"plants_mart",
-		"group":"Fungi/Plants"
-	},
 	"spom":{
 		"group":"Fungi/Plants",
 		"mart_virtual_schema":"fungi_mart",
@@ -297,51 +278,6 @@
 			"Drosophila melanogaster"
 		]
 	},
-	"atha":{
-		"group":"Fungi/Plants",
-		"mart_virtual_schema":"plants_mart",
-		"refdb":{
-			"access":"http://plants.ensembl.org/Arabidopsis_thaliana/Transcript/ProteinSummary?peptide=###ID###",
-			"dbname":[
-				"ENSEMBL",
-				"Ensembl",
-				"ENSEMBL_Arabidopsis_PROTEIN"
-			],
-			"url":"http://plants.ensembl.org/Arabidopsis_thaliana",
-			"ensg_access":"http://plants.ensembl.org/Arabidopsis_thaliana/geneview?gene=###ID###&db=core"
-		},
-		"mart_url":"http://plants.ensembl.org/biomart/martservice",
-		"alt_refdb":{
-			"url":"http://www.arabidopsis.org/index.jsp",
-			"alt_id":"-TAIR-G",
-			"dbname":[
-				"TAIR"
-			],
-			"access":"http://www.arabidopsis.org/servlets/TairObject?type=locus&name=###ID###"
-		},
-		"mart_group":"athaliana_eg_gene",
-		"name":[
-			"Arabidopsis thaliana"
-		]
-	},
-	"tgut":{
-		"compara":"core",
-		"group":"Vertebrate",
-		"refdb":{
-			"ensg_access":"http://www.ensembl.org/Taeniopygia_guttata/geneview?gene=###ID###&db=core",
-			"url":"http://www.ensembl.org/Taeniopygia_guttata/Info/Index/",
-			"dbname":[
-				"ENSEMBL",
-				"Ensembl",
-				"ENSEMBL_Taeniopygia_guttata_PROTEIN"
-			],
-			"access":"http://www.ensembl.org/Taeniopygia_guttata/Transcript/ProteinSummary?peptide=###ID###"
-		},
-		"name":[
-			"Taeniopygia guttata"
-		],
-		"mart_group":"tguttata_gene_ensembl"
-	},
 	"drer":{
 		"mart_group":"drerio_gene_ensembl",
 		"name":[
@@ -359,26 +295,6 @@
 		},
 		"group":"Vertebrate",
 		"compara":"core"
-	},
-	"mtub":{
-		"group":"Eubacteria",
-		"pan_name":"mycobacterium_tuberculosis_h37rv_asm19595v2",
-		"mart_group":"myc_30_gene",
-		"name":[
-			"Mycobacterium tuberculosis"
-		],
-		"refdb":{
-			"access":"http://bacteria.ensembl.org/Mycobacterium/M_tuberculosis_H37Rv/Transcript/ProteinSummary?peptide=###ID###",
-			"dbname":[
-				"ENSEMBL",
-				"Ensembl",
-				"Ensembl",
-				"ENSEMBL_M_tuberculosis_PROTEIN"
-			],
-			"url":"http://bacteria.ensembl.org/Mycobacterium/M_tuberculosis_H37Rv/Info/Index",
-			"ensg_access":"http://bacteria.ensembl.org/Mycobacterium/M_tuberculosis_H37Rv/geneview?gene=###ID###&db=core"
-		},
-		"prokaryote":1
 	},
 	"rnor":{
 		"compara":"core",

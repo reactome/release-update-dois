@@ -6,8 +6,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +33,7 @@ public class PathwaySummationMappingFile {
 		File pathwaySummationFile = new File(pathwaySummationFilename);
 		pathwaySummationFile.delete();
 		pathwaySummationFile.createNewFile();
-		for (GKInstance pathwayInst : pathwayInstances)
+		for (GKInstance pathwayInst : sortByName(pathwayInstances))
 		{
 			if (containsHumanEntry(pathwayInst))
 			{
@@ -40,7 +42,8 @@ public class PathwaySummationMappingFile {
 				String stableId = ((GKInstance) pathwayInst.getAttributeValue(stableIdentifier)).getAttributeValue(identifier).toString();
 				for (GKInstance summationInst : (Collection<GKInstance>) pathwayInst.getAttributeValuesList(summation))
 				{
-					String textString = summationInst.getAttributeValue(text).toString().replaceAll(" +", " ").replaceAll("\n", "");
+					String textString = summationInst.getAttributeValue(text).toString().replaceAll("\\s+", " ");
+
 					String row = stableId + "\t" + nameString + "\t" + textString + "\n";
 					// Filter duplicates
 					if (!rowHash.contains(row))
@@ -55,6 +58,14 @@ public class PathwaySummationMappingFile {
 		Files.move(Paths.get(pathwaySummationFilename), Paths.get(outpathName), StandardCopyOption.REPLACE_EXISTING);
 
 		logger.info("Finished PathwaySummationMappingFile");
+	}
+
+	// Sort instances by display name
+	private static Collection<GKInstance> sortByName(Collection<GKInstance> instances) {
+		return instances
+		.stream()
+		.sorted(Comparator.comparing(GKInstance::getDisplayName))
+		.collect(Collectors.toList());
 	}
 
 	// Check that at least one of the Species instances is for Homo sapiens

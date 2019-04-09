@@ -2,6 +2,8 @@ package org.reactome.release.updateDOIs;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,18 +31,18 @@ public class ReportTests {
 		
 	}
 	
-	public static void expectedUpdatesTests( HashMap<String,HashMap<String,String>> expectedUpdatedDOIs, ArrayList<String> updated, ArrayList<String> notUpdated, int fetchHits ) {
+	public static void expectedUpdatesTests(Map<String,Map<String,String>> expectedUpdatedDOIs, List<String> updated, List<String> notUpdated, int expectedNumberOfUpdatedDOIs, String REACTOME_DOI_PREFIX) {
 		// Checking if provided list matched updated instances. Any that don't, it attempts to determine why they might not of been updated.
 		// This entails comparing the DB ID, display name and the stable ID version of the provided list (UpdateDOIs.report) with the actual updated instances
 		if (notUpdated.size() > 0)
 		{
-			
-			ArrayList<String> unresolvedDOIs = new ArrayList<String>();
+			warningsLog.warn("Some DOIs from UpdateDOIs.report were not updated");
+			List<String> unresolvedDOIs = new ArrayList<>();
 			for (String missed : notUpdated) 
 			{
 				String missedDoi = missed.split(":")[0];
 				String missedName = missed.split(":")[1];
-				String missedClean = missedDoi.replace("10.3180/", "");
+				String missedClean = missedDoi.replace(REACTOME_DOI_PREFIX + "/", "");
 				String missedStableId = missedClean.split("\\.")[0];
 				String missedStableIdVersion = missedClean.split("\\.")[1];
 				int resolved = 0;
@@ -79,7 +81,7 @@ public class ReportTests {
 					warningsLog.warn("[" + unresolvedDOI + "]" + "DOI does not match any DOIs expected to be updated -- Could not match display name or DB ID");
 				}
 			}
-		} else if (expectedUpdatedDOIs.size() != 0 && fetchHits > expectedUpdatedDOIs.size()) {
+		} else if (expectedUpdatedDOIs.size() != 0 && expectedNumberOfUpdatedDOIs > expectedUpdatedDOIs.size()) {
 			warningsLog.warn("The following DOIs were unexpectedly updated: ");
 			for (Object updatedDOI : updated)
 			{

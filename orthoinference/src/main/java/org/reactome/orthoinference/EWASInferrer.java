@@ -41,7 +41,12 @@ public class EWASInferrer {
 		if (homologueMappings.get(referenceEntityId) != null)
 		{
 			// Iterate through the array of homologue mappings, attempting to infer EWAS instances for each.
-			for (String homologueId : homologueMappings.get(referenceEntityId)) {
+			for (String homologue : homologueMappings.get(referenceEntityId)) {
+
+				// Handles homologues formatted as either DB:ID or just ID
+				String homologueSource = homologue.contains(":") ? homologue.split(":")[0] : "";
+				String homologueId = homologue.contains(":") ? homologue.split(":")[1] : homologue;
+
 				if (checkValidSpeciesProtein(homologueId)) {
 					GKInstance infReferenceGeneProductInst = null;
 					if (referenceGeneProductIdenticals.get(homologueId) == null) {
@@ -49,7 +54,7 @@ public class EWASInferrer {
 						infReferenceGeneProductInst.addAttributeValue(identifier, homologueId);
 						// Reference DB can differ between homologue mappings, but can be differentiated by the 'homologueSource' found in each mapping.
 						// With PANTHER data, the Protein IDs are exclusively UniProt
-						GKInstance referenceDatabaseInst = uniprotDbInst;
+						GKInstance referenceDatabaseInst = homologueSource.equals("ENSP") ? enspDbInst : uniprotDbInst;
 						infReferenceGeneProductInst.addAttributeValue(referenceDatabase, referenceDatabaseInst);
 
 						// Creates ReferenceDNASequence instance from ReferenceEntity
@@ -57,8 +62,9 @@ public class EWASInferrer {
 						infReferenceGeneProductInst.addAttributeValue(referenceGene, inferredReferenceDNAInstances);
 
 						infReferenceGeneProductInst.addAttributeValue(species, speciesInst);
-						infReferenceGeneProductInst.setAttributeValue(_displayName, "UniProt:" + homologueId);
-						infReferenceGeneProductInst = InstanceUtilities.checkForIdenticalInstances(infReferenceGeneProductInst, null);
+						String referenceGeneProductSource = homologueSource.equals("ENSP") ? "ENSEMBL:" : "UniProt:";
+						infReferenceGeneProductInst.setAttributeValue(_displayName, referenceGeneProductSource + homologueId);
+						infReferenceGeneProductInst = InstanceUtilities.checkForIdenticalInstances(infReferenceGeneProductInst);
 						referenceGeneProductIdenticals.put(homologueId, infReferenceGeneProductInst);
 					} else {
 						infReferenceGeneProductInst = referenceGeneProductIdenticals.get(homologueId);
@@ -261,9 +267,11 @@ public class EWASInferrer {
 		{
 			String[] tabSplit = currentLine.split("\t");
 			String ensgKey = tabSplit[0];
-			String[] proteinIds = tabSplit[1].split(" ");
-			for (String proteinId : proteinIds)
+			String[] proteins = tabSplit[1].split(" ");
+			for (String protein : proteins)
 			{
+				String proteinId = protein.contains(":") ? protein.split(":")[1] : protein;
+
 				if (ensgMappings.get(proteinId) == null)
 				{
 					List<String> singleArray = new ArrayList<>();
