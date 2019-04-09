@@ -186,9 +186,6 @@ public class EventsInferrer
 			try {
 				logger.info("Attempting to infer " + reactionInst);
 				ReactionInferrer.inferReaction(reactionInst);
-			} catch (RuntimeException e) {
-				e.printStackTrace();
-				return;
 			} catch (Exception e) {
 				e.printStackTrace();
 				return;
