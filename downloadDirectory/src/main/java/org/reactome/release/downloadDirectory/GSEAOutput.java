@@ -1,16 +1,11 @@
 package org.reactome.release.downloadDirectory;
 
-import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -32,41 +27,10 @@ public class GSEAOutput {
 		exporter.setDBA(dba);
 		exporter.export(outFilename);
 
-		logger.info("Updating ReactomePathways.gmt with 'Reactome Pathway' column...");
-		updateGSEAFile();
-
-		logger.info("Zipping ReactomePathways.gmt...");
+		logger.info("Zipping " + outFilename);
 		zipGSEAFile(releaseNumber);
 
-		logger.info("Finished GSEAOutput");
-	}
-
-	// Adds the string 'Reactome Pathway' to the third column of the output file
-	private static void updateGSEAFile() throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader(outFilename));
-		StringBuffer inputBuffer = new StringBuffer();
-
-		String line;
-		while ((line = br.readLine()) != null)
-		{
-			String[] tabSplit = line.split("\t");
-			List<String> updatedLine = new ArrayList<>();
-			for (int i=0; i < tabSplit.length; i++)
-			{
-				if (i == 2)
-				{
-					updatedLine.add("Reactome Pathway");
-				}
-				updatedLine.add(tabSplit[i]);
-			}
-			inputBuffer.append(String.join("\t",updatedLine));
-			inputBuffer.append("\n");
-		}
-		String updatedLines = inputBuffer.toString();
-		br.close();
-		FileOutputStream fileOut = new FileOutputStream(outFilename);
-		fileOut.write(updatedLines.getBytes());
-		fileOut.close();
+		logger.info("Finished GSEAOutput step");
 	}
 
 	// Zips the GSEA file and then removes the original
