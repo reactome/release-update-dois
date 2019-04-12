@@ -31,26 +31,22 @@ public class MolecularFunctionAnnotationBuilder {
     private static boolean validateMolecularFunctionCatalyst(GKInstance catalystInst) throws Exception {
         GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
         boolean validCatalystPE = GOAGeneratorUtilities.validateCatalyst(catalystPEInst);
+        boolean catalystValidity = false;
         if (validCatalystPE) {
-
-            //TODO: Refactor
             List<GKInstance> activeUnitInstances = catalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit);
-            if (activeUnitInstances.size() == 0 && !GOAGeneratorUtilities.multiInstancePhysicalEntity(catalystPEInst.getSchemClass())) {
-                return true;
+            if (activeUnitInstances.size() == 0) { 
+               catalystValidity = GOAGeneratorUtilities.multiInstancePhysicalEntity(catalystPEInst.getSchemClass()) ? false : true;
             } else if (activeUnitInstances.size() == 1) {
-                SchemaClass activeUnitSchemaClass = (activeUnitInstances).get(0).getSchemClass();
-                if (activeUnitSchemaClass.isa(ReactomeJavaConstants.Complex) || activeUnitSchemaClass.isa(ReactomeJavaConstants.Polymer)) {
-                    return false;
-                }
-                if (activeUnitSchemaClass.isa(ReactomeJavaConstants.EntitySet) && !GOAGeneratorUtilities.onlyEWASMembers((activeUnitInstances).get(0))) {
-                    return false;
-                }
+                catalystValidity = validCatalystAU(activeUnitInstances.get(0));
             } else {
-                return false;
+                catalystValidity = false;
             }
-            return true;
         }
-        return true;
+        return catalystValidity;
+    }
+
+    private static boolean validCatalystAU(GKInstance activeUnitInst) throws Exception {
+           return activeUnitInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet) && !GOAGeneratorUtilities.onlyEWASMembers(activeUnitInst) ? false : true;
     }
 
     // Retrieves all protein instances from an EntitySet comprised of only EWAS' or that are not a Complex/Polymer but are an EWAS.
