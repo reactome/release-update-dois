@@ -10,9 +10,6 @@ public class BiologicalProcessAnnotationBuilder {
 
     private static final int MAX_RECURSION_LEVEL = 2;
 
-    private static final List<String> microbialSpeciesToExclude = new ArrayList<>(Arrays.asList("813", "562", "491", "90371", "1280", "5811"));
-    private static final String PROTEIN_BINDING_ANNOTATION = "0005515";
-
     public static void processBiologicalFunctions(GKInstance reactionInst) throws Exception {
 
         Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
@@ -23,7 +20,7 @@ public class BiologicalProcessAnnotationBuilder {
             // Check that catalyst instance has no disqualifying attributes.
             for (GKInstance catalystInst : catalystInstances) {
                 GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
-                boolean validCatalyst = GOAGeneratorUtilities.validateCatalyst(catalystPEInst);
+                boolean validCatalyst = GOAGeneratorUtilities.validateCatalystPE(catalystPEInst);
                 if (validCatalyst) {
                     Set<GKInstance> proteinInstances = getBiologicalProcessProteins((GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity));
                     processProteins(proteinInstances, reactionInst);
@@ -43,6 +40,24 @@ public class BiologicalProcessAnnotationBuilder {
         return proteinInstances;
     }
 
+    // Returns all constituent PhysicalEntity instances of a Multi-instance PhysicalEntity
+    private static Set<GKInstance> getMultiInstanceSubInstances(GKInstance physicalEntityInst) throws Exception {
+        SchemaClass physicalEntitySchemaClass = physicalEntityInst.getSchemClass();
+        String subunitType = null;
+        Set<GKInstance> subInstanceProteins = new HashSet<>();
+        if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex)) {
+            subunitType = ReactomeJavaConstants.hasComponent;
+        } else if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer)) {
+            subunitType = ReactomeJavaConstants.repeatedUnit;
+        } else if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet)) {
+            subunitType = ReactomeJavaConstants.hasMember;
+        }
+        for (GKInstance subunitInst : (Collection<GKInstance>) physicalEntityInst.getAttributeValuesList(subunitType)) {
+            subInstanceProteins.addAll(getBiologicalProcessProteins(subunitInst));
+        }
+        return subInstanceProteins;
+    }
+
     // Attempt to generate GO Annotation information for each protein associated with the whole Reaction or just it's catalysts, depending on the goTerm being evaluated.
     private static void processProteins(Set<GKInstance> proteinInstances, GKInstance reactionInst) throws Exception {
 
@@ -53,8 +68,7 @@ public class BiologicalProcessAnnotationBuilder {
             boolean validProtein = GOAGeneratorUtilities.validateProtein(referenceEntityInst, speciesInst);
             if (validProtein) {
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
-                // TODO: Rule check
-                if (!microbialSpeciesToExclude.contains(taxonIdentifier)) {
+                if (!GOAGeneratorUtilities.excludedMicrobialSpecies(taxonIdentifier)) {
                     getGOBiologicalProcessLine(referenceEntityInst, reactionInst, taxonIdentifier);
                 }
             }
@@ -63,14 +77,11 @@ public class BiologicalProcessAnnotationBuilder {
 
     // Before creating GOA line for BP annotations, the reaction in question needs to be checked for the existance of a 'goBiologicalProcess' attribute. If there is none
     // than the instance's 'hasEvent' referrals are checked for any.
-    private static List<String> getGOBiologicalProcessLine(GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
-        List<String> goAnnotationLines = new ArrayList<>();
+    private static void getGOBiologicalProcessLine(GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
         for (Map<String, String> biologicalProcessAccession : getGOBiologicalProcessAccessions(reactionInst, 0)) {
             String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, "P", biologicalProcessAccession.get("accession"), biologicalProcessAccession.get("event"), "TAS", taxonIdentifier);
             GOAGeneratorUtilities.assignDateForGOALine(reactionInst, goaLine);
-            goAnnotationLines.add(goaLine);
         }
-        return goAnnotationLines;
     }
 
     // This method checks for a populated 'goBiologicalProcess' attribute in the incoming instance. If there are none and the max recursion has been reached,
@@ -81,7 +92,7 @@ public class BiologicalProcessAnnotationBuilder {
             Collection<GKInstance> goBiologicalProcessInstances = eventInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess);
             if (goBiologicalProcessInstances.size() > 0) {
                 for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
-                    if (!goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString().equals(PROTEIN_BINDING_ANNOTATION)) {
+                    if (!GOAGeneratorUtilities.accessionForProteinBindingAnnotation(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession))) {
                         Map<String, String> goBiologicalProcessAccession = new HashMap<>();
                         goBiologicalProcessAccession.put("accession", "GO:" + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
                         GKInstance eventStableIdentifierInst = (GKInstance) eventInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
@@ -102,21 +113,4 @@ public class BiologicalProcessAnnotationBuilder {
         return goBiologicalProcessAccessions;
     }
 
-    // Returns all constituent PhysicalEntity instances of a Multi-instance PhysicalEntity
-    private static Set<GKInstance> getMultiInstanceSubInstances(GKInstance physicalEntityInst) throws Exception {
-        SchemaClass physicalEntitySchemaClass = physicalEntityInst.getSchemClass();
-        String subunitType = null;
-        Set<GKInstance> subInstanceProteins = new HashSet<>();
-        if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex)) {
-            subunitType = ReactomeJavaConstants.hasComponent;
-        } else if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer)) {
-            subunitType = ReactomeJavaConstants.repeatedUnit;
-        } else if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet)) {
-            subunitType = ReactomeJavaConstants.hasMember;
-        }
-        for (GKInstance subunitInst : (Collection<GKInstance>) physicalEntityInst.getAttributeValuesList(subunitType)) {
-            subInstanceProteins.addAll(getBiologicalProcessProteins(subunitInst));
-        }
-        return subInstanceProteins;
-    }
 }

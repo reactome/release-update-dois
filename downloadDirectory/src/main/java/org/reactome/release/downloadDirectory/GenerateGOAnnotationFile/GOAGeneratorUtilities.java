@@ -1,6 +1,5 @@
 package org.reactome.release.downloadDirectory.GenerateGOAnnotationFile;
 
-import com.sun.xml.internal.bind.v2.TODO;
 import org.gk.model.ClassAttributeFollowingInstruction;
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
@@ -16,6 +15,8 @@ import java.util.*;
 
 public class GOAGeneratorUtilities {
 
+    private static final List<String> microbialSpeciesToExclude = new ArrayList<>(Arrays.asList("813", "562", "491", "90371", "1280", "5811"));
+    private static final String PROTEIN_BINDING_ANNOTATION = "0005515";
     private static final String uniprotDbString = "UniProtKB";
     private static Map<String, Integer> dates = new HashMap<>();
     private static Set<String> goaLines = new HashSet<>();
@@ -36,7 +37,6 @@ public class GOAGeneratorUtilities {
     }
 
     // This checks if the protein in question has UniProt as a Reference Database, and if the species has a crossReference. If not, it's information will not be generated for the GOA file.
-    // TODO: Rule check
     public static boolean validateProtein(GKInstance referenceEntityInst, GKInstance speciesInst) throws Exception {
         if (referenceEntityInst != null && speciesInst != null) {
             GKInstance referenceDatabaseInst = (GKInstance) referenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase);
@@ -48,8 +48,16 @@ public class GOAGeneratorUtilities {
     }
 
     // This method checks the validity of the PhysicalEntity of a Catalyst instance by checking it has a compartment attribute.
-    public static boolean validateCatalyst(GKInstance catalystPEInst) throws Exception {
+    public static boolean validateCatalystPE(GKInstance catalystPEInst) throws Exception {
         if (catalystPEInst != null && catalystPEInst.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
+            return true;
+        }
+        return false;
+    }
+
+    // Checks if this PhysicalEntity is one that is made of multiple PhysicalEntity instances.
+    public static boolean multiInstancePhysicalEntity(SchemaClass physicalEntitySchemaClass) {
+        if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer)) {
             return true;
         }
         return false;
@@ -113,28 +121,6 @@ public class GOAGeneratorUtilities {
         return instanceDate;
     }
 
-    // Checks if this PhysicalEntity is one that is made of multiple PhysicalEntity instances.
-    public static boolean multiInstancePhysicalEntity(SchemaClass physicalEntitySchemaClass) {
-        if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer)) {
-            return true;
-        }
-        return false;
-    }
-
-    // Checks that the incoming EntitySet instance only has EWAS members
-    public static boolean onlyEWASMembers(GKInstance entitySetInst) throws Exception {
-        Collection<GKInstance> memberInstances = entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember);
-        if (memberInstances.size() > 0) {
-            for (GKInstance memberInst : memberInstances) {
-                if (!memberInst.getSchemClass().isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
     // With all GOA annotations made and most recent dates for each line found, generate the GOA file.
     public static void outputGOAFile(String filename) throws IOException {
         if (Files.exists(Paths.get(filename))) {
@@ -148,5 +134,13 @@ public class GOAGeneratorUtilities {
             br.append(goaLine + "\t" + dates.get(goaLine) + "\tReactome\t\t\n");
         }
         br.close();
+    }
+
+    public static boolean excludedMicrobialSpecies(String taxonIdentifier) {
+        return microbialSpeciesToExclude.contains(taxonIdentifier);
+    }
+
+    public static boolean accessionForProteinBindingAnnotation(Object goAccession) {
+        return goAccession.toString().equals(PROTEIN_BINDING_ANNOTATION);
     }
 }
