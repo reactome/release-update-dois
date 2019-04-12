@@ -6,9 +6,6 @@ import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -17,11 +14,6 @@ import java.util.*;
 public class CreateGOAFile {
 
     private static final Logger logger = LogManager.getLogger();
-
-    private static final String CELLULAR_COMPONENT = "Cellular Component";
-    private static final String MOLECULAR_FUNCTION = "Molecular Function";
-    private static final String BIOLOGICAL_PROCESS = "Biological Process";
-
     private static final String GOA_FILENAME = "gene_association.reactome";
 
     public static void execute(MySQLAdaptor dbAdaptor, String releaseNumber) throws Exception {
@@ -35,7 +27,7 @@ public class CreateGOAFile {
                 BiologicalProcessAnnotationBuilder.processBiologicalFunctions(reactionInst);
             }
         }
-        GOAGeneratorUtilities.outputGOAFile();
+        GOAGeneratorUtilities.outputGOAFile(GOA_FILENAME);
         Files.move(Paths.get(GOA_FILENAME), Paths.get(releaseNumber + "/" + GOA_FILENAME), StandardCopyOption.REPLACE_EXISTING);
         logger.info("Finished generating gene_association.reactome");
         }

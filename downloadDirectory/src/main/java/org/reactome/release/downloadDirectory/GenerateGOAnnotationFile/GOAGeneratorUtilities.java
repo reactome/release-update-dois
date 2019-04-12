@@ -18,7 +18,6 @@ public class GOAGeneratorUtilities {
 
     private static final String uniprotDbString = "UniProtKB";
     private static Map<String, Integer> dates = new HashMap<>();
-    private static final String GOA_FILENAME = "gene_association.reactome";
     private static Set<String> goaLines = new HashSet<>();
 
     public static Set<GKInstance> retrieveProteins(GKInstance reactionInst) throws Exception {
@@ -137,13 +136,13 @@ public class GOAGeneratorUtilities {
     }
 
     // With all GOA annotations made and most recent dates for each line found, generate the GOA file.
-    public static void outputGOAFile() throws IOException {
-        if (Files.exists(Paths.get(GOA_FILENAME))) {
-            Files.delete(Paths.get(GOA_FILENAME));
+    public static void outputGOAFile(String filename) throws IOException {
+        if (Files.exists(Paths.get(filename))) {
+            Files.delete(Paths.get(filename));
         }
         List<String> sortedGoaLines = new ArrayList<>(goaLines);
         Collections.sort(sortedGoaLines);
-        BufferedWriter br = new BufferedWriter((new FileWriter(GOA_FILENAME)));
+        BufferedWriter br = new BufferedWriter((new FileWriter(filename)));
         br.write("!gaf-version: 2.1\n");
         for (String goaLine : sortedGoaLines) {
             br.append(goaLine + "\t" + dates.get(goaLine) + "\tReactome\t\t\n");

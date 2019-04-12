@@ -21,7 +21,7 @@ public class CellularComponentAnnotationBuilder {
             GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
             GKInstance speciesInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.species);
             // Check if the protein has any disqualifying attributes.
-            boolean validProtein = EntityValidator.validateProtein(referenceEntityInst, speciesInst);
+            boolean validProtein = GOAGeneratorUtilities.validateProtein(referenceEntityInst, speciesInst);
             if (validProtein) {
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
                 // TODO: Rule check
@@ -39,12 +39,11 @@ public class CellularComponentAnnotationBuilder {
     }
 
     // This feeds into the GOA line generator. It formats that method call with attributes specific to CC annotations.
-    private static String generateGOCellularCompartmentLine(GKInstance proteinInst, GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
+    private static void generateGOCellularCompartmentLine(GKInstance proteinInst, GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
         String reactomeIdentifier = "REACTOME:" + ((GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
         String goCellularCompartmentAccession = getCellularCompartmentGOAccession(proteinInst);
         String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, "C", goCellularCompartmentAccession, reactomeIdentifier, "TAS", taxonIdentifier);
         GOAGeneratorUtilities.assignDateForGOALine(proteinInst, goaLine);
-        return goaLine;
     }
 
     // Checks for and returns valid GO accessions specific to Cellular Compartments in the protein of interest.

@@ -15,27 +15,31 @@ public class MolecularFunctionAnnotationBuilder {
 
         Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
         for (GKInstance catalystInst : catalystInstances) {
-            // Check that catalyst instance has no disqualifying attributes.
-            boolean validCatalyst = validateMolecularFunctionCatalyst(catalystInst);
-            if (validCatalyst) {
-                // For MF annotations, gets all proteins from the ActiveUnit if it exists or from the PhysicalEntity if not.
-                GKInstance activeUnitInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit);
-                GKInstance entityInst = activeUnitInst == null ? (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity) : activeUnitInst;
-                Set<GKInstance> proteinInstances = getMolecularFunctionProteins(entityInst);
-                // For BP annotations (that have a catalyst), it gets all proteins from the PhysicalEntity
-                processProteins(proteinInstances, reactionInst, catalystInst);
-            }
+                // Check that catalyst instance has no disqualifying attributes.
+                boolean validCatalyst = validateMolecularFunctionCatalyst(catalystInst);
+                if (validCatalyst) {
+                    // For MF annotations, gets all proteins from the ActiveUnit if it exists or from the PhysicalEntity if not.
+                    GKInstance activeUnitInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit);
+                    GKInstance entityInst = activeUnitInst == null ? (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity) : activeUnitInst;
+                    Set<GKInstance> proteinInstances = getMolecularFunctionProteins(entityInst);
+                    // For BP annotations (that have a catalyst), it gets all proteins from the PhysicalEntity
+                    processProteins(proteinInstances, reactionInst, catalystInst);
+                }
         }
     }
 
+    // This checks validity of a catalyst in a few ways. It first checks that the PhysicalEntity is valid.
+    // Then it will check if the ActiveUnit is valid if it exists. If there is no ActiveUnit, the PhysicalEntity
+    // is checked to see if it is 'multi-instance', meaning Complex, Polymer, or EntitySet. If so, it is considered invalid.
+    // Catalysts with more than 1 ActiveUnit are also considered invalid.
     private static boolean validateMolecularFunctionCatalyst(GKInstance catalystInst) throws Exception {
         GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
         boolean validCatalystPE = GOAGeneratorUtilities.validateCatalyst(catalystPEInst);
         boolean catalystValidity = false;
         if (validCatalystPE) {
             List<GKInstance> activeUnitInstances = catalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit);
-            if (activeUnitInstances.size() == 0) { 
-               catalystValidity = GOAGeneratorUtilities.multiInstancePhysicalEntity(catalystPEInst.getSchemClass()) ? false : true;
+            if (activeUnitInstances.size() == 0) {
+                catalystValidity = GOAGeneratorUtilities.multiInstancePhysicalEntity(catalystPEInst.getSchemClass()) ? false : true;
             } else if (activeUnitInstances.size() == 1) {
                 catalystValidity = validCatalystAU(activeUnitInstances.get(0));
             } else {
@@ -45,22 +49,31 @@ public class MolecularFunctionAnnotationBuilder {
         return catalystValidity;
     }
 
+    // Validity of ActiveUnit is dependant on it not being an EntitySet with non-EWAS members.
+    // This rule used to also exclude Complex and Polymers, but it seems ActiveUnits can't be either of those.
     private static boolean validCatalystAU(GKInstance activeUnitInst) throws Exception {
-           return activeUnitInst.getSchemClass().isa(ReactomeJavaConstants.EntitySet) && !GOAGeneratorUtilities.onlyEWASMembers(activeUnitInst) ? false : true;
+        SchemaClass activeUnitSchemaClass = activeUnitInst.getSchemClass();
+        if (activeUnitSchemaClass.isa(ReactomeJavaConstants.EntitySet) && !GOAGeneratorUtilities.onlyEWASMembers(activeUnitInst)) {
+            return false;
+        }
+        if (activeUnitSchemaClass.isa(ReactomeJavaConstants.Complex) || activeUnitSchemaClass.isa(ReactomeJavaConstants.Polymer)) {
+            return false;
+        }
+           return true;
     }
 
     // Retrieves all protein instances from an EntitySet comprised of only EWAS' or that are not a Complex/Polymer but are an EWAS.
     private static Set<GKInstance> getMolecularFunctionProteins(GKInstance entityInst) throws Exception {
         Set<GKInstance> proteinInstances = new HashSet<>();
         SchemaClass entitySchemaClass = entityInst.getSchemClass();
-        if (!(entitySchemaClass.isa(ReactomeJavaConstants.Complex) || entitySchemaClass.isa(ReactomeJavaConstants.Polymer))) {
+//        if (!(entitySchemaClass.isa(ReactomeJavaConstants.Complex) || entitySchemaClass.isa(ReactomeJavaConstants.Polymer))) {
             //TODO: Is onlyEWASMembers required here?
             if (entitySchemaClass.isa(ReactomeJavaConstants.EntitySet) && GOAGeneratorUtilities.onlyEWASMembers(entityInst)) {
                 proteinInstances.addAll(entityInst.getAttributeValuesList(ReactomeJavaConstants.hasMember));
             } else if (entitySchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
                 proteinInstances.add(entityInst);
             }
-        }
+//        }
         return proteinInstances;
     }
 
