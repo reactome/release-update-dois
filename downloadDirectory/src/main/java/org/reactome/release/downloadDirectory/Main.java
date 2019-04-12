@@ -17,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
+import org.reactome.release.downloadDirectory.GenerateGOAnnotationFile.CreateGOAFile;
 
 public class Main {
 	private static final Logger logger = LogManager.getLogger();
@@ -151,10 +152,11 @@ public class Main {
 		// These file copy commands now use absolute paths instead of relative ones
 		if (stepsToRun.contains("GenerateGOAnnotationFile"))
 		{
-			// This step copies the gene_association.reactome file generated during the goa_prepare step of Release to the download_directory folder
+			// This step generates the gene_association.reactome file
 			// Output: gene_association.reactome
 			try {
-				GenerateGOAnnotationFile.execute(dbAdaptor, releaseNumber);
+				CreateGOAFile.execute(dbAdaptor, releaseNumber);
+
 			} catch (Exception e) {
 				failedSteps.add("GenerateGOAnnotationFile");
 				e.printStackTrace();
