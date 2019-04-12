@@ -41,10 +41,10 @@ public class CreateGOAFile {
     }
 
     private static boolean isManuallyInferred(GKInstance reactionInst) throws Exception {
-        return reactionInst.getAttributeValue(ReactomeJavaConstants.inferredFrom) != null ? true : false;
+        return reactionInst.getAttributeValue(ReactomeJavaConstants.inferredFrom) != null;
     }
 
     private static boolean isElectronicallyInferred(GKInstance reactionInst) throws Exception {
-        return reactionInst.getAttributeValue(ReactomeJavaConstants.evidenceType) != null ? true : false;
+        return reactionInst.getAttributeValue(ReactomeJavaConstants.evidenceType) != null;
     }
 }

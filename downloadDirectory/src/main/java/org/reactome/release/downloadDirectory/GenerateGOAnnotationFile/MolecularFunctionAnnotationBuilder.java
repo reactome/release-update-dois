@@ -19,7 +19,6 @@ public class MolecularFunctionAnnotationBuilder {
                     GKInstance activeUnitInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit);
                     GKInstance entityInst = activeUnitInst == null ? (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity) : activeUnitInst;
                     Set<GKInstance> proteinInstances = getMolecularFunctionProteins(entityInst);
-                    // For BP annotations (that have a catalyst), it gets all proteins from the PhysicalEntity
                     processProteins(proteinInstances, reactionInst, catalystInst);
                 }
         }
@@ -39,8 +38,6 @@ public class MolecularFunctionAnnotationBuilder {
                 catalystValidity = GOAGeneratorUtilities.multiInstancePhysicalEntity(catalystPEInst.getSchemClass()) ? false : true;
             } else if (activeUnitInstances.size() == 1) {
                 catalystValidity = validCatalystAU(activeUnitInstances.get(0));
-            } else {
-                catalystValidity = false;
             }
         }
         return catalystValidity;
@@ -56,7 +53,7 @@ public class MolecularFunctionAnnotationBuilder {
         if (activeUnitSchemaClass.isa(ReactomeJavaConstants.Complex) || activeUnitSchemaClass.isa(ReactomeJavaConstants.Polymer)) {
             return false;
         }
-           return true;
+        return true;
     }
 
     // Retrieves all protein instances from an EntitySet comprised of only EWAS' or that are not a Complex/Polymer but are an EWAS.
@@ -73,16 +70,12 @@ public class MolecularFunctionAnnotationBuilder {
 
     // Checks that the incoming EntitySet instance only has EWAS members
     private static boolean onlyEWASMembers(GKInstance entitySetInst) throws Exception {
-        Collection<GKInstance> memberInstances = entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember);
-        if (memberInstances.size() > 0) {
-            for (GKInstance memberInst : memberInstances) {
-                if (!memberInst.getSchemClass().isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
-                    return false;
-                }
+        for (GKInstance memberInst : (Collection<GKInstance>) entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember)) {
+            if (!memberInst.getSchemClass().isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
+                return false;
             }
-            return true;
         }
-        return false;
+        return true;
     }
 
     // Attempt to generate GO Annotation information for each protein associated with the whole Reaction or just it's catalysts, depending on the goTerm being evaluated.

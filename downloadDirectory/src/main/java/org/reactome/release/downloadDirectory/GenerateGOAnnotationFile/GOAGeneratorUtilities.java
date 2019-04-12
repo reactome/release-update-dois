@@ -49,18 +49,12 @@ public class GOAGeneratorUtilities {
 
     // This method checks the validity of the PhysicalEntity of a Catalyst instance by checking it has a compartment attribute.
     public static boolean validateCatalystPE(GKInstance catalystPEInst) throws Exception {
-        if (catalystPEInst != null && catalystPEInst.getAttributeValue(ReactomeJavaConstants.compartment) != null) {
-            return true;
-        }
-        return false;
+        return catalystPEInst != null && catalystPEInst.getAttributeValue(ReactomeJavaConstants.compartment) != null;
     }
 
     // Checks if this PhysicalEntity is one that is made of multiple PhysicalEntity instances.
     public static boolean multiInstancePhysicalEntity(SchemaClass physicalEntitySchemaClass) {
-        if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer)) {
-            return true;
-        }
-        return false;
+        return physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer);
     }
 
     // Generic function that generates a single line in the GOA file. The arguments are formatted in GO term-specific methods before this is called.
