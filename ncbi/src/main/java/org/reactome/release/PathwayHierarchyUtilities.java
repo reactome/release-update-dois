@@ -27,14 +27,15 @@ public class PathwayHierarchyUtilities {
 	 * to the Set of Pathway database identifiers in which each Reaction Like Event participates
 	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
 	 * @return Map of Reaction Like Event identifier to Set of Pathway identifiers
+	 * @throws IllegalStateException Thrown if the graphDBSession parameter is null
 	 */
 	public static Map<Long, Set<Long>> fetchRLEIdToPathwayId(Session graphDBSession) {
-		if (rleToPathwayIdCache.containsKey(graphDBSession)) {
-			return rleToPathwayIdCache.get(graphDBSession);
-		}
-
 		if (graphDBSession == null) {
 			throw new IllegalStateException("Neo4j driver session parameter is null");
+		}
+
+		if (rleToPathwayIdCache.containsKey(graphDBSession)) {
+			return rleToPathwayIdCache.get(graphDBSession);
 		}
 
 		logger.info("Computing RLE id to Pathway id");
