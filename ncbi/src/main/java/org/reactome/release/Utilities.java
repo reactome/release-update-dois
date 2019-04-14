@@ -68,6 +68,16 @@ public class Utilities {
 	}
 
 	/**
+	 * Deletes the file at the path provided (if it exists) and creates an empty file
+	 * @param filePath Path of file to delete (if it already exists) and re-create
+	 * @throws IOException Thrown if unable to delete file (if exists) or create file at path provided
+	 */
+	public static void deleteAndCreateFile(Path filePath) throws IOException {
+		Files.deleteIfExists(filePath);
+		Files.createFile(filePath);
+	}
+
+	/**
 	 * Appends a String value to a file, specified by path, with a new line character (determined by OS)
 	 * @param lineToAppend Line to append to file
 	 * @param filePath Path of file to which to append line

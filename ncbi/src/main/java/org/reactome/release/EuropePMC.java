@@ -1,6 +1,5 @@
 package org.reactome.release;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.neo4j.driver.v1.Session;
@@ -10,7 +9,6 @@ import org.w3c.dom.Element;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -97,13 +95,10 @@ public class EuropePMC {
 	 * @throws IOException Thrown if creating or appending for file fails
 	 */
 	private void writeEuropePMCProfileFile() throws IOException {
-		Path europePMCProfileFilePath = getEuropePMCProfileFilePath();
-
-		Files.deleteIfExists(europePMCProfileFilePath);
-		Files.createFile(europePMCProfileFilePath);
-
 		logger.info("Writing Europe PMC Profile file");
 
+		Path europePMCProfileFilePath = getEuropePMCProfileFilePath();
+		deleteAndCreateFile(europePMCProfileFilePath);
 		appendWithNewLine(getEuropePMCProfileXML(), europePMCProfileFilePath);
 
 		logger.info("Finished writing Europe PMC Profile file");
@@ -151,13 +146,10 @@ public class EuropePMC {
 	 * @throws IOException Thrown if creating or appending for either file fails
 	 */
 	private void writeEuropePMCLinkFile(Session graphDBSession) throws IOException {
-		Path europePMCLinkFilePath = getEuropePMCLinkFilePath();
-
-		Files.deleteIfExists(europePMCLinkFilePath);
-		Files.createFile(europePMCLinkFilePath);
-
 		logger.info("Writing Europe PMC Link file");
 
+		Path europePMCLinkFilePath = getEuropePMCLinkFilePath();
+		deleteAndCreateFile(europePMCLinkFilePath);
 		appendWithNewLine(getEuropePMCLinksXML(graphDBSession), europePMCLinkFilePath);
 
 		logger.info("Finished writing Europe PMC Link file");

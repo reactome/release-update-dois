@@ -12,6 +12,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import static org.reactome.release.Utilities.appendWithNewLine;
+import static org.reactome.release.Utilities.deleteAndCreateFile;
 
 /**
  * File generator for NCBI Gene.  This class has logic for producing a file for
@@ -47,12 +48,10 @@ public class NCBIGene {
 	 * @throws IOException Thrown if creating or appending for file fails
 	 */
 	public void writeProteinFile() throws IOException {
-		Path filePath = getProteinFilePath();
-
-		Files.deleteIfExists(filePath);
-		Files.createFile(filePath);
-
 		logger.info("Writing proteins_version file");
+
+		Path filePath = getProteinFilePath();
+		deleteAndCreateFile(filePath);
 
 		// Write file header
 		Files.write(
@@ -86,11 +85,11 @@ public class NCBIGene {
 	 * @throws IOException Thrown if creating or appending for any file fails
 	 */
 	public void writeGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles) throws IOException {
-		Path geneErrorFilePath = getGeneErrorFilePath();
-		Files.deleteIfExists(geneErrorFilePath);
-		Files.createFile(geneErrorFilePath);
 
 		logger.info("Writing gene XML file(s)");
+
+		Path geneErrorFilePath = getGeneErrorFilePath();
+		deleteAndCreateFile(geneErrorFilePath);
 
 		Set<String> ncbiGeneXMLNodeStrings = new LinkedHashSet<>();
 		for (NCBIEntry ncbiEntry : ncbiEntries) {
@@ -120,8 +119,8 @@ public class NCBIGene {
 		int fileCount = 0;
 		for (Set<String> ncbiGeneXMLNodeStringsSubSet : Utilities.splitSet(ncbiGeneXMLNodeStrings, numGeneXMLFiles)) {
 			Path geneXMLFilePath = getGeneXMLFilePath(++fileCount);
-			Files.deleteIfExists(geneXMLFilePath);
-			Files.createFile(geneXMLFilePath);
+
+			deleteAndCreateFile(geneXMLFilePath);
 
 			logger.info("Generating " + geneXMLFilePath.getFileName());
 

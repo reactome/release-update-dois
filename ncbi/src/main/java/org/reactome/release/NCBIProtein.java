@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashSet;
@@ -14,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.reactome.release.Utilities.appendWithNewLine;
+import static org.reactome.release.Utilities.deleteAndCreateFile;
 
 /**
  * File generator for NCBI Protein.  This class has logic for producing a file for
@@ -44,11 +44,10 @@ public class NCBIProtein {
 	 * @throws IOException Thrown if creating or appending for file fails
 	 */
 	public void writeNCBIProteinFile() throws IOException {
-		Path ncbiProteinFilePath = getNCBIProteinFilePath();
-		Files.deleteIfExists(ncbiProteinFilePath);
-		Files.createFile(ncbiProteinFilePath);
-
 		logger.info("Writing NCBI protein file");
+
+		Path ncbiProteinFilePath = getNCBIProteinFilePath();
+		deleteAndCreateFile(ncbiProteinFilePath);
 
 		appendWithNewLine(getProteinFileHeader(), ncbiProteinFilePath);
 

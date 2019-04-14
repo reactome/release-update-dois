@@ -5,13 +5,13 @@ import org.apache.logging.log4j.Logger;
 import org.neo4j.driver.v1.*;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.reactome.release.Utilities.appendWithNewLine;
+import static org.reactome.release.Utilities.deleteAndCreateFile;
 
 /**
  * File generator for UCSC.  This class has logic for producing a file for
@@ -57,13 +57,12 @@ public class UCSC {
 	 * @throws IOException Thrown if creating or appending for file fails
 	 */
 	private void writeUCSCEntityFile(Session graphDBSession) throws IOException {
-		Path ucscEntityFilePath = Paths.get(outputDir, "ucsc_entity" + version);
-		Files.deleteIfExists(ucscEntityFilePath);
-		Files.createFile(ucscEntityFilePath);
-
 		logger.info("Writing UCSC Entity file");
 
+		Path ucscEntityFilePath = Paths.get(outputDir, "ucsc_entity" + version);
+		deleteAndCreateFile(ucscEntityFilePath);
 		appendWithNewLine(getUCSCEntityHeader(), ucscEntityFilePath);
+		
 		for (String line : getUCSCEntityLines(graphDBSession)) {
 			appendWithNewLine(line, ucscEntityFilePath);
 		}
@@ -102,15 +101,13 @@ public class UCSC {
 	 * @throws IOException Thrown if creating or appending for file fails
 	 */
 	private void writeUCSCEventFile(Session graphDBSession) throws IOException {
+		logger.info("Writing UCSC Event file");
+
 		Path ucscEventFilePath = Paths.get(outputDir, "ucsc_events" + version);
-		Files.deleteIfExists(ucscEventFilePath);
-		Files.createFile(ucscEventFilePath);
+		deleteAndCreateFile(ucscEventFilePath);
 
 		Path ucscErrorFilePath = Paths.get(outputDir, "ucsc_" + version + ".err");
-		Files.deleteIfExists(ucscErrorFilePath);
-		Files.createFile(ucscErrorFilePath);
-
-		logger.info("Writing UCSC Event file");
+		deleteAndCreateFile(ucscErrorFilePath);
 
 		appendWithNewLine(getUCSCEventsHeader(), ucscEventFilePath);
 
