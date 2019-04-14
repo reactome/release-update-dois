@@ -211,7 +211,7 @@ public class EuropePMC {
 	 * a Europe PMC Link XML Node based on this relationship to be used in the exported Europe PMC Link File.
 	 * @author jweiser
 	 */
-	public static class EuropePMCLink {
+	static class EuropePMCLink {
 		private String pathwayDisplayName;
 		private String pathwayStableId;
 		private String pubMedIdentifier;
