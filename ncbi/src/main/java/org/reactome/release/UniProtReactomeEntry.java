@@ -163,8 +163,7 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 				.addAll(reactionLikeEventIds.stream().map(eventCache::get).collect(Collectors.toSet()));
 
 			for (long reactionLikeEventId : reactionLikeEventIds) {
-				Set<Long> pathwayIds = rleToPathwayId.computeIfAbsent(reactionLikeEventId,
-																			  k -> new HashSet<>());
+				Set<Long> pathwayIds = rleToPathwayId.computeIfAbsent(reactionLikeEventId, k -> new HashSet<>());
 				uniprotAccessionToReactomeEvent
 					.computeIfAbsent(uniprotAccession, k-> new HashSet<>())
 					.addAll(pathwayIds.stream().map(eventCache::get).collect(Collectors.toSet()));
