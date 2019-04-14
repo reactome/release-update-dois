@@ -55,7 +55,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int version = Integer.parseInt(props.getProperty("reactomeVersion", "67"));
+		int version = Integer.parseInt(props.getProperty("reactomeVersion"));
 		String outputDir = props.getProperty("outputDir", "archive");
 		Files.createDirectories(Paths.get(outputDir));
 		logger.info("Files for Reactome version " + version + " will be output to the directory " + outputDir);
