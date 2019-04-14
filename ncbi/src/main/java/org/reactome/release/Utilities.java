@@ -1,6 +1,19 @@
 package org.reactome.release;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -68,7 +81,6 @@ public class Utilities {
 		);
 	}
 
-
 	/**
 	 * Appends a List of String values to a file, specified by path, with a new line character (determined by OS)
 	 * added for each String value in the list
@@ -80,5 +92,65 @@ public class Utilities {
 		for (String lineToAppend : linesToAppend) {
 			appendWithNewLine(lineToAppend, filePath);
 		}
+	}
+
+	/**
+	 * Returns an empty W3C Document object for a standalone XML document
+	 * @return W3C Document object representing an XML structure
+	 * @throws ParserConfigurationException Thrown if the creation of the document builder object fails
+	 */
+	public static Document createXMLDocument() throws ParserConfigurationException {
+		DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder documentBuilder;
+		documentBuilder = documentBuilderFactory.newDocumentBuilder();
+
+		Document doc = documentBuilder.newDocument();
+		doc.setXmlStandalone(true);
+
+		return doc;
+	}
+
+	/**
+	 * Creates, attaches (to the passed document object), and returns a root XML element
+	 * @param document XML W3C Document
+	 * @param elementName Name of root element to create and attach to the document
+	 * @return W3C Element object representing the root element of the document
+	 */
+	public static Element attachRootElement(Document document, String elementName) {
+		Element rootElement = document.createElement(elementName);
+		document.appendChild(rootElement);
+
+		return rootElement;
+	}
+
+	/**
+	 * Creates and returns an XML element with the provided name and text content
+	 * @param document XML W3C Document used to create the element
+	 * @param elementName Name of the XML element to create (i.e. the tag name)
+	 * @param elementText Value of the text to include as the element's child text node
+	 * @return W3C Element object representing the created XML element
+	 */
+	public static Element getElement(Document document, String elementName, String elementText) {
+		Element element = document.createElement(elementName);
+		element.appendChild(document.createTextNode(elementText));
+
+		return element;
+	}
+
+	/**
+	 * Returns the XML String equivalent of an XML W3C Document object
+	 * @param doc XML W3C Document
+	 * @return XML String representation of the document
+	 * @throws TransformerException Throws if the transformation of the document fails
+	 */
+	public static String transformDocumentToXMLString(Document doc) throws TransformerException {
+		StringWriter writer = new StringWriter();
+		TransformerFactory tf = TransformerFactory.newInstance();
+		Transformer transformer;
+		transformer = tf.newTransformer();
+		transformer.setOutputProperty(OutputKeys.STANDALONE, "yes");
+		transformer.transform(new DOMSource(doc), new StreamResult(writer));
+
+		return writer.toString();
 	}
 }
