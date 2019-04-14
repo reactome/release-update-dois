@@ -114,21 +114,21 @@ public class ReactomeEvent {
 
 	/**
 	 * Checks equality based on object type and value of event db id, display name and stable identifier
-	 * @param o Object to check for equality with the calling ReactomeEvent
+	 * @param obj Object to check for equality with the calling ReactomeEvent
 	 * @return <code>true</code> if the same object or a ReactomeEvent object with the same db id, display name,
 	 * and stable identifier.  Returns <code>false</code> otherwise.
 	 */
 	@Override
-	public boolean equals(Object o) {
-		if (o == this) {
+	public boolean equals(Object obj) {
+		if (obj == this) {
 			return true;
 		}
 
-		if (!(o instanceof ReactomeEvent)) {
+		if (!(obj instanceof ReactomeEvent)) {
 			return false;
 		}
 
-		ReactomeEvent oRE = (ReactomeEvent) o;
+		ReactomeEvent oRE = (ReactomeEvent) obj;
 
 		return	getDbId() == oRE.getDbId() &&
 				getName().equals(oRE.getName()) &&

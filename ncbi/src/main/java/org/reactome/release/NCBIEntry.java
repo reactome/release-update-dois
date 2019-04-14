@@ -101,31 +101,31 @@ public class NCBIEntry implements Comparable<NCBIEntry> {
 
 	/**
 	 * Compares UniProt accession values of this object and parameter
-	 * @param o NCBIEntry object to compare
+	 * @param obj NCBIEntry object to compare
 	 * @return Value of String compare between this UniProt accession and the parameter's UniProt accession
 	 */
 	@Override
-	public int compareTo(@Nonnull NCBIEntry o) {
-		return this.getUniprotAccession().compareTo(o.getUniprotAccession());
+	public int compareTo(@Nonnull NCBIEntry obj) {
+		return this.getUniprotAccession().compareTo(obj.getUniprotAccession());
 	}
 
 	/**
 	 * Checks equality based on object type and value of UniProt accession, UniProt display name, and NCBI Gene ids
-	 * @param o Object to check for equality with the calling NCBI Entry object.
+	 * @param obj Object to check for equality with the calling NCBI Entry object.
 	 * @return <code>true</code> if the same object or an NCBI Entry object with the same UniProt accession,
 	 * UniProt display name, and NCBI Gene ids.  Returns <code>false</code> otherwise.
 	 */
 	@Override
-	public boolean equals(Object o) {
-		if (o == this) {
+	public boolean equals(Object obj) {
+		if (obj == this) {
 			return true;
 		}
 
-		if (!(o instanceof NCBIEntry)) {
+		if (!(obj instanceof NCBIEntry)) {
 			return false;
 		}
 
-		NCBIEntry other = (NCBIEntry) o;
+		NCBIEntry other = (NCBIEntry) obj;
 
 		return other.getUniprotAccession().equals(this.getUniprotAccession()) &&
 			   other.getUniprotDisplayName().equals(this.getUniprotDisplayName()) &&

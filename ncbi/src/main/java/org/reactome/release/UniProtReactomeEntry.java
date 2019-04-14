@@ -336,33 +336,33 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 
 	/**
 	 * Compares UniProt accession values of this object and parameter
-	 * @param o UniProtReactomeEntry object to compare
+	 * @param obj UniProtReactomeEntry object to compare
 	 * @return Value of String compare between this UniProt accession and the parameter's UniProt accession
 	 */
 	@Override
-	public int compareTo(@Nonnull UniProtReactomeEntry o) {
-		return this.getAccession().compareTo(o.getAccession());
+	public int compareTo(@Nonnull UniProtReactomeEntry obj) {
+		return this.getAccession().compareTo(obj.getAccession());
 	}
 
 	/**
 	 * Checks equality based on object type and value of UniProt db id, accession, and display name
-	 * @param o Object to check for equality with the calling UniProtReactomeEntry.
+	 * @param obj Object to check for equality with the calling UniProtReactomeEntry.
 	 * @return <code>true</code> if the same object or a UniProtReactomeEntry object with the same UniProt db id,
 	 * accession, and display name.  Returns <code>false</code> otherwise.
 	 */
 	@Override
-	public boolean equals(Object o) {
-		if (o == this) {
+	public boolean equals(Object obj) {
+		if (obj == this) {
 			return true;
 		}
 
-		if (!(o instanceof UniProtReactomeEntry)) {
+		if (!(obj instanceof UniProtReactomeEntry)) {
 			return false;
 		}
 
-		return ((UniProtReactomeEntry) o).getDbId() == this.getDbId() &&
-			   ((UniProtReactomeEntry) o).getAccession().equals(this.getAccession()) &&
-			   ((UniProtReactomeEntry) o).getDisplayName().equals(this.getDisplayName());
+		return ((UniProtReactomeEntry) obj).getDbId() == this.getDbId() &&
+			   ((UniProtReactomeEntry) obj).getAccession().equals(this.getAccession()) &&
+			   ((UniProtReactomeEntry) obj).getDisplayName().equals(this.getDisplayName());
 	}
 
 	/**
