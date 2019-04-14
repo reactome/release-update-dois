@@ -15,12 +15,24 @@ import java.util.stream.Collectors;
  * @author jweiser
  */
 public class ReactomeEvent {
+	private static Map<String, String> namePatternToReplacement;
 	private static Map<Session, Map<Long, ReactomeEvent>> eventCache = new HashMap<>();
 	private static Logger logger = LogManager.getLogger();
 
 	private long dbId;
 	private String name;
 	private String stableIdentifier;
+
+	static {
+		namePatternToReplacement = new TreeMap<>();
+		namePatternToReplacement.put("amino acids", "Metabolism of nitrogenous molecules");
+		namePatternToReplacement.put("Cycle, Mitotic", "Cell Cycle (Mitotic)");
+		namePatternToReplacement.put("L13a-mediated translational", "L13a-mediated translation");
+		namePatternToReplacement.put("Abortive initiation after", "Abortive initiation");
+		namePatternToReplacement.put("Formation of the Cleavage and Polyadenylation", "Cleavage and Polyadenylation");
+		namePatternToReplacement.put("energy metabolism", "Energy Metabolism");
+		namePatternToReplacement.put("sugars", "Metabolism of sugars");
+	}
 
 	public ReactomeEvent(long dbId, String name, String stableIdentifier) {
 		this.dbId = dbId;
@@ -86,20 +98,11 @@ public class ReactomeEvent {
 	 * a parameter, otherwise.
 	 */
 	private String fixName(String name) {
-		Map<String, String> patternToReplacement = new TreeMap<>();
-		patternToReplacement.put("amino acids", "Metabolism of nitrogenous molecules");
-		patternToReplacement.put("Cycle, Mitotic", "Cell Cycle (Mitotic)");
-		patternToReplacement.put("L13a-mediated translational", "L13a-mediated translation");
-		patternToReplacement.put("Abortive initiation after", "Abortive initiation");
-		patternToReplacement.put("Formation of the Cleavage and Polyadenylation", "Cleavage and Polyadenylation");
-		patternToReplacement.put("energy metabolism", "Energy Metabolism");
-		patternToReplacement.put("sugars", "Metabolism of sugars");
-
-		return patternToReplacement
+		return namePatternToReplacement
 			.keySet()
 			.stream()
 			.filter(name::contains)
-			.map(patternToReplacement::get)
+			.map(namePatternToReplacement::get)
 			.reduce((first, second) -> second) // Get last element in stream
 			.orElse(name); // Default to original name if no replacement
 	}
