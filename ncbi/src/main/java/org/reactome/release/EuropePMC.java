@@ -4,17 +4,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.neo4j.driver.v1.Session;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.reactome.release.Utilities.appendWithNewLine;
+import static org.reactome.release.Utilities.*;
 
 /**
  * File generator for Europe PMC.  This class will produce files for
@@ -112,25 +114,34 @@ public class EuropePMC {
 	 * @return XML string describing Reactome as a data provider to Europe PMC
 	 */
 	private String getEuropePMCProfileXML() {
-		return String.join(System.lineSeparator(),
-			getXMLDeclaration(),
-			"<providers>",
-			indentString("<provider>", 1),
-			indentString("<id>" + reactomeProviderID + "</id>",2),
-			indentString("<resourceName>Reactome</resourceName>", 2),
-			indentString(
-				"<description>" +
-					"Reactome is a free, open-source, curated and peer-reviewed pathway database. " +
-					"Our goal is to provide intuitive bioinformatics tools for the visualization, " +
-					"interpretation and analysis of pathway knowledge to support basic research, genome analysis, " +
-					"modeling, systems biology and education." +
-				"</description>",
-				2
-			),
-			indentString("<email>help@reactome.org</email>", 2),
-			indentString("</provider>", 1),
-			"</providers>"
-		);
+		Document document;
+		try {
+			document = createXMLDocument();
+		} catch (ParserConfigurationException e) {
+			throw new RuntimeException("Unable to create document builder for Europe PMC Profile XML");
+		}
+
+		Element providers = attachRootElement(document, "providers");
+		Element provider =  document.createElement("provider");
+		providers.appendChild(provider);
+
+		Map<String, String> nodeNameToValue = new LinkedHashMap<>();
+		nodeNameToValue.put("id", Integer.toString(reactomeProviderID));
+		nodeNameToValue.put("resourceName", "Reactome");
+		nodeNameToValue.put("description",
+			"Reactome is a free, open-source, curated and peer-reviewed pathway database. " +
+			"Our goal is to provide intuitive bioinformatics tools for the visualization, " +
+			"interpretation and analysis of pathway knowledge to support basic research, genome analysis, " +
+			"modeling, systems biology and education.");
+		nodeNameToValue.put("email", "help@reactome.org");
+
+		nodeNameToValue.forEach((key, value) -> provider.appendChild(getElement(document, key, value)));
+
+		try {
+			return transformDocumentToXMLString(document);
+		} catch (TransformerException e) {
+			throw new RuntimeException("Unable to transform Europe PMC profile document to XML");
+		}
 	}
 
 	/**
@@ -147,39 +158,36 @@ public class EuropePMC {
 
 		logger.info("Writing Europe PMC Link file");
 
-		appendWithNewLine(getXMLDeclaration(), europePMCLinkFilePath);
-		appendWithNewLine(getOpenRootTag(), europePMCLinkFilePath);
-
-		for (EuropePMCLink europePMCLink : fetchEuropePMCLinks(graphDBSession)) {
-			appendWithNewLine(europePMCLink.getLinkXML(), europePMCLinkFilePath);
-		}
-		appendWithNewLine(getCloseRootTag(), europePMCLinkFilePath);
+		appendWithNewLine(getEuropePMCLinksXML(graphDBSession), europePMCLinkFilePath);
 
 		logger.info("Finished writing Europe PMC Link file");
 	}
 
 	/**
-	 * Standard XML declaration header
-	 * @return XML declaration as String
+	 * Produces Europe PMC Links XML content for pathways and associated literature references
+	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
+	 * @return XML String describing the relationships between Reactome pathways and literature references in Europe
+	 * PMC XML format (https://europepmc.org/LabsLink)
 	 */
-	private String getXMLDeclaration() {
-		return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>";
-	}
+	private String getEuropePMCLinksXML(Session graphDBSession) {
+		Document document;
+		try {
+			document = Utilities.createXMLDocument();
+		} catch (ParserConfigurationException e) {
+			throw new RuntimeException("Unable to create document builder for Europe PMC Profile XML");
+		}
 
-	/**
-	 * Opening XML tag of Europe PMC link file
-	 * @return Opening XML tag as String
-	 */
-	private String getOpenRootTag() {
-		return "<" + rootTag + ">";
-	}
+		Element linksXMLRoot = attachRootElement(document, rootTag);
 
-	/**
-	 * Closing XML tag of Europe PMC link file
-	 * @return Closing XML tag as String
-	 */
-	private String getCloseRootTag() {
-		return "</" + rootTag + ">";
+		for (EuropePMCLink europePMCLink : fetchEuropePMCLinks(graphDBSession)) {
+			linksXMLRoot.appendChild(europePMCLink.getLinkXML(document));
+		}
+
+		try {
+			return transformDocumentToXMLString(document);
+		} catch (TransformerException e) {
+			throw new RuntimeException("Unable to transform Europe PMC profile document to XML");
+		}
 	}
 
 	/**
@@ -307,21 +315,54 @@ public class EuropePMC {
 		/**
 		 * Link XML based on pre-set Reactome's Europe PMC provider id and the annotation's pathway name, URL, and
 		 * PubMed literature identifier
-		 * @return Link XML tag as String
+		 * @param document W3C Document object to create the Link XML element
+		 * @return Link XML tag as W3C Dom Element
 		 */
-		public String getLinkXML() {
-			return String.join(System.lineSeparator(),
-				indentString("<link providerId=\"" + reactomeProviderID + "\">", 1),
-				indentString("<resource>",2),
-				indentString("<title>" + getPathwayDisplayName() + "</title>", 3),
-				indentString("<url>" + getPathwayURL() + "</url>", 3),
-				indentString("</resource>",2),
-				indentString("<record>", 2),
-				indentString("<source>MED</source>", 3),
-				indentString("<id>" + getPubMedIdentifier() + "</id>", 3),
-				indentString("</record>",2),
-				indentString("</link>",1)
-			);
+		public Element getLinkXML(Document document) {
+			Element link = document.createElement("link");
+			link.setAttribute("providerId", Integer.toString(reactomeProviderID));
+
+			link.appendChild(getResourceElement(document, getPathwayDisplayName(), getPathwayURL()));
+			link.appendChild(getRecordElement(document, getPubMedIdentifier()));
+
+			return link;
+		}
+
+		/**
+		 * Resource XML element (child of Link XML tag) containing the annotation's title (i.e. pathway name)
+		 * and URL (i.e. pathway URL) as child tags
+		 * @param document W3C Document object to create the Resource XML element
+		 * @return Resource XML tag as W3C Dom Element
+		 */
+		private Element getResourceElement(Document document, String pathwayDisplayName, String pathwayURL) {
+			Element resource = document.createElement("resource");
+
+			Element title = getElement(document, "title", pathwayDisplayName);
+			Element url = getElement(document, "url", pathwayURL);
+
+			resource.appendChild(title);
+			resource.appendChild(url);
+
+			return resource;
+		}
+
+		/**
+		 * Record XML element (child of Link XML tag) containing the annotation's source (i.e. "MED" for PubMed)
+		 * and id (i.e. PubMed identifier) as child tags
+		 * @param document W3C Document object to create the Record XML element
+		 * @return Record XML tag as W3C Dom Element
+		 */
+		private Element getRecordElement(Document document, String pubMedIdentifier) {
+			Element record = document.createElement("record");
+
+			final String PUBMED_SOURCE_VALUE = "MED";
+			Element source = getElement(document, "source", PUBMED_SOURCE_VALUE);
+			Element id = getElement(document, "id", pubMedIdentifier);
+
+			record.appendChild(source);
+			record.appendChild(id);
+
+			return record;
 		}
 
 		/**
