@@ -76,7 +76,7 @@ public class UCSC {
 	 * @return Header for UCSC Entity file as String
 	 */
 	private String getUCSCEntityHeader() {
-		return "URL for entity_identifier: " + ReactomeConstants.UNIPROT_QUERY_URL +
+		return "URL for entity_identifier: " + ReactomeURLConstants.UNIPROT_QUERY_URL +
 			   System.lineSeparator() + System.lineSeparator() +
 			   "Reactome Entity" +
 			   System.lineSeparator() + System.lineSeparator();
@@ -138,7 +138,7 @@ public class UCSC {
 	 * @return Header for UCSC Event file as String
 	 */
 	private String getUCSCEventsHeader() {
-		return "URL for events: " + ReactomeConstants.PATHWAY_BROWSER_URL +
+		return "URL for events: " + ReactomeURLConstants.PATHWAY_BROWSER_URL +
 			System.lineSeparator() + System.lineSeparator() +
 			String.join("\t", "Reactome Entity", "Event ST_ID", "Event_name") +
 			System.lineSeparator() + System.lineSeparator();

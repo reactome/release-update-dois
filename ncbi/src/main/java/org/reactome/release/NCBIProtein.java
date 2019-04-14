@@ -79,7 +79,7 @@ public class NCBIProtein {
 			"prid:\t4914",
 			"dbase:\tprotein",
 			"stype:\tmeta-databases",
-			"!base:\t" + ReactomeConstants.UNIPROT_QUERY_URL,
+			"!base:\t" + ReactomeURLConstants.UNIPROT_QUERY_URL,
 			getProteinFileSeparator(),
 			"linkid:\t0"
 		);

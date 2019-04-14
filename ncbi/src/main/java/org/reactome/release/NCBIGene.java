@@ -160,8 +160,8 @@ public class NCBIGene {
 						   "<!DOCTYPE LinkSet PUBLIC \"-//NLM//DTD LinkOut 1.0//EN\"",
 						   "\"http://www.ncbi.nlm.nih.gov/entrez/linkout/doc/LinkOut.dtd\"",
 						   "[",
-						   "<!ENTITY entity.base.url \"" + ReactomeConstants.UNIPROT_QUERY_URL + "\">",
-						   "<!ENTITY event.base.url \"" + ReactomeConstants.PATHWAY_BROWSER_URL + "\">",
+						   "<!ENTITY entity.base.url \"" + ReactomeURLConstants.UNIPROT_QUERY_URL + "\">",
+						   "<!ENTITY event.base.url \"" + ReactomeURLConstants.PATHWAY_BROWSER_URL + "\">",
 						   "]>"
 		).concat(System.lineSeparator());
 	}
