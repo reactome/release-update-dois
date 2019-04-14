@@ -60,29 +60,25 @@ public class Main {
 		Files.createDirectories(Paths.get(outputDir));
 		logger.info("Files for Reactome version " + version + " will be output to the directory " + outputDir);
 
-		Session graphDBSession = getGraphDBDriver(props).session();
+		try (Session graphDBSession = getGraphDBDriver(props).session()) {
+			List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneEntries(graphDBSession);
 
-		List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneEntries(graphDBSession);
+			// Write NCBI Gene related Protein File
+			NCBIGene.getInstance(ncbiEntries, outputDir, version).writeProteinFile();
 
-		// Write NCBI Gene related Protein File
-		NCBIGene.getInstance(ncbiEntries, outputDir, version).writeProteinFile();
+			// Write NCBI Gene Files (split into multiple files to conform with 15MB upload maximum)
+			int numGeneXMLFiles = Integer.parseInt(props.getProperty("numGeneXMLFiles", "1"));
+			NCBIGene.getInstance(ncbiEntries, outputDir, version).writeGeneXMLFiles(graphDBSession, numGeneXMLFiles);
 
-		// Write NCBI Gene Files (split into multiple files to conform with 15MB upload maximum)
-		int numGeneXMLFiles = Integer.parseInt(props.getProperty("numGeneXMLFiles", "1"));
-		NCBIGene.getInstance(ncbiEntries, outputDir, version).writeGeneXMLFiles(
-			graphDBSession,
-			numGeneXMLFiles
-		);
+			// Write NCBI Protein File
+			NCBIProtein.getInstance(ncbiEntries, outputDir, version).writeNCBIProteinFile();
 
-		// Write NCBI Protein File
-		NCBIProtein.getInstance(ncbiEntries, outputDir, version).writeNCBIProteinFile();
+			// Write UCSC Entity and Event Files
+			UCSC.getInstance(outputDir, version).writeUCSCFiles(graphDBSession);
+			// Write Europe PMC Profile and Link Files
+			EuropePMC.getInstance(outputDir, version).writeEuropePMCFiles(graphDBSession);
+		}
 
-		// Write UCSC Entity and Event Files
-		UCSC.getInstance(outputDir, version).writeUCSCFiles(graphDBSession);
-		// Write Europe PMC Profile and Link Files
-		EuropePMC.getInstance(outputDir, version).writeEuropePMCFiles(graphDBSession);
-
-		graphDBSession.close();
 		logger.info("Finished NCBI, UCSC, and Europe PMC export step");
 
 		System.exit(0);
