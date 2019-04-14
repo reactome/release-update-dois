@@ -1,7 +1,13 @@
 package org.reactome.release;
 
 import org.junit.jupiter.api.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSSerializer;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,6 +41,44 @@ public class EuropePMCTest {
 		Set<EuropePMC.EuropePMCLink> europePMCLinks = EuropePMC.fetchEuropePMCLinks(dummyGraphDBServer.getSession());
 
 		assertThat(europePMCLinks, contains(expectedEuropePMCLink));
+	}
+
+	@Test
+	public void correctEuropePMCLinkXMLElement() throws ParserConfigurationException {
+		final String PATHWAY_DISPLAY_NAME = "p53-Dependent G1 DNA Damage Response";
+		final String PATHWAY_STABLE_ID = "R-HSA-69563";
+		final String PATHWAY_URL = "https://www.reactome.org/PathwayBrowser/#/" + PATHWAY_STABLE_ID;
+		final String PUBMED_ID = "9153395";
+
+		String expectedXML = String.format(
+			"<link providerId=\"1903\">" +
+			"<resource><title>%s</title><url>%s</url></resource>" +
+			"<record><source>MED</source><id>%s</id></record>" +
+			"</link>",
+			PATHWAY_DISPLAY_NAME, PATHWAY_URL, PUBMED_ID
+		);
+
+		EuropePMC.EuropePMCLink europePMCLink = new EuropePMC.EuropePMCLink(
+			PATHWAY_DISPLAY_NAME,
+			PATHWAY_STABLE_ID,
+			PUBMED_ID
+		);
+		Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+		Element europePMCLinkXML = europePMCLink.getLinkXML(document);
+
+		assertThat(getElementAsString(europePMCLinkXML), equalTo(expectedXML));
+	}
+
+	// Taken from https://stackoverflow.com/a/19701727
+	private String getElementAsString(Element element) {
+		DOMImplementationLS lsImpl = (DOMImplementationLS)element
+			.getOwnerDocument()
+			.getImplementation()
+			.getFeature("LS", "3.0");
+		LSSerializer serializer = lsImpl.createLSSerializer();
+		//by default its true, so set it to false to get String without xml-declaration
+		serializer.getDomConfig().setParameter("xml-declaration", false);
+		return serializer.writeToString(element);
 	}
 
 	@Test
