@@ -29,7 +29,7 @@ public class Main {
 	 *     Entries of all UniProt accessions in Reactome associated with an NCBI Gene Identifier (file only contains
 	 *     UniProt accessions)
 	 * UCSC Entity File
-	 *     Entires of all human, rat, and mouse UniProt accessions in Reactome
+	 *     Entries of all human, rat, and mouse UniProt accessions in Reactome
 	 * UCSC Entity File
 	 *     UniProt accessions (human, rat, and mouse) mapped to the events in which they participate in Reactome
 	 * Europe PMC Profile File
