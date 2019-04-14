@@ -74,9 +74,11 @@ public class NCBIProtein {
 	}
 
 	private String getProteinFileHeader() {
+		final int REACTOME_PROVIDER_ID_FOR_NCBI = 4914;
+
 		return String.join(System.lineSeparator(),
 			getProteinFileSeparator(),
-			"prid:\t4914",
+			"prid:\t" + REACTOME_PROVIDER_ID_FOR_NCBI,
 			"dbase:\tprotein",
 			"stype:\tmeta-databases",
 			"!base:\t" + ReactomeURLConstants.UNIPROT_QUERY_URL,
