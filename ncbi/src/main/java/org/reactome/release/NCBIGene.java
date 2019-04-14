@@ -155,13 +155,13 @@ public class NCBIGene {
 	 */
 	public static String getXMLHeader() {
 		return String.join(System.lineSeparator(),
-						   "<?xml version=\"1.0\"?>",
-						   "<!DOCTYPE LinkSet PUBLIC \"-//NLM//DTD LinkOut 1.0//EN\"",
-						   "\"http://www.ncbi.nlm.nih.gov/entrez/linkout/doc/LinkOut.dtd\"",
-						   "[",
-						   "<!ENTITY entity.base.url \"" + ReactomeURLConstants.UNIPROT_QUERY_URL + "\">",
-						   "<!ENTITY event.base.url \"" + ReactomeURLConstants.PATHWAY_BROWSER_URL + "\">",
-						   "]>"
+			"<?xml version=\"1.0\"?>",
+			"<!DOCTYPE LinkSet PUBLIC \"-//NLM//DTD LinkOut 1.0//EN\"",
+			"\"http://www.ncbi.nlm.nih.gov/entrez/linkout/doc/LinkOut.dtd\"",
+			"[",
+			"<!ENTITY entity.base.url \"" + ReactomeURLConstants.UNIPROT_QUERY_URL + "\">",
+			"<!ENTITY event.base.url \"" + ReactomeURLConstants.PATHWAY_BROWSER_URL + "\">",
+			"]>"
 		).concat(System.lineSeparator());
 	}
 
