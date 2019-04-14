@@ -191,16 +191,6 @@ public class EuropePMC {
 	}
 
 	/**
-	 * Indents String by given number of tabs
-	 * @param string String to indent
-	 * @param numberOfIndents Number of times to indent string
-	 * @return Tab-indented string
-	 */
-	private static String indentString(String string, int numberOfIndents) {
-		return StringUtils.repeat("\t", numberOfIndents).concat(string);
-	}
-
-	/**
 	 * Returns Path for Europe PMC Profile File based on pre-set output directory and Reactome version
 	 * @return Path object for Europe PMC Profile File
 	 */
