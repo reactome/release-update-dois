@@ -101,8 +101,7 @@ public class Utilities {
 	 */
 	public static Document createXMLDocument() throws ParserConfigurationException {
 		DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder documentBuilder;
-		documentBuilder = documentBuilderFactory.newDocumentBuilder();
+		DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 
 		Document doc = documentBuilder.newDocument();
 		doc.setXmlStandalone(true);
