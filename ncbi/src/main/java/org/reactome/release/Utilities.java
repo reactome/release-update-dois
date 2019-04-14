@@ -44,8 +44,8 @@ public class Utilities {
 
 		Set<String> subSet = new LinkedHashSet<>();
 		int keyCount = 0;
-		for(String ncbiGeneXMLNodeString : set) {
-			subSet.add(ncbiGeneXMLNodeString);
+		for(String stringInSet : set) {
+			subSet.add(stringInSet);
 			keyCount += 1;
 
 			// Sub set is "full" and the next sub set should be populated
