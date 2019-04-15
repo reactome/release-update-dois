@@ -105,7 +105,7 @@ public class MolecularFunctionAnnotationBuilder {
             pubMedIdentifiers.add("PMID:" + literatureReferenceInst.getAttributeValue(ReactomeJavaConstants.pubMedIdentifier).toString());
         }
         GKInstance activityInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activity);
-        if (!GOAGeneratorUtilities.accessionForProteinBindingAnnotation(activityInst.getAttributeValue(ReactomeJavaConstants.accession))) {
+        if (!GOAGeneratorUtilities.proteinBindingAnnotation(activityInst.getAttributeValue(ReactomeJavaConstants.accession))) {
             String goAccession = "GO:" + activityInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
             if (pubMedIdentifiers.size() > 0) {
                 for (String pubmedIdentifier : pubMedIdentifiers) {

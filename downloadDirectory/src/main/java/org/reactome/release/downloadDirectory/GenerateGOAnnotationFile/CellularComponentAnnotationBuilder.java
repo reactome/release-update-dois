@@ -1,11 +1,16 @@
 package org.reactome.release.downloadDirectory.GenerateGOAnnotationFile;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
+
 
 import java.util.*;
 
 public class CellularComponentAnnotationBuilder {
+
+    private static final Logger logger = LogManager.getLogger();
 
     private static final List<String> speciesWithAlternateGOCompartment = new ArrayList<>(Arrays.asList("11676", "211044", "1491", "1392"));
     private static final String CELLULAR_COMPONENT_LETTER = "C";
@@ -29,8 +34,14 @@ public class CellularComponentAnnotationBuilder {
                     if (!speciesWithAlternateGOCompartment.contains(taxonIdentifier)) {
                         // For CC, we are looking at ALL proteins in a ReactionlikeEvent
                         generateGOCellularCompartmentLine(proteinInst, referenceEntityInst, reactionInst, taxonIdentifier);
+                    } else {
+                        logger.info("Protein has an alternate GO compartment, skipping GO annotation");
                     }
+                } else {
+                    logger.info("Protein is from an excluded microbial species, skipping GO annotation");
                 }
+            } else {
+                logger.info("Invalid protein, skipping GO annotation");
             }
         }
     }
@@ -39,9 +50,11 @@ public class CellularComponentAnnotationBuilder {
     private static void generateGOCellularCompartmentLine(GKInstance proteinInst, GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
         String reactomeIdentifier = "REACTOME:" + ((GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
         String goCellularCompartmentAccession = getCellularCompartmentGOAccession(proteinInst);
-        if (goCellularCompartmentAccession != null) {
+        if (!goCellularCompartmentAccession.isEmpty()) {
             String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, CELLULAR_COMPONENT_LETTER, goCellularCompartmentAccession, reactomeIdentifier, "TAS", taxonIdentifier);
             GOAGeneratorUtilities.assignDateForGOALine(proteinInst, goaLine);
+        } else {
+            logger.info("Protein has an empty compartment, skipping GO annotation");
         }
     }
 
@@ -49,7 +62,7 @@ public class CellularComponentAnnotationBuilder {
     private static String getCellularCompartmentGOAccession(GKInstance proteinInst) throws Exception {
         GKInstance compartmentInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.compartment);
         String cellularComponentAccession = "";
-        if (compartmentInst != null && !GOAGeneratorUtilities.accessionForProteinBindingAnnotation(compartmentInst.getAttributeValue(ReactomeJavaConstants.accession))) {
+        if (compartmentInst != null && !GOAGeneratorUtilities.proteinBindingAnnotation(compartmentInst.getAttributeValue(ReactomeJavaConstants.accession))) {
             cellularComponentAccession = "GO:" + compartmentInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
         }
         return cellularComponentAccession;

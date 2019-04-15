@@ -5,6 +5,7 @@ import org.gk.model.ReactomeJavaConstants;
 import org.gk.schema.SchemaClass;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class BiologicalProcessAnnotationBuilder {
 
@@ -43,7 +44,6 @@ public class BiologicalProcessAnnotationBuilder {
 
     // Returns all constituent PhysicalEntity instances of a Multi-instance PhysicalEntity
     private static Set<GKInstance> getMultiInstanceSubInstances(GKInstance physicalEntityInst) throws Exception {
-        Collection<GKInstance> subunitInstances = physicalEntityInst.getAttributeValuesList(getSubunitType(physicalEntityInst.getSchemClass()));
         Set<GKInstance> subInstanceProteins = new HashSet<>();
         for (GKInstance subunitInst : (Collection<GKInstance>)  physicalEntityInst.getAttributeValuesList(getSubunitType(physicalEntityInst.getSchemClass()))) {
             subInstanceProteins.addAll(getBiologicalProcessProteins(subunitInst));
@@ -97,7 +97,7 @@ public class BiologicalProcessAnnotationBuilder {
             Collection<GKInstance> goBiologicalProcessInstances = eventInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess);
             if (goBiologicalProcessInstances.size() > 0) {
                 for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
-                    if (!GOAGeneratorUtilities.accessionForProteinBindingAnnotation(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession))) {
+                    if (!GOAGeneratorUtilities.proteinBindingAnnotation(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession))) {
                         Map<String, String> goBiologicalProcessAccession = new HashMap<>();
                         goBiologicalProcessAccession.put("accession", "GO:" + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
                         GKInstance eventStableIdentifierInst = (GKInstance) eventInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
