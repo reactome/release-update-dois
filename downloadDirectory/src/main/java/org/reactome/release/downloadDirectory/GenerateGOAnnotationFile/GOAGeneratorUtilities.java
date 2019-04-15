@@ -93,7 +93,7 @@ public class GOAGeneratorUtilities {
         return microbialSpeciesToExclude.contains(taxonIdentifier);
     }
 
-    public static boolean accessionForProteinBindingAnnotation(Object goAccession) {
+    public static boolean proteinBindingAnnotation(Object goAccession) {
         return goAccession.toString().equals(PROTEIN_BINDING_ANNOTATION);
     }
 
