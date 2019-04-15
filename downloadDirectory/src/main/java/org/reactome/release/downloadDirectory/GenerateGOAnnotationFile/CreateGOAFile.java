@@ -6,9 +6,6 @@ import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class CreateGOAFile {
@@ -28,16 +25,13 @@ public class CreateGOAFile {
             }
         }
         GOAGeneratorUtilities.outputGOAFile(GOA_FILENAME);
-        Files.move(Paths.get(GOA_FILENAME), Paths.get(releaseNumber + "/" + GOA_FILENAME), StandardCopyOption.REPLACE_EXISTING);
+        GOAGeneratorUtilities.moveFile(GOA_FILENAME, releaseNumber + "/" + GOA_FILENAME);
         logger.info("Finished generating gene_association.reactome");
         }
 
     // Parent method that houses electronically and manually inferred instance checks.
     private static boolean isInferred(GKInstance reactionInst) throws Exception {
-        if (isElectronicallyInferred(reactionInst) || isManuallyInferred(reactionInst)) {
-            return true;
-        }
-        return false;
+        return isElectronicallyInferred(reactionInst) || isManuallyInferred(reactionInst);
     }
 
     private static boolean isManuallyInferred(GKInstance reactionInst) throws Exception {

@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class GOAGeneratorUtilities {
@@ -88,6 +89,14 @@ public class GOAGeneratorUtilities {
         }
     }
 
+    public static boolean excludedMicrobialSpecies(String taxonIdentifier) {
+        return microbialSpeciesToExclude.contains(taxonIdentifier);
+    }
+
+    public static boolean accessionForProteinBindingAnnotation(Object goAccession) {
+        return goAccession.toString().equals(PROTEIN_BINDING_ANNOTATION);
+    }
+
     // Finds most recent modification date for a GOA line. This is a bit of a moving target since GOA lines can be generated convergently for
     // each type of GO annotation. Depending on if it is looking at the individual protein or whole reaction level, the date attribute
     // may not be the most recent. If it is found that the goaLine was generated earlier but that a more recent modification date exists based on the
@@ -98,28 +107,27 @@ public class GOAGeneratorUtilities {
         if (modifiedInstances.size() > 0) {
             List<GKInstance> modifiedInstancesList = new ArrayList<>(modifiedInstances);
             GKInstance mostRecentModifiedInst = modifiedInstancesList.get(modifiedInstancesList.size() - 1);
-            instanceDate = Integer.valueOf(mostRecentModifiedInst.getAttributeValue(ReactomeJavaConstants.dateTime).toString().split(" ")[0].replaceAll("-", ""));
+            instanceDate = getDate(mostRecentModifiedInst);
         } else {
             GKInstance createdInst = (GKInstance) entityInst.getAttributeValue(ReactomeJavaConstants.created);
-            instanceDate = Integer.valueOf(createdInst.getAttributeValue(ReactomeJavaConstants.dateTime).toString().split(" ")[0].replaceAll("-", ""));
+            instanceDate = getDate(createdInst);
         }
 
         // Stores date in global hash that allows date value to be updated if a more recent date was found.
-        if (dates.get(goaLine) == null) {
+        if (dates.get(goaLine) == null || instanceDate > dates.get(goaLine)) {
             dates.put(goaLine, instanceDate);
-        } else {
-            if (instanceDate > dates.get(goaLine)) {
-                dates.put(goaLine, instanceDate);
-            }
         }
         return instanceDate;
     }
 
+    private static int getDate(GKInstance instanceEditInst) throws Exception {
+        return Integer.valueOf(instanceEditInst.getAttributeValue(ReactomeJavaConstants.dateTime).toString().split(" ")[0].replaceAll("-", ""));
+    }
+
     // With all GOA annotations made and most recent dates for each line found, generate the GOA file.
     public static void outputGOAFile(String filename) throws IOException {
-        if (Files.exists(Paths.get(filename))) {
-            Files.delete(Paths.get(filename));
-        }
+
+        Files.deleteIfExists(Paths.get(filename));
         List<String> sortedGoaLines = new ArrayList<>(goaLines);
         Collections.sort(sortedGoaLines);
         BufferedWriter br = new BufferedWriter((new FileWriter(filename)));
@@ -130,11 +138,7 @@ public class GOAGeneratorUtilities {
         br.close();
     }
 
-    public static boolean excludedMicrobialSpecies(String taxonIdentifier) {
-        return microbialSpeciesToExclude.contains(taxonIdentifier);
-    }
-
-    public static boolean accessionForProteinBindingAnnotation(Object goAccession) {
-        return goAccession.toString().equals(PROTEIN_BINDING_ANNOTATION);
+    public static void moveFile(String filename, String targetDirectory) throws IOException {
+        Files.move(Paths.get(filename), Paths.get(targetDirectory), StandardCopyOption.REPLACE_EXISTING);
     }
 }
