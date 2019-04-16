@@ -2,6 +2,13 @@
 DIR=$(dirname "$(readlink -f "$0")") # Directory of the script -- allows the script to invoked from anywhere
 cd $DIR
 
+echo -n "Enter Reactome version: "
+read reactome_version
+if [ -z $reactome_version ]; then
+    echo "ERROR: Reactome version required" >&2
+    exit 1;
+fi
+
 echo -n "Enter Neo4J user name: "
 read user
 if [ -z $user ]; then
@@ -39,13 +46,6 @@ echo -n "Enter path to output directory (leave blank for $DIR/archive): "
 read output_directory
 if [ -z $output_directory ]; then
     output_directory="$DIR/archive"
-fi
-
-echo -n "Enter Reactome version: "
-read reactome_version
-if [ -z $reactome_version ]; then
-    echo "ERROR: Reactome version required" >&2
-    exit 1;
 fi
 
 config_file=config.properties
