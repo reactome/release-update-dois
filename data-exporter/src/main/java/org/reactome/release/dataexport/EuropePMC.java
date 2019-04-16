@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.reactome.release.DataExportUtilities.*;
+import static org.reactome.release.dataexport.DataExportUtilities.*;
 
 /**
  * File generator for Europe PMC.  This class will produce files for

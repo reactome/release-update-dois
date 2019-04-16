@@ -93,7 +93,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>org.reactome.release.Main</mainClass>
+							<mainClass>org.reactome.release.dataexport.Main</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>

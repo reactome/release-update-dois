@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 import java.io.FileInputStream;
 import java.io.IOException;

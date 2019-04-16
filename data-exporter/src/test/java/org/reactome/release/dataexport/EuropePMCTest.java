@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 import org.junit.jupiter.api.*;
 import org.w3c.dom.Document;

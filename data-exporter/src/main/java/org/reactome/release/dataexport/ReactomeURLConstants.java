@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 public class ReactomeURLConstants {
 	public static final String UNIPROT_QUERY_URL = "https://www.reactome.org/content/query?q=UniProt:";

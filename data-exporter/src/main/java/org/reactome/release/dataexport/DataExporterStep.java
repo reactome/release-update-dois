@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

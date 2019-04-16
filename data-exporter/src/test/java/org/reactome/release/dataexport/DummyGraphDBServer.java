@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.driver.v1.GraphDatabase;

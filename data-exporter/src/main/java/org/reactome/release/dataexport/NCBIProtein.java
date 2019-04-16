@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.reactome.release.DataExportUtilities.appendWithNewLine;
-import static org.reactome.release.DataExportUtilities.deleteAndCreateFile;
+import static org.reactome.release.dataexport.DataExportUtilities.appendWithNewLine;
+import static org.reactome.release.dataexport.DataExportUtilities.deleteAndCreateFile;
 
 /**
  * File generator for NCBI Protein.  This class has logic for producing a file for

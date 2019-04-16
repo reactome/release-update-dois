@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 import org.junit.jupiter.api.*;
 
@@ -6,7 +6,6 @@ import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 
 public class NCBIEntryTest {
 

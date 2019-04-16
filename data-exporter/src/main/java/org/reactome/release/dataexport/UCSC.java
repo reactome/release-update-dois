@@ -1,4 +1,4 @@
-package org.reactome.release;
+package org.reactome.release.dataexport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,8 +10,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.reactome.release.DataExportUtilities.appendWithNewLine;
-import static org.reactome.release.DataExportUtilities.deleteAndCreateFile;
+import static org.reactome.release.dataexport.DataExportUtilities.appendWithNewLine;
+import static org.reactome.release.dataexport.DataExportUtilities.deleteAndCreateFile;
 
 /**
  * File generator for UCSC.  This class has logic for producing a file for
