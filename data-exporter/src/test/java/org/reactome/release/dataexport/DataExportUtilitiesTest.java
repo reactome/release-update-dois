@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.reactome.release.dataexport.DataExportUtilities.splitSet;
 
-public class UtilitiesTest {
+public class DataExportUtilitiesTest {
 	private Set<String> stringSet;
 
 	@BeforeEach
