@@ -24,7 +24,7 @@ public class BiologicalProcessAnnotationBuilder {
                 GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
                 boolean validCatalyst = GOAGeneratorUtilities.validateCatalystPE(catalystPEInst);
                 if (validCatalyst) {
-                    Set<GKInstance> proteinInstances = getBiologicalProcessProteins((GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity));
+                    Set<GKInstance> proteinInstances = getBiologicalProcessProteins(catalystPEInst);
                     processProteins(proteinInstances, reactionInst);
                 }
             }

@@ -28,17 +28,12 @@ public class CellularComponentAnnotationBuilder {
             boolean validProtein = GOAGeneratorUtilities.validateProtein(referenceEntityInst, speciesInst);
             if (validProtein) {
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
-                if (!GOAGeneratorUtilities.excludedMicrobialSpecies(taxonIdentifier)) {
-
-                    // For CC annotations, alternateGOCompartments are disqualifying.
-                    if (!speciesWithAlternateGOCompartment.contains(taxonIdentifier)) {
-                        // For CC, we are looking at ALL proteins in a ReactionlikeEvent
-                        generateGOCellularCompartmentLine(proteinInst, referenceEntityInst, reactionInst, taxonIdentifier);
-                    } else {
-                        logger.info("Protein has an alternate GO compartment, skipping GO annotation");
-                    }
-                } else {
-                    logger.info("Protein is from an excluded microbial species, skipping GO annotation");
+                // For CC annotations, alternateGOCompartments are disqualifying.
+                if (!GOAGeneratorUtilities.excludedMicrobialSpecies(taxonIdentifier) && !speciesWithAlternateGOCompartment.contains(taxonIdentifier)) {
+                    // For CC, we are looking at ALL proteins in a ReactionlikeEvent
+                    generateGOCellularCompartmentLine(proteinInst, referenceEntityInst, reactionInst, taxonIdentifier);
+//                } else {
+//                    logger.info("Protein is from an excluded microbial species, skipping GO annotation");
                 }
             } else {
                 logger.info("Invalid protein, skipping GO annotation");

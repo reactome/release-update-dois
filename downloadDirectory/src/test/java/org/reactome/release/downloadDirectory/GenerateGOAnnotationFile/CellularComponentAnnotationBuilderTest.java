@@ -12,7 +12,6 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,14 +37,14 @@ public class CellularComponentAnnotationBuilderTest {
     @Mock
     private GKInstance mockCompartmentInst;
 
-    private Set<GKInstance> proteinSet = new HashSet<>();
+    private Set<GKInstance> mockProteinSet = new HashSet<>();
 
     @Test
     public void cellularComponentAnnotationBuilderTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
 
-        proteinSet.add(mockProteinInst);
-        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(proteinSet);
+        mockProteinSet.add(mockProteinInst);
+        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
         Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
@@ -63,8 +62,8 @@ public class CellularComponentAnnotationBuilderTest {
     public void cellularComponentInvalidProteinTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
 
-        proteinSet.add(mockProteinInst);
-        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(proteinSet);
+        mockProteinSet.add(mockProteinInst);
+        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
         Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(false);
@@ -75,8 +74,8 @@ public class CellularComponentAnnotationBuilderTest {
     public void cellularComponentExcludedMicrobialSpeciesTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
 
-        proteinSet.add(mockProteinInst);
-        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(proteinSet);
+        mockProteinSet.add(mockProteinInst);
+        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
         Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
@@ -90,8 +89,8 @@ public class CellularComponentAnnotationBuilderTest {
     public void cellularComponentAlternateGOCompartmentTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
 
-        proteinSet.add(mockProteinInst);
-        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(proteinSet);
+        mockProteinSet.add(mockProteinInst);
+        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
         Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
@@ -104,8 +103,8 @@ public class CellularComponentAnnotationBuilderTest {
     public void cellularComponentEmptyCompartmentTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
 
-        proteinSet.add(mockProteinInst);
-        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(proteinSet);
+        mockProteinSet.add(mockProteinInst);
+        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
         Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
