@@ -81,10 +81,9 @@ public class NCBIGene {
 	 * Writes NCBI Gene XML files describing the relationships between NCBI Gene identifiers and UniProt entries as
 	 * well as their Reactome pathways to pre-set output directory
 	 * @param graphDBSession Neo4J Driver Session object for querying the graph database
-	 * @param numGeneXMLFiles Number of files to divide the Gene XML entries among
 	 * @throws IOException Thrown if creating or appending for any file fails
 	 */
-	public void writeGeneXMLFiles(Session graphDBSession, int numGeneXMLFiles) throws IOException {
+	public void writeGeneXMLFiles(Session graphDBSession) throws IOException {
 
 		logger.info("Writing gene XML file(s)");
 
@@ -117,7 +116,8 @@ public class NCBIGene {
 		}
 
 		int fileCount = 0;
-		for (Set<String> ncbiGeneXMLNodeStringsSubSet : Utilities.splitSet(ncbiGeneXMLNodeStrings, numGeneXMLFiles)) {
+		int numberOfGeneXMLFiles = getNumberOfGeneXMLFiles(ncbiGeneXMLNodeStrings);
+		for (Set<String> ncbiGeneXMLNodeStringsSubSet : Utilities.splitSet(ncbiGeneXMLNodeStrings, numberOfGeneXMLFiles)) {
 			Path geneXMLFilePath = getGeneXMLFilePath(++fileCount);
 
 			deleteAndCreateFile(geneXMLFilePath);
@@ -134,6 +134,27 @@ public class NCBIGene {
 		}
 
 		logger.info("Finished writing gene XML file(s)");
+	}
+
+	/**
+	 * The size (in bytes) for the set of all Link XML node strings to include in the final NCBI Gene XML files
+	 * is determined and the minimum number of files to write in order for each to be less than the pre-set limit is
+	 * returned.
+	 * The maximum size of each file is 15MB and is a limit set by NCBI for individual file uploads.
+	 * @param ncbiGeneXMLNodeStrings Set of all the Link XML nodes strings to include in the NCBI Gene XML file(s)
+	 * @return Number of NCBI Gene XML files to create (i.e. split the XML nodes amongst to be under the file size
+	 * limit)
+	 */
+	private int getNumberOfGeneXMLFiles(Set<String> ncbiGeneXMLNodeStrings) {
+		final int BYTES_TO_KILOBYTES = 1024;
+		final int KILOBYTES_TO_MEGABYTES = 1024;
+		final double MAX_FILE_SIZE_IN_MEGABYTES = 15.0;
+
+		int sizeInBytes = ncbiGeneXMLNodeStrings.stream().mapToInt(str -> str.getBytes().length).sum();
+		int sizeInMegaBytes = sizeInBytes / BYTES_TO_KILOBYTES / KILOBYTES_TO_MEGABYTES;
+
+		// The number of files is rounded up to ensure the minimum number of files is an integer
+		return (int) Math.ceil(sizeInMegaBytes / MAX_FILE_SIZE_IN_MEGABYTES);
 	}
 
 	private Path getProteinFilePath() {

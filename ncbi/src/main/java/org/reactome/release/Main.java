@@ -67,8 +67,7 @@ public class Main {
 			NCBIGene.getInstance(ncbiEntries, outputDir, version).writeProteinFile();
 
 			// Write NCBI Gene Files (split into multiple files to conform with 15MB upload maximum)
-			int numGeneXMLFiles = Integer.parseInt(props.getProperty("numGeneXMLFiles", "1"));
-			NCBIGene.getInstance(ncbiEntries, outputDir, version).writeGeneXMLFiles(graphDBSession, numGeneXMLFiles);
+			NCBIGene.getInstance(ncbiEntries, outputDir, version).writeGeneXMLFiles(graphDBSession);
 
 			// Write NCBI Protein File
 			NCBIProtein.getInstance(ncbiEntries, outputDir, version).writeNCBIProteinFile();
