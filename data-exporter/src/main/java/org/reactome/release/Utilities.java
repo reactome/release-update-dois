@@ -155,8 +155,9 @@ public class Utilities {
 	public static String transformDocumentToXMLString(Document doc) throws TransformerException {
 		StringWriter writer = new StringWriter();
 		TransformerFactory tf = TransformerFactory.newInstance();
-		Transformer transformer;
-		transformer = tf.newTransformer();
+		Transformer transformer = tf.newTransformer();
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 		transformer.setOutputProperty(OutputKeys.STANDALONE, "yes");
 		transformer.transform(new DOMSource(doc), new StreamResult(writer));
 
