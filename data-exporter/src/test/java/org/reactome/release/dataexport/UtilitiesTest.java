@@ -8,6 +8,7 @@ import java.util.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.reactome.release.dataexport.DataExportUtilities.splitSet;
 
 public class UtilitiesTest {
 	private Set<String> stringSet;
@@ -21,7 +22,7 @@ public class UtilitiesTest {
 	public void splitSetWithEvenSubSetSizes() {
 		final int NUM_OF_SUB_SETS = 4;
 
-		List<Set<String>> listOfStringSubSets = Utilities.splitSet(stringSet, NUM_OF_SUB_SETS);
+		List<Set<String>> listOfStringSubSets = splitSet(stringSet, NUM_OF_SUB_SETS);
 
 		assertThat(listOfStringSubSets, hasSize(NUM_OF_SUB_SETS));
 
@@ -33,7 +34,7 @@ public class UtilitiesTest {
 	public void splitSetWithUnEvenSubSetSizes() {
 		final int NUM_OF_SUB_SETS = 3;
 
-		List<Set<String>> listOfStringSubSets = Utilities.splitSet(stringSet, NUM_OF_SUB_SETS);
+		List<Set<String>> listOfStringSubSets = splitSet(stringSet, NUM_OF_SUB_SETS);
 
 		assertThat(listOfStringSubSets, hasSize(NUM_OF_SUB_SETS));
 
