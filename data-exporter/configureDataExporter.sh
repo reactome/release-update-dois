@@ -2,6 +2,12 @@
 DIR=$(dirname "$(readlink -f "$0")") # Directory of the script -- allows the script to invoked from anywhere
 cd $DIR
 
+original_config_file=src/main/resources/sample_config.properties
+# Stop git tracking on original/sample configuration file to prevent committing and pushing if any sensitive
+# information is mistakenly added
+git update-index --assume-unchanged $original_config_file
+
+
 echo -n "Enter Reactome version: "
 read reactome_version
 if [ -z $reactome_version ]; then
@@ -49,24 +55,14 @@ if [ -z $output_directory ]; then
 fi
 
 config_file=config.properties
-original_config_file=src/main/resources/sample_config.properties
 
-# Stop git tracking on original configruation file
-git update-index --assume-unchanged $original_config_file
-
-# Makes a copy of the sample configuration file
-cp -f $original_config_file $config_file
-
-# Removes comments from the original configuration file
-sed -i '/^###/d' $config_file
-
-# Replaces the dummy database configuration values
-sed -i "s|\(user=\).*|\1$user|" $config_file
-sed -i "s|\(password=\).*|\1$password|" $config_file
-sed -i "s|\(host=\).*|\1$host|" $config_file
-sed -i "s|\(port=\).*|\1$port|" $config_file
-sed -i "s|\(reactomeVersion=\).*|\1$reactome_version|" $config_file
-sed -i "s|\(outputDir=\).*|\1$output_directory|" $config_file
+>$config_file
+echo "user=$user" >> $config_file
+echo "password=$password" >> $config_file
+echo "host=$host" >> $config_file
+echo "port=$port" >> $config_file
+echo "reactomeVersion=$reactome_version" >> $config_file
+echo "outputDir=$output_directory" >> $config_file
 
 # Change permissions to read/write for user only
 chmod 600 $config_file
