@@ -10,8 +10,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.reactome.release.Utilities.appendWithNewLine;
-import static org.reactome.release.Utilities.deleteAndCreateFile;
+import static org.reactome.release.DataExportUtilities.appendWithNewLine;
+import static org.reactome.release.DataExportUtilities.deleteAndCreateFile;
 
 /**
  * File generator for UCSC.  This class has logic for producing a file for

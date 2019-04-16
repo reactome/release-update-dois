@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.reactome.release.Utilities.appendWithNewLine;
-import static org.reactome.release.Utilities.deleteAndCreateFile;
+import static org.reactome.release.DataExportUtilities.appendWithNewLine;
+import static org.reactome.release.DataExportUtilities.deleteAndCreateFile;
 
 /**
  * File generator for NCBI Protein.  This class has logic for producing a file for

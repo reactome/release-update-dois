@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.reactome.release.Utilities.*;
+import static org.reactome.release.DataExportUtilities.*;
 
 /**
  * File generator for Europe PMC.  This class will produce files for
@@ -164,7 +164,7 @@ public class EuropePMC {
 	private String getEuropePMCLinksXML(Session graphDBSession) {
 		Document document;
 		try {
-			document = Utilities.createXMLDocument();
+			document = createXMLDocument();
 		} catch (ParserConfigurationException e) {
 			throw new RuntimeException("Unable to create document builder for Europe PMC Profile XML");
 		}

@@ -11,8 +11,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
-import static org.reactome.release.Utilities.appendWithNewLine;
-import static org.reactome.release.Utilities.deleteAndCreateFile;
+import static org.reactome.release.DataExportUtilities.*;
 
 /**
  * File generator for NCBI Gene.  This class has logic for producing a file for
@@ -117,7 +116,7 @@ public class NCBIGene {
 
 		int fileCount = 0;
 		int numberOfGeneXMLFiles = getNumberOfGeneXMLFiles(ncbiGeneXMLNodeStrings);
-		for (Set<String> ncbiGeneXMLNodeStringsSubSet : Utilities.splitSet(ncbiGeneXMLNodeStrings, numberOfGeneXMLFiles)) {
+		for (Set<String> ncbiGeneXMLNodeStringsSubSet : splitSet(ncbiGeneXMLNodeStrings, numberOfGeneXMLFiles)) {
 			Path geneXMLFilePath = getGeneXMLFilePath(++fileCount);
 
 			deleteAndCreateFile(geneXMLFilePath);

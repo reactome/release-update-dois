@@ -24,7 +24,7 @@ import java.util.*;
  * used by the data export process.
  * @author jweiser
  */
-public class Utilities {
+public class DataExportUtilities {
 	/**
 	 * Takes a set of Strings and splits it into a list of the requested number of sub-sets.  If an ordered set, order
 	 * is preserved.  If the set does not split evenly into the number of set-sets requested, the remainder elements
