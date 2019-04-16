@@ -30,7 +30,7 @@ public class Main {
 	 *     UniProt accessions)
 	 * UCSC Entity File
 	 *     Entries of all human, rat, and mouse UniProt accessions in Reactome
-	 * UCSC Entity File
+	 * UCSC Event File
 	 *     UniProt accessions (human, rat, and mouse) mapped to the events in which they participate in Reactome
 	 * Europe PMC Profile File
 	 *     Short XML file identifying Reactome as a data provider to Europe PMC
