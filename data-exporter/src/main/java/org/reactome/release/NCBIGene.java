@@ -174,6 +174,8 @@ public class NCBIGene {
 	 * @return XML header as String
 	 */
 	public static String getXMLHeader() {
+		// Ideally, the XML header and entire file would be generated via the org.w3c.dom package classes.  However,
+		// these classes don't support addition of inline document type definition entries which is required by NCBI.
 		return String.join(System.lineSeparator(),
 			"<?xml version=\"1.0\"?>",
 			"<!DOCTYPE LinkSet PUBLIC \"-//NLM//DTD LinkOut 1.0//EN\"",
