@@ -147,7 +147,7 @@ public class NCBIGene {
 	private int getNumberOfGeneXMLFiles(Set<String> ncbiGeneXMLNodeStrings) {
 		final int BYTES_TO_KILOBYTES = 1024;
 		final int KILOBYTES_TO_MEGABYTES = 1024;
-		final double MAX_FILE_SIZE_IN_MEGABYTES = 15.0;
+		final double MAX_FILE_SIZE_IN_MEGABYTES = 14.0; // Actual limit is 15MB, but set lower for a bit of buffer space
 
 		int sizeInBytes = ncbiGeneXMLNodeStrings.stream().mapToInt(str -> str.getBytes().length).sum();
 		int sizeInMegaBytes = sizeInBytes / BYTES_TO_KILOBYTES / KILOBYTES_TO_MEGABYTES;
