@@ -62,7 +62,7 @@ public class UCSC {
 		Path ucscEntityFilePath = Paths.get(outputDir, "ucsc_entity" + version);
 		deleteAndCreateFile(ucscEntityFilePath);
 		appendWithNewLine(getUCSCEntityHeader(), ucscEntityFilePath);
-		
+
 		for (String line : getUCSCEntityLines(graphDBSession)) {
 			appendWithNewLine(line, ucscEntityFilePath);
 		}
