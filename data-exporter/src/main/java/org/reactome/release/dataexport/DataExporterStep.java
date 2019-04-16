@@ -51,7 +51,7 @@ public class DataExporterStep extends ReleaseStep {
 		Files.createDirectories(Paths.get(outputDir));
 		logger.info("Files for Reactome version " + version + " will be output to the directory " + outputDir);
 
-		try (Session graphDBSession = getGraphDBDriver(props).session()) {
+		try (Driver graphDBDriver = getGraphDBDriver(props); Session graphDBSession = graphDBDriver.session()) {
 			List<NCBIEntry> ncbiEntries = NCBIEntry.getUniProtToNCBIGeneEntries(graphDBSession);
 
 			// Write NCBI Gene related Protein File
