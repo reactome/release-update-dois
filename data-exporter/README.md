@@ -2,7 +2,7 @@
 
 This program will produce data exports for submission to NCBI, UCSC, and Europe PMC.  Files provided to these resources are:
 * **NCBI:** Gene (NCBI gene identifier to Reactome top level pathways) and Protein (all UniProt entries in Reactome associated with any NCBI Gene identifier).
-* **UCSC:** Entity (UniProt entires in Reactome) and Events (UniProt entries in Reactome in relation to Reactome pathways and reactions).
+* **UCSC:** Entity (UniProt entries in Reactome) and Events (UniProt entries in Reactome in relation to Reactome pathways and reactions).
 * **Europe PMC:** Profile and Link XML (describing Reactome as a provider and Reactome Pathway to literature references, respectively).
 
 The file outputs will be as follows in the configured output directory (see configuration section below) and where XX is the Reactome Version:
@@ -21,7 +21,7 @@ The program can be run by invoking the script `runDataExporter.sh` at the root d
 
 Usage: `./runDataExporter.sh`
 
-NOTE: This script is building and invoking a Java application which requries a Java 8+ environment. You will need maven and a full JDK to compile.
+NOTE: This script is building and invoking a Java application which requires a Java 8+ environment. You will need maven and a full JDK to compile.
 
 ### To run the application manually:
 
@@ -31,7 +31,7 @@ NOTE: This script is building and invoking a Java application which requries a J
 If the manual compilation was successful, you should see a JAR file in the `target` directory, with a name like `data-exporter-VERSION_NUMBER-jar-with-dependencies.jar`. This is the file you will run with a command like the following:
 
 4. `java -jar target/data-exporter-1.0-SNAPSHOT-jar-with-dependencies.jar [path_to_config_file]`
- 
+
 ## Configuration
 
 **NOTE: Configuration is done when calling the main script `runDataExporter.sh` for the first time, so this section is if set values need to be changed and for general reference.**
@@ -52,10 +52,10 @@ outputDir=data-exporter/archive
 ```
 
 ## Logging
- 
-When run, the jar file will ouptut log files to a `logs` directory at the root directory of this project.  For each run of the program, the following log files will be created:
+
+When run, the jar file will output log files to a `logs` directory at the root directory of this project.  For each run of the program, the following log files will be created:
 * a Main-<timestamp>.log file - will contain all statements logged by the program
-* a Main-<timestamp>.err file - will contain all statements logged with serverity of WARN, ERROR, or FATAL by the program
+* a Main-<timestamp>.err file - will contain all statements logged with severity of WARN, ERROR, or FATAL by the program
 * a NCBIGene-<timestamp>.log file - will contain all statements specific to processing in the NCBI Gene class where processing of UniProt entries in Reactome happens
 
 The log files will contain timestamps of when the program was executed.
