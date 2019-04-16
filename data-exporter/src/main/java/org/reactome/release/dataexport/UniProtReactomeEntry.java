@@ -153,7 +153,7 @@ public class UniProtReactomeEntry implements Comparable<UniProtReactomeEntry> {
 
 		AtomicInteger count = new AtomicInteger(0);
 		Map<String, Set<ReactomeEvent>> uniprotAccessionToReactomeEvent = new ConcurrentHashMap<>();
-		uniprotAccessionToReactionLikeEventId.keySet().parallelStream().forEach(uniprotAccession -> {
+		uniprotAccessionToReactionLikeEventId.keySet().stream().forEach(uniprotAccession -> {
 			Set<Long> reactionLikeEventIds =
 				uniprotAccessionToReactionLikeEventId.computeIfAbsent(uniprotAccession, k -> new HashSet<>());
 
