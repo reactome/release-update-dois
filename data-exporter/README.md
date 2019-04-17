@@ -19,7 +19,9 @@ The file outputs will be as follows in the configured output directory (see conf
 
 The program can be run by invoking the script `runDataExporter.sh` at the root directory of this project.  It will prompt for configuration values if none have been previously set, so the configuration documentation below is for reference or if you wish to alter existing configuration values.
 
-Usage: `./runDataExporter.sh`
+Using the -b or --build_jar option, the data-exporter.jar file will force `data-exporter.jar` to be re-built.
+
+Usage: `./runDataExporter.sh [-b|--build_jar]`
 
 NOTE: This script is building and invoking a Java application which requires a Java 8+ environment. You will need maven and a full JDK to compile.
 
