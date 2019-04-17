@@ -8,11 +8,21 @@ import org.gk.persistence.MySQLAdaptor;
 
 import java.util.*;
 
+/**
+ *  Generates gene_association.reactome file from all curated ReactionlikeEvents in the database.
+ * @author jcook
+ */
 public class CreateGOAFile {
 
     private static final Logger logger = LogManager.getLogger();
     private static final String GOA_FILENAME = "gene_association.reactome";
 
+    /**
+     * This is called from the Main DownloadDirectory class.
+     * @param dbAdaptor -- MySQLAdaptor for database
+     * @param releaseNumber
+     * @throws Exception
+     */
     public static void execute(MySQLAdaptor dbAdaptor, String releaseNumber) throws Exception {
         logger.info("Generating GO annotation file: gene_association.reactome");
 

@@ -14,6 +14,11 @@ public class MolecularFunctionAnnotationBuilder {
 
     private static final String MOLECULAR_FUNCTION_LETTER = "F";
 
+    /**
+     * Initial Molecular Function annotations method that iterates through and validates the reaction's catalyst instances, if any exist.
+     * @param reactionInst
+     * @throws Exception
+     */
     public static void processMolecularFunctions(GKInstance reactionInst) throws Exception {
 
         Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
@@ -32,10 +37,15 @@ public class MolecularFunctionAnnotationBuilder {
         }
     }
 
-    // This checks validity of a catalyst in a few ways. It first checks that the PhysicalEntity is valid.
-    // Then it will check if the ActiveUnit is valid if it exists. If there is no ActiveUnit, the PhysicalEntity
-    // is checked to see if it is 'multi-instance', meaning Complex, Polymer, or EntitySet. If so, it is considered invalid.
-    // Catalysts with more than 1 ActiveUnit are also considered invalid.
+    /**
+     * This checks validity of a catalyst in a few ways. It first checks that the Catalyst PhysicalEntity is valid.
+     * Then it will check if the ActiveUnit is valid if it exists. If there is no ActiveUnit, the PhysicalEntity
+     * is checked to see if it is 'multi-instance', which will invalidate it.
+     * Catalysts with more than 1 ActiveUnit are also considered invalid.
+     * @param catalystInst -- Catalyst instance taken from the original reaction instance.
+     * @return
+     * @throws Exception
+     */
     private static boolean validateMolecularFunctionCatalyst(GKInstance catalystInst) throws Exception {
         GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
         boolean validCatalystPE = GOAGeneratorUtilities.validateCatalystPE(catalystPEInst);
@@ -54,8 +64,13 @@ public class MolecularFunctionAnnotationBuilder {
         return catalystValidity;
     }
 
-    // Validity of ActiveUnit is dependant on it not being an EntitySet with non-EWAS members.
-    // This rule used to also exclude Complex and Polymers, but it seems ActiveUnits can't be either of those.
+    /**
+     *  Validity of ActiveUnit is dependant on it not being an EntitySet with non-EWAS members.
+     *  This rule used to also exclude Complex and Polymers, but it seems ActiveUnits can't be either of those.
+     * @param activeUnitInst -- Active unit instance taken from the catalyst instance.
+     * @return
+     * @throws Exception
+     */
     private static boolean validCatalystAU(GKInstance activeUnitInst) throws Exception {
         SchemaClass activeUnitSchemaClass = activeUnitInst.getSchemClass();
         if (activeUnitSchemaClass.isa(ReactomeJavaConstants.EntitySet) && !onlyEWASMembers(activeUnitInst)) {
@@ -67,7 +82,12 @@ public class MolecularFunctionAnnotationBuilder {
         return true;
     }
 
-    // Retrieves all protein instances from an EntitySet comprised of only EWAS' or that are not a Complex/Polymer but are an EWAS.
+    /**
+     * Retrieves all protein instances from an EntitySet comprised of only EWAS' or that are not a Complex/Polymer but are an EWAS.
+     * @param entityInst -- Can be either an ActiveUnit or PhysicalActivity instance taken from a Reaction's catalyst.
+     * @return
+     * @throws Exception
+     */
     private static Set<GKInstance> getMolecularFunctionProteins(GKInstance entityInst) throws Exception {
         Set<GKInstance> proteinInstances = new HashSet<>();
         SchemaClass entitySchemaClass = entityInst.getSchemClass();
@@ -79,7 +99,12 @@ public class MolecularFunctionAnnotationBuilder {
         return proteinInstances;
     }
 
-    // Checks that the incoming EntitySet instance only has EWAS members
+    /**
+     * Checks that the incoming EntitySet instance only has EWAS members
+     * @param entitySetInst --  ActiveUnit/PhysicalEntity of a catalyst that is an EntitySet
+     * @return
+     * @throws Exception
+     */
     private static boolean onlyEWASMembers(GKInstance entitySetInst) throws Exception {
        Collection<GKInstance> memberInstances = (Collection<GKInstance>) entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember);
         return memberInstances
@@ -88,7 +113,13 @@ public class MolecularFunctionAnnotationBuilder {
 
     }
 
-    // Attempt to generate GO Annotation information for each protein associated with the whole Reaction or just it's catalysts, depending on the goTerm being evaluated.
+    /**
+     * Iterates through each protein from a Catalyst's ActiveUnit/PhysicalEntity, filtering out any that are invalid, are from the excluded species or that have no activity value.
+     * @param proteinInstances -- EWAS' from the ActiveUnit/PhysicalEntity of the catalyst.
+     * @param reactionInst -- Reaction the catalyst/proteins come from.
+     * @param catalystInst -- Catalyst instance from reaction.
+     * @throws Exception
+     */
     private static void processProteins(Set<GKInstance> proteinInstances, GKInstance reactionInst, GKInstance catalystInst) throws Exception {
         for (GKInstance proteinInst : proteinInstances) {
             GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
@@ -112,9 +143,16 @@ public class MolecularFunctionAnnotationBuilder {
         }
     }
 
-    // Generating GOA lines for MF annotations depends on if the catalyst has any literatureReferences (meaning it has a PubMed annotation). If it does, multiple GOA lines
-    // that are specific to each PubMed annotation will be output, or, if there are no literatureReferences just a single line with a Reactome identifier will be output.
-    // The GOA generation will be called differently depending on this.
+    /**
+     * Generating GOA lines for MF annotations depends on if the catalyst has any literatureReferences (meaning it has a PubMed annotation). If it does, multiple GOA lines
+     * that are specific to each PubMed annotation will be output, or, if there are no literatureReferences just a single line with a Reactome identifier will be output.
+     * The GOA line generation will be called differently depending on this.
+     * @param catalystInst -- Catalyst instance from reaction.
+     * @param referenceEntityInst -- ReferenceEntity instance from protein instance.
+     * @param taxonIdentifier -- CrossReference ID of protein's species.
+     * @param reactionInst -- Reaction instance that protein/catalyst comes from.
+     * @throws Exception
+     */
     private static void getGOMolecularFunctionLine(GKInstance catalystInst, GKInstance referenceEntityInst, String taxonIdentifier, GKInstance reactionInst) throws Exception {
         List<String> pubMedIdentifiers = new ArrayList<>();
         for (GKInstance literatureReferenceInst : (Collection<GKInstance>) catalystInst.getAttributeValuesList(ReactomeJavaConstants.literatureReference)) {
@@ -123,7 +161,6 @@ public class MolecularFunctionAnnotationBuilder {
         GKInstance activityInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activity);
         if (!GOAGeneratorUtilities.proteinBindingAnnotation(activityInst.getAttributeValue(ReactomeJavaConstants.accession))) {
             String goAccession = "GO:" + activityInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
-            //todo
             if (pubMedIdentifiers.size() > 0) {
                 for (String pubmedIdentifier : pubMedIdentifiers) {
                     String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, MOLECULAR_FUNCTION_LETTER, goAccession, pubmedIdentifier, "EXP", taxonIdentifier);

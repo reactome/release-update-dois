@@ -16,12 +16,20 @@ import java.util.*;
 
 public class GOAGeneratorUtilities {
 
+    // CrossReference IDs of excluded microbial species: C. trachomatis, E. coli, N. meningitidis, S. typhimurium, S. aureus, and T. gondii
     private static final List<String> microbialSpeciesToExclude = new ArrayList<>(Arrays.asList("813", "562", "491", "90371", "1280", "5811"));
+    // This GO accession pertains to protein binding, which would require an "IPI" prefix. Excluded for now.
     private static final String PROTEIN_BINDING_ANNOTATION = "0005515";
     private static final String uniprotDbString = "UniProtKB";
     private static Map<String, Integer> dates = new HashMap<>();
     private static Set<String> goaLines = new HashSet<>();
 
+    /**
+     * Performs an AttributeQueryRequest on the incoming reaction instance. This will retrieve all protein's affiliated with the Reaction.
+     * @param reactionInst
+     * @return -- Set of GKInstances output from the AttributeQueryRequest
+     * @throws Exception
+     */
     public static Set<GKInstance> retrieveProteins(GKInstance reactionInst) throws Exception {
         List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<>();
         classesToFollow.add(new ClassAttributeFollowingInstruction(ReactomeJavaConstants.Pathway, new String[]{ReactomeJavaConstants.hasEvent}, new String[]{}));
@@ -37,7 +45,13 @@ public class GOAGeneratorUtilities {
         return InstanceUtilities.followInstanceAttributes(reactionInst, classesToFollow, outClasses);
     }
 
-    // This checks if the protein in question has UniProt as a Reference Database, and if the species has a crossReference. If not, it's information will not be generated for the GOA file.
+    /**
+     * Verifys existence of ReferenceEntity and Species, and that the ReferenceDatabase associated with the ReferenceEntity is from UniProt.
+     * @param referenceEntityInst -- ReferenceEntity instance from the protein/catalyst/reaction.
+     * @param speciesInst -- Species instance from the protein/catalyst/reaction.
+     * @return -- true/false indicating protein validity.
+     * @throws Exception
+     */
     public static boolean validateProtein(GKInstance referenceEntityInst, GKInstance speciesInst) throws Exception {
         if (referenceEntityInst != null && speciesInst != null) {
             GKInstance referenceDatabaseInst = (GKInstance) referenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase);
@@ -49,16 +63,37 @@ public class GOAGeneratorUtilities {
     }
 
     // This method checks the validity of the PhysicalEntity of a Catalyst instance by checking it has a compartment attribute.
+
+    /**
+     * Shared catalyst validation method between MolecularFunction and BiologicalProcess classes that checks for existence of compartment attribute.
+     * @param catalystPEInst -- PhysicalEntity attribute from a Catalyst instance
+     * @return -- true/false indicating PhysicalEntity validity.
+     * @throws Exception
+     */
     public static boolean validateCatalystPE(GKInstance catalystPEInst) throws Exception {
         return catalystPEInst != null && catalystPEInst.getAttributeValue(ReactomeJavaConstants.compartment) != null;
     }
 
-    // Checks if this PhysicalEntity is one that is made of multiple PhysicalEntity instances.
+    /**
+     * Checks if the PhysicalEntity is a 'multi-instance' type, which includes Complexes, EntitySets, and Polymers
+     * @param physicalEntitySchemaClass
+     * @return
+     */
     public static boolean multiInstancePhysicalEntity(SchemaClass physicalEntitySchemaClass) {
         return physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer);
     }
 
-    // Generic function that generates a single line in the GOA file. The arguments are formatted in GO term-specific methods before this is called.
+    /**
+     * Builds most of the GO annotation line that will be added to gene_association.reactome.
+     * @param referenceEntityInst -- ReferenceEntity instance from the protein/catalyst/reaction.
+     * @param goLetter -- Can be "C", "F" or "P" for Cellular Component, Molecular Function, or Biological Process annotations, respectively.
+     * @param goAccession -- GO accession taken from the protein/catalyst/reaction instance.
+     * @param eventIdentifier -- StableIdentifier of the protein/catalyst/reaction. Will have either a 'REACTOME' or 'PMID' prefix.
+     * @param evidenceCode -- Will be either "TAS" (Traceable Author Statement) or "EXP" (Experimentally Inferred). Most will be TAS, unless there is a PMID accession.
+     * @param taxonIdentifier -- Reactome Species CrossReference identifier.
+     * @return -- GO annotation line, excluding the DateTime and 'Reactome' columns.
+     * @throws Exception
+     */
     public static String generateGOALine(GKInstance referenceEntityInst, String goLetter, String goAccession, String eventIdentifier, String evidenceCode, String taxonIdentifier) throws Exception {
         List<String> goaLine = new ArrayList<>();
         goaLine.add(uniprotDbString);
@@ -78,7 +113,12 @@ public class GOAGeneratorUtilities {
         return String.join("\t", goaLine);
     }
 
-    // Generates the third column of the GOA line by checking attributes of the referenceEntity instance.
+    /**
+     * Returns the value for the 'secondaryIdentifier' column in the GOA line.
+     * @param referenceEntityInst -- ReferenceEntity instance from the protein/catalyst/reaction.
+     * @return
+     * @throws Exception
+     */
     private static String getSecondaryIdentifier(GKInstance referenceEntityInst) throws Exception {
         if (referenceEntityInst.getAttributeValue(ReactomeJavaConstants.secondaryIdentifier) != null) {
             return referenceEntityInst.getAttributeValue(ReactomeJavaConstants.secondaryIdentifier).toString();
@@ -89,18 +129,34 @@ public class GOAGeneratorUtilities {
         }
     }
 
+    /**
+     * Checks that the protein is not from an excluded microbial taxon.
+     * @param taxonIdentifier -- Protein's Species' CrossReference identifier.
+     * @return
+     */
     public static boolean excludedMicrobialSpecies(String taxonIdentifier) {
         return microbialSpeciesToExclude.contains(taxonIdentifier);
     }
 
+    /**
+     * Checks that the GO accession is not for Protein Binding. These don't receive a GO annotation since they require an "IPI" evidence code.
+     * @param goAccession -- GO accession string.
+     * @return
+     */
     public static boolean proteinBindingAnnotation(Object goAccession) {
         return goAccession.toString().equals(PROTEIN_BINDING_ANNOTATION);
     }
 
-    // Finds most recent modification date for a GOA line. This is a bit of a moving target since GOA lines can be generated convergently for
-    // each type of GO annotation. Depending on if it is looking at the individual protein or whole reaction level, the date attribute
-    // may not be the most recent. If it is found that the goaLine was generated earlier but that a more recent modification date exists based on the
-    // entity that is currently being checked, then it will just update that date value in the hash associated with the line. (Yes, this is weird).
+    /**
+     * Finds most recent modification date for a GOA line. This is a bit of a moving target since GOA lines can be generated convergently for
+     * each type of GO annotation. Depending on if it is looking at the individual protein or whole reaction level, the date attribute
+     * may not be the most recent. If it is found that the goaLine was generated earlier but that a more recent modification date exists based on the
+     * entity that is currently being checked, then it will just update that date value in the hash associated with the line. (Yes, this is weird).
+     * @param entityInst -- Protein/catalyst/reaction that is receiving a GO annotation.
+     * @param goaLine -- GO annotation line, used for checking the 'dates' structure.
+     * @return
+     * @throws Exception
+     */
     public static Integer assignDateForGOALine(GKInstance entityInst, String goaLine) throws Exception {
         int instanceDate;
         Collection<GKInstance> modifiedInstances = entityInst.getAttributeValuesList(ReactomeJavaConstants.modified);
@@ -120,11 +176,21 @@ public class GOAGeneratorUtilities {
         return instanceDate;
     }
 
+    /**
+     * Retrieves date from instance and formats it for GO annotation file.
+     * @param instanceEditInst
+     * @return
+     * @throws Exception
+     */
     private static int getDate(GKInstance instanceEditInst) throws Exception {
         return Integer.valueOf(instanceEditInst.getAttributeValue(ReactomeJavaConstants.dateTime).toString().split(" ")[0].replaceAll("-", ""));
     }
 
-    // With all GOA annotations made and most recent dates for each line found, generate the GOA file.
+    /**
+     * Iterates through the lines in the 'goaLines' list, retrieves the date associated with that line and also adds the 'Reactome' column before adding it to the gene_association.reactome file.
+     * @param filename
+     * @throws IOException
+     */
     public static void outputGOAFile(String filename) throws IOException {
 
         Files.deleteIfExists(Paths.get(filename));
@@ -138,6 +204,7 @@ public class GOAGeneratorUtilities {
         br.close();
     }
 
+    // Move file into DownloadDirectory folder corresponding to release number.
     public static void moveFile(String filename, String targetDirectory) throws IOException {
         Files.move(Paths.get(filename), Paths.get(targetDirectory), StandardCopyOption.REPLACE_EXISTING);
     }
