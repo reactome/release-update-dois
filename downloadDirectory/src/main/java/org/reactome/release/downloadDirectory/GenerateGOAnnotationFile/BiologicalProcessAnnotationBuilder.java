@@ -1,13 +1,16 @@
 package org.reactome.release.downloadDirectory.GenerateGOAnnotationFile;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.schema.SchemaClass;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class BiologicalProcessAnnotationBuilder {
+
+    private static final Logger logger = LogManager.getLogger();
 
     private static final int MAX_RECURSION_LEVEL = 2;
     private static final String BIOLOGICAL_PROCESS_LETTER = "P";
@@ -26,6 +29,8 @@ public class BiologicalProcessAnnotationBuilder {
                 if (validCatalyst) {
                     Set<GKInstance> proteinInstances = getBiologicalProcessProteins(catalystPEInst);
                     processProteins(proteinInstances, reactionInst);
+                } else {
+                    logger.info("Invalid catalyst, skipping GO annotation");
                 }
             }
         }
@@ -75,7 +80,11 @@ public class BiologicalProcessAnnotationBuilder {
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
                 if (!GOAGeneratorUtilities.excludedMicrobialSpecies(taxonIdentifier)) {
                     getGOBiologicalProcessLine(referenceEntityInst, reactionInst, taxonIdentifier);
+                } else {
+                    logger.info("Protein is from an excluded microbial species, skipping GO annotation");
                 }
+            } else {
+                logger.info("Invalid protein, skipping GO annotation");
             }
         }
     }
@@ -103,6 +112,8 @@ public class BiologicalProcessAnnotationBuilder {
                         GKInstance eventStableIdentifierInst = (GKInstance) eventInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
                         goBiologicalProcessAccession.put("event", "REACTOME:" + eventStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
                         goBiologicalProcessAccessions.add(goBiologicalProcessAccession);
+                    } else {
+                        logger.info("Accession is for protein binding, skipping GO annotation");
                     }
                 }
             } else {

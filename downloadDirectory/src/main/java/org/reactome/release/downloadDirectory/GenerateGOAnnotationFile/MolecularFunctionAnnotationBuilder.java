@@ -1,5 +1,7 @@
 package org.reactome.release.downloadDirectory.GenerateGOAnnotationFile;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.schema.SchemaClass;
@@ -7,6 +9,8 @@ import org.gk.schema.SchemaClass;
 import java.util.*;
 
 public class MolecularFunctionAnnotationBuilder {
+
+    private static final Logger logger = LogManager.getLogger();
 
     private static final String MOLECULAR_FUNCTION_LETTER = "F";
 
@@ -22,6 +26,8 @@ public class MolecularFunctionAnnotationBuilder {
                     GKInstance entityInst = activeUnitInst == null ? (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity) : activeUnitInst;
                     Set<GKInstance> proteinInstances = getMolecularFunctionProteins(entityInst);
                     processProteins(proteinInstances, reactionInst, catalystInst);
+                } else {
+                    logger.info("Invalid catalyst, skipping GO annotation");
                 }
         }
     }
@@ -41,6 +47,9 @@ public class MolecularFunctionAnnotationBuilder {
             } else if (activeUnitInstances.size() == 1) {
                 catalystValidity = validCatalystAU(activeUnitInstances.get(0));
             }
+        }
+        if (!catalystValidity) {
+            logger.info("Invalid catalyst, skipping GO annotation");
         }
         return catalystValidity;
     }
@@ -81,7 +90,6 @@ public class MolecularFunctionAnnotationBuilder {
 
     // Attempt to generate GO Annotation information for each protein associated with the whole Reaction or just it's catalysts, depending on the goTerm being evaluated.
     private static void processProteins(Set<GKInstance> proteinInstances, GKInstance reactionInst, GKInstance catalystInst) throws Exception {
-
         for (GKInstance proteinInst : proteinInstances) {
             GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
             GKInstance speciesInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.species);
@@ -89,9 +97,17 @@ public class MolecularFunctionAnnotationBuilder {
             boolean validProtein = GOAGeneratorUtilities.validateProtein(referenceEntityInst, speciesInst);
             if (validProtein) {
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
-                if (!GOAGeneratorUtilities.excludedMicrobialSpecies(taxonIdentifier) && catalystInst.getAttributeValue(ReactomeJavaConstants.activity) != null) {
-                    getGOMolecularFunctionLine(catalystInst, referenceEntityInst, taxonIdentifier, reactionInst);
+                if (!GOAGeneratorUtilities.excludedMicrobialSpecies(taxonIdentifier)) {
+                    if (catalystInst.getAttributeValue(ReactomeJavaConstants.activity) != null) {
+                        getGOMolecularFunctionLine(catalystInst, referenceEntityInst, taxonIdentifier, reactionInst);
+                    } else {
+                        logger.info("Catalyst has no GO_MolecularFunction attribute, skipping GO annotation");
+                    }
+                } else {
+                    logger.info("Protein is from an excluded microbial species, skipping GO annotation");
                 }
+            } else {
+                logger.info("Invalid protein, skipping GO annotation");
             }
         }
     }
@@ -107,6 +123,7 @@ public class MolecularFunctionAnnotationBuilder {
         GKInstance activityInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activity);
         if (!GOAGeneratorUtilities.proteinBindingAnnotation(activityInst.getAttributeValue(ReactomeJavaConstants.accession))) {
             String goAccession = "GO:" + activityInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
+            //todo
             if (pubMedIdentifiers.size() > 0) {
                 for (String pubmedIdentifier : pubMedIdentifiers) {
                     String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, MOLECULAR_FUNCTION_LETTER, goAccession, pubmedIdentifier, "EXP", taxonIdentifier);
@@ -117,6 +134,8 @@ public class MolecularFunctionAnnotationBuilder {
                 String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, MOLECULAR_FUNCTION_LETTER, goAccession, reactomeIdentifier, "TAS", taxonIdentifier);
                 GOAGeneratorUtilities.assignDateForGOALine(catalystInst, goaLine);
             }
+        } else {
+            logger.info("Accession is for protein binding, skipping GO annotation");
         }
     }
 }

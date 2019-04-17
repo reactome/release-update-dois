@@ -19,6 +19,7 @@ public class CreateGOAFile {
         for (GKInstance reactionInst : (Collection<GKInstance>) dbAdaptor.fetchInstancesByClass(ReactomeJavaConstants.ReactionlikeEvent)) {
             // Only finding GO accessions from curated ReactionlikeEvents
             if (!isInferred(reactionInst)) {
+                logger.info("Creating GO annotations for " + reactionInst);
                 CellularComponentAnnotationBuilder.processCellularComponents(reactionInst);
                 MolecularFunctionAnnotationBuilder.processMolecularFunctions(reactionInst);
                 BiologicalProcessAnnotationBuilder.processBiologicalFunctions(reactionInst);
