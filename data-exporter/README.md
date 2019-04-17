@@ -56,8 +56,10 @@ outputDir=data-exporter/archive
 ## Logging
 
 When run, the jar file will output log files to a `logs` directory at the root directory of this project.  For each run of the program, the following log files will be created:
-* a Main-<timestamp>.log file - will contain all statements logged by the program
-* a Main-<timestamp>.err file - will contain all statements logged with severity of WARN, ERROR, or FATAL by the program
-* a NCBIGene-<timestamp>.log file - will contain all statements specific to processing in the NCBI Gene class where processing of UniProt entries in Reactome happens
+* a Main-\<timestamp>.log file - will contain all statements logged by the program
+* a Main-\<timestamp>.err file - will contain all statements logged with severity of WARN, ERROR, or FATAL by the 
+program
+* a NCBIGene-\<timestamp>.log file - will contain all statements specific to processing in the NCBI Gene class where 
+processing of UniProt entries in Reactome happens
 
 The log files will contain timestamps of when the program was executed.
