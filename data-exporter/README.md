@@ -19,7 +19,7 @@ The file outputs will be as follows in the configured output directory (see conf
 
 The program can be run by invoking the script `runDataExporter.sh` at the root directory of this project.  It will prompt for configuration values if none have been previously set, so the configuration documentation below is for reference or if you wish to alter existing configuration values.
 
-Using the -b or --build_jar option, the data-exporter.jar file will force `data-exporter.jar` to be re-built.
+Optionally, using the -b or --build_jar option, the script will force `data-exporter.jar` to be re-built.  The jar file will be built regardless of specifying this option if it does not exist.
 
 Usage: `./runDataExporter.sh [-b|--build_jar]`
 
