@@ -151,9 +151,8 @@ This step will match old <b>stableIdentifiers</b> to ones in the new format. The
 
 This step generates the 'gene_association.reactome' GO Annotation file. Information about the file format can be found <a href="https://www.ebi.ac.uk/GOA/newto">here</a>. This step will go through all <b>curated</b> ReactionlikeEvents that are in the database and generate GOA lines for a variety of instances pertaining to all 3 of the Gene Ontology annotation types: <b>Cellular Compartment</b>, <b>Molecular Function</b> and <b>Biological Process</b>.
 
-`Cellular Compartment`: It will evaluate all proteins (EntityWithAccessionedSequences) associated with a ReactionlikeEvent in the entire hierarchy.<br><br>
-`Molecular Function`: It will evaluate all proteins in the CatalystActivity attribute of the ReactionlikeEvent. More specifically it will annotate the proteins in the ActiveUnit or, if no ActiveUnit exists, the PhysicalEntity slots. The type of annotation produced for Molecular Function accessions depends on if any PubMed identifiers exist in the protein of interest. Those with a pmid will get a GOA entry that cites PubMed, while those that don't will receive the typical Reactome annotation.<br><br>
-`Biological Process`: It will evaluate all CatalystActivity proteins of the ReactionlikeEvent unless there are none, in which case it will evaluate all proteins associated with the ReactionlikeEvent in the entire hierarchy. When attempting to generate an annotation for the protein, if no BiologicalProcess accession exists it will check the referral of the protein for an accession, to a maximum of 2 levels above. 
+
+Further information on the details of the GenerateGOAnnotationFile step can be found <a href="https://github.com/reactome/data-release-pipeline/blob/feature/goa-prepare/downloadDirectory/src/main/java/org/reactome/release/downloadDirectory/GenerateGOAnnotationFile/README.md">here</a>.
 
 To check the file, compare it with previous release. Since the number of curated proteins does not change drastically between release, there should be a relatively similar amount of annotations in the files.
 
