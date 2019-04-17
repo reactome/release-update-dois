@@ -36,4 +36,6 @@ target
 .attach_pid*
 normal_event_skip_list.txt
 
+logs/
 \.idea/
+archive/
