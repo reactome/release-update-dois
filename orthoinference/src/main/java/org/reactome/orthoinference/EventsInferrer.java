@@ -72,6 +72,7 @@ public class EventsInferrer
 		String dateOfRelease = props.getProperty("dateOfRelease");
 		int personId = Integer.valueOf(props.getProperty("personId"));
 		setReleaseDates(dateOfRelease);
+		PathwayDiagramGenerator.setPersonId((long) personId);
 		
 		SkipInstanceChecker.getSkipList("normal_event_skip_list.txt");
 		
@@ -148,6 +149,7 @@ public class EventsInferrer
 			return;
 		}
 		String humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID().toString();
+		PathwayDiagramGenerator.setReferenceSpeciesId(Long.parseLong(humanInstanceDbId));
 		// Gets Reaction instances of source species (human)
 		Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", humanInstanceDbId);
 
@@ -182,7 +184,7 @@ public class EventsInferrer
 				continue;
 			}
 			// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
-			
+
 			try {
 				logger.info("Attempting to infer " + reactionInst);
 				ReactionInferrer.inferReaction(reactionInst);
@@ -193,6 +195,7 @@ public class EventsInferrer
 		}
 		HumanEventsUpdater.setInferredEvent(ReactionInferrer.getInferredEvent());
 		HumanEventsUpdater.updateHumanEvents(ReactionInferrer.getInferrableHumanEvents());
+		PathwayDiagramGenerator.generateOrthologousPathwayDiagrams();
 		outputReport(species);
 		resetVariables();
 		System.gc();
@@ -247,6 +250,7 @@ public class EventsInferrer
 		OrthologousEntityGenerator.setAdaptor(dbAdaptor);
 		EWASInferrer.setAdaptor(dbAdaptor);
 		HumanEventsUpdater.setAdaptor(dbAdaptor);
+		PathwayDiagramGenerator.setAdaptor(dbAdaptor);
 		
 	}
 
@@ -286,6 +290,7 @@ public class EventsInferrer
 		OrthologousEntityGenerator.setSpeciesInstance(speciesInst);
 		EWASInferrer.setSpeciesInstance(speciesInst);
 		InstanceUtilities.setSpeciesInstance(speciesInst);
+		PathwayDiagramGenerator.setSpeciesInstance(speciesInst);
 	}
 	// Create and set static Summation instance
 	private static void setSummationInstance() throws Exception
