@@ -2,7 +2,7 @@
 
 This step produces the `gene_association.reactome` file that can be downloaded from Reactome. The file contains annotations from proteins in curated <b>ReactionlikeEvent</b> (RlE) instances in Reactome's knowledgebase.
 The annotations are generated for the standard GO terms, <i>Cellular Compartment</i>, <i>Molecular Function</i> and <i>Biological Process</i>, which have accessions that can be retrieved from particular proteins that make up a ReactionlikeEvent.
-Further information can be found <a href="https://www.ebi.ac.uk/GOA">here</a>.
+Further information about the file format can be found <a href="http://geneontology.org/docs/go-annotation-file-gaf-format-2.1/">here</a>.
 
 Below is a description of how annotations are generated for each of the GO terms. 
 
@@ -24,13 +24,9 @@ The <b>GO accession</b> is retrieved from <b>activity</b> attribute of the catal
 
 Biological Process annotations can ge generated from <b>CatalystActivity</b> proteins (similar to Molecular Function) or, if no catalyst exists, from all proteins in the RlE (similar to Cellular Compartment).
 
-<h4>Catalyst protein annotations</h4> 
+<b>Catalyst protein annotations</b>: For RlEs that do have a catalyst, annotations are generated just from a catalyst's PhysicalEntity instance. All PhysicalEntity types are eligible for GO annotation. 
 
-For RlEs that do have a catalyst, annotations are generated just from a catalyst's <b>PhysicalEntity</b> instance. All PhysicalEntity types are eligible for GO annotation. 
-
-<h4>Non-catalyst protein annotations</h4> 
-
-Protein retrieval for those that do not have a catalyst is done using the same AttributeQueryRequest method described in the Cellular Compartment section.
+<b>Non-catalyst protein annotations</b>: Protein retrieval for those that do not have a catalyst is done using the same AttributeQueryRequest method described in the Cellular Compartment section.
 
 <br>
 Once all proteins have been retrieved, they are filtered based on source database (needs to be UniProt) and species validity again. Once a protein passes these filters, the program will attempt to retrieve the Biological Process accession from the RlE instance's <b>goBiologicalProcess</b> attribute.
@@ -48,4 +44,7 @@ UniProtKB       A0AVI4  TM129_HUMAN             GO:0061630      PMID:24807418   
 UniProtKB       A5YM72  CRNS1_HUMAN             GO:0047730      REACTOME:R-HSA-6786245  TAS             F                       protein taxon:9606      20150706        Reactome
 ```
 
-This shows different annotation types that can be found in `gene_association.reactome`. {TODO: Describe the N/As and some of the repetitive column values}
+This shows different annotation types that can be found in `gene_association.reactome`. There are four columns (marked with N/A) that are not populated by the GOA prepare step. In GO Annotation format, these would be the Qualifier (4th column), With (or) from (8th column), DB Object Name (10th), and DB Object Synonym (11th) columns.
+
+In this sample file you can also see the annotation formats for each GO annotation type. Molecular Function annotations (lines 4 and 5) can be of two forms. The first, at line 4, are for Molecular Function annotations where an existing PubMed literature reference existed. These receive the 'PMID' prefix on their EventIdentifier and the EvidenceCode 'EXP', meaning it was inferred from an experiment (<a href="http://geneontology.org/docs/guide-go-evidence-codes/">source</a>). The second, at line 5, are those without a PubMed reference. These receiver the typical 'REACTOME' prefix for their EventIdentifier and 'TAS' for the evidence code (Traceable Author Statement). 
+
