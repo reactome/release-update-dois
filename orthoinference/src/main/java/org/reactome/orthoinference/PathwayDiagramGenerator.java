@@ -44,12 +44,15 @@ public class PathwayDiagramGenerator {
                     // Look for OrthologousEvent instances that match the current target species and that are electronically inferred.
                     if (targetSpeciesInst == speciesInst && orthoPathwayInst.getAttributeValue(ReactomeJavaConstants.evidenceType) != null) {
                         // Generate Orthologous PathwayDiagram instance using generatePredictedDiagram method from PredictedPathwayDiagramGeneratorFromDB.
+                        // This method is the one needed to build PathwayDiagrams for species-specific Pathway instances.
                         logger.info("Building Pathway diagram for " + orthoPathwayInst);
                         diagramGenerator.generatePredictedDiagram(orthoPathwayInst, pathwayInst, diagramInst);
                     }
                 }
             }
         }
+
+        //TODO PathwayDiagram counts
         logger.info("Finish pathway diagram generation for " + speciesInst.getDisplayName());
     }
 
