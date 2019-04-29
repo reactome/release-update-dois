@@ -1,13 +1,13 @@
 #!/bin/bash
 
-## This script will create or replace a database using a mysql dump file. It takes the DB name and dump filepath as arguements.
-## A config file populated with mySQL username and password is also required.
+## This script will create or replace a database using a mysql dump file. It takes the DB name (-d or --database) and dump filepath (-f or --file) as arguments.
+## A config file populated with mySQL username, password and host is also required. Its filepath can be optionally specified (-c or --config), otherwise a default 'config.properties' file is assumed.
 ## author: jcook
 
 dbFilepath=
 dbName=
 configFilepath=config.properties
-## Parse execution arguments
+## Parse command-line arguments
 while (( "$#" )); do
 	case "$1" in
 		-f|--file)
