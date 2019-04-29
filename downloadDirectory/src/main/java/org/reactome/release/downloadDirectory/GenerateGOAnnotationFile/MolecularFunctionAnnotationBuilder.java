@@ -14,8 +14,8 @@ public class MolecularFunctionAnnotationBuilder {
 
     /**
      * Initial Molecular Function annotations method that iterates through and validates the reaction's catalyst instances, if any exist.
-     * @param reactionInst
-     * @throws Exception
+     * @param reactionInst -- GKInstance from ReactionlikeEvent class.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     public static void processMolecularFunctions(GKInstance reactionInst) throws Exception {
 
@@ -40,9 +40,9 @@ public class MolecularFunctionAnnotationBuilder {
      * Then it will check if the ActiveUnit is valid if it exists. If there is no ActiveUnit, the PhysicalEntity
      * is checked to see if it is 'multi-instance', which will invalidate it.
      * Catalysts with more than 1 ActiveUnit are also considered invalid.
-     * @param catalystInst -- Catalyst instance taken from the original reaction instance.
-     * @return
-     * @throws Exception
+     * @param catalystInst -- GKInstance, catalyst instance taken from the original reaction instance.
+     * @return -- True if the catalyst instance has been deemed valid, false if not.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static boolean validateMolecularFunctionCatalyst(GKInstance catalystInst) throws Exception {
         GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
@@ -65,9 +65,9 @@ public class MolecularFunctionAnnotationBuilder {
     /**
      *  Validity of ActiveUnit is dependant on it not being an EntitySet with non-EWAS members.
      *  This rule used to also exclude Complex and Polymers, but it seems ActiveUnits can't be either of those.
-     * @param activeUnitInst -- Active unit instance taken from the catalyst instance.
-     * @return
-     * @throws Exception
+     * @param activeUnitInst -- GKInstance, active unit instance taken from the catalyst instance.
+     * @return -- True if the activeUnit instance has been deemed valid, false if not.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static boolean validCatalystAU(GKInstance activeUnitInst) throws Exception {
         SchemaClass activeUnitSchemaClass = activeUnitInst.getSchemClass();
@@ -82,9 +82,9 @@ public class MolecularFunctionAnnotationBuilder {
 
     /**
      * Retrieves all protein instances from an EntitySet comprised of only EWAS' or that are not a Complex/Polymer but are an EWAS.
-     * @param entityInst -- Can be either an ActiveUnit or PhysicalActivity instance taken from a Reaction's catalyst.
-     * @return
-     * @throws Exception
+     * @param entityInst -- GKInstance, ActiveUnit/PhysicalActivity instance taken from a Reaction's catalyst.
+     * @return -- Set of GKInstances, retrieved protein instances from either ActiveUnit or PhysicalEntity.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static Set<GKInstance> getMolecularFunctionProteins(GKInstance entityInst) throws Exception {
         Set<GKInstance> proteinInstances = new HashSet<>();
@@ -99,9 +99,9 @@ public class MolecularFunctionAnnotationBuilder {
 
     /**
      * Checks that the incoming EntitySet instance only has EWAS members
-     * @param entitySetInst --  ActiveUnit/PhysicalEntity of a catalyst that is an EntitySet
-     * @return
-     * @throws Exception
+     * @param entitySetInst -- GKInstance,  ActiveUnit/PhysicalEntity of a catalyst that is an EntitySet
+     * @return -- Boolean, true if the instance only contains EWAS' in its hasMember attribute, false if not.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static boolean onlyEWASMembers(GKInstance entitySetInst) throws Exception {
        Collection<GKInstance> memberInstances = (Collection<GKInstance>) entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember);
@@ -113,10 +113,10 @@ public class MolecularFunctionAnnotationBuilder {
 
     /**
      * Iterates through each protein from a Catalyst's ActiveUnit/PhysicalEntity, filtering out any that are invalid, are from the excluded species or that have no activity value.
-     * @param proteinInstances -- EWAS' from the ActiveUnit/PhysicalEntity of the catalyst.
-     * @param reactionInst -- Reaction the catalyst/proteins come from.
-     * @param catalystInst -- Catalyst instance from reaction.
-     * @throws Exception
+     * @param proteinInstances -- Set of GKInstances, EWAS' from the ActiveUnit/PhysicalEntity of the catalyst.
+     * @param reactionInst -- GKInstance, parent reaction the catalyst/proteins come from.
+     * @param catalystInst -- GKInstance, catalyst instance from reaction.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static void processProteins(Set<GKInstance> proteinInstances, GKInstance reactionInst, GKInstance catalystInst) throws Exception {
         for (GKInstance proteinInst : proteinInstances) {
@@ -145,11 +145,11 @@ public class MolecularFunctionAnnotationBuilder {
      * Generating GOA lines for MF annotations depends on if the catalyst has any literatureReferences (meaning it has a PubMed annotation). If it does, multiple GOA lines
      * that are specific to each PubMed annotation will be output, or, if there are no literatureReferences just a single line with a Reactome identifier will be output.
      * The GOA line generation will be called differently depending on this.
-     * @param catalystInst -- Catalyst instance from reaction.
-     * @param referenceEntityInst -- ReferenceEntity instance from protein instance.
-     * @param taxonIdentifier -- CrossReference ID of protein's species.
-     * @param reactionInst -- Reaction instance that protein/catalyst comes from.
-     * @throws Exception
+     * @param catalystInst -- GKInstance, catalyst instance from reaction.
+     * @param referenceEntityInst -- GKInstance, ReferenceEntity instance from protein instance.
+     * @param taxonIdentifier -- String, CrossReference ID of protein's species.
+     * @param reactionInst -- GKInstance, parent reaction instance that protein/catalyst comes from.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static void getGOMolecularFunctionLine(GKInstance catalystInst, GKInstance referenceEntityInst, String taxonIdentifier, GKInstance reactionInst) throws Exception {
         List<String> pubMedIdentifiers = new ArrayList<>();

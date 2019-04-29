@@ -17,8 +17,8 @@ public class BiologicalProcessAnnotationBuilder {
 
     /**
      * Initial Biological Function annotations method that determines how to retrieve proteins for annotation. Protein retrieval methods differ depending on the presence of a catalyst.
-     * @param reactionInst
-     * @throws Exception
+     * @param reactionInst -- GKInstance from ReactionlikeEvent class
+     * @throws Exception -- MySQLAdaptor exception
      */
     public static void processBiologicalFunctions(GKInstance reactionInst) throws Exception {
 
@@ -43,9 +43,9 @@ public class BiologicalProcessAnnotationBuilder {
 
     /**
      * Returns all protein instances from multi-instance PhysicalEntitys (Polymer/Complex/EntitySet) or just the single incoming instance if it is an EWAS.
-     * @param physicalEntityInst -- PhysicalEntity instance from catalyst.
-     * @return
-     * @throws Exception
+     * @param physicalEntityInst -- GKInstance, PhysicalEntity instance from catalyst.
+     * @return -- Set of GKInstances, retrieved protein instances.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static Set<GKInstance> getBiologicalProcessProteins(GKInstance physicalEntityInst) throws Exception {
         Set<GKInstance> proteinInstances = new HashSet<>();
@@ -59,9 +59,9 @@ public class BiologicalProcessAnnotationBuilder {
 
     /**
      * Returns all constituent PhysicalEntity instances of a Multi-instance PhysicalEntity
-     * @param physicalEntityInst
-     * @return
-     * @throws Exception
+     * @param physicalEntityInst -- GKInstance, PhysicalEntity instance from catalyst.
+     * @return -- Set of GKInstances, returns all subunits (members, components, repeatedUnits) of physicalEntityInst.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static Set<GKInstance> getMultiInstanceSubInstances(GKInstance physicalEntityInst) throws Exception {
         Set<GKInstance> subInstanceProteins = new HashSet<>();
@@ -73,8 +73,8 @@ public class BiologicalProcessAnnotationBuilder {
 
     /**
      * Determines what subunit type this instance has.
-     * @param physicalEntitySchemaClass
-     * @return
+     * @param physicalEntitySchemaClass -- SchemaClass from physicalEntityInst
+     * @return -- String of subunit type that PhysicalEntity has.
      */
     private static String getSubunitType(SchemaClass physicalEntitySchemaClass) {
         String subunitType = null;
@@ -90,9 +90,9 @@ public class BiologicalProcessAnnotationBuilder {
 
     /**
      * Iterates through all retrieves proteins, filtering out any that are invalid, are from the excluded species.
-     * @param proteinInstances -- These can be all catalyst proteins or, if no catalyst exists in the reaction, all reaction proteins.
-     * @param reactionInst
-     * @throws Exception
+     * @param proteinInstances -- Set of GKInstances, these can be all catalyst proteins or, if no catalyst exists in the reaction, all reaction proteins.
+     * @param reactionInst -- GKInstance, parent reaction instance.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static void processProteins(Set<GKInstance> proteinInstances, GKInstance reactionInst) throws Exception {
 
@@ -117,10 +117,10 @@ public class BiologicalProcessAnnotationBuilder {
     /**
      * Before creating GOA line for BP annotations, the reaction in question needs to be checked for the existance of a 'goBiologicalProcess' attribute. If there is none
      * than the instance's 'hasEvent' referrals are checked for any.
-     * @param referenceEntityInst -- ReferenceEntity instance from protein instance.
-     * @param reactionInst
-     * @param taxonIdentifier -- CrossReference ID of protein's species.
-     * @throws Exception
+     * @param referenceEntityInst -- GKInstance, ReferenceEntity instance from protein instance.
+     * @param reactionInst -- GKInstance, parent reaction instance.
+     * @param taxonIdentifier -- String, CrossReference ID of protein's species.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static void getGOBiologicalProcessLine(GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
         for (Map<String, String> biologicalProcessAccession : getGOBiologicalProcessAccessions(reactionInst, 0)) {
@@ -132,10 +132,10 @@ public class BiologicalProcessAnnotationBuilder {
     /**
      * This method checks for a populated 'goBiologicalProcess' attribute in the incoming instance. If there are none and the max recursion has been reached,
      * it's 'hasEvent' referral is checked for it. Once finding it, it returns the 'accession' and 'identifier' for each one, which will be used to generate a GOA line.
-     * @param eventInst -- Can be the original reaction instance, or, if it had no Biological Process accessions, its Event referrals.
-     * @param recursion -- Indicates number of times the method has been recursively called.
-     * @return
-     * @throws Exception
+     * @param eventInst -- GKInstance, Can be the original reaction instance, or, if it had no Biological Process accessions, its Event referrals.
+     * @param recursion -- Integer, Indicates number of times the method has been recursively called.
+     * @return -- 1 or more Maps containing the GO accession string and event instance it is associated with.
+     * @throws Exception -- MySQLAdaptor exception.
      */
     private static List<Map<String, String>> getGOBiologicalProcessAccessions(GKInstance eventInst, int recursion) throws Exception {
         List<Map<String, String>> goBiologicalProcessAccessions = new ArrayList<>();
