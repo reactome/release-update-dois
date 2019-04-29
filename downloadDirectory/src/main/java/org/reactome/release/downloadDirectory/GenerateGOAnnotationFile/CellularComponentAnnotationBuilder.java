@@ -13,27 +13,17 @@ public class CellularComponentAnnotationBuilder {
     private static final Logger logger = LogManager.getLogger();
 
     // CrossReference IDs of species containing an alternative GO compartment, which do not receive a GO annotation: HIV 1, unknown, C. botulinum, B. anthracis
-    private static final List<String> speciesWithAlternateGOCompartment = new ArrayList<>(Arrays.asList("11676", "211044", "1491", "1392"));
-    private static final String CELLULAR_COMPONENT_LETTER = "C";
+    private static final List<String> speciesWithAlternateGOCompartment = Arrays.asList(GOAGeneratorConstants.HIV_1_CROSS_REFERENCE, GOAGeneratorConstants.C_BOTULINUM_CROSS_REFERENCE, GOAGeneratorConstants.B_ANTHRACIS_CROSS_REFERENCE);
 
     /**
      * Initial Cellular Compartment annotations method that first retrieves all proteins associated with the reaction before moving to GO annotation.
+     * Then iterates through each retrieved protein, filtering out any that are invalid or are from the excluded species.
      * @param reactionInst
      * @throws Exception
      */
     public static void processCellularComponents(GKInstance reactionInst) throws Exception {
-        Set<GKInstance> proteinInstances = GOAGeneratorUtilities.retrieveProteins(reactionInst);
-        processProteins(proteinInstances, reactionInst);
-    }
-
-    /**
-     * Iterates through each retrieved protein, filtering out any that are invalid or are from the excluded species.
-     * @param proteinInstances -- Proteins retrieved from the above 'retrieveProteins' step.
-     * @param reactionInst
-     * @throws Exception
-     */
-    private static void processProteins(Set<GKInstance> proteinInstances, GKInstance reactionInst) throws Exception {
-        for (GKInstance proteinInst : proteinInstances) {
+        // First retrieve proteins, then build GO annotation
+        for (GKInstance proteinInst : GOAGeneratorUtilities.retrieveProteins(reactionInst)) {
             GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
             GKInstance speciesInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.species);
             // Check if the protein has any disqualifying attributes.
@@ -66,10 +56,10 @@ public class CellularComponentAnnotationBuilder {
      * @throws Exception
      */
     private static void generateGOCellularCompartmentLine(GKInstance proteinInst, GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
-        String reactomeIdentifier = "REACTOME:" + ((GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
+        String reactomeIdentifier = GOAGeneratorConstants.REACTOME_IDENTIFIER_PREFIX  + ((GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
         String goCellularCompartmentAccession = getCellularCompartmentGOAccession(proteinInst);
         if (!goCellularCompartmentAccession.isEmpty()) {
-            String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, CELLULAR_COMPONENT_LETTER, goCellularCompartmentAccession, reactomeIdentifier, "TAS", taxonIdentifier);
+            String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, GOAGeneratorConstants.CELLULAR_COMPONENT_LETTER, goCellularCompartmentAccession, reactomeIdentifier,  GOAGeneratorConstants.TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
             GOAGeneratorUtilities.assignDateForGOALine(proteinInst, goaLine);
         } else {
             logger.info("Protein has no Cellular Compartment accession, skipping GO annotation");
@@ -86,7 +76,7 @@ public class CellularComponentAnnotationBuilder {
         GKInstance compartmentInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.compartment);
         String cellularComponentAccession = "";
         if (compartmentInst != null && !GOAGeneratorUtilities.proteinBindingAnnotation(compartmentInst.getAttributeValue(ReactomeJavaConstants.accession))) {
-            cellularComponentAccession = "GO:" + compartmentInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
+            cellularComponentAccession = GOAGeneratorConstants.GO_IDENTIFIER_PREFIX + compartmentInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
         }
         return cellularComponentAccession;
     }

@@ -15,7 +15,6 @@ import java.util.*;
 public class CreateGOAFile {
 
     private static final Logger logger = LogManager.getLogger();
-    private static final String GOA_FILENAME = "gene_association.reactome";
 
     /**
      * This is called from the Main DownloadDirectory class.
@@ -35,8 +34,8 @@ public class CreateGOAFile {
                 BiologicalProcessAnnotationBuilder.processBiologicalFunctions(reactionInst);
             }
         }
-        GOAGeneratorUtilities.outputGOAFile(GOA_FILENAME);
-        GOAGeneratorUtilities.moveFile(GOA_FILENAME, releaseNumber + "/" + GOA_FILENAME);
+        GOAGeneratorUtilities.outputGOAFile();
+        GOAGeneratorUtilities.moveFile(releaseNumber + "/");
         logger.info("Finished generating gene_association.reactome");
         }
 

@@ -12,8 +12,6 @@ public class MolecularFunctionAnnotationBuilder {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private static final String MOLECULAR_FUNCTION_LETTER = "F";
-
     /**
      * Initial Molecular Function annotations method that iterates through and validates the reaction's catalyst instances, if any exist.
      * @param reactionInst
@@ -156,19 +154,19 @@ public class MolecularFunctionAnnotationBuilder {
     private static void getGOMolecularFunctionLine(GKInstance catalystInst, GKInstance referenceEntityInst, String taxonIdentifier, GKInstance reactionInst) throws Exception {
         List<String> pubMedIdentifiers = new ArrayList<>();
         for (GKInstance literatureReferenceInst : (Collection<GKInstance>) catalystInst.getAttributeValuesList(ReactomeJavaConstants.literatureReference)) {
-            pubMedIdentifiers.add("PMID:" + literatureReferenceInst.getAttributeValue(ReactomeJavaConstants.pubMedIdentifier).toString());
+            pubMedIdentifiers.add(GOAGeneratorConstants.PUBMED_IDENTIFIER_PREFIX + literatureReferenceInst.getAttributeValue(ReactomeJavaConstants.pubMedIdentifier).toString());
         }
         GKInstance activityInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activity);
         if (!GOAGeneratorUtilities.proteinBindingAnnotation(activityInst.getAttributeValue(ReactomeJavaConstants.accession))) {
-            String goAccession = "GO:" + activityInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
+            String goAccession = GOAGeneratorConstants.GO_IDENTIFIER_PREFIX + activityInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
             if (pubMedIdentifiers.size() > 0) {
                 for (String pubmedIdentifier : pubMedIdentifiers) {
-                    String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, MOLECULAR_FUNCTION_LETTER, goAccession, pubmedIdentifier, "EXP", taxonIdentifier);
+                    String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, GOAGeneratorConstants.MOLECULAR_FUNCTION_LETTER, goAccession, pubmedIdentifier, GOAGeneratorConstants.INFERRED_FROM_EXPERIMENT_CODE, taxonIdentifier);
                     GOAGeneratorUtilities.assignDateForGOALine(catalystInst, goaLine);
                 }
             } else {
-                String reactomeIdentifier=  "REACTOME:" + ((GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
-                String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, MOLECULAR_FUNCTION_LETTER, goAccession, reactomeIdentifier, "TAS", taxonIdentifier);
+                String reactomeIdentifier=  GOAGeneratorConstants.REACTOME_IDENTIFIER_PREFIX + ((GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
+                String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, GOAGeneratorConstants.MOLECULAR_FUNCTION_LETTER, goAccession, reactomeIdentifier, GOAGeneratorConstants.TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
                 GOAGeneratorUtilities.assignDateForGOALine(catalystInst, goaLine);
             }
         } else {

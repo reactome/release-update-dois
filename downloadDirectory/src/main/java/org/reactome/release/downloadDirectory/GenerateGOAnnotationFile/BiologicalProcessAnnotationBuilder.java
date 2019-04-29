@@ -12,9 +12,8 @@ public class BiologicalProcessAnnotationBuilder {
 
     private static final Logger logger = LogManager.getLogger();
 
-    // When attempting to find BiologicalProcess accessions, sometimes referral Event instances need to be checked. We cap this at 2 recursions.
+    // When attempting to find BiologicalProcess accessions, sometimes referral Event instances need to be checked. We cap this at 2 recursions (the parent and grandparent referrals).
     private static final int MAX_RECURSION_LEVEL = 2;
-    private static final String BIOLOGICAL_PROCESS_LETTER = "P";
 
     /**
      * Initial Biological Function annotations method that determines how to retrieve proteins for annotation. Protein retrieval methods differ depending on the presence of a catalyst.
@@ -125,7 +124,7 @@ public class BiologicalProcessAnnotationBuilder {
      */
     private static void getGOBiologicalProcessLine(GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
         for (Map<String, String> biologicalProcessAccession : getGOBiologicalProcessAccessions(reactionInst, 0)) {
-            String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, BIOLOGICAL_PROCESS_LETTER, biologicalProcessAccession.get("accession"), biologicalProcessAccession.get("event"), "TAS", taxonIdentifier);
+            String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, GOAGeneratorConstants.BIOLOGICAL_PROCESS_LETTER, biologicalProcessAccession.get(GOAGeneratorConstants.ACCESSION_STRING), biologicalProcessAccession.get(GOAGeneratorConstants.EVENT_STRING),  GOAGeneratorConstants.TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
             GOAGeneratorUtilities.assignDateForGOALine(reactionInst, goaLine);
         }
     }
@@ -146,9 +145,9 @@ public class BiologicalProcessAnnotationBuilder {
                 for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
                     if (!GOAGeneratorUtilities.proteinBindingAnnotation(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession))) {
                         Map<String, String> goBiologicalProcessAccession = new HashMap<>();
-                        goBiologicalProcessAccession.put("accession", "GO:" + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
+                        goBiologicalProcessAccession.put(GOAGeneratorConstants.ACCESSION_STRING, GOAGeneratorConstants.GO_IDENTIFIER_PREFIX + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
                         GKInstance eventStableIdentifierInst = (GKInstance) eventInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
-                        goBiologicalProcessAccession.put("event", "REACTOME:" + eventStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
+                        goBiologicalProcessAccession.put(GOAGeneratorConstants.EVENT_STRING, GOAGeneratorConstants.REACTOME_IDENTIFIER_PREFIX + eventStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
                         goBiologicalProcessAccessions.add(goBiologicalProcessAccession);
                     } else {
                         logger.info("Accession is for protein binding, skipping GO annotation");

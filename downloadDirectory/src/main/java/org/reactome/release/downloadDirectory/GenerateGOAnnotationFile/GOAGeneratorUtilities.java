@@ -1,5 +1,6 @@
 package org.reactome.release.downloadDirectory.GenerateGOAnnotationFile;
 
+import com.sun.org.apache.bcel.internal.generic.RETURN;
 import org.gk.model.ClassAttributeFollowingInstruction;
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
@@ -17,10 +18,7 @@ import java.util.*;
 public class GOAGeneratorUtilities {
 
     // CrossReference IDs of excluded microbial species: C. trachomatis, E. coli, N. meningitidis, S. typhimurium, S. aureus, and T. gondii
-    private static final List<String> microbialSpeciesToExclude = new ArrayList<>(Arrays.asList("813", "562", "491", "90371", "1280", "5811"));
-    // This GO accession pertains to protein binding, which would require an "IPI" prefix. Excluded for now.
-    private static final String PROTEIN_BINDING_ANNOTATION = "0005515";
-    private static final String uniprotDbString = "UniProtKB";
+    private static final List<String> microbialSpeciesToExclude = Arrays.asList(GOAGeneratorConstants.C_TRACHOMATIS_CROSS_REFERENCE, GOAGeneratorConstants.E_COLI_CROSS_REFERENCE, GOAGeneratorConstants.N_MENINGITIDIS_CROSS_REFERENCE, GOAGeneratorConstants.S_AUREUS_CROSS_REFERENCE, GOAGeneratorConstants.S_TYPHIMURIUM_CROSS_REFERENCE, GOAGeneratorConstants.T_GONDII_CROSS_REFERENCE);
     private static Map<String, Integer> dates = new HashMap<>();
     private static Set<String> goaLines = new HashSet<>();
 
@@ -55,7 +53,7 @@ public class GOAGeneratorUtilities {
     public static boolean validateProtein(GKInstance referenceEntityInst, GKInstance speciesInst) throws Exception {
         if (referenceEntityInst != null && speciesInst != null) {
             GKInstance referenceDatabaseInst = (GKInstance) referenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase);
-            if (referenceDatabaseInst != null && referenceDatabaseInst.getDisplayName().equals("UniProt") && speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference) != null) {
+            if (referenceDatabaseInst != null && referenceDatabaseInst.getDisplayName().equals(GOAGeneratorConstants.UNIPROT_STRING) && speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference) != null) {
                 return true;
             }
         }
@@ -96,7 +94,7 @@ public class GOAGeneratorUtilities {
      */
     public static String generateGOALine(GKInstance referenceEntityInst, String goLetter, String goAccession, String eventIdentifier, String evidenceCode, String taxonIdentifier) throws Exception {
         List<String> goaLine = new ArrayList<>();
-        goaLine.add(uniprotDbString);
+        goaLine.add(GOAGeneratorConstants.UNIPROT_KB_STRING);
         goaLine.add(referenceEntityInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
         goaLine.add(getSecondaryIdentifier(referenceEntityInst));
         goaLine.add("");
@@ -107,8 +105,8 @@ public class GOAGeneratorUtilities {
         goaLine.add(goLetter);
         goaLine.add("");
         goaLine.add("");
-        goaLine.add("protein");
-        goaLine.add("taxon:" + taxonIdentifier);
+        goaLine.add(GOAGeneratorConstants.PROTEIN_STRING);
+        goaLine.add(GOAGeneratorConstants.TAXON_PREFIX + taxonIdentifier);
         goaLines.add(String.join("\t", goaLine));
         return String.join("\t", goaLine);
     }
@@ -144,7 +142,7 @@ public class GOAGeneratorUtilities {
      * @return
      */
     public static boolean proteinBindingAnnotation(Object goAccession) {
-        return goAccession.toString().equals(PROTEIN_BINDING_ANNOTATION);
+        return goAccession.toString().equals(GOAGeneratorConstants.PROTEIN_BINDING_ANNOTATION);
     }
 
     /**
@@ -188,24 +186,24 @@ public class GOAGeneratorUtilities {
 
     /**
      * Iterates through the lines in the 'goaLines' list, retrieves the date associated with that line and also adds the 'Reactome' column before adding it to the gene_association.reactome file.
-     * @param filename
      * @throws IOException
      */
-    public static void outputGOAFile(String filename) throws IOException {
+    public static void outputGOAFile() throws IOException {
 
-        Files.deleteIfExists(Paths.get(filename));
+        Files.deleteIfExists(Paths.get(GOAGeneratorConstants.GOA_FILENAME));
         List<String> sortedGoaLines = new ArrayList<>(goaLines);
         Collections.sort(sortedGoaLines);
-        BufferedWriter br = new BufferedWriter((new FileWriter(filename)));
+        BufferedWriter br = new BufferedWriter((new FileWriter(GOAGeneratorConstants.GOA_FILENAME)));
         br.write("!gaf-version: 2.1\n");
         for (String goaLine : sortedGoaLines) {
-            br.append(goaLine + "\t" + dates.get(goaLine) + "\tReactome\t\t\n");
+            br.append(goaLine + "\t" + dates.get(goaLine) + "\t" + GOAGeneratorConstants.REACTOME_STRING + "\t\t\n");
         }
         br.close();
     }
 
     // Move file into DownloadDirectory folder corresponding to release number.
-    public static void moveFile(String filename, String targetDirectory) throws IOException {
-        Files.move(Paths.get(filename), Paths.get(targetDirectory), StandardCopyOption.REPLACE_EXISTING);
+    public static void moveFile(String targetDirectory) throws IOException {
+        targetDirectory += GOAGeneratorConstants.GOA_FILENAME;
+        Files.move(Paths.get(GOAGeneratorConstants.GOA_FILENAME), Paths.get(targetDirectory), StandardCopyOption.REPLACE_EXISTING);
     }
 }
