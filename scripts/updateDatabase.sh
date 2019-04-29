@@ -69,14 +69,18 @@ echo "Updating $dbName with $dbFilepath";
 echo "Backing up $dbName";
 
 ## Take archive of DB, drop it and create a new, empty one
-mysqldump -u$username -p$password -h$host -P$port $dbName > $dbName.backup.dump
+dbArchiveFile="$dbName.backup.dump"
+mysqldump -u$username -p$password -h$host -P$port $dbName > $dbArchiveFile
+echo "Compressing $dbArchiveFile";
+eval "gzip -f $dbArchiveFile";
 echo "Finished backing up $dbName";
+
 echo "Updating $dbName with $dbFilepath";
 mysql -u$username -p$password -h$host -P$port -e 'drop database if exists $dbName; create database $dbName'
 
 ## If dump is gzipped, must use 'zcat'
 catCommand=cat
-if [ $dbFilepath == *.gz ]
+if [[ $dbFilepath == *.gz ]]
 then
 	catCommand=zcat
 fi
