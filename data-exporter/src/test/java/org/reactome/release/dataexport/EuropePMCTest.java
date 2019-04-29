@@ -51,7 +51,7 @@ public class EuropePMCTest {
 		final String PUBMED_ID = "9153395";
 
 		String expectedXML = String.format(
-			"<link providerId=\"1903\">" +
+			"<link providerId=\"1925\">" +
 			"<resource><title>%s</title><url>%s</url></resource>" +
 			"<record><source>MED</source><id>%s</id></record>" +
 			"</link>",
