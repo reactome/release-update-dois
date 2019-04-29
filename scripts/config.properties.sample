@@ -1,4 +1,6 @@
 # Example config file for updateDatabase.sh
 username=mySQLUsername
 password=mySQLPassword
-host=mySQLHost
+#Optional parameters that have default values
+host=localhost
+port=3306

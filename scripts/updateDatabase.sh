@@ -41,6 +41,7 @@ echo "Reading $configFilepath";
 username=
 password=
 host=localhost
+port=3306
 while read line; do
 	if [[ $line == username* ]]
  	then
@@ -51,6 +52,9 @@ while read line; do
 	elif [[ $line == host* ]]
 	then
 		host=${line#*=}
+	elif [[ $line == port* ]]
+	then
+		port=${line#*=}
  	fi
 done < $configFilepath
 
@@ -65,10 +69,10 @@ echo "Updating $dbName with $dbFilepath";
 echo "Backing up $dbName";
 
 ## Take archive of DB, drop it and create a new, empty one
-mysqldump -u$username -p$password -h$host $dbName > $dbName.backup.dump
+mysqldump -u$username -p$password -h$host -P$port $dbName > $dbName.backup.dump
 echo "Finished backing up $dbName";
 echo "Updating $dbName with $dbFilepath";
-mysql -u$username -p$password -h$host -e 'drop database if exists $dbName; create database $dbName'
+mysql -u$username -p$password -h$host -P$port -e 'drop database if exists $dbName; create database $dbName'
 
 ## If dump is gzipped, must use 'zcat'
 catCommand=cat
@@ -78,7 +82,7 @@ then
 fi
 
 ## Restore database using 'cat' piped to mysql
-cmd="$catCommand $dbFilepath | mysql -u$username -p$password -h$host $dbName"
+cmd="$catCommand $dbFilepath | mysql -u$username -p$password -h$host -P$port $dbName"
 echo "Restoring updated $dbName";
 eval $cmd;
 echo "Finished database update";
