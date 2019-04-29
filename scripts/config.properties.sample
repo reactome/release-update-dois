@@ -1,0 +1,3 @@
+# Example config file for updateDatabase.sh
+username=mySQLUsername
+password=mySQLPassword
