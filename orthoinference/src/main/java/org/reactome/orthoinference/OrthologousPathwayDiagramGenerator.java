@@ -9,30 +9,37 @@ import org.gk.persistence.MySQLAdaptor;
 
 import java.util.Collection;
 
-public class PathwayDiagramGenerator {
+public class OrthologousPathwayDiagramGenerator {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private static MySQLAdaptor dba;
-    private static GKInstance speciesInst;
-    private static long personId;
-    private static long referenceSpeciesId;
+    private MySQLAdaptor dba;
+    private GKInstance speciesInst;
+    private long personId;
+    private long referenceSpeciesId;
+
+    public OrthologousPathwayDiagramGenerator(MySQLAdaptor dba, GKInstance speciesInst, long personId, long referenceSpeciesId) {
+        this.dba = dba;
+        this.speciesInst = speciesInst;
+        this.personId = personId;
+        this.referenceSpeciesId = referenceSpeciesId;
+    }
 
     /**
      * This method will go through all reference species PathwayDiagrams and finds the orthologous Pathway instances that are for the current target species and
      * generates the orthologous PathwayDiagram via the PredictedPathwayDiagramGeneratorFromDB method in CuratorTool.
      * @throws Exception
      */
-    public static void generateOrthologousPathwayDiagrams() throws Exception {
+    public void generateOrthologousPathwayDiagrams() throws Exception {
 
-        logger.info("Generating diagrams for inferred " + speciesInst.getDisplayName() + "pathways");
+        logger.info("Generating diagrams for inferred " + speciesInst.getDisplayName() + " pathways");
         // Create PredictedPathwayDiagramGeneratorFromDB object and set db adaptor and author ID.
         PredictedPathwayDiagramGeneratorFromDB diagramGenerator = new PredictedPathwayDiagramGeneratorFromDB();
         diagramGenerator.setMySQLAdaptor(dba);
         diagramGenerator.setDefaultPersonId(personId);
 
         GKInstance referenceSpeciesInst = dba.fetchInstance(referenceSpeciesId);
-
+        
         // Iterate through each PathwayDiagram instance looking for those associated with the reference species.
         for (GKInstance diagramInst: (Collection<GKInstance>) dba.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram)) {
             GKInstance pathwayInst = (GKInstance) diagramInst.getAttributeValue(ReactomeJavaConstants.representedPathway);
@@ -51,24 +58,7 @@ public class PathwayDiagramGenerator {
                 }
             }
         }
-
         //TODO PathwayDiagram counts
         logger.info("Finish pathway diagram generation for " + speciesInst.getDisplayName());
-    }
-
-    public static void setAdaptor(MySQLAdaptor dbAdaptor) {
-        dba = dbAdaptor;
-    }
-
-    public static void setSpeciesInstance(GKInstance speciesInstCopy) {
-        speciesInst = speciesInstCopy;
-    }
-
-    public static void setPersonId(long personIdCopy) {
-        personId = personIdCopy;
-    }
-
-    public static void setReferenceSpeciesId(long referenceSpeciesIdCopy) {
-        referenceSpeciesId = referenceSpeciesIdCopy;
     }
 }

@@ -51,6 +51,7 @@ public class EventsInferrer
 	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
 	private static List<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
 	private static StableIdentifierGenerator stableIdentifierGenerator;
+	private static OrthologousPathwayDiagramGenerator orthologousPathwayDiagramGenerator;
 
 	@SuppressWarnings("unchecked")
 	public static void inferEvents(Properties props, String pathToConfig, String species) throws Exception
@@ -72,7 +73,6 @@ public class EventsInferrer
 		String dateOfRelease = props.getProperty("dateOfRelease");
 		int personId = Integer.valueOf(props.getProperty("personId"));
 		setReleaseDates(dateOfRelease);
-		PathwayDiagramGenerator.setPersonId((long) personId);
 		
 		SkipInstanceChecker.getSkipList("normal_event_skip_list.txt");
 		
@@ -106,9 +106,7 @@ public class EventsInferrer
 		ReactionInferrer.setEligibleFilename(eligibleFilename);
 		ReactionInferrer.setInferredFilename(inferredFilename);
 
-
 		stableIdentifierGenerator = new StableIdentifierGenerator(dbAdaptor, (String) speciesObject.get("abbreviation"));
-
 		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
 		setInstanceEdits(personId);
 		logger.info("Reading in Orthopairs files");
@@ -149,7 +147,7 @@ public class EventsInferrer
 			return;
 		}
 		String humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID().toString();
-		PathwayDiagramGenerator.setReferenceSpeciesId(Long.parseLong(humanInstanceDbId));
+		orthologousPathwayDiagramGenerator = new OrthologousPathwayDiagramGenerator(dbAdaptor, speciesInst, personId, Long.valueOf(humanInstanceDbId));
 		// Gets Reaction instances of source species (human)
 		Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", humanInstanceDbId);
 
@@ -161,7 +159,7 @@ public class EventsInferrer
 		}
 		// For now sort the instances by DB ID so that it matches the Perl sequence
 		Collections.sort(dbids);
-		
+
 		for (Long dbid : dbids)
 		{
 			GKInstance reactionInst = reactionMap.get(dbid);
@@ -195,7 +193,7 @@ public class EventsInferrer
 		}
 		HumanEventsUpdater.setInferredEvent(ReactionInferrer.getInferredEvent());
 		HumanEventsUpdater.updateHumanEvents(ReactionInferrer.getInferrableHumanEvents());
-		PathwayDiagramGenerator.generateOrthologousPathwayDiagrams();
+		orthologousPathwayDiagramGenerator.generateOrthologousPathwayDiagrams();
 		outputReport(species);
 		resetVariables();
 		System.gc();
@@ -250,7 +248,6 @@ public class EventsInferrer
 		OrthologousEntityGenerator.setAdaptor(dbAdaptor);
 		EWASInferrer.setAdaptor(dbAdaptor);
 		HumanEventsUpdater.setAdaptor(dbAdaptor);
-		PathwayDiagramGenerator.setAdaptor(dbAdaptor);
 		
 	}
 
@@ -290,7 +287,6 @@ public class EventsInferrer
 		OrthologousEntityGenerator.setSpeciesInstance(speciesInst);
 		EWASInferrer.setSpeciesInstance(speciesInst);
 		InstanceUtilities.setSpeciesInstance(speciesInst);
-		PathwayDiagramGenerator.setSpeciesInstance(speciesInst);
 	}
 	// Create and set static Summation instance
 	private static void setSummationInstance() throws Exception
