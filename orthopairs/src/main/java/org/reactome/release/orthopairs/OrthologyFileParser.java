@@ -73,23 +73,8 @@ public class OrthologyFileParser {
     }
 
     private static Map<String, Map<String, Set<String>>> MapId(String targetSpecies, String keyEntity, String valueEntity, Map<String,Map<String,Set<String>>> entityMap, String orthologType) {
-        // The 'null' conditionals are for the first time that level of the map is added. For example, if 'MOUSE' doesn't have an existing structure in the map,
-        // the first condition will handle this.
-        //Set<String>  firstTargetEntityIdAdded = new HashSet<>(Arrays.asList(valueEntity));
-        //Map<String,Set<String>> firstSourceEntityMap = new HashMap<>();
-        //firstSourceEntityMap.put(keyEntity, firstTargetEntityIdAdded);
+        
         entityMap.computeIfAbsent(targetSpecies, k -> new HashMap<>());
-        /*
-        else {
-            if (entityMap.get(targetSpecies).get(keyEntity) == null) {
-                Set<String> firstTargetEntityIdAdded = new HashSet<>(Arrays.asList(valueEntity));
-                entityMap.get(targetSpecies).put(keyEntity, firstTargetEntityIdAdded);
-            } else {
-                entityMap.get(targetSpecies).get(keyEntity).add(valueEntity);
-            }
-        }
-        */
-
         // Lines with an orthologType equal to 'LDO' mean that we only want that value in the Set since its the Least Diverged Ortholog, meaning we have a
         // high degree of confidence in its homology. We remove all other values from the Set unless an 'LDO' value already exists. In this rare case,
         // we will keep multiple LDOs.
