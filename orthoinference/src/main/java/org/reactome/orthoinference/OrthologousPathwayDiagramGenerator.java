@@ -14,12 +14,14 @@ public class OrthologousPathwayDiagramGenerator {
     private static final Logger logger = LogManager.getLogger();
 
     private MySQLAdaptor dba;
+    private MySQLAdaptor dbaPrev;
     private GKInstance speciesInst;
     private long personId;
     private long referenceSpeciesId;
 
-    public OrthologousPathwayDiagramGenerator(MySQLAdaptor dba, GKInstance speciesInst, long personId, long referenceSpeciesId) {
+    public OrthologousPathwayDiagramGenerator(MySQLAdaptor dba, MySQLAdaptor dbaPrev, GKInstance speciesInst, long personId, long referenceSpeciesId) {
         this.dba = dba;
+        this.dbaPrev = dbaPrev;
         this.speciesInst = speciesInst;
         this.personId = personId;
         this.referenceSpeciesId = referenceSpeciesId;
@@ -28,18 +30,18 @@ public class OrthologousPathwayDiagramGenerator {
     /**
      * This method will go through all reference species PathwayDiagrams and finds the orthologous Pathway instances that are for the current target species and
      * generates the orthologous PathwayDiagram via the PredictedPathwayDiagramGeneratorFromDB method in CuratorTool.
-     * @throws Exception
+     * @throws Exception -- MySQLAdaptor exception
      */
     public void generateOrthologousPathwayDiagrams() throws Exception {
 
-        logger.info("Generating diagrams for inferred " + speciesInst.getDisplayName() + " pathways");
+        logger.info("Generating pathway diagrams for inferred " + speciesInst.getDisplayName() + " pathways");
         // Create PredictedPathwayDiagramGeneratorFromDB object and set db adaptor and author ID.
         PredictedPathwayDiagramGeneratorFromDB diagramGenerator = new PredictedPathwayDiagramGeneratorFromDB();
         diagramGenerator.setMySQLAdaptor(dba);
         diagramGenerator.setDefaultPersonId(personId);
 
         GKInstance referenceSpeciesInst = dba.fetchInstance(referenceSpeciesId);
-        
+
         // Iterate through each PathwayDiagram instance looking for those associated with the reference species.
         for (GKInstance diagramInst: (Collection<GKInstance>) dba.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram)) {
             GKInstance pathwayInst = (GKInstance) diagramInst.getAttributeValue(ReactomeJavaConstants.representedPathway);
@@ -58,7 +60,33 @@ public class OrthologousPathwayDiagramGenerator {
                 }
             }
         }
-        //TODO PathwayDiagram counts
+
+        comparePathwayDiagramCounts((Collection<GKInstance>) dba.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram), (Collection<GKInstance>) dbaPrev.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram));
         logger.info("Finish pathway diagram generation for " + speciesInst.getDisplayName());
+    }
+
+    // This method checks that the PathwayDiagram count has not decreased since previous release.
+    private void comparePathwayDiagramCounts(Collection<GKInstance> currentPathwayDiagramInstances, Collection<GKInstance> previousPathwayDiagramInstances) throws Exception {
+
+        int currentPathwayDiagramCount = getPathwayDiagramCountsForSpecies(currentPathwayDiagramInstances);
+        int previousPathwayDiagramCount = getPathwayDiagramCountsForSpecies(previousPathwayDiagramInstances);
+
+        currentPathwayDiagramCount--;
+        if (currentPathwayDiagramCount < previousPathwayDiagramCount) {
+            logger.warn("PathwayDiagram count for " + speciesInst.getDisplayName() + " has decreased since previous release from " + previousPathwayDiagramCount + " to " + currentPathwayDiagramCount);
+        }
+    }
+
+    // This method retrieves the PathwayDiagram instance count for a specific species
+    private int getPathwayDiagramCountsForSpecies(Collection<GKInstance> PathwayDiagramInstances) throws Exception {
+        int pathwayDiagramCount = 0;
+        for (GKInstance pathwayDiagramInst : PathwayDiagramInstances) {
+            GKInstance pathwayInst = (GKInstance) pathwayDiagramInst.getAttributeValue(ReactomeJavaConstants.representedPathway);
+            GKInstance pathwaySpeciesInst = (GKInstance) pathwayInst.getAttributeValue(ReactomeJavaConstants.species);
+            if (speciesInst.getDBID().equals(pathwaySpeciesInst.getDBID())) {
+                pathwayDiagramCount++;
+            }
+        }
+        return pathwayDiagramCount;
     }
 }

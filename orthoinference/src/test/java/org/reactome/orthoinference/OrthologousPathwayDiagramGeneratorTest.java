@@ -21,7 +21,7 @@ import java.util.List;
 @PrepareForTest({OrthologousPathwayDiagramGenerator.class})
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "javax.script.*",
         "javax.xml.*", "com.sun.org.apache.xerces.*", "org.xml.sax.*", "com.sun.xml.*", "org.w3c.dom.*", "org.mockito.*"})
-public class PathwayDiagramGeneratorTest {
+public class OrthologousPathwayDiagramGeneratorTest {
 
     @Mock
     MySQLAdaptor mockAdaptor;
@@ -50,7 +50,7 @@ public class PathwayDiagramGeneratorTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        testDiagramGenerator = new OrthologousPathwayDiagramGenerator(mockAdaptor, mockSpeciesInst, 12345L, 12345L);
+        testDiagramGenerator = new OrthologousPathwayDiagramGenerator(mockAdaptor, mockAdaptor, mockSpeciesInst, 12345L, 12345L);
     }
     @Test
     public void generateOrthologousPathwayDiagramsTest() throws Exception {

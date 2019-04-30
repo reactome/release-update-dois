@@ -44,12 +44,13 @@ import org.reactome.release.common.database.InstanceEditUtils;
 public class EventsInferrer
 {
 	private static final Logger logger = LogManager.getLogger();
-	static MySQLAdaptor dbAdaptor = null;
-	private static String releaseVersion = "";
+	private static MySQLAdaptor dbAdaptor;
+	private static MySQLAdaptor dbAdaptorPrev;
+	private static String releaseVersion;
 	private static GKInstance instanceEditInst;
 	private static GKInstance speciesInst;
-	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
-	private static List<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
+	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<>();
+	private static List<GKInstance> manualHumanEvents = new ArrayList<>();
 	private static StableIdentifierGenerator stableIdentifierGenerator;
 	private static OrthologousPathwayDiagramGenerator orthologousPathwayDiagramGenerator;
 
@@ -61,12 +62,14 @@ public class EventsInferrer
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
 		String database = props.getProperty("currentDatabase");
+		String prevDatabase = props.getProperty("previousDatabase");
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
 		
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		setDbAdaptors(dbAdaptor);
-		
+		dbAdaptorPrev = new MySQLAdaptor(host, prevDatabase, username, password, port);
+
 		releaseVersion = props.getProperty("releaseNumber");
 		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
 		String pathToSpeciesConfig = props.getProperty("pathToSpeciesConfig");
@@ -147,7 +150,7 @@ public class EventsInferrer
 			return;
 		}
 		String humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID().toString();
-		orthologousPathwayDiagramGenerator = new OrthologousPathwayDiagramGenerator(dbAdaptor, speciesInst, personId, Long.valueOf(humanInstanceDbId));
+		orthologousPathwayDiagramGenerator = new OrthologousPathwayDiagramGenerator(dbAdaptor, dbAdaptorPrev, speciesInst, personId, Long.valueOf(humanInstanceDbId));
 		// Gets Reaction instances of source species (human)
 		Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", humanInstanceDbId);
 
