@@ -6,6 +6,8 @@ import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.schema.SchemaClass;
 
+import static org.reactome.release.downloadDirectory.GenerateGOAnnotationFile.GOAGeneratorConstants.*;
+
 import java.util.*;
 
 public class BiologicalProcessAnnotationBuilder {
@@ -60,7 +62,7 @@ public class BiologicalProcessAnnotationBuilder {
     /**
      * Returns all constituent PhysicalEntity instances of a Multi-instance PhysicalEntity
      * @param physicalEntityInst -- GKInstance, PhysicalEntity instance from catalyst.
-     * @return -- Set of GKInstances, returns all subunits (members, components, repeatedUnits) of physicalEntityInst.
+     * @return -- Set of GKInstances, returns all subunit protein instances (members, components, or repeatedUnits) of physicalEntityInst.
      * @throws Exception -- MySQLAdaptor exception.
      */
     private static Set<GKInstance> getMultiInstanceSubInstances(GKInstance physicalEntityInst) throws Exception {
@@ -72,12 +74,12 @@ public class BiologicalProcessAnnotationBuilder {
     }
 
     /**
-     * Determines what subunit type this instance has.
+     * Determines what subunit type this instance has. SchemaClass will always be one of Complex, Polymer or EntitySet.
      * @param physicalEntitySchemaClass -- SchemaClass from physicalEntityInst
      * @return -- String of subunit type that PhysicalEntity has.
      */
     private static String getSubunitType(SchemaClass physicalEntitySchemaClass) {
-        String subunitType = null;
+        String subunitType = "";
         if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex)) {
             subunitType = ReactomeJavaConstants.hasComponent;
         } else if (physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer)) {
@@ -119,12 +121,12 @@ public class BiologicalProcessAnnotationBuilder {
      * than the instance's 'hasEvent' referrals are checked for any.
      * @param referenceEntityInst -- GKInstance, ReferenceEntity instance from protein instance.
      * @param reactionInst -- GKInstance, parent reaction instance.
-     * @param taxonIdentifier -- String, CrossReference ID of protein's species.
+     * @param taxonIdentifier -- String, CrossReference ID of protein's species. Example: 9606 (Human Species crossReference identifier from NCBI)
      * @throws Exception -- MySQLAdaptor exception.
      */
     private static void getGOBiologicalProcessLine(GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
         for (Map<String, String> biologicalProcessAccession : getGOBiologicalProcessAccessions(reactionInst, 0)) {
-            String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, GOAGeneratorConstants.BIOLOGICAL_PROCESS_LETTER, biologicalProcessAccession.get(GOAGeneratorConstants.ACCESSION_STRING), biologicalProcessAccession.get(GOAGeneratorConstants.EVENT_STRING),  GOAGeneratorConstants.TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
+            String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, BIOLOGICAL_PROCESS_LETTER, biologicalProcessAccession.get(ACCESSION_STRING), biologicalProcessAccession.get(EVENT_STRING), TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
             GOAGeneratorUtilities.assignDateForGOALine(reactionInst, goaLine);
         }
     }
@@ -133,7 +135,7 @@ public class BiologicalProcessAnnotationBuilder {
      * This method checks for a populated 'goBiologicalProcess' attribute in the incoming instance. If there are none and the max recursion has been reached,
      * it's 'hasEvent' referral is checked for it. Once finding it, it returns the 'accession' and 'identifier' for each one, which will be used to generate a GOA line.
      * @param eventInst -- GKInstance, Can be the original reaction instance, or, if it had no Biological Process accessions, its Event referrals.
-     * @param recursion -- Integer, Indicates number of times the method has been recursively called.
+     * @param recursion -- int, Indicates number of times the method has been recursively called.
      * @return -- 1 or more Maps containing the GO accession string and event instance it is associated with.
      * @throws Exception -- MySQLAdaptor exception.
      */
@@ -145,9 +147,9 @@ public class BiologicalProcessAnnotationBuilder {
                 for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
                     if (!GOAGeneratorUtilities.proteinBindingAnnotation(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession))) {
                         Map<String, String> goBiologicalProcessAccession = new HashMap<>();
-                        goBiologicalProcessAccession.put(GOAGeneratorConstants.ACCESSION_STRING, GOAGeneratorConstants.GO_IDENTIFIER_PREFIX + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
+                        goBiologicalProcessAccession.put(ACCESSION_STRING, GO_IDENTIFIER_PREFIX + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
                         GKInstance eventStableIdentifierInst = (GKInstance) eventInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
-                        goBiologicalProcessAccession.put(GOAGeneratorConstants.EVENT_STRING, GOAGeneratorConstants.REACTOME_IDENTIFIER_PREFIX + eventStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
+                        goBiologicalProcessAccession.put(EVENT_STRING, REACTOME_IDENTIFIER_PREFIX + eventStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
                         goBiologicalProcessAccessions.add(goBiologicalProcessAccession);
                     } else {
                         logger.info("Accession is for protein binding, skipping GO annotation");

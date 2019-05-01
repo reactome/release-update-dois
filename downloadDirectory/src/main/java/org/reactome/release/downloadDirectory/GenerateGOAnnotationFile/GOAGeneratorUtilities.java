@@ -6,6 +6,8 @@ import org.gk.model.InstanceUtilities;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.schema.SchemaClass;
 
+import static org.reactome.release.downloadDirectory.GenerateGOAnnotationFile.GOAGeneratorConstants.*;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -16,7 +18,7 @@ import java.util.zip.GZIPOutputStream;
 public class GOAGeneratorUtilities {
 
     // CrossReference IDs of excluded microbial species: C. trachomatis, E. coli, N. meningitidis, S. typhimurium, S. aureus, and T. gondii
-    private static final List<String> microbialSpeciesToExclude = Arrays.asList(GOAGeneratorConstants.C_TRACHOMATIS_CROSS_REFERENCE, GOAGeneratorConstants.E_COLI_CROSS_REFERENCE, GOAGeneratorConstants.N_MENINGITIDIS_CROSS_REFERENCE, GOAGeneratorConstants.S_AUREUS_CROSS_REFERENCE, GOAGeneratorConstants.S_TYPHIMURIUM_CROSS_REFERENCE, GOAGeneratorConstants.T_GONDII_CROSS_REFERENCE);
+    private static final List<String> microbialSpeciesToExclude = Arrays.asList(C_TRACHOMATIS_CROSS_REFERENCE, E_COLI_CROSS_REFERENCE, N_MENINGITIDIS_CROSS_REFERENCE, S_AUREUS_CROSS_REFERENCE, S_TYPHIMURIUM_CROSS_REFERENCE, T_GONDII_CROSS_REFERENCE);
     private static Map<String, Integer> dates = new HashMap<>();
     private static Set<String> goaLines = new HashSet<>();
 
@@ -51,7 +53,7 @@ public class GOAGeneratorUtilities {
     public static boolean validateProtein(GKInstance referenceEntityInst, GKInstance speciesInst) throws Exception {
         if (referenceEntityInst != null && speciesInst != null) {
             GKInstance referenceDatabaseInst = (GKInstance) referenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase);
-            if (referenceDatabaseInst != null && referenceDatabaseInst.getDisplayName().equals(GOAGeneratorConstants.UNIPROT_STRING) && speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference) != null) {
+            if (referenceDatabaseInst != null && referenceDatabaseInst.getDisplayName().equals(UNIPROT_STRING) && speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference) != null) {
                 return true;
             }
         }
@@ -92,7 +94,7 @@ public class GOAGeneratorUtilities {
      */
     public static String generateGOALine(GKInstance referenceEntityInst, String goLetter, String goAccession, String eventIdentifier, String evidenceCode, String taxonIdentifier) throws Exception {
         List<String> goaLine = new ArrayList<>();
-        goaLine.add(GOAGeneratorConstants.UNIPROT_KB_STRING);
+        goaLine.add(UNIPROT_KB_STRING);
         goaLine.add(referenceEntityInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
         goaLine.add(getSecondaryIdentifier(referenceEntityInst));
         goaLine.add("");
@@ -103,8 +105,8 @@ public class GOAGeneratorUtilities {
         goaLine.add(goLetter);
         goaLine.add("");
         goaLine.add("");
-        goaLine.add(GOAGeneratorConstants.PROTEIN_STRING);
-        goaLine.add(GOAGeneratorConstants.TAXON_PREFIX + taxonIdentifier);
+        goaLine.add(PROTEIN_STRING);
+        goaLine.add(TAXON_PREFIX + taxonIdentifier);
         goaLines.add(String.join("\t", goaLine));
         return String.join("\t", goaLine);
     }
@@ -140,7 +142,7 @@ public class GOAGeneratorUtilities {
      * @return -- true if goAccession matches the protein binding annotation value, false if not.
      */
     public static boolean proteinBindingAnnotation(Object goAccession) {
-        return goAccession.toString().equals(GOAGeneratorConstants.PROTEIN_BINDING_ANNOTATION);
+        return goAccession.toString().equals(PROTEIN_BINDING_ANNOTATION);
     }
 
     /**
@@ -188,13 +190,13 @@ public class GOAGeneratorUtilities {
      */
     public static void outputGOAFile() throws IOException {
 
-        Files.deleteIfExists(Paths.get(GOAGeneratorConstants.GOA_FILENAME));
+        Files.deleteIfExists(Paths.get(GOA_FILENAME));
         List<String> sortedGoaLines = new ArrayList<>(goaLines);
         Collections.sort(sortedGoaLines);
-        BufferedWriter br = new BufferedWriter((new FileWriter(GOAGeneratorConstants.GOA_FILENAME)));
+        BufferedWriter br = new BufferedWriter((new FileWriter(GOA_FILENAME)));
         br.write("!gaf-version: 2.1\n");
         for (String goaLine : sortedGoaLines) {
-            br.append(goaLine + "\t" + dates.get(goaLine) + "\t" + GOAGeneratorConstants.REACTOME_STRING + "\t\t\n");
+            br.append(goaLine + "\t" + dates.get(goaLine) + "\t" + REACTOME_STRING + "\t\t\n");
         }
         br.close();
         gzipGOAFile();
@@ -205,8 +207,8 @@ public class GOAGeneratorUtilities {
      * @throws IOException -- File writing/reading exceptions.
      */
     private static void gzipGOAFile() throws IOException {
-        File goaFile = new File(GOAGeneratorConstants.GOA_FILENAME);
-        File goaFileGZipped = new File(GOAGeneratorConstants.GOA_FILENAME + ".gz");
+        File goaFile = new File(GOA_FILENAME);
+        File goaFileGZipped = new File(GOA_FILENAME + ".gz");
         GZIPOutputStream gzipOutputStream = new GZIPOutputStream(new FileOutputStream(goaFileGZipped));
         try (FileInputStream fileInputStream = new FileInputStream(goaFile)) {
             byte[] buffer = new byte[1024];
@@ -224,7 +226,7 @@ public class GOAGeneratorUtilities {
      * @throws IOException -- If file or targetDirectory do not exist, this will be thrown.
      */
     public static void moveFile(String targetDirectory) throws IOException {
-        String updatedTargetDirectory = targetDirectory + GOAGeneratorConstants.GOA_FILENAME + ".gz";
-        Files.move(Paths.get(GOAGeneratorConstants.GOA_FILENAME + ".gz"), Paths.get(updatedTargetDirectory), StandardCopyOption.REPLACE_EXISTING);
+        String updatedTargetDirectory = targetDirectory + GOA_FILENAME + ".gz";
+        Files.move(Paths.get(GOA_FILENAME + ".gz"), Paths.get(updatedTargetDirectory), StandardCopyOption.REPLACE_EXISTING);
     }
 }
