@@ -70,8 +70,7 @@ public class OrthologousPathwayDiagramGenerator {
 
         int currentPathwayDiagramCount = getPathwayDiagramCountsForSpecies(currentPathwayDiagramInstances);
         int previousPathwayDiagramCount = getPathwayDiagramCountsForSpecies(previousPathwayDiagramInstances);
-
-        currentPathwayDiagramCount--;
+        
         if (currentPathwayDiagramCount < previousPathwayDiagramCount) {
             logger.warn("PathwayDiagram count for " + speciesInst.getDisplayName() + " has decreased since previous release from " + previousPathwayDiagramCount + " to " + currentPathwayDiagramCount);
         }
