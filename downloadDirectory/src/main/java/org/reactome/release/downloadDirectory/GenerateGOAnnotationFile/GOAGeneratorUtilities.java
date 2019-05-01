@@ -1,19 +1,17 @@
 package org.reactome.release.downloadDirectory.GenerateGOAnnotationFile;
 
-import com.sun.org.apache.bcel.internal.generic.RETURN;
 import org.gk.model.ClassAttributeFollowingInstruction;
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.schema.SchemaClass;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.zip.GZIPOutputStream;
 
 public class GOAGeneratorUtilities {
 
@@ -199,6 +197,25 @@ public class GOAGeneratorUtilities {
             br.append(goaLine + "\t" + dates.get(goaLine) + "\t" + GOAGeneratorConstants.REACTOME_STRING + "\t\t\n");
         }
         br.close();
+        gzipGOAFile();
+    }
+
+    /**
+     * Gzips gene_association.reactome file
+     * @throws IOException -- File writing/reading exceptions.
+     */
+    private static void gzipGOAFile() throws IOException {
+        File goaFile = new File(GOAGeneratorConstants.GOA_FILENAME);
+        File goaFileGZipped = new File(GOAGeneratorConstants.GOA_FILENAME + ".gz");
+        GZIPOutputStream gzipOutputStream = new GZIPOutputStream(new FileOutputStream(goaFileGZipped));
+        try (FileInputStream fileInputStream = new FileInputStream(goaFile)) {
+            byte[] buffer = new byte[1024];
+            int length;
+            while((length=fileInputStream.read(buffer)) != -1) {
+                gzipOutputStream.write(buffer, 0, length);
+            }
+            gzipOutputStream.close();
+        }
     }
 
     /**
@@ -207,7 +224,7 @@ public class GOAGeneratorUtilities {
      * @throws IOException -- If file or targetDirectory do not exist, this will be thrown.
      */
     public static void moveFile(String targetDirectory) throws IOException {
-        targetDirectory += GOAGeneratorConstants.GOA_FILENAME;
-        Files.move(Paths.get(GOAGeneratorConstants.GOA_FILENAME), Paths.get(targetDirectory), StandardCopyOption.REPLACE_EXISTING);
+        String updatedTargetDirectory = targetDirectory + GOAGeneratorConstants.GOA_FILENAME + ".gz";
+        Files.move(Paths.get(GOAGeneratorConstants.GOA_FILENAME + ".gz"), Paths.get(updatedTargetDirectory), StandardCopyOption.REPLACE_EXISTING);
     }
 }
