@@ -67,16 +67,16 @@ public class BiologicalProcessAnnotationBuilderTest {
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(true);
         Mockito.when(mockCatalystPEInst.getSchemClass()).thenReturn(mockPESchemaClass);
-        Mockito.when(GOAGeneratorUtilities.multiInstancePhysicalEntity(mockPESchemaClass)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isMultiInstancePhysicalEntity(mockPESchemaClass)).thenReturn(true);
         Mockito.when(mockPESchemaClass.isa(ReactomeJavaConstants.EntitySet)).thenReturn(true);
         Mockito.when(mockCatalystPEInst.getAttributeValuesList(ReactomeJavaConstants.hasMember)).thenReturn(mockMemberSet);
         Mockito.when(mockCatalystPEMemberInst.getSchemClass()).thenReturn(mockMemberSchemaClass);
         Mockito.when(mockMemberSchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)).thenReturn(true);
         Mockito.when(mockCatalystPEMemberInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockCatalystPEMemberInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
+        Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockReactionInst.getReferers(ReactomeJavaConstants.hasEvent)).thenReturn(mockEventReferralSet);
@@ -95,7 +95,7 @@ public class BiologicalProcessAnnotationBuilderTest {
         Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
+        Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess)).thenReturn(mockGOBioProcessSet);
@@ -111,7 +111,7 @@ public class BiologicalProcessAnnotationBuilderTest {
         mockCatalystSet.add(mockCatalystInst);
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(false);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(false);
         BiologicalProcessAnnotationBuilder.processBiologicalFunctions(mockReactionInst);
     }
 
@@ -123,7 +123,7 @@ public class BiologicalProcessAnnotationBuilderTest {
         Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(false);
+        Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(false);
         BiologicalProcessAnnotationBuilder.processBiologicalFunctions(mockReactionInst);
     }
 
@@ -135,10 +135,10 @@ public class BiologicalProcessAnnotationBuilderTest {
         Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
+        Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
-        Mockito.when(GOAGeneratorUtilities.excludedMicrobialSpecies("1234")).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isExcludedMicrobialSpecies("1234")).thenReturn(true);
         BiologicalProcessAnnotationBuilder.processBiologicalFunctions(mockReactionInst);
     }
 
@@ -150,12 +150,13 @@ public class BiologicalProcessAnnotationBuilderTest {
         Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when((GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
+        Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess)).thenReturn(mockGOBioProcessSet);
         Mockito.when(mockGOBioProcessInst.getAttributeValue(ReactomeJavaConstants.accession)).thenReturn("123456");
-        Mockito.when(GOAGeneratorUtilities.proteinBindingAnnotation("123456")).thenReturn(true);
+        //Check coverage due to change in this function
+        Mockito.when(GOAGeneratorUtilities.isProteinBindingAnnotation("123456")).thenReturn(true);
         BiologicalProcessAnnotationBuilder.processBiologicalFunctions(mockReactionInst);
     }
 

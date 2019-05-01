@@ -61,14 +61,14 @@ public class MolecularFunctionAnnotationBuilderTest {
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(true);
         Mockito.when(mockCatalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitInst);
         Mockito.when(mockActiveUnitInst.getSchemClass()).thenReturn(mockSchemaClass);
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)).thenReturn(true);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when(GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activity)).thenReturn(mockGOMolecularFunctionInst);
@@ -83,7 +83,7 @@ public class MolecularFunctionAnnotationBuilderTest {
         mockCatalystSet.add(mockCatalystInst);
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(false);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(false);
         MolecularFunctionAnnotationBuilder.processMolecularFunctions(mockReactionInst);
     }
 
@@ -96,7 +96,7 @@ public class MolecularFunctionAnnotationBuilderTest {
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(true);
         Mockito.when(mockCatalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitInst);
         Mockito.when(mockActiveUnitInst.getSchemClass()).thenReturn(mockSchemaClass);
@@ -114,14 +114,14 @@ public class MolecularFunctionAnnotationBuilderTest {
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(true);
         Mockito.when(mockCatalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitInst);
         Mockito.when(mockActiveUnitInst.getSchemClass()).thenReturn(mockSchemaClass);
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)).thenReturn(true);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when(GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(false);
+        Mockito.when(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(false);
         MolecularFunctionAnnotationBuilder.processMolecularFunctions(mockReactionInst);
     }
 
@@ -134,17 +134,17 @@ public class MolecularFunctionAnnotationBuilderTest {
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(true);
         Mockito.when(mockCatalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitInst);
         Mockito.when(mockActiveUnitInst.getSchemClass()).thenReturn(mockSchemaClass);
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)).thenReturn(true);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when(GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
-        Mockito.when(GOAGeneratorUtilities.excludedMicrobialSpecies("1234")).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isExcludedMicrobialSpecies("1234")).thenReturn(true);
         MolecularFunctionAnnotationBuilder.processMolecularFunctions(mockReactionInst);
     }
 
@@ -157,14 +157,14 @@ public class MolecularFunctionAnnotationBuilderTest {
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(true);
         Mockito.when(mockCatalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitInst);
         Mockito.when(mockActiveUnitInst.getSchemClass()).thenReturn(mockSchemaClass);
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)).thenReturn(true);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when(GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activity)).thenReturn(null);
@@ -179,19 +179,19 @@ public class MolecularFunctionAnnotationBuilderTest {
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(true);
         Mockito.when(mockCatalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitInst);
         Mockito.when(mockActiveUnitInst.getSchemClass()).thenReturn(mockSchemaClass);
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)).thenReturn(true);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when(GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activity)).thenReturn(mockGOMolecularFunctionInst);
         Mockito.when((mockGOMolecularFunctionInst.getAttributeValue(ReactomeJavaConstants.accession))).thenReturn("1234");
-        Mockito.when(GOAGeneratorUtilities.proteinBindingAnnotation("1234")).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isProteinBindingAnnotation("1234")).thenReturn(true);
         MolecularFunctionAnnotationBuilder.processMolecularFunctions(mockReactionInst);
     }
 
@@ -203,14 +203,14 @@ public class MolecularFunctionAnnotationBuilderTest {
 
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity)).thenReturn(mockCatalystSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity)).thenReturn(mockCatalystPEInst);
-        Mockito.when(GOAGeneratorUtilities.validateCatalystPE(mockCatalystPEInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidCatalystPE(mockCatalystPEInst)).thenReturn(true);
         Mockito.when(mockCatalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitSet);
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit)).thenReturn(mockActiveUnitInst);
         Mockito.when(mockActiveUnitInst.getSchemClass()).thenReturn(mockSchemaClass);
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)).thenReturn(true);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
         Mockito.when(mockActiveUnitInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when(GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
+        Mockito.when(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst)).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockCatalystInst.getAttributeValue(ReactomeJavaConstants.activity)).thenReturn(mockGOMolecularFunctionInst);

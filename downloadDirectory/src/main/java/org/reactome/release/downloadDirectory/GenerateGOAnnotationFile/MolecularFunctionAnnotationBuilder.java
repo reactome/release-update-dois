@@ -24,7 +24,7 @@ public class MolecularFunctionAnnotationBuilder {
         Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
         for (GKInstance catalystInst : catalystInstances) {
                 // Check that catalyst instance has no disqualifying attributes.
-                boolean validCatalyst = validateMolecularFunctionCatalyst(catalystInst);
+                boolean validCatalyst = isValidMolecularFunctionCatalyst(catalystInst);
                 if (validCatalyst) {
                     // For MF annotations, gets all proteins from the ActiveUnit if it exists or from the PhysicalEntity if not.
                     GKInstance activeUnitInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activeUnit);
@@ -43,19 +43,19 @@ public class MolecularFunctionAnnotationBuilder {
      * is checked to see if it is 'multi-instance', which will invalidate it.
      * Catalysts with more than 1 ActiveUnit are also considered invalid.
      * @param catalystInst -- GKInstance, catalyst instance taken from the original reaction instance.
-     * @return -- True if the catalyst instance has been deemed valid, false if not.
+     * @return -- boolean, True if the catalyst instance has been deemed valid, false if not.
      * @throws Exception -- MySQLAdaptor exception.
      */
-    private static boolean validateMolecularFunctionCatalyst(GKInstance catalystInst) throws Exception {
+    private static boolean isValidMolecularFunctionCatalyst(GKInstance catalystInst) throws Exception {
         GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
-        boolean validCatalystPE = GOAGeneratorUtilities.validateCatalystPE(catalystPEInst);
+        boolean validCatalystPE = GOAGeneratorUtilities.isValidCatalystPE(catalystPEInst);
         boolean catalystValidity = false;
         if (validCatalystPE) {
             List<GKInstance> activeUnitInstances = catalystInst.getAttributeValuesList(ReactomeJavaConstants.activeUnit);
             if (activeUnitInstances.size() == 0) {
-                catalystValidity = GOAGeneratorUtilities.multiInstancePhysicalEntity(catalystPEInst.getSchemClass()) ? false : true;
+                catalystValidity = GOAGeneratorUtilities.isMultiInstancePhysicalEntity(catalystPEInst.getSchemClass()) ? false : true;
             } else if (activeUnitInstances.size() == 1) {
-                catalystValidity = validCatalystAU(activeUnitInstances.get(0));
+                catalystValidity = isValidCatalystAU(activeUnitInstances.get(0));
             }
         }
         if (!catalystValidity) {
@@ -68,18 +68,15 @@ public class MolecularFunctionAnnotationBuilder {
      *  Validity of ActiveUnit is dependant on it not being an EntitySet with non-EWAS members.
      *  This rule used to also exclude Complex and Polymers, but it seems ActiveUnits can't be either of those.
      * @param activeUnitInst -- GKInstance, active unit instance taken from the catalyst instance.
-     * @return -- True if the activeUnit instance has been deemed valid, false if not.
+     * @return -- boolean, True if the activeUnit instance has been deemed valid, false if not.
      * @throws Exception -- MySQLAdaptor exception.
      */
-    private static boolean validCatalystAU(GKInstance activeUnitInst) throws Exception {
+    private static boolean isValidCatalystAU(GKInstance activeUnitInst) throws Exception {
         SchemaClass activeUnitSchemaClass = activeUnitInst.getSchemClass();
-        if (activeUnitSchemaClass.isa(ReactomeJavaConstants.EntitySet) && !onlyEWASMembers(activeUnitInst)) {
-            return false;
+        if (activeUnitSchemaClass.isa(ReactomeJavaConstants.EntitySet) && isOnlyEWASMembers(activeUnitInst) || activeUnitSchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
+            return true;
         }
-        if (activeUnitSchemaClass.isa(ReactomeJavaConstants.Complex) || activeUnitSchemaClass.isa(ReactomeJavaConstants.Polymer)) {
-            return false;
-        }
-        return true;
+        return false;
     }
 
     /**
@@ -91,7 +88,7 @@ public class MolecularFunctionAnnotationBuilder {
     private static Set<GKInstance> getMolecularFunctionProteins(GKInstance entityInst) throws Exception {
         Set<GKInstance> proteinInstances = new HashSet<>();
         SchemaClass entitySchemaClass = entityInst.getSchemClass();
-        if (entitySchemaClass.isa(ReactomeJavaConstants.EntitySet) && onlyEWASMembers(entityInst)) {
+        if (entitySchemaClass.isa(ReactomeJavaConstants.EntitySet) && isOnlyEWASMembers(entityInst)) {
             proteinInstances.addAll(entityInst.getAttributeValuesList(ReactomeJavaConstants.hasMember));
         } else if (entitySchemaClass.isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
             proteinInstances.add(entityInst);
@@ -102,10 +99,10 @@ public class MolecularFunctionAnnotationBuilder {
     /**
      * Checks that the incoming EntitySet instance only has EWAS members
      * @param entitySetInst -- GKInstance,  ActiveUnit/PhysicalEntity of a catalyst that is an EntitySet
-     * @return -- Boolean, true if the instance only contains EWAS' in its hasMember attribute, false if not.
+     * @return -- boolean, true if the instance only contains EWAS' in its hasMember attribute, false if not.
      * @throws Exception -- MySQLAdaptor exception.
      */
-    private static boolean onlyEWASMembers(GKInstance entitySetInst) throws Exception {
+    private static boolean isOnlyEWASMembers(GKInstance entitySetInst) throws Exception {
        Collection<GKInstance> memberInstances = (Collection<GKInstance>) entitySetInst.getAttributeValuesList(ReactomeJavaConstants.hasMember);
         return memberInstances
                 .stream()
@@ -125,10 +122,10 @@ public class MolecularFunctionAnnotationBuilder {
             GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
             GKInstance speciesInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.species);
             // Check if the protein has any disqualifying attributes.
-            boolean validProtein = GOAGeneratorUtilities.validateProtein(referenceEntityInst, speciesInst);
+            boolean validProtein = GOAGeneratorUtilities.isValidProtein(referenceEntityInst, speciesInst);
             if (validProtein) {
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
-                if (!GOAGeneratorUtilities.excludedMicrobialSpecies(taxonIdentifier)) {
+                if (!GOAGeneratorUtilities.isExcludedMicrobialSpecies(taxonIdentifier)) {
                     if (catalystInst.getAttributeValue(ReactomeJavaConstants.activity) != null) {
                         getGOMolecularFunctionLine(catalystInst, referenceEntityInst, taxonIdentifier, reactionInst);
                     } else {
@@ -159,7 +156,7 @@ public class MolecularFunctionAnnotationBuilder {
             pubMedIdentifiers.add(PUBMED_IDENTIFIER_PREFIX + literatureReferenceInst.getAttributeValue(ReactomeJavaConstants.pubMedIdentifier).toString());
         }
         GKInstance activityInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.activity);
-        if (!GOAGeneratorUtilities.proteinBindingAnnotation(activityInst.getAttributeValue(ReactomeJavaConstants.accession))) {
+        if (!GOAGeneratorUtilities.isProteinBindingAnnotation(activityInst.getAttributeValue(ReactomeJavaConstants.accession).toString())) {
             String goAccession = GO_IDENTIFIER_PREFIX + activityInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
             if (pubMedIdentifiers.size() > 0) {
                 for (String pubmedIdentifier : pubMedIdentifiers) {
@@ -167,7 +164,8 @@ public class MolecularFunctionAnnotationBuilder {
                     GOAGeneratorUtilities.assignDateForGOALine(catalystInst, goaLine);
                 }
             } else {
-                String reactomeIdentifier = REACTOME_IDENTIFIER_PREFIX + ((GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
+//                String reactomeIdentifier = REACTOME_IDENTIFIER_PREFIX + ((GKInstance) reactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
+                String reactomeIdentifier = REACTOME_IDENTIFIER_PREFIX + GOAGeneratorUtilities.getStableIdentifierIdentifier(reactionInst);
                 String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, MOLECULAR_FUNCTION_LETTER, goAccession, reactomeIdentifier, TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
                 GOAGeneratorUtilities.assignDateForGOALine(catalystInst, goaLine);
             }

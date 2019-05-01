@@ -32,7 +32,7 @@ public class BiologicalProcessAnnotationBuilder {
             // Check that catalyst instance has no disqualifying attributes.
             for (GKInstance catalystInst : catalystInstances) {
                 GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(ReactomeJavaConstants.physicalEntity);
-                boolean validCatalyst = GOAGeneratorUtilities.validateCatalystPE(catalystPEInst);
+                boolean validCatalyst = GOAGeneratorUtilities.isValidCatalystPE(catalystPEInst);
                 if (validCatalyst) {
                     Set<GKInstance> proteinInstances = getBiologicalProcessProteins(catalystPEInst);
                     processProteins(proteinInstances, reactionInst);
@@ -51,7 +51,7 @@ public class BiologicalProcessAnnotationBuilder {
      */
     private static Set<GKInstance> getBiologicalProcessProteins(GKInstance physicalEntityInst) throws Exception {
         Set<GKInstance> proteinInstances = new HashSet<>();
-        if (GOAGeneratorUtilities.multiInstancePhysicalEntity(physicalEntityInst.getSchemClass())) {
+        if (GOAGeneratorUtilities.isMultiInstancePhysicalEntity(physicalEntityInst.getSchemClass())) {
             proteinInstances.addAll(getMultiInstanceSubInstances(physicalEntityInst));
         } else if (physicalEntityInst.getSchemClass().isa(ReactomeJavaConstants.EntityWithAccessionedSequence)) {
             proteinInstances.add(physicalEntityInst);
@@ -102,10 +102,10 @@ public class BiologicalProcessAnnotationBuilder {
             GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
             GKInstance speciesInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.species);
             // Check if the protein has any disqualifying attributes.
-            boolean validProtein = GOAGeneratorUtilities.validateProtein(referenceEntityInst, speciesInst);
+            boolean validProtein = GOAGeneratorUtilities.isValidProtein(referenceEntityInst, speciesInst);
             if (validProtein) {
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
-                if (!GOAGeneratorUtilities.excludedMicrobialSpecies(taxonIdentifier)) {
+                if (!GOAGeneratorUtilities.isExcludedMicrobialSpecies(taxonIdentifier)) {
                     getGOBiologicalProcessLine(referenceEntityInst, reactionInst, taxonIdentifier);
                 } else {
                     logger.info("Protein is from an excluded microbial species, skipping GO annotation");
@@ -145,11 +145,12 @@ public class BiologicalProcessAnnotationBuilder {
             Collection<GKInstance> goBiologicalProcessInstances = eventInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess);
             if (goBiologicalProcessInstances.size() > 0) {
                 for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
-                    if (!GOAGeneratorUtilities.proteinBindingAnnotation(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession))) {
+                    if (!GOAGeneratorUtilities.isProteinBindingAnnotation(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString())) {
                         Map<String, String> goBiologicalProcessAccession = new HashMap<>();
                         goBiologicalProcessAccession.put(ACCESSION_STRING, GO_IDENTIFIER_PREFIX + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
                         GKInstance eventStableIdentifierInst = (GKInstance) eventInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
-                        goBiologicalProcessAccession.put(EVENT_STRING, REACTOME_IDENTIFIER_PREFIX + eventStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString());
+                        String reactomeIdentifier = REACTOME_IDENTIFIER_PREFIX + GOAGeneratorUtilities.getStableIdentifierIdentifier(eventInst);
+                        goBiologicalProcessAccession.put(EVENT_STRING, reactomeIdentifier);
                         goBiologicalProcessAccessions.add(goBiologicalProcessAccession);
                     } else {
                         logger.info("Accession is for protein binding, skipping GO annotation");

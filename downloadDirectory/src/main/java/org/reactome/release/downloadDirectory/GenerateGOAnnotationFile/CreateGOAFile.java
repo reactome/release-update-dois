@@ -20,7 +20,7 @@ public class CreateGOAFile {
      * This is called from the Main DownloadDirectory class.
      * @param dbAdaptor -- MySQLAdaptor for database
      * @param releaseNumber
-     * @throws Exception -- General exception. Likeliest exception type are related to MySQLAdaptor.
+     * @throws Exception -- General exception. Exception types are MySQLAdaptor or IO exceptions.
      */
     public static void execute(MySQLAdaptor dbAdaptor, String releaseNumber) throws Exception {
         logger.info("Generating GO annotation file: gene_association.reactome");

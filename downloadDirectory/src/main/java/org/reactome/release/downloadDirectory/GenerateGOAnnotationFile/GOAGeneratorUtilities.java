@@ -12,7 +12,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 public class GOAGeneratorUtilities {
@@ -50,7 +52,7 @@ public class GOAGeneratorUtilities {
      * @return -- true/false indicating protein validity.
      * @throws Exception -- MySQLAdaptor exception.
      */
-    public static boolean validateProtein(GKInstance referenceEntityInst, GKInstance speciesInst) throws Exception {
+    public static boolean isValidProtein(GKInstance referenceEntityInst, GKInstance speciesInst) throws Exception {
         if (referenceEntityInst != null && speciesInst != null) {
             GKInstance referenceDatabaseInst = (GKInstance) referenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase);
             if (referenceDatabaseInst != null && referenceDatabaseInst.getDisplayName().equals(UNIPROT_STRING) && speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference) != null) {
@@ -68,7 +70,7 @@ public class GOAGeneratorUtilities {
      * @return -- true/false indicating PhysicalEntity validity.
      * @throws Exception -- MySQLAdaptor exception.
      */
-    public static boolean validateCatalystPE(GKInstance catalystPEInst) throws Exception {
+    public static boolean isValidCatalystPE(GKInstance catalystPEInst) throws Exception {
         return catalystPEInst != null && catalystPEInst.getAttributeValue(ReactomeJavaConstants.compartment) != null;
     }
 
@@ -77,7 +79,7 @@ public class GOAGeneratorUtilities {
      * @param physicalEntitySchemaClass
      * @return == true/false indicating if this instance has multiple subunits that comprise it.
      */
-    public static boolean multiInstancePhysicalEntity(SchemaClass physicalEntitySchemaClass) {
+    public static boolean isMultiInstancePhysicalEntity(SchemaClass physicalEntitySchemaClass) {
         return physicalEntitySchemaClass.isa(ReactomeJavaConstants.Complex) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.EntitySet) || physicalEntitySchemaClass.isa(ReactomeJavaConstants.Polymer);
     }
 
@@ -132,7 +134,7 @@ public class GOAGeneratorUtilities {
      * @param taxonIdentifier -- String, Protein's Species' CrossReference identifier.
      * @return -- true if the taxonIdentifier is found in the microbialSpeciesToExclude array, false if not.
      */
-    public static boolean excludedMicrobialSpecies(String taxonIdentifier) {
+    public static boolean isExcludedMicrobialSpecies(String taxonIdentifier) {
         return microbialSpeciesToExclude.contains(taxonIdentifier);
     }
 
@@ -141,8 +143,20 @@ public class GOAGeneratorUtilities {
      * @param goAccession -- Object, GO accession string.
      * @return -- true if goAccession matches the protein binding annotation value, false if not.
      */
-    public static boolean proteinBindingAnnotation(Object goAccession) {
-        return goAccession.toString().equals(PROTEIN_BINDING_ANNOTATION);
+    public static boolean isProteinBindingAnnotation(String goAccession) {
+        return goAccession.equals(PROTEIN_BINDING_ANNOTATION);
+    }
+
+    /**
+     * Retrieves the stable identifier string associated with the incoming instance
+     * @param eventInst -- GKInstance, Reaction or other Event instance
+     * @return -- String, stable identifier string
+     * @throws Exception -- MySQL exception
+     */
+    public static String getStableIdentifierIdentifier(GKInstance eventInst) throws Exception {
+        GKInstance stableIdentifierInst = (GKInstance) eventInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
+        String stableIdentifierIdentifier = stableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier).toString();
+        return stableIdentifierIdentifier;
     }
 
     /**
@@ -152,7 +166,7 @@ public class GOAGeneratorUtilities {
      * entity that is currently being checked, then it will just update that date value in the hash associated with the line. (Yes, this is weird).
      * @param entityInst -- GKInstance, Protein/catalyst/reaction that is receiving a GO annotation.
      * @param goaLine -- String, GO annotation line, used for checking the 'dates' structure.
-     * @return -- Integer, parsed from the dateTime of the entityInst's modified or created attributes.
+     * @return -- int, parsed from the dateTime of the entityInst's modified or created attributes.
      * @throws Exception -- MySQLAdaptor exception.
      */
     public static Integer assignDateForGOALine(GKInstance entityInst, String goaLine) throws Exception {
@@ -190,15 +204,16 @@ public class GOAGeneratorUtilities {
      */
     public static void outputGOAFile() throws IOException {
 
+        final String GAF_HEADER = "!gaf-version: 2.1\n";
+
         Files.deleteIfExists(Paths.get(GOA_FILENAME));
-        List<String> sortedGoaLines = new ArrayList<>(goaLines);
-        Collections.sort(sortedGoaLines);
-        BufferedWriter br = new BufferedWriter((new FileWriter(GOA_FILENAME)));
-        br.write("!gaf-version: 2.1\n");
-        for (String goaLine : sortedGoaLines) {
-            br.append(goaLine + "\t" + dates.get(goaLine) + "\t" + REACTOME_STRING + "\t\t\n");
-        }
-        br.close();
+        Files.write(Paths.get(GOA_FILENAME), GAF_HEADER.getBytes());
+
+        List<String> lines = goaLines.stream().sorted().map(
+                line -> String.join("\t", line, dates.get(line).toString(), REACTOME_STRING, "","")
+        ).collect(Collectors.toList());
+        Files.write(Paths.get(GOA_FILENAME), lines, StandardOpenOption.APPEND);
+
         gzipGOAFile();
     }
 

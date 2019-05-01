@@ -54,26 +54,26 @@ public class GOAGeneratorUtilitiesTest {
         Mockito.when(mockReferenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase)).thenReturn(mockRefDatabaseInst);
         Mockito.when(mockRefDatabaseInst.getDisplayName()).thenReturn("UniProt");
         Mockito.when(mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).thenReturn(mockCrossReferenceInst);
-        assertTrue(GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst));
+        assertTrue(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst));
 
         Mockito.when(mockReferenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase)).thenReturn(mockRefDatabaseInst);
         Mockito.when(mockRefDatabaseInst.getDisplayName()).thenReturn("UniProt");
         Mockito.when(mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).thenReturn(null);
-        assertFalse(GOAGeneratorUtilities.validateProtein(mockReferenceEntityInst, mockSpeciesInst));
+        assertFalse(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst));
     }
 
     @Test
     public void validateCatalystPETest() throws Exception {
         Mockito.when(mockCatatlystPEInst.getAttributeValue(ReactomeJavaConstants.compartment)).thenReturn(mockCompartmentInst);
-        assertTrue(GOAGeneratorUtilities.validateCatalystPE(mockCatatlystPEInst));
+        assertTrue(GOAGeneratorUtilities.isValidCatalystPE(mockCatatlystPEInst));
     }
 
     @Test
     public void multiInstancePhysicalEntityTest() {
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntitySet)).thenReturn(true);
-        assertTrue(GOAGeneratorUtilities.multiInstancePhysicalEntity(mockSchemaClass));
+        assertTrue(GOAGeneratorUtilities.isMultiInstancePhysicalEntity(mockSchemaClass));
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntitySet)).thenReturn(false);
-        assertFalse(GOAGeneratorUtilities.multiInstancePhysicalEntity(mockSchemaClass));
+        assertFalse(GOAGeneratorUtilities.isMultiInstancePhysicalEntity(mockSchemaClass));
     }
 
     @Test
@@ -86,14 +86,14 @@ public class GOAGeneratorUtilitiesTest {
 
     @Test
     public void excludedMicrobialSpeciesTest() {
-        assertTrue(GOAGeneratorUtilities.excludedMicrobialSpecies("813"));
-        assertFalse(GOAGeneratorUtilities.excludedMicrobialSpecies("812"));
+        assertTrue(GOAGeneratorUtilities.isExcludedMicrobialSpecies("813"));
+        assertFalse(GOAGeneratorUtilities.isExcludedMicrobialSpecies("812"));
     }
 
     @Test
     public void proteinBindingAnnotationTest() {
-        assertTrue(GOAGeneratorUtilities.proteinBindingAnnotation("0005515"));
-        assertFalse(GOAGeneratorUtilities.proteinBindingAnnotation("1234567"));
+        assertTrue(GOAGeneratorUtilities.isProteinBindingAnnotation("0005515"));
+        assertFalse(GOAGeneratorUtilities.isProteinBindingAnnotation("1234567"));
     }
 
     @Test
