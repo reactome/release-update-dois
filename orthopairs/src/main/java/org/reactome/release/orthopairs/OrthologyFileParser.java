@@ -43,7 +43,6 @@ public class OrthologyFileParser {
                     // For Ortholog type, we only want to look at the Least Divered Ortholog(LDO) and Ortholog(O) lines.
                     if (line.startsWith(sourceSpeciesPantherName)) {
                         String[] tabSplit = line.split("\t");
-
                         String sourceInfo = tabSplit[0];
                         String[] sourceSplit = sourceInfo.split("\\|");
                         String sourceGene = sourceSplit[1];
@@ -74,36 +73,24 @@ public class OrthologyFileParser {
     }
 
     private static Map<String, Map<String, Set<String>>> MapId(String targetSpecies, String keyEntity, String valueEntity, Map<String,Map<String,Set<String>>> entityMap, String orthologType) {
-
-        // The 'null' conditionals are for the first time that level of the map is added. For example, if 'MOUSE' doesn't have an existing structure in the map,
-        // the first condition will handle this.
-        if (entityMap.get(targetSpecies) == null) {
-            Set<String>  firstTargetEntityIdAdded = new HashSet<>(Arrays.asList(valueEntity));
-            Map<String,Set<String>> firstSourceEntityMap = new HashMap<>();
-            firstSourceEntityMap.put(keyEntity, firstTargetEntityIdAdded);
-            entityMap.put(targetSpecies, firstSourceEntityMap);
-        } else {
-            if (entityMap.get(targetSpecies).get(keyEntity) == null) {
-                Set<String> firstTargetEntityIdAdded = new HashSet<>(Arrays.asList(valueEntity));
-                entityMap.get(targetSpecies).put(keyEntity, firstTargetEntityIdAdded);
-            } else {
-                entityMap.get(targetSpecies).get(keyEntity).add(valueEntity);
-            }
-        }
-
+        
+        entityMap.computeIfAbsent(targetSpecies, k -> new HashMap<>());
         // Lines with an orthologType equal to 'LDO' mean that we only want that value in the Set since its the Least Diverged Ortholog, meaning we have a
         // high degree of confidence in its homology. We remove all other values from the Set unless an 'LDO' value already exists. In this rare case,
         // we will keep multiple LDOs.
-        Set<String> targetEntitys = entityMap.get(targetSpecies).get(keyEntity);
+        Set<String> targetEntitys = Optional.ofNullable(entityMap.get(targetSpecies).get(keyEntity)).orElse(new HashSet<>());
+
         if (orthologType.equals("LDO")) {
             if (!targetEntitys.contains("LDO")) {
                 targetEntitys.clear();
                 targetEntitys.add(valueEntity);
                 targetEntitys.add("LDO");
-                entityMap.get(targetSpecies).put(keyEntity, targetEntitys);
+            } else {
+                targetEntitys.add(valueEntity);
             }
-        } else if (orthologType.equals("O") && targetEntitys.contains("LDO")) {
-            targetEntitys.remove(valueEntity);
+            entityMap.get(targetSpecies).put(keyEntity, targetEntitys);
+        } else if (orthologType.equals("O") && !targetEntitys.contains("LDO")) {
+            targetEntitys.add(valueEntity);
             entityMap.get(targetSpecies).put(keyEntity, targetEntitys);
         }
         return entityMap;
