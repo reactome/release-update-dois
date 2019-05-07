@@ -289,7 +289,7 @@ public class EuropePMC {
 		 * @return Pathway URL as String
 		 */
 		private String getPathwayURL() {
-			return ReactomeURLConstants.PATHWAY_BROWSER_URL + getPathwayStableId();
+			return ReactomeURLConstants.CONTENT_DETAIL_URL + getPathwayStableId();
 		}
 
 		/**

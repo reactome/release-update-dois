@@ -47,7 +47,7 @@ public class EuropePMCTest {
 	public void correctEuropePMCLinkXMLElement() throws ParserConfigurationException {
 		final String PATHWAY_DISPLAY_NAME = "p53-Dependent G1 DNA Damage Response";
 		final String PATHWAY_STABLE_ID = "R-HSA-69563";
-		final String PATHWAY_URL = "https://www.reactome.org/PathwayBrowser/#/" + PATHWAY_STABLE_ID;
+		final String PATHWAY_URL = "https://www.reactome.org/content/detail/" + PATHWAY_STABLE_ID;
 		final String PUBMED_ID = "9153395";
 
 		String expectedXML = String.format(
