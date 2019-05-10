@@ -124,10 +124,8 @@ public class EuropePMC {
 		nodeNameToValue.put("id", Integer.toString(reactomeProviderID));
 		nodeNameToValue.put("resourceName", "Reactome");
 		nodeNameToValue.put("description",
-			"Reactome is a free, open-source, curated and peer-reviewed pathway database. " +
-			"Our goal is to provide intuitive bioinformatics tools for the visualization, " +
-			"interpretation and analysis of pathway knowledge to support basic research, genome analysis, " +
-			"modeling, systems biology and education.");
+			"Reactome is a free, open-source, curated and peer-reviewed pathway database."
+		);
 		nodeNameToValue.put("email", "help@reactome.org");
 
 		nodeNameToValue.forEach((key, value) -> provider.appendChild(getElement(document, key, value)));
@@ -291,7 +289,7 @@ public class EuropePMC {
 		 * @return Pathway URL as String
 		 */
 		private String getPathwayURL() {
-			return ReactomeURLConstants.PATHWAY_BROWSER_URL + getPathwayStableId();
+			return ReactomeURLConstants.CONTENT_DETAIL_URL + getPathwayStableId();
 		}
 
 		/**
