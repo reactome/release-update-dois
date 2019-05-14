@@ -98,7 +98,6 @@ public class StableIdentifierUpdater {
 				logger.warn(sliceInstance + " -- Instance not found in gkCentral");
 			}
 		}
-
 		// TODO: Update test_slice after gkCentral has been successfully updated
 		if (dbaSlice.supportsTransactions()) {
 			dbaSlice.commit();
@@ -120,6 +119,7 @@ public class StableIdentifierUpdater {
 
 		stableIdentifierInst.addAttributeValue(identifierVersion, String.valueOf(newIdentifierVersion));
 		stableIdentifierInst.setDisplayName(id + "." + newIdentifierVersion);
+		Collection<GKInstance> modifiedInstances = (Collection<GKInstance>) stableIdentifierInst.getAttributeValuesList(modified);
 		stableIdentifierInst.addAttributeValue(modified, instanceEdit);
 		dba.updateInstanceAttribute(stableIdentifierInst, identifierVersion);
 		dba.updateInstanceAttribute(stableIdentifierInst, _displayName);
