@@ -65,7 +65,7 @@ public class FetchTestReactomeOntologyFiles {
 				if (splitLine.length > 1 && splitLine[1].matches("( [A-Z][a-z]{2}){2} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3} [0-9]{4}")) {
 					String dateTime = ";" + splitLine[1] + "\n";
 					dateTimeCounter++;
-					if (pinsSwitch && dateTimeCounter == 1) { //
+					if (pinsSwitch && dateTimeCounter == 1) {
 						Files.write(Paths.get(pinsFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
 					}
 					if (dateTimeCounter == 2) {
@@ -79,10 +79,10 @@ public class FetchTestReactomeOntologyFiles {
 				line += "\n";
 
 				// Generate pins file
-				if (dateTimeCounter == 1 && pinsSwitch) { //
+				if (dateTimeCounter == 1 && pinsSwitch) { 
 					if (line.contains("pprj_file_content")) {
 						line = "\n";
-						pinsSwitch = false; //
+						pinsSwitch = false;
 					}
 					if (line.contains(".pont")) {
 						line = line.replaceAll("[a-zA-Z0-9]+.pont", pontFilename);
@@ -109,11 +109,11 @@ public class FetchTestReactomeOntologyFiles {
 						line = "\n";
 					}
 
-					if (pprjSwitch) { //
+					if (pprjSwitch) { 
 						if (line.startsWith(";") || line.startsWith("(") || line.startsWith(")") || line.startsWith("\n") || line.startsWith("\t")) {
 							Files.write(Paths.get(pprjFilename), line.getBytes(), StandardOpenOption.APPEND);
 						} else {
-							pprjSwitch = false; //
+							pprjSwitch = false; 
 						}
 					}
 				}
