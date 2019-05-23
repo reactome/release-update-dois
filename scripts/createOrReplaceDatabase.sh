@@ -1,7 +1,8 @@
 #!/bin/bash
 
 ## This script will create or replace a database using a mysql dump file. It takes the DB name (-d or --database) and dump filepath (-f or --file) as arguments.
-## A config file populated with mySQL username, password and host is also required. Its filepath can be optionally specified (-c or --config), otherwise a default 'config.properties' file is assumed.
+## A config file populated with MySQL username is required and optionally with the host and port. Its filepath can be optionally specified (-c or --config), otherwise 
+## a default 'config.properties' file is assumed.
 ## author: jcook
 
 dbFilepath=
@@ -36,19 +37,15 @@ then
 	exit 1
 fi
 
-## Parse config file for username and password properties
+## Parse config file for username, host and port properties
 echo "Reading $configFilepath";
 username=
-password=
 host=localhost
 port=3306
 while read line; do
 	if [[ $line == username* ]]
  	then
  		username=${line#*=}
- 	elif [[ $line == password* ]]
- 	then
- 		password=${line#*=}
 	elif [[ $line == host* ]]
 	then
 		host=${line#*=}
@@ -59,28 +56,28 @@ while read line; do
 done < $configFilepath
 
 ## Improperly formatted or missing config file
-if [ -z "$username" ] || [ -z "$password" ]
+if [ -z "$username" ]
 then
-	echo "Could not find username and/or password in $configFilepath";
+	echo "No username in $configFilepath";
 	exit 1
 fi
 
 ## Take archive of DB, drop it and create a new, empty one
 dbArchiveFile="$dbName.backup.dump"
-if ! mysql -u$username -p$password -h$host -P$port -e "use $dbName" 2> /dev/null;
+if ! mysql -u$username -h$host -P$port -e "use $dbName" 2> /dev/null;
 then
 	echo "Creating $dbName";
-	mysql -u$username -p$password -h$host -P$port -e "create database $dbName"
+	mysql -u$username -h$host -P$port -e "create database $dbName"
 else
 	echo "Backing up $dbName";
-	mysqldump -u$username -p$password -h$host -P$port $dbName > $dbArchiveFile
+	mysqldump -u$username -h$host -P$port $dbName > $dbArchiveFile
 	echo "Gzipping $dbArchiveFile";
 	eval "gzip -f $dbArchiveFile";
 	echo "Finished backing up $dbName";
 fi
 
 ## Drop and create database
-mysql -u$username -p$password -h$host -P$port -e "drop database if exists $dbName; create database $dbName"
+mysql -u$username -h$host -P$port -e "drop database if exists $dbName; create database $dbName"
 
 ## If dump is gzipped, must use 'zcat'
 catCommand=cat
@@ -90,7 +87,7 @@ then
 fi
 
 ## Restore database using 'cat' piped to mysql
-cmd="$catCommand $dbFilepath | mysql -u$username -p$password -h$host -P$port $dbName"
+cmd="$catCommand $dbFilepath | mysql -u$username -h$host -P$port $dbName"
 echo "Restoring $dbFilepath to $dbName";
 eval $cmd;
 echo "Finished database update";
