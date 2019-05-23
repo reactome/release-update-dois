@@ -32,7 +32,7 @@ done
 if [ -z "$dbFilepath" ] || [ -z "$dbName" ]
 then
 	echo "Create or replace mySQL databases";
-	echo "Usage: bash updateDatabase.sh -f databaseFile -d databaseName [-c configFile] ";
+	echo "Usage: bash createOrReplaceDatabase.sh -f databaseFile -d databaseName [-c configFile] ";
 	exit 1
 fi
 
@@ -65,18 +65,22 @@ then
 	exit 1
 fi
 
-echo "Updating $dbName with $dbFilepath";
-echo "Backing up $dbName";
-
 ## Take archive of DB, drop it and create a new, empty one
 dbArchiveFile="$dbName.backup.dump"
-mysqldump -u$username -p$password -h$host -P$port $dbName > $dbArchiveFile
-echo "Compressing $dbArchiveFile";
-eval "gzip -f $dbArchiveFile";
-echo "Finished backing up $dbName";
+if ! mysql -u$username -p$password -h$host -P$port -e "use $dbName" 2> /dev/null;
+then
+	echo "Creating $dbName";
+	mysql -u$username -p$password -h$host -P$port -e "create database $dbName"
+else
+	echo "Backing up $dbName";
+	mysqldump -u$username -p$password -h$host -P$port $dbName > $dbArchiveFile
+	echo "Gzipping $dbArchiveFile";
+	eval "gzip -f $dbArchiveFile";
+	echo "Finished backing up $dbName";
+fi
 
-echo "Updating $dbName with $dbFilepath";
-mysql -u$username -p$password -h$host -P$port -e 'drop database if exists $dbName; create database $dbName'
+## Drop and create database
+mysql -u$username -p$password -h$host -P$port -e "drop database if exists $dbName; create database $dbName"
 
 ## If dump is gzipped, must use 'zcat'
 catCommand=cat
@@ -87,6 +91,6 @@ fi
 
 ## Restore database using 'cat' piped to mysql
 cmd="$catCommand $dbFilepath | mysql -u$username -p$password -h$host -P$port $dbName"
-echo "Restoring updated $dbName";
+echo "Restoring $dbFilepath to $dbName";
 eval $cmd;
 echo "Finished database update";
