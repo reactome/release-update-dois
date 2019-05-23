@@ -48,6 +48,8 @@ public class OrthologousPathwayDiagramGeneratorTest {
     @Mock
     PredictedPathwayDiagramGeneratorFromDB mockDiagramGenerator;
 
+    long mockId = 12345L;
+
     Collection<GKInstance> mockDiagramInstances = new ArrayList<>();
     Collection<GKInstance> mockPrevDiagramInstances = new ArrayList<>();
     List<GKInstance> mockOrthoEventInstances = new ArrayList<>();
@@ -59,7 +61,7 @@ public class OrthologousPathwayDiagramGeneratorTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        testDiagramGenerator = new OrthologousPathwayDiagramGenerator(mockAdaptor, mockPrevAdaptor, mockSpeciesInst, 12345L, 12345L);
+        testDiagramGenerator = new OrthologousPathwayDiagramGenerator(mockAdaptor, mockPrevAdaptor, mockSpeciesInst, mockId, mockId);
     }
     @Test
     public void generateOrthologousPathwayDiagramsTest() throws Exception {
@@ -68,7 +70,7 @@ public class OrthologousPathwayDiagramGeneratorTest {
         mockOrthoEventInstances.add(mockOrthoEventInst);
 
         PowerMockito.whenNew(PredictedPathwayDiagramGeneratorFromDB.class).withNoArguments().thenReturn(mockDiagramGenerator);
-        Mockito.when(mockAdaptor.fetchInstance(12345L)).thenReturn(mockSpeciesInst);
+        Mockito.when(mockAdaptor.fetchInstance(mockId)).thenReturn(mockSpeciesInst);
         Mockito.when(mockSpeciesInst.getDisplayName()).thenReturn("Species");
         Mockito.when(mockAdaptor.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram)).thenReturn(mockDiagramInstances);
         Mockito.when(mockDiagramInst.getAttributeValue(ReactomeJavaConstants.representedPathway)).thenReturn(mockPathwayInst);
