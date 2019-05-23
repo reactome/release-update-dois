@@ -43,11 +43,11 @@ public class StableIdentifierGenerator {
         // Paralogs will have the same base stable identifier, but we want to denote when that happens.
         // We pull the value from `seenOrthoIds`, increment it and then add it to the stable identifier name (eg: R-MMU-123456-2)
         int paralogCount = Optional.ofNullable(seenOrthoIds.get(targetIdentifier)).orElse(0) + 1;
-        String targetIdentifierUnmodified = targetIdentifier;
+        seenOrthoIds.put(targetIdentifier, paralogCount);
         if (paralogCount > 1) {
             targetIdentifier += "-" + paralogCount;
         }
-        seenOrthoIds.put(targetIdentifierUnmodified, paralogCount);
+
 
         // Check that the stable identifier instance does not already exist in DB
         // TODO: Performance check
