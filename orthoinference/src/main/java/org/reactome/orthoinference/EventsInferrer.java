@@ -149,8 +149,8 @@ public class EventsInferrer
 			logger.info("Could not find Species instance for Homo sapiens");
 			return;
 		}
-		String humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID().toString();
-		orthologousPathwayDiagramGenerator = new OrthologousPathwayDiagramGenerator(dbAdaptor, dbAdaptorPrev, speciesInst, personId, Long.valueOf(humanInstanceDbId));
+		long humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID();
+		orthologousPathwayDiagramGenerator = new OrthologousPathwayDiagramGenerator(dbAdaptor, dbAdaptorPrev, speciesInst, personId, humanInstanceDbId);
 		// Gets Reaction instances of source species (human)
 		Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", humanInstanceDbId);
 
