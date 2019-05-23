@@ -87,9 +87,6 @@ public class FetchTestReactomeOntologyFiles {
 					if (line.contains(".pont")) {
 						line = line.replaceAll("[a-zA-Z0-9]+.pont", pontFilename);
 					}
-					if (line.contains(".pins")) {
-						line = line.replaceAll("[a-zA-Z0-9]+.pins", pprjFilename);
-					}
 					Files.write(Paths.get(pinsFilename), line.getBytes(), StandardOpenOption.APPEND);
 				}
 
