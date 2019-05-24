@@ -33,16 +33,16 @@ fi
 
 ## Take archive of DB (if it exists in MySQL), drop it and create a new, empty one 
 dbArchiveFile="$dbName.backup.dump"
-if ! mysql -e "use $dbName" 2> /dev/null;
+if mysql -e "use $dbName" 2> /dev/null;
 then
-	echo "Creating $dbName database";
-	mysql -e "create database $dbName"
-else
 	echo "Backing up $dbName";
 	mysqldump $dbName > $dbArchiveFile
 	echo "Gzipping $dbArchiveFile";
 	eval "gzip -f $dbArchiveFile";
 	echo "Finished backing up $dbName";
+else
+	echo "Creating $dbName database";
+	mysql -e "create database $dbName"
 fi
 
 ## Drop and create database
