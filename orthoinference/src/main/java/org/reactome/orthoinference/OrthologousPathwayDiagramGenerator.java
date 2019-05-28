@@ -49,18 +49,24 @@ public class OrthologousPathwayDiagramGenerator {
                 // When a PathwayDiagram instance associated with the reference species is found, iterate through all of it's OrthologousEvent instances.
                 for (GKInstance orthoPathwayInst : (Collection<GKInstance>) pathwayInst.getAttributeValuesList(ReactomeJavaConstants.orthologousEvent)) {
                     // Look for OrthologousEvent instances that match the current target species and that are electronically inferred.
-                    if (isSameSpecies(orthoPathwayInst, targetSpeciesInst) && isElectronicallyInferred(orthoPathwayInst)) {
-                        // Generate Orthologous PathwayDiagram instance using generatePredictedDiagram method from PredictedPathwayDiagramGeneratorFromDB.
-                        // This method is the one needed to build PathwayDiagrams for species-specific Pathway instances.
-                        logger.info("Building Pathway diagram for " + orthoPathwayInst);
-                        diagramGenerator.generatePredictedDiagram(orthoPathwayInst, pathwayInst, diagramInst);
-                    }
+                    GKInstance orthoDiagram = generateOrthologousPathwayDiagram(orthoPathwayInst, pathwayInst, diagramInst, diagramGenerator);
                 }
             }
         }
 
         comparePathwayDiagramCounts((Collection<GKInstance>) dba.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram), (Collection<GKInstance>) dbaPrev.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram));
         logger.info("Finish pathway diagram generation for " + targetSpeciesInst.getDisplayName());
+    }
+
+    public GKInstance generateOrthologousPathwayDiagram(GKInstance orthoPathwayInst, GKInstance pathwayInst, GKInstance diagramInst, PredictedPathwayDiagramGeneratorFromDB diagramGenerator) throws Exception {
+        GKInstance orthoDiagram = null;
+        if (isSameSpecies(orthoPathwayInst, targetSpeciesInst) && isElectronicallyInferred(orthoPathwayInst)) {
+            // Generate Orthologous PathwayDiagram instance using generatePredictedDiagram method from PredictedPathwayDiagramGeneratorFromDB.
+            // This method is the one needed to build PathwayDiagrams for species-specific Pathway instances.
+            logger.info("Building Pathway diagram for " + orthoPathwayInst);
+            orthoDiagram = diagramGenerator.generatePredictedDiagram(orthoPathwayInst, pathwayInst, diagramInst);
+        }
+        return orthoDiagram;
     }
 
     // Compare the species attribute in a Pathway with another species instance for equality
@@ -81,12 +87,12 @@ public class OrthologousPathwayDiagramGenerator {
         int currentPathwayDiagramCount = getPathwayDiagramCountsForSpecies(currentPathwayDiagramInstances);
         int previousPathwayDiagramCount = getPathwayDiagramCountsForSpecies(previousPathwayDiagramInstances);
 
-        if (isFewerSpeciesDiagramCountsBetweenReleases(currentPathwayDiagramCount, previousPathwayDiagramCount)) {
+        if (hasFewerSpeciesDiagramCountsBetweenReleases(currentPathwayDiagramCount, previousPathwayDiagramCount)) {
             logger.warn("PathwayDiagram count for " + targetSpeciesInst.getDisplayName() + " has decreased since previous release from " + previousPathwayDiagramCount + " to " + currentPathwayDiagramCount);
         }
     }
 
-    public boolean isFewerSpeciesDiagramCountsBetweenReleases(int currentPathwayDiagramCount, int previousPathwayDiagramCount) {
+    public boolean hasFewerSpeciesDiagramCountsBetweenReleases(int currentPathwayDiagramCount, int previousPathwayDiagramCount) {
         return currentPathwayDiagramCount < previousPathwayDiagramCount;
     }
 
