@@ -40,9 +40,6 @@ then
 	echo "Gzipping $dbArchiveFile";
 	eval "gzip -f $dbArchiveFile";
 	echo "Finished backing up $dbName";
-else
-	echo "Creating $dbName database";
-	mysql -e "create database $dbName"
 fi
 
 ## Drop and create database
