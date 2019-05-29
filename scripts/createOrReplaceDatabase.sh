@@ -43,6 +43,7 @@ then
 fi
 
 ## Drop and create database
+echo "Creating new $dbName database";
 mysql -e "drop database if exists $dbName; create database $dbName"
 
 ## If dump is gzipped, must use 'zcat'
