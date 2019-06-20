@@ -44,13 +44,15 @@ import org.reactome.release.common.database.InstanceEditUtils;
 public class EventsInferrer
 {
 	private static final Logger logger = LogManager.getLogger();
-	static MySQLAdaptor dbAdaptor = null;
-	private static String releaseVersion = "";
+	private static MySQLAdaptor dbAdaptor;
+	private static MySQLAdaptor dbAdaptorPrev;
+	private static String releaseVersion;
 	private static GKInstance instanceEditInst;
 	private static GKInstance speciesInst;
-	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<GKInstance,GKInstance>();
-	private static List<GKInstance> manualHumanEvents = new ArrayList<GKInstance>();
+	private static Map<GKInstance,GKInstance> manualEventToNonHumanSource = new HashMap<>();
+	private static List<GKInstance> manualHumanEvents = new ArrayList<>();
 	private static StableIdentifierGenerator stableIdentifierGenerator;
+	private static OrthologousPathwayDiagramGenerator orthologousPathwayDiagramGenerator;
 
 	@SuppressWarnings("unchecked")
 	public static void inferEvents(Properties props, String pathToConfig, String species) throws Exception
@@ -59,13 +61,15 @@ public class EventsInferrer
 		// Set up DB adaptor using config.properties file
 		String username = props.getProperty("username");
 		String password = props.getProperty("password");
-		String database = props.getProperty("database");
+		String database = props.getProperty("currentDatabase");
+		String prevDatabase = props.getProperty("previousDatabase");
 		String host = props.getProperty("host");
 		int port = Integer.valueOf(props.getProperty("port"));
 		
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		setDbAdaptors(dbAdaptor);
-		
+		dbAdaptorPrev = new MySQLAdaptor(host, prevDatabase, username, password, port);
+
 		releaseVersion = props.getProperty("releaseNumber");
 		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
 		String pathToSpeciesConfig = props.getProperty("pathToSpeciesConfig");
@@ -105,9 +109,7 @@ public class EventsInferrer
 		ReactionInferrer.setEligibleFilename(eligibleFilename);
 		ReactionInferrer.setInferredFilename(inferredFilename);
 
-
 		stableIdentifierGenerator = new StableIdentifierGenerator(dbAdaptor, (String) speciesObject.get("abbreviation"));
-
 		// Set static variables (DB/Species Instances, mapping files) that will be repeatedly used
 		setInstanceEdits(personId);
 		logger.info("Reading in Orthopairs files");
@@ -147,7 +149,8 @@ public class EventsInferrer
 			logger.info("Could not find Species instance for Homo sapiens");
 			return;
 		}
-		String humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID().toString();
+		long humanInstanceDbId = sourceSpeciesInst.iterator().next().getDBID();
+		orthologousPathwayDiagramGenerator = new OrthologousPathwayDiagramGenerator(dbAdaptor, dbAdaptorPrev, speciesInst, personId, humanInstanceDbId);
 		// Gets Reaction instances of source species (human)
 		Collection<GKInstance> reactionInstances = (Collection<GKInstance>) dbAdaptor.fetchInstanceByAttribute("ReactionlikeEvent", "species", "=", humanInstanceDbId);
 
@@ -159,7 +162,7 @@ public class EventsInferrer
 		}
 		// For now sort the instances by DB ID so that it matches the Perl sequence
 		Collections.sort(dbids);
-		
+
 		for (Long dbid : dbids)
 		{
 			GKInstance reactionInst = reactionMap.get(dbid);
@@ -182,7 +185,7 @@ public class EventsInferrer
 				continue;
 			}
 			// This Reaction doesn't already exist for this species, and an orthologous inference will be attempted.
-			
+
 			try {
 				logger.info("Attempting to infer " + reactionInst);
 				ReactionInferrer.inferReaction(reactionInst);
@@ -193,6 +196,7 @@ public class EventsInferrer
 		}
 		HumanEventsUpdater.setInferredEvent(ReactionInferrer.getInferredEvent());
 		HumanEventsUpdater.updateHumanEvents(ReactionInferrer.getInferrableHumanEvents());
+		orthologousPathwayDiagramGenerator.generateOrthologousPathwayDiagrams();
 		outputReport(species);
 		resetVariables();
 		System.gc();

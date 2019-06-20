@@ -64,7 +64,7 @@ public class EWASInferrer {
 						infReferenceGeneProductInst.addAttributeValue(species, speciesInst);
 						String referenceGeneProductSource = homologueSource.equals("ENSP") ? "ENSEMBL:" : "UniProt:";
 						infReferenceGeneProductInst.setAttributeValue(_displayName, referenceGeneProductSource + homologueId);
-						infReferenceGeneProductInst = InstanceUtilities.checkForIdenticalInstances(infReferenceGeneProductInst);
+						infReferenceGeneProductInst = InstanceUtilities.checkForIdenticalInstances(infReferenceGeneProductInst, null);
 						referenceGeneProductIdenticals.put(homologueId, infReferenceGeneProductInst);
 					} else {
 						infReferenceGeneProductInst = referenceGeneProductIdenticals.get(homologueId);
