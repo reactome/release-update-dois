@@ -15,12 +15,15 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
 import java.util.Collection;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({StableIdentifierGenerator.class, InstanceUtilities.class})
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "javax.script.*",
-        "javax.xml.*", "com.sun.org.apache.xerces.*", "org.xml.sax.*", "com.sun.xml.*", "org.w3c.dom.*", "org.mockito.*"})
+        "javax.xml.*", "com.sun.org.apache.xerces.*", "org.xml.sax.*", "com.sun.xml.*", "org.w3c.dom.*"})
 public class StableIdentifierGeneratorTest {
 
     private static Object identifier = "R-HSA-123456";
@@ -51,23 +54,22 @@ public class StableIdentifierGeneratorTest {
     }
 
     @Test
-    public void generateOrthologousStableIdTest() throws Exception {
+    public void generateOrthologousStableIdReturnsStableIdentifierInst() throws Exception {
 
         PowerMockito.mockStatic(InstanceUtilities.class);
         Mockito.when(mockOriginalInst.getAttributeValue("stableIdentifier")).thenReturn(mockStableIdentifierInst);
         Mockito.when(mockStableIdentifierInst.getAttributeValue("identifier")).thenReturn(identifier);
-
         Mockito.when(mockAdaptor.fetchInstanceByAttribute("StableIdentifier", "identifier", "=", "R-ABC-123456")).thenReturn(mockInstanceCollection);
-
         PowerMockito.when(InstanceUtilities.createNewInferredGKInstance(mockStableIdentifierInst)).thenReturn(mockOrthoStableIdentifierInst);
-        stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst);
+        assertThat(stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst), is(equalTo(mockOrthoStableIdentifierInst)));
     }
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void generateOrthologousStableIdRuntimeExceptionTest() throws Exception {
+    public void nullStableIdentifierReturnsRuntimeException() throws Exception {
+
         Mockito.when(mockOriginalInst.getAttributeValue("stableIdentifier")).thenReturn(null);
 
         expectedException.expect(RuntimeException.class);
