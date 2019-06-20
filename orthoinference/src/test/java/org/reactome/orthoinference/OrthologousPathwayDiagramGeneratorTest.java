@@ -17,11 +17,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({OrthologousPathwayDiagramGenerator.class, PredictedPathwayDiagramGeneratorFromDB.class})
@@ -38,8 +38,6 @@ public class OrthologousPathwayDiagramGeneratorTest {
     @Mock
     GKInstance mockSpeciesInst2;
     @Mock
-    GKInstance mockAlternateSpeciesInst;
-    @Mock
     GKInstance mockDiagramInst;
     @Mock
     GKInstance mockPathwayInst;
@@ -55,7 +53,6 @@ public class OrthologousPathwayDiagramGeneratorTest {
     long mockId = 12345L;
 
     Collection<GKInstance> mockDiagramInstances = new ArrayList<>();
-    Collection<GKInstance> mockPrevDiagramInstances = new ArrayList<>();
     List<GKInstance> mockOrthoEventInstances = new ArrayList<>();
 
 
@@ -87,54 +84,42 @@ public class OrthologousPathwayDiagramGeneratorTest {
     }
 
     @Test
-    public void fewerPathwayDiagramsTest() throws Exception {
-        mockDiagramInstances.add(mockDiagramInst);
-        mockPrevDiagramInstances.addAll(Arrays.asList(mockDiagramInst, mockDiagramInst));
-
-        Mockito.when(mockAdaptor.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram)).thenReturn(mockDiagramInstances);
-        Mockito.when(mockPrevAdaptor.fetchInstancesByClass(ReactomeJavaConstants.PathwayDiagram)).thenReturn(mockPrevDiagramInstances);
-        Mockito.when(mockDiagramInst.getAttributeValue(ReactomeJavaConstants.representedPathway)).thenReturn(mockPathwayInst);
-        Mockito.when(mockPathwayInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockAlternateSpeciesInst);
-        testDiagramGenerator.generateOrthologousPathwayDiagrams();
-    }
-
-    @Test
     public void sameSpeciesReturnsTrue() throws Exception {
         Mockito.when(mockPathwayInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        assertTrue(testDiagramGenerator.isSameSpecies(mockPathwayInst, mockSpeciesInst));
+        assertThat(testDiagramGenerator.isSameSpecies(mockPathwayInst, mockSpeciesInst), is(equalTo(true)));
     }
 
     @Test
     public void differentSpeciesReturnsFalse() throws Exception {
         Mockito.when(mockPathwayInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst2);
-        assertFalse(testDiagramGenerator.isSameSpecies(mockPathwayInst, mockSpeciesInst));
+        assertThat(testDiagramGenerator.isSameSpecies(mockPathwayInst, mockSpeciesInst), is(equalTo(false)));
     }
 
     @Test
     public void electroniciallyInferredReturnsTrue() throws Exception {
         Mockito.when(mockPathwayInst.getAttributeValue(ReactomeJavaConstants.evidenceType)).thenReturn(mockEvidenceTypeInst);
-        assertTrue(testDiagramGenerator.isElectronicallyInferred(mockPathwayInst));
+        assertThat(testDiagramGenerator.isElectronicallyInferred(mockPathwayInst), is(equalTo(true)));
     }
 
     @Test
     public void manuallyInferredReturnsFalse() throws Exception {
         Mockito.when(mockPathwayInst.getAttributeValue(ReactomeJavaConstants.evidenceType)).thenReturn(null);
-        assertFalse(testDiagramGenerator.isElectronicallyInferred(mockPathwayInst));
+        assertThat(testDiagramGenerator.isElectronicallyInferred(mockPathwayInst), is(equalTo(false)));
     }
 
     @Test
     public void fewerDiagramCountsReturnsTrue() {
-        assertTrue(testDiagramGenerator.hasFewerSpeciesDiagramCountsBetweenReleases(4, 6));
+        assertThat(testDiagramGenerator.hasFewerSpeciesDiagramCountsBetweenReleases(4, 6), is(equalTo(true)));
     }
 
     @Test
     public void equalDiagramCountsReturnsFalse() {
-        assertFalse(testDiagramGenerator.hasFewerSpeciesDiagramCountsBetweenReleases(4, 4));
+        assertThat(testDiagramGenerator.hasFewerSpeciesDiagramCountsBetweenReleases(4, 4), is(equalTo(false)));
     }
 
     @Test
     public void moreDiagramCountsReturnsFalse() {
-        assertFalse(testDiagramGenerator.hasFewerSpeciesDiagramCountsBetweenReleases(6, 4));
+        assertThat(testDiagramGenerator.hasFewerSpeciesDiagramCountsBetweenReleases(6, 4), is(equalTo(false)));
     }
 
     @Test
@@ -143,7 +128,7 @@ public class OrthologousPathwayDiagramGeneratorTest {
         Mockito.when(mockPathwayInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
         Mockito.when(mockOrthoEventInst.getAttributeValue(ReactomeJavaConstants.evidenceType)).thenReturn(mockEvidenceTypeInst);
         Mockito.when(mockDiagramGenerator.generatePredictedDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst)).thenReturn(mockOrthoDiagramInst);
-        assertNull(testDiagramGenerator.generateOrthologousPathwayDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst, mockDiagramGenerator));
+        assertThat(testDiagramGenerator.generateOrthologousPathwayDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst, mockDiagramGenerator), is(nullValue()));
     }
 
     @Test
@@ -151,7 +136,7 @@ public class OrthologousPathwayDiagramGeneratorTest {
         Mockito.when(mockOrthoEventInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
         Mockito.when(mockPathwayInst.getAttributeValue(ReactomeJavaConstants.evidenceType)).thenReturn(null);
         Mockito.when(mockDiagramGenerator.generatePredictedDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst)).thenReturn(mockOrthoDiagramInst);
-        assertNull(testDiagramGenerator.generateOrthologousPathwayDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst, mockDiagramGenerator));
+        assertThat(testDiagramGenerator.generateOrthologousPathwayDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst, mockDiagramGenerator), is(nullValue()));
     }
 
     @Test
@@ -159,6 +144,6 @@ public class OrthologousPathwayDiagramGeneratorTest {
         Mockito.when(mockOrthoEventInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
         Mockito.when(mockOrthoEventInst.getAttributeValue(ReactomeJavaConstants.evidenceType)).thenReturn(mockEvidenceTypeInst);
         Mockito.when(mockDiagramGenerator.generatePredictedDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst)).thenReturn(mockOrthoDiagramInst);
-        assertEquals(mockOrthoDiagramInst, testDiagramGenerator.generateOrthologousPathwayDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst, mockDiagramGenerator));
+        assertThat(testDiagramGenerator.generateOrthologousPathwayDiagram(mockOrthoEventInst, mockPathwayInst, mockDiagramInst, mockDiagramGenerator), is(equalTo(mockOrthoDiagramInst)));
     }
 }
