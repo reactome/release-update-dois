@@ -14,6 +14,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import static org.junit.Assert.*;
 
 import java.util.Collection;
 
@@ -51,27 +52,24 @@ public class StableIdentifierGeneratorTest {
     }
 
     @Test
-    public void generateOrthologousStableIdTest() throws Exception {
+    public void generateOrthologousStableIdReturnsStableIdentifierInst() throws Exception {
 
         PowerMockito.mockStatic(InstanceUtilities.class);
         Mockito.when(mockOriginalInst.getAttributeValue("stableIdentifier")).thenReturn(mockStableIdentifierInst);
         Mockito.when(mockStableIdentifierInst.getAttributeValue("identifier")).thenReturn(identifier);
-
         Mockito.when(mockAdaptor.fetchInstanceByAttribute("StableIdentifier", "identifier", "=", "R-ABC-123456")).thenReturn(mockInstanceCollection);
-
         PowerMockito.when(InstanceUtilities.createNewInferredGKInstance(mockStableIdentifierInst)).thenReturn(mockOrthoStableIdentifierInst);
-        stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst);
+        assertEquals(stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst), mockOrthoStableIdentifierInst);
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
-    public void generateOrthologousStableIdRuntimeExceptionTest() throws Exception {
+    public void nullStableIdentifierReturnsRuntimeException() throws Exception {
         Mockito.when(mockOriginalInst.getAttributeValue("stableIdentifier")).thenReturn(null);
-
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage("No stable identifier instance found for " + mockOriginalInst);
-        stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst);
+        try {
+            stIdGenerator.generateOrthologousStableId(mockInferredInst, mockOriginalInst);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            assertTrue(e.getMessage().contains("No stable identifier instance found for " + mockOriginalInst));
+        }
     }
 }

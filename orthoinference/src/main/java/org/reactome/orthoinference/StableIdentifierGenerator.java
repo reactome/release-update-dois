@@ -62,9 +62,7 @@ public class StableIdentifierGenerator {
             orthoStableIdentifierInst = existingStableIdentifier.iterator().next();
         }
 
-        // Populate inferred instance with new StableIdentifier instance
-        inferredInst.addAttributeValue(stableIdentifier, orthoStableIdentifierInst);
-        return inferredInst;
+        return orthoStableIdentifierInst;
     }
 
     private GKInstance createOrthologousStableIdentifierInstance(GKInstance stableIdentifierInst, String targetIdentifier) throws Exception {
