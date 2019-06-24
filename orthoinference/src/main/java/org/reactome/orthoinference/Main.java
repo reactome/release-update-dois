@@ -11,9 +11,8 @@ public class Main {
 	private static final Logger logger = LogManager.getLogger();
 	
 	public static void main(String[] args) throws Exception {
-		
+
 		String pathToConfig = "src/main/resources/config.properties";
-		
 		String speciesCode = "";
 		if (args.length > 0 && args[0].matches("config.properties"))
 		{
@@ -25,10 +24,15 @@ public class Main {
 			logger.fatal("Please include a 4-letter species code as the first argument (eg: mmus)");
 			System.exit(0);
 		}
-		
+
 		Properties props = new Properties();
 		props.load(new FileInputStream(pathToConfig));
-        EventsInferrer.inferEvents(props, pathToConfig, speciesCode);
+        EventsInferrer.inferEvents(props, speciesCode);
+
+        // Link report file to report_ortho_inference.txt in website_files_update directory
+        String pathtoWebsiteFilesUpdateWithReportFile = props.getProperty("pathToWebsiteFilesUpdateFolder") + "report_ortho_inference.txt";
+        String reportFilename = "report_ortho_inference_test_reactome_" + props.getProperty("releaseNumber") + ".txt";
+        Runtime.getRuntime().exec("ln " + reportFilename + " " + pathtoWebsiteFilesUpdateWithReportFile);
 	}
 
 }

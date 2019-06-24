@@ -1,6 +1,5 @@
 package org.reactome.orthoinference;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,11 +11,10 @@ import org.gk.model.ClassAttributeFollowingInstruction;
 import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
 import static org.gk.model.ReactomeJavaConstants.*;
-import org.gk.schema.InvalidAttributeException;
 
 public class ProteinCountUtility {
 	
-	private static Map<String, String[]> homologueMappings = new HashMap<String,String[]>();
+	private static Map<String, String[]> homologueMappings = new HashMap<>();
 	
 	/** This function is meant to emulate the count_distinct_proteins function found in infer_events.pl.
 	 A crucial note is that the Perl version seems to be depend on the order by which instance groups are taken from the DB. Often the DB IDs are ordered smallest to largest, 
@@ -26,10 +24,10 @@ public class ProteinCountUtility {
 	 See the bottom of ProteinCount.checkCandidates for further elaboration. 
 	*/
 	
-	public static List<Integer> getDistinctProteinCounts (GKInstance instanceToBeInferred) throws InvalidAttributeException, Exception
+	public static List<Integer> getDistinctProteinCounts (GKInstance instanceToBeInferred) throws Exception
 	{
 		// Perform an AttributeQueryRequest with specified input attributes (ReactionlikeEvent, CatalystActivity, Complex, Polymer, EWAS) and output attributes (ReferenceGeneProduct, EntitySet).
-		List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
+		List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<>();
 		classesToFollow.add(new ClassAttributeFollowingInstruction(ReactionlikeEvent, new String[]{input, output, catalystActivity}, new String[]{}));
 		classesToFollow.add(new ClassAttributeFollowingInstruction(CatalystActivity, new String[]{physicalEntity}, new String[]{}));
 		classesToFollow.add(new ClassAttributeFollowingInstruction(Complex, new String[]{hasComponent}, new String[]{}));
@@ -41,9 +39,9 @@ public class ProteinCountUtility {
 		Collection<GKInstance> followedInstances = InstanceUtilities.followInstanceAttributes(instanceToBeInferred, classesToFollow, outClasses);	
 		
 		// Sort instances by DB ID
-		List<Long> dbIds = new ArrayList<Long>();
-		Collection<GKInstance> sortedFollowedInstances = new ArrayList<GKInstance>();
-		Map<Long,GKInstance> instances = new HashMap<Long,GKInstance>();
+		List<Long> dbIds = new ArrayList<>();
+		Collection<GKInstance> sortedFollowedInstances = new ArrayList<>();
+		Map<Long,GKInstance> instances = new HashMap<>();
 		for (GKInstance instance : followedInstances) 
 		{
 			dbIds.add(instance.getDBID());
@@ -56,7 +54,7 @@ public class ProteinCountUtility {
 		}
 		
 		// With the output instances saved in followedInstances, begin the protein count process, which is based on the homologue mappings (orthopairs) files.
-		List<Integer> distinctProteinCounts = new ArrayList<Integer>();
+		List<Integer> distinctProteinCounts = new ArrayList<>();
 		int total = 0;
 		int inferrable = 0;
 		int max = 0;
@@ -97,9 +95,9 @@ public class ProteinCountUtility {
 				Collection<GKInstance> entitySetsFollowedInstances = InstanceUtilities.followInstanceAttributes(entityInst, entitySetsInstancesToFollow, entitySetsOutClasses);
 				
 				// Sort instances by DB ID
-				List<Long> entitySetsDbIds = new ArrayList<Long>();
-				Collection<GKInstance> entitySetsSortedInstances = new ArrayList<GKInstance>();
-				Map<Long,GKInstance> entitySetInstances = new HashMap<Long,GKInstance>();
+				List<Long> entitySetsDbIds = new ArrayList<>();
+				Collection<GKInstance> entitySetsSortedInstances = new ArrayList<>();
+				Map<Long,GKInstance> entitySetInstances = new HashMap<>();
 				for (GKInstance instance : entitySetsFollowedInstances) 
 				{
 					entitySetsDbIds.add(instance.getDBID());
@@ -208,9 +206,9 @@ public class ProteinCountUtility {
 	}
 	// Function that determines protein counts of CandidateSets. Incoming arguments are the candidateSet of interest, as well as the output array from the very first AttributeQueryRequest (AQR).
 	// This 'output array from the first AQR' is used to prevent redundant counts, such as if a Candidate instance has already undergone a protein count.
-	private static List<Integer> getCandidateProteinCounts(GKInstance candidateSetInst, Collection<GKInstance> sortedFollowedInstances) throws InvalidAttributeException, Exception
+	private static List<Integer> getCandidateProteinCounts(GKInstance candidateSetInst, Collection<GKInstance> sortedFollowedInstances) throws Exception
 	{
-		List<Integer> checkedCandidateCounts = new ArrayList<Integer>();
+		List<Integer> checkedCandidateCounts = new ArrayList<>();
 		if (candidateSetInst.getAttributeValue(hasCandidate) != null)
 		{
 			// AttributeQueryRequest for candidateSets, where the output instances are Complex, Polymer, and ReferenceSequence
@@ -218,16 +216,16 @@ public class ProteinCountUtility {
 			int candidateInferrable = 0;
 			int candidateMax = 0;
 			int flag = 0;
-			List<ClassAttributeFollowingInstruction> candidateSetInstancesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
+			List<ClassAttributeFollowingInstruction> candidateSetInstancesToFollow = new ArrayList<>();
 			candidateSetInstancesToFollow.add(new ClassAttributeFollowingInstruction(CandidateSet, new String[]{hasCandidate}, new String[]{}));
 			candidateSetInstancesToFollow.add(new ClassAttributeFollowingInstruction(EntityWithAccessionedSequence, new String[]{referenceEntity}, new String[]{}));
 			String[] candidateSetOutClasses = new String[] {Complex, Polymer, ReferenceSequence};
 			@SuppressWarnings("unchecked")
 			Collection<GKInstance> candidateSetFollowedInstances = InstanceUtilities.followInstanceAttributes(candidateSetInst, candidateSetInstancesToFollow, candidateSetOutClasses);
 			
-			List<Long> dbIdsCandidateSet = new ArrayList<Long>();
-			Collection<GKInstance> sortedCandidateSetFollowedInstances = new ArrayList<GKInstance>();
-			Map<Long,GKInstance> candidateSetInstances = new HashMap<Long,GKInstance>();
+			List<Long> dbIdsCandidateSet = new ArrayList<>();
+			Collection<GKInstance> sortedCandidateSetFollowedInstances = new ArrayList<>();
+			Map<Long,GKInstance> candidateSetInstances = new HashMap<>();
 			for (GKInstance instance : candidateSetFollowedInstances) 
 			{
 				dbIdsCandidateSet.add(instance.getDBID());
@@ -319,13 +317,13 @@ public class ProteinCountUtility {
 		return checkedCandidateCounts;
 	}
 	
-	public static void setHomologueMappingFile(Map<String, String[]> homologueMappingsCopy) throws IOException
+	public static void setHomologueMappingFile(Map<String, String[]> homologueMappingsCopy)
 	{
 		homologueMappings = homologueMappingsCopy;
 	}
 	
 	public static void resetVariables() 
 	{
-		homologueMappings = new HashMap<String,String[]>();
+		homologueMappings = new HashMap<>();
 	}
 }
