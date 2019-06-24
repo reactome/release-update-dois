@@ -321,9 +321,4 @@ public class ProteinCountUtility {
 	{
 		homologueMappings = homologueMappingsCopy;
 	}
-	
-	public static void resetVariables() 
-	{
-		homologueMappings = new HashMap<>();
-	}
 }

@@ -369,13 +369,4 @@ public class EWASInferrer {
 	{
 		speciesInst = speciesInstCopy;
 	}
-
-	public static void resetVariables()
-	{
-		homologueMappings = new HashMap<>();
-		ensgMappings = new HashMap<>();
-		referenceGeneProductIdenticals = new HashMap<>();
-		ewasIdenticals = new HashMap<>();
-		residueIdenticals = new HashMap<>();
-	}
 }

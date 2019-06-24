@@ -219,11 +219,4 @@ public class InstanceUtilities {
 	{
 		instanceEditInst = instanceEditCopy;
 	}
-	
-	public static void resetVariables()
-	{
-		mockedIdenticals = new HashMap<>();
-	}
-	
-
 }

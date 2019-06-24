@@ -191,8 +191,6 @@ public class EventsInferrer
 		PathwaysInferrer.inferPathways(ReactionInferrer.getInferrableHumanEvents());
 		orthologousPathwayDiagramGenerator.generateOrthologousPathwayDiagrams();
 		outputReport(species);
-		resetVariables();
-		System.gc();
 		logger.info("Finished orthoinference of " + speciesName);
 	}
 
@@ -328,18 +326,5 @@ public class EventsInferrer
 		OrthologousEntityGenerator.setInstanceEdit(instanceEditInst);
 		EWASInferrer.setInstanceEdit(instanceEditInst);
 		PathwaysInferrer.setInstanceEdit(instanceEditInst);
-	}
-	
-	// Reduce memory usage after species inference complete
-	private static void resetVariables() 
-	{
-		ReactionInferrer.resetVariables();
-		OrthologousEntityGenerator.resetVariables();
-		EWASInferrer.resetVariables();
-		ProteinCountUtility.resetVariables();
-		InstanceUtilities.resetVariables();
-		PathwaysInferrer.resetVariables();
-		manualEventToNonHumanSource = new HashMap<>();
-		manualHumanEvents = new ArrayList<>();
 	}
 }

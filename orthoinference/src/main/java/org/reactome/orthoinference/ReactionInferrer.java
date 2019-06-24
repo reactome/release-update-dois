@@ -320,13 +320,5 @@ public class ReactionInferrer {
 	{
 		return inferredCount;
 	}
-	
-	public static void resetVariables() 
-	{
-		inferredCatalyst = new HashMap<>();
-		inferredEvent = new HashMap<>();
-		eligibleCount = 0;
-		inferredCount = 0;
-		inferrableHumanEvents = new ArrayList<>();
-	}
+
 }

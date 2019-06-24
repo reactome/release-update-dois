@@ -260,10 +260,4 @@ public class PathwaysInferrer {
 	{
 		inferredEventIdenticals = inferredEventCopy;
 	}
-
-	public static void resetVariables()
-	{
-		updatedInferrableHumanEvents = new ArrayList<>();
-		inferredEventIdenticals = new HashMap<>();
-	}
 }

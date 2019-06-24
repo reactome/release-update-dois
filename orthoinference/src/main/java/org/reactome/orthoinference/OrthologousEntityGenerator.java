@@ -439,15 +439,4 @@ public class OrthologousEntityGenerator {
 		complexSummationInst.setAttributeValue(_displayName, complexSummationText);
 		complexSummationInst = InstanceUtilities.checkForIdenticalInstances(complexSummationInst, null);
 	}
-	
-	public static void resetVariables()
-	{
-		orthologousEntityIdenticals = new HashMap<>();
-		homolEWASIdenticals = new HashMap<>();
-		complexPolymerIdenticals = new HashMap<>();
-		inferredEntitySetIdenticals = new HashMap<>();
-		definedSetIdenticals = new HashMap<>();
-		complexIdenticals = new HashMap<>();
-		entitySetIdenticals = new HashMap<>();
-	}
 }
