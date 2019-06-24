@@ -187,8 +187,8 @@ public class EventsInferrer
 				return;
 			}
 		}
-		HumanEventsUpdater.setInferredEvent(ReactionInferrer.getInferredEvent());
-		HumanEventsUpdater.updateHumanEvents(ReactionInferrer.getInferrableHumanEvents());
+		PathwaysInferrer.setInferredEvent(ReactionInferrer.getInferredEvent());
+		PathwaysInferrer.inferPathways(ReactionInferrer.getInferrableHumanEvents());
 		orthologousPathwayDiagramGenerator.generateOrthologousPathwayDiagrams();
 		outputReport(species);
 		resetVariables();
@@ -211,7 +211,7 @@ public class EventsInferrer
 	private static void setReleaseDates(String dateOfRelease) 
 	{
 		ReactionInferrer.setReleaseDate(dateOfRelease);
-		HumanEventsUpdater.setReleaseDate(dateOfRelease);
+		PathwaysInferrer.setReleaseDate(dateOfRelease);
 	
 	}
 
@@ -250,7 +250,7 @@ public class EventsInferrer
 		InstanceUtilities.setAdaptor(dbAdaptor);
 		OrthologousEntityGenerator.setAdaptor(dbAdaptor);
 		EWASInferrer.setAdaptor(dbAdaptor);
-		HumanEventsUpdater.setAdaptor(dbAdaptor);
+		PathwaysInferrer.setAdaptor(dbAdaptor);
 		
 	}
 
@@ -303,7 +303,7 @@ public class EventsInferrer
 		summationInst.addAttributeValue(_displayName, summationText);
 		summationInst = InstanceUtilities.checkForIdenticalInstances(summationInst, null);
 		ReactionInferrer.setSummationInstance(summationInst);
-		HumanEventsUpdater.setSummationInstance(summationInst);
+		PathwaysInferrer.setSummationInstance(summationInst);
 	}
 	// Create and set static EvidenceType instance
 	private static void setEvidenceTypeInstance() throws Exception
@@ -317,7 +317,7 @@ public class EventsInferrer
 		evidenceTypeInst.addAttributeValue(_displayName, evidenceTypeText);
 		evidenceTypeInst = InstanceUtilities.checkForIdenticalInstances(evidenceTypeInst, null);
 		ReactionInferrer.setEvidenceTypeInstance(evidenceTypeInst);
-		HumanEventsUpdater.setEvidenceTypeInstance(evidenceTypeInst);
+		PathwaysInferrer.setEvidenceTypeInstance(evidenceTypeInst);
 	}
 	
 	private static void setInstanceEdits(int personId) throws Exception 
@@ -327,7 +327,7 @@ public class EventsInferrer
 		InstanceUtilities.setInstanceEdit(instanceEditInst);
 		OrthologousEntityGenerator.setInstanceEdit(instanceEditInst);
 		EWASInferrer.setInstanceEdit(instanceEditInst);
-		HumanEventsUpdater.setInstanceEdit(instanceEditInst);
+		PathwaysInferrer.setInstanceEdit(instanceEditInst);
 	}
 	
 	// Reduce memory usage after species inference complete
@@ -338,7 +338,7 @@ public class EventsInferrer
 		EWASInferrer.resetVariables();
 		ProteinCountUtility.resetVariables();
 		InstanceUtilities.resetVariables();
-		HumanEventsUpdater.resetVariables();
+		PathwaysInferrer.resetVariables();
 		manualEventToNonHumanSource = new HashMap<>();
 		manualHumanEvents = new ArrayList<>();
 	}
