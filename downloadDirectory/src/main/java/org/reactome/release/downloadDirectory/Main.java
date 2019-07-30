@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -192,6 +193,19 @@ public class Main {
 				e.printStackTrace();
 			}
 		}
+		if (stepsToRun.contains("protegeexporter"))
+		{
+			try
+			{
+				runProtegeExporter(props, dbAdaptor, releaseDirAbsolute);	
+			}
+			catch (Exception e)
+			{
+				failedSteps.add("protegeexporter");
+				e.printStackTrace();
+			}
+			
+		}
 		if (stepsToRun.contains("CreateReactome2BioSystems"))
 		{
 			// This step converts Reactome Pathway instances into the NCBI BioSystems format (http://www.ncbi.nlm.nih.gov/biosystems/).
@@ -225,6 +239,24 @@ public class Main {
 			logger.warn("\nErrors were reported in the following step(s): " + failedStepsString + "\n");
 		}
 		logger.info("Finished DownloadDirectory");
+	}
+
+	private static void runProtegeExporter(Properties props, MySQLAdaptor dbAdaptor, String releaseDir)
+	{
+		ProtegeExporter protegeExporter = new ProtegeExporter();
+		protegeExporter.setReleaseDirectory(releaseDir);
+		String propsPrefix = "protegeexporter";
+		int parallelism = Integer.parseInt(props.getProperty(propsPrefix + ".parallelism"));
+		protegeExporter.setParallelism(parallelism);
+		String extraIncludeStr = props.getProperty(propsPrefix+".extraIncludes");
+		if (extraIncludeStr != null && !extraIncludeStr.trim().isEmpty())
+		{
+			List<String> extraIncludes = Arrays.asList(extraIncludeStr.split(","));
+			protegeExporter.setExtraIncludes(extraIncludes);
+		}
+		String pathToWrapperScript = props.getProperty(propsPrefix+".pathToWrapperScript");
+		protegeExporter.setPathToWrapperScript(pathToWrapperScript);
+		protegeExporter.execute(dbAdaptor);
 	}
 }
 
