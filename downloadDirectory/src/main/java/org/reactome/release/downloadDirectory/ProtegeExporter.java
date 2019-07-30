@@ -60,30 +60,22 @@ public class ProtegeExporter
 						logger.info("Shutting down thread pool");
 						pool.shutdownNow();
 					}));
-				
 				pool.submit(() -> {
 					// parallelStream should use the degree of parallelism set on the "pool" object.
 					pathways.parallelStream().forEach(pathway -> 
 					{
 						logger.info("Running protegeexport script for Pathway: {}", pathway.toString());
-						// Run the script as a one-liner:
-						// perl -MGKB::WebUtils -I$(pwd) -I/home/sshorser/perl5/lib/perl5/ -e 'my $wu = GKB::WebUtils->new_from_cgi(); $wu->create_protege_project_wo_orthologues("BLAH",123);'
-						// Better: perl protegeexporter ID=12345
-						ProcessBuilder processBuilder = new ProcessBuilder();
-						// NOTE: if you run this on your workstation, you may need to Include the path to Bio::Root::Root if that package is installed on a non-default path.
-						// example: "-I/home/someusername/perl5/lib/perl5"
-	//					pb.command("perl", "-I/home/ubuntu/perl5/lib/perl5/","-I/home/sshorser/perl5/lib/perl5/","-I"+this.releaseDirectory+"/modules","protegeexporter","DEBUG=1","DB="+dba.getDBName(),"ID="+pathway.getDBID());
-	//					List<String> cmdArgs = Arrays.asList("/usr/bin/perl", "-MGKB::WebUtils", "-I/home/ubuntu/perl5/lib/perl5/","-I/home/sshorser/perl5/lib/perl5/","-I"+this.releaseDirectory+"/modules",
-	//								"-e", "'my $wu = GKB::WebUtils->new_from_cgi(); $wu->create_protege_project_wo_orthologues(\"Reactome_"+pathway.getDBID()+"\",["+pathway.getDBID()+"]);'");
+
 						String fileName = "Reactome_pathway_" + pathway.getDBID() + "_"+ pathway.getDisplayName().toLowerCase().replace(" ", "_").replace("-", "_");
 						List<String> cmdArgs = new ArrayList<>();
 						cmdArgs.add("perl");
 						cmdArgs.addAll(this.extraIncludes);
 						cmdArgs.addAll(Arrays.asList("-I"+this.releaseDirectory+"/modules", "run_protege_exporter.pl", pathway.getDBID().toString(), fileName));
+						// Build the process.
+						ProcessBuilder processBuilder = new ProcessBuilder();
 						processBuilder.command(cmdArgs)
 									.directory(Paths.get(this.pathToWrapperScript).toFile())
 									.inheritIO();
-						
 						logger.info("Command is: `{}`", String.join(" ", processBuilder.command()));
 						Process process = null;
 						try
