@@ -27,7 +27,8 @@ import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
 
 /**
- * Exports top-level pathways in Protege format, using the Perl code in GKB::WebUtils
+ * Exports top-level pathways in Protege format, using the Perl code in GKB::WebUtils, and then
+ * packages the resulting files into a single tar file.
  * Takes ~1.5 hours on my (Solomon) workstation, with 7 threads running 8 cores.
  * @author sshorser
  *
@@ -202,13 +203,9 @@ public class ProtegeExporter
 						
 						final int len = 1024;
 						byte[] buff = new byte[len];
-//						long size = 0;
 						long bytesRead = is.read(buff, 0, len);
 						while (bytesRead > 0)
 						{
-//							size += bytesRead;
-//							entry.setSize(size);
-							
 							// If bytesRead + len > entrySize then an exception will be thrown, so always take min of len,bytesRead. 
 							tarOutStream.write(buff, 0, (int) Math.min(len, bytesRead));
 							bytesRead = is.read(buff, 0, len);
@@ -258,7 +255,9 @@ public class ProtegeExporter
 	}
 
 	/**
-	 * Set the degree of parallelism. Default will be the default degree of parallelism of the ForkJoinPool's common thread pool (usually, I think this is NUMBER_OF_CPUS - 1)
+	 * Set the degree of parallelism. Default will be the default degree of parallelism of the ForkJoinPool's common thread pool (usually, I think this is NUMBER_OF_CPUS - 1).
+	 * This code will run multiple protege exports in parallel, so if you set this to 3, you should see up to three perl processes running protege export. If you use setPathwayIdsToProcess
+	 * to set a single pathway, increasing parallelism won't make this run any faster.
 	 * @param parallelism
 	 */
 	public void setParallelism(int parallelism)
@@ -268,7 +267,7 @@ public class ProtegeExporter
 
 	/**
 	 * If, for some reason, there are libraries/modules that are not in Perl's "@INC",
-	 * add them here as a single string, such as "-I/home/MY_USER/perl5/lib/perl5/ -I/other/path/to_perl_libs/"
+	 * add them here as list, be sure to prefix each with "-I", as <code>Arrays.asList("-I/home/MY_USER/perl5/lib/perl5/","-I/other/path/to_perl_libs/")</code>
 	 * @param extraIncludes
 	 */
 	public void setExtraIncludes(List<String> extraIncludes)
