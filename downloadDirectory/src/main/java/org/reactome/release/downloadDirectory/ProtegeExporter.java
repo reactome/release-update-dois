@@ -108,7 +108,10 @@ public class ProtegeExporter
 				}));
 				// Filtering is in effect IF the set has something in it.
 				final boolean filterInEffect = !this.pathwayIdsToProcess.isEmpty();
-				logger.info("Filtering is in effect. ONLY the following pathways will be exported to protege: {}", this.pathwayIdsToProcess.toString());
+				if (filterInEffect)
+				{
+					logger.info("Filtering is in effect. ONLY the following pathways will be exported to protege: {}", this.pathwayIdsToProcess.toString());
+				}
 				// submit jobs to pool:
 				pool.submit(() ->
 				{

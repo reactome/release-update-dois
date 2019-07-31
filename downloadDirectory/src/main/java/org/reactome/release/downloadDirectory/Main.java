@@ -198,7 +198,7 @@ public class Main {
 			{
 //				Files.createDirectories(Paths.get(releaseNumber + "/protege_files") );
 //				runProtegeExporter(props, dbAdaptor, releaseDirAbsolute, releaseNumber + "/protege_files");
-				ProtegeExporter protegeExporter = new ProtegeExporter(props, releaseDir.getAbsolutePath(), releaseNumber);
+				ProtegeExporter protegeExporter = new ProtegeExporter(props, releaseDirAbsolute, releaseNumber);
 				protegeExporter.execute(dbAdaptor);
 			}
 			catch (Exception e)
