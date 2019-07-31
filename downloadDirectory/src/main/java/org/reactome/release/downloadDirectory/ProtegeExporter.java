@@ -126,8 +126,9 @@ public class ProtegeExporter
 						if (processPathway)
 						{
 							logger.info("Running protegeexport script for Pathway: {}", pathway.toString());
-	
-							String fileName = "Reactome_pathway_" + pathway.getDBID() + "_"+ pathway.getDisplayName().toLowerCase().replace(" ", "_").replace("-", "_");
+							// include a normalized display_name in the output to make it easiser to identify the contents of an archive.
+							String normalizedDisplayName = pathway.getDisplayName().toLowerCase().replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "");
+							String fileName = "Reactome_pathway_" + pathway.getDBID() + "_" + normalizedDisplayName;
 							List<String> cmdArgs = new ArrayList<>();
 							cmdArgs.add("perl");
 							cmdArgs.addAll(this.extraIncludes);
