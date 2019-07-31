@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -197,7 +196,10 @@ public class Main {
 		{
 			try
 			{
-				runProtegeExporter(props, dbAdaptor, releaseDirAbsolute);	
+//				Files.createDirectories(Paths.get(releaseNumber + "/protege_files") );
+//				runProtegeExporter(props, dbAdaptor, releaseDirAbsolute, releaseNumber + "/protege_files");
+				ProtegeExporter protegeExporter = new ProtegeExporter(props, releaseDir.getAbsolutePath(), releaseNumber);
+				protegeExporter.execute(dbAdaptor);
 			}
 			catch (Exception e)
 			{
@@ -240,24 +242,34 @@ public class Main {
 		}
 		logger.info("Finished DownloadDirectory");
 	}
-
-	private static void runProtegeExporter(Properties props, MySQLAdaptor dbAdaptor, String releaseDir)
-	{
-		ProtegeExporter protegeExporter = new ProtegeExporter();
-		protegeExporter.setReleaseDirectory(releaseDir);
-		String propsPrefix = "protegeexporter";
-		int parallelism = Integer.parseInt(props.getProperty(propsPrefix + ".parallelism"));
-		protegeExporter.setParallelism(parallelism);
-		String extraIncludeStr = props.getProperty(propsPrefix+".extraIncludes");
-		if (extraIncludeStr != null && !extraIncludeStr.trim().isEmpty())
-		{
-			List<String> extraIncludes = Arrays.asList(extraIncludeStr.split(","));
-			protegeExporter.setExtraIncludes(extraIncludes);
-		}
-		String pathToWrapperScript = props.getProperty(propsPrefix+".pathToWrapperScript");
-		protegeExporter.setPathToWrapperScript(pathToWrapperScript);
-		protegeExporter.execute(dbAdaptor);
-	}
+//
+//	
+//
+//	/**
+//	 * Executes the protege exporter.
+//	 * @param props
+//	 * @param dbAdaptor
+//	 * @param releaseDir
+//	 * @param downloadDir
+//	 */
+//	private static void runProtegeExporter(Properties props, MySQLAdaptor dbAdaptor, String releaseDir, String downloadDir)
+//	{
+//		ProtegeExporter protegeExporter = new ProtegeExporter();
+//		protegeExporter.setReleaseDirectory(releaseDir);
+//		String propsPrefix = "protegeexporter";
+//		int parallelism = Integer.parseInt(props.getProperty(propsPrefix + ".parallelism"));
+//		protegeExporter.setParallelism(parallelism);
+//		String extraIncludeStr = props.getProperty(propsPrefix+".extraIncludes");
+//		if (extraIncludeStr != null && !extraIncludeStr.trim().isEmpty())
+//		{
+//			List<String> extraIncludes = Arrays.asList(extraIncludeStr.split(","));
+//			protegeExporter.setExtraIncludes(extraIncludes);
+//		}
+//		String pathToWrapperScript = props.getProperty(propsPrefix+".pathToWrapperScript");
+//		protegeExporter.setPathToWrapperScript(pathToWrapperScript);
+//		protegeExporter.setDownloadDirectory(downloadDir);
+//		protegeExporter.execute(dbAdaptor);
+//	}
 }
 
 
