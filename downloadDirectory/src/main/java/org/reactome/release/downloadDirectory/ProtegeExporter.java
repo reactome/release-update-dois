@@ -62,7 +62,8 @@ public class ProtegeExporter
 	{
 		this.setReleaseDirectory(releaseDir);
 		String propsPrefix = "protegeexporter";
-		int degP = Integer.parseInt(props.getProperty(propsPrefix + ".parallelism"));
+		// Use the value of CommonPoolParallelism if nothing is in the properties file.
+		int degP = Integer.parseInt(props.getProperty(propsPrefix + ".parallelism", String.valueOf(ForkJoinPool.getCommonPoolParallelism())));
 		this.setParallelism(degP);
 		String extraIncludeStr = props.getProperty(propsPrefix+".extraIncludes");
 		if (extraIncludeStr != null && !extraIncludeStr.trim().isEmpty())
@@ -143,7 +144,7 @@ public class ProtegeExporter
 						if (processPathway)
 						{
 							logger.info("Running protegeexport script for Pathway: {}", pathway.toString());
-							// include a normalized display_name in the output to make it easiser to identify the contents of an archive.
+							// include a normalized display_name in the output to make it easier to identify the contents of an archive.
 							String normalizedDisplayName = pathway.getDisplayName().toLowerCase().replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "");
 							String fileName = "Reactome_pathway_" + pathway.getDBID() + "_" + normalizedDisplayName;
 							ProcessBuilder processBuilder = createProcessBuilder(pathway.getDBID().toString(), fileName);
@@ -171,10 +172,12 @@ public class ProtegeExporter
 							}
 							catch (IOException e)
 							{
+								logger.error("{}", e.getMessage());
 								e.printStackTrace();
 							}
 							catch (InterruptedException e)
 							{
+								logger.error("{}", e.getMessage());
 								e.printStackTrace();
 								// If something interrupts, force the process to terminate.
 								process.destroyForcibly();
@@ -226,6 +229,8 @@ public class ProtegeExporter
 			}
 			catch (Exception e)
 			{
+				processPathway = false;
+				logger.error("Error occurred while trying to determine species of pathway ({}). Error is: {}. This pathway will not be processed!", pathway.toString(), e.getMessage());
 				e.printStackTrace();
 			}
 		}
@@ -288,7 +293,7 @@ public class ProtegeExporter
 		}
 		catch (IOException e)
 		{
-			logger.error("An error occurred while trying to move {} to the download directory ({}). You may need to move it manually.", PROTEGE_ARCHIVE_PATH, this.downloadDirectory);
+			logger.error("An error occurred while trying to move {} to the download directory ({}). You may need to move it manually. Error is: {}", PROTEGE_ARCHIVE_PATH, this.downloadDirectory, e.getMessage());
 			e.printStackTrace();
 		}
 	}

@@ -189,9 +189,9 @@ This step copies the `models2pathways.tsv` file that is produced during the <a h
 <h4>Protege exporter</h4>
 This step will run the protege export code in `GKB::WebUtils`. The Perl code will create an archive file containing a pins, pont, and pprj file, for a given pathway. This code is designed to only export TOP-LEVEL pathways, as defined as pathways associated with the FrontPageItem in the database.
 
-This step takes the following configuration options:
+This step takes the following configuration options, specified in `config.properties`:
  - protegeexporter.pathToWrapperScript - This is the _absolute_ path to the directory containing the Perl wrapper script `run_protege_exporter.pl`. The script should be located in `src/main/resources` for _this_ project.
- - protegeexporter.parallelism - The number of concurrent protege export jobs to run. Try to keep this smaller than the number of available cores (MySQL and your operating system should get 1 core each, at least).
+ - protegeexporter.parallelism - The number of concurrent protege export jobs to run. Try to keep this smaller than the number of available cores (MySQL and your operating system should get 1 core each, at least). If you do not specify anything for this value, then parallelism will be the default value used by the `ForkJoinPool` class, which is usually the number of cores minus 1.
  - protegeexporter.extraIncludes - If you need to specify additional include paths for Perl, use this option. this should be a comma-separate string formatted as: `-I/alt/path/to/perl/libs,-I/other/alt/path/to/libs`.
  - protegeexporter.filterIds - If you want to filter to only export specific pathways, specify them here as a comma-separated list of DB_IDs.
  - protegeexporter.filterSpecies - If you want to filter to only export pathways of a specific species, you can specify a comma-separated list here. Normally, you would just set this to `Homo sapiens`.
