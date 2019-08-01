@@ -333,14 +333,12 @@ public class ProtegeExporter
 			tarOutStream.closeArchiveEntry();
 			tarOutStream.flush();
 		}
-		catch (FileNotFoundException e)
-		{
-			e.printStackTrace();
-		}
 		catch (IOException e)
 		{
+			logger.error("Error while adding to tar: {}", e.getMessage());
 			e.printStackTrace();
 		}
+		
 	}
 	
 	/**
