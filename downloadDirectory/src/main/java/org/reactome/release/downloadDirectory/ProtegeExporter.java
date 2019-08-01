@@ -315,12 +315,19 @@ public class ProtegeExporter
 			
 			final int len = 1024;
 			byte[] buff = new byte[len];
-			long bytesRead = is.read(buff, 0, len);
-			while (bytesRead > 0)
+			boolean done = false;
+			while (!done)
 			{
+				long bytesRead = is.read(buff, 0, len);
+				if (bytesRead < 0)
+				{
+					done = true;
+				}
+				else
+				{
 				// If bytesRead + len > entrySize then an exception will be thrown, so always take min of len,bytesRead. 
-				tarOutStream.write(buff, 0, (int) Math.min(len, bytesRead));
-				bytesRead = is.read(buff, 0, len);
+					tarOutStream.write(buff, 0, (int) Math.min(len, bytesRead));
+				}
 			}
 			
 			tarOutStream.closeArchiveEntry();
