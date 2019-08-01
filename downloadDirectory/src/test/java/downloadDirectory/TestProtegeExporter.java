@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -67,7 +68,7 @@ public class TestProtegeExporter
 		testExporter.setPathToWrapperScript(pathToJavaRoot + "src/main/resources/");
 		testExporter.setExtraIncludes(Arrays.asList("-I/home/ubuntu/perl5/lib/perl5/","-I/home/sshorser/perl5/lib/perl5/"));
 		testExporter.setParallelism(4);
-		HashSet<Long> pathwayIds = new HashSet<>(Arrays.asList(1670466L,8963743L,870392L,1500931L,5205647L));
+		Set<Long> pathwayIds = new HashSet<>(Arrays.asList(1670466L,8963743L,870392L,1500931L,5205647L));
 		testExporter.setPathwayIdsToProcess(pathwayIds);
 		testExporter.setDownloadDirectory(RELEASE_NUM);
 		testExporter.setSpeciesToProcess(new HashSet<>(Arrays.asList("Mycobacterium tuberculosis")));
