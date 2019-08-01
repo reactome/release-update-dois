@@ -50,8 +50,8 @@ public class TestProtegeExporter
 		testExporter.setReleaseDirectory("/home/sshorser/workspaces/reactome/Release");
 		testExporter.setPathToWrapperScript("/home/sshorser/workspaces/reactome/ReleaseNG/data-release-pipeline/downloadDirectory/src/main/resources/");
 		testExporter.setExtraIncludes(Arrays.asList("-I/home/ubuntu/perl5/lib/perl5/","-I/home/sshorser/perl5/lib/perl5/"));
-//		testExporter.setParallelism(4);
-//		testExporter.setPathwayIdsToProcess(new HashSet<>(Arrays.asList(1670466L,8963743L,870392L,1500931L,5205647L)));
+		testExporter.setParallelism(4);
+		testExporter.setPathwayIdsToProcess(new HashSet<>(Arrays.asList(1670466L,8963743L,870392L,1500931L,5205647L)));
 		testExporter.setDownloadDirectory(RELEASE_NUM);
 		testExporter.execute(adaptor);
 	}

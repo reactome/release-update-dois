@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
@@ -60,13 +61,16 @@ public class Main {
 
 		// Determine which steps will be run via stepsToRun.config file
 		String pathToStepConfig = props.getProperty("stepsToRunConfigPath");
-		FileReader fr = new FileReader(pathToStepConfig);
-		BufferedReader br = new BufferedReader(fr);
-		List<String> stepsToRun = br.lines().filter(
-				line -> !line.startsWith("#")
-			).collect(Collectors.toList());
-		br.close();
-
+		Set<String> stepsToRun;
+		
+		try(FileReader fr = new FileReader(pathToStepConfig);
+			BufferedReader br = new BufferedReader(fr);)
+		{
+			stepsToRun = br.lines().filter(
+					line -> !line.startsWith("#")
+				).collect(Collectors.toSet());
+			br.close();
+		}
 		// Temporary system for catching failed steps -- this will need to be cleaned up in future
 		List<String> failedSteps = new ArrayList<>();
 		//Begin download directory steps
@@ -196,8 +200,6 @@ public class Main {
 		{
 			try
 			{
-//				Files.createDirectories(Paths.get(releaseNumber + "/protege_files") );
-//				runProtegeExporter(props, dbAdaptor, releaseDirAbsolute, releaseNumber + "/protege_files");
 				ProtegeExporter protegeExporter = new ProtegeExporter(props, releaseDirAbsolute, releaseNumber);
 				protegeExporter.execute(dbAdaptor);
 			}
@@ -242,34 +244,6 @@ public class Main {
 		}
 		logger.info("Finished DownloadDirectory");
 	}
-//
-//	
-//
-//	/**
-//	 * Executes the protege exporter.
-//	 * @param props
-//	 * @param dbAdaptor
-//	 * @param releaseDir
-//	 * @param downloadDir
-//	 */
-//	private static void runProtegeExporter(Properties props, MySQLAdaptor dbAdaptor, String releaseDir, String downloadDir)
-//	{
-//		ProtegeExporter protegeExporter = new ProtegeExporter();
-//		protegeExporter.setReleaseDirectory(releaseDir);
-//		String propsPrefix = "protegeexporter";
-//		int parallelism = Integer.parseInt(props.getProperty(propsPrefix + ".parallelism"));
-//		protegeExporter.setParallelism(parallelism);
-//		String extraIncludeStr = props.getProperty(propsPrefix+".extraIncludes");
-//		if (extraIncludeStr != null && !extraIncludeStr.trim().isEmpty())
-//		{
-//			List<String> extraIncludes = Arrays.asList(extraIncludeStr.split(","));
-//			protegeExporter.setExtraIncludes(extraIncludes);
-//		}
-//		String pathToWrapperScript = props.getProperty(propsPrefix+".pathToWrapperScript");
-//		protegeExporter.setPathToWrapperScript(pathToWrapperScript);
-//		protegeExporter.setDownloadDirectory(downloadDir);
-//		protegeExporter.execute(dbAdaptor);
-//	}
 }
 
 

@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,7 +31,9 @@ import org.gk.persistence.MySQLAdaptor;
 /**
  * Exports top-level pathways in Protege format, using the Perl code in GKB::WebUtils, and then
  * packages the resulting files into a single tar file.
- * Takes ~1.5 hours on my (Solomon) workstation, with 7 threads running 8 cores.
+ * Takes ~1.5 hours on my (Solomon) workstation, with 7 threads running 8 cores. Of course, it ran the system
+ * at a very high load. 5 threads (concurrent protege exporters) finished in almost the same amount of time
+ * and the system was not too overloaded. Less than that seemed to complete slower.
  * @author sshorser
  *
  */
@@ -112,6 +116,7 @@ public class ProtegeExporter
 				{
 					logger.info("Filtering is in effect. ONLY the following pathways will be exported to protege: {}", this.pathwayIdsToProcess.toString());
 				}
+				LocalDateTime overallStart = LocalDateTime.now();
 				// submit jobs to pool:
 				pool.submit(() ->
 				{
@@ -145,9 +150,11 @@ public class ProtegeExporter
 							Process process = null;
 							try
 							{
+								LocalDateTime exportStart = LocalDateTime.now();
 								process = processBuilder.start();
 								int exitCode = process.waitFor();
-								logger.info("Finished generating protege files for {}, exit code is {}", pathway.toString(), exitCode);
+								LocalDateTime exportEnd = LocalDateTime.now();
+								logger.info("Finished generating protege files for {}; Elapsed time: {}; Exit code is {}", pathway.toString(), Duration.between(exportStart, exportEnd), exitCode);
 								if (exitCode == 0)
 								{
 									Files.createDirectories(Paths.get("/tmp/protege_files"));
@@ -156,7 +163,9 @@ public class ProtegeExporter
 								}
 								else
 								{
-									logger.warn("Non-zero exit code from protegeexporter script: {}. Check logs for more details.", exitCode);
+									// Should a non-zero exit throw an exception and interrupt the whole process? I am leaning to "no" - if a *single* pathway fails to export,
+									// I think I'd want the rest of them to continue, and then we can re-run for just the failed pathway.
+									logger.error("Non-zero exit code from protegeexporter script: {}. Check logs for more details.", exitCode);
 								}
 							}
 							catch (IOException e)
@@ -171,7 +180,9 @@ public class ProtegeExporter
 						}
 					});
 				}).get();
+				LocalDateTime overallEnd = LocalDateTime.now();
 				pool.shutdown();
+				logger.info("Overall elapsed time: {}", Duration.between(overallStart, overallEnd));
 			}
 		}
 		catch (Exception e)
