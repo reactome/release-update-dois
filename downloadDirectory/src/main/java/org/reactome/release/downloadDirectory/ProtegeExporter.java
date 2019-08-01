@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
@@ -137,21 +138,13 @@ public class ProtegeExporter
 							// include a normalized display_name in the output to make it easiser to identify the contents of an archive.
 							String normalizedDisplayName = pathway.getDisplayName().toLowerCase().replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "");
 							String fileName = "Reactome_pathway_" + pathway.getDBID() + "_" + normalizedDisplayName;
-							List<String> cmdArgs = new ArrayList<>();
-							cmdArgs.add("perl");
-							cmdArgs.addAll(this.extraIncludes);
-							cmdArgs.addAll(Arrays.asList("-I"+this.releaseDirectory+"/modules", "run_protege_exporter.pl", pathway.getDBID().toString(), fileName));
-							// Build the process.
-							ProcessBuilder processBuilder = new ProcessBuilder();
-							processBuilder.command(cmdArgs)
-										.directory(Paths.get(this.pathToWrapperScript).toFile())
-										.inheritIO();
-							logger.info("Command is: `{}`", String.join(" ", processBuilder.command()));
+							ProcessBuilder processBuilder = createProcessBuilder(pathway.getDBID().toString(), fileName);
 							Process process = null;
 							try
 							{
 								LocalDateTime exportStart = LocalDateTime.now();
 								process = processBuilder.start();
+								// Now, wait for protege export to complete.
 								int exitCode = process.waitFor();
 								LocalDateTime exportEnd = LocalDateTime.now();
 								logger.info("Finished generating protege files for {}; Elapsed time: {}; Exit code is {}", pathway.toString(), Duration.between(exportStart, exportEnd), exitCode);
@@ -175,6 +168,7 @@ public class ProtegeExporter
 							catch (InterruptedException e)
 							{
 								e.printStackTrace();
+								// If something interrupts, force the process to terminate.
 								process.destroyForcibly();
 							}
 						}
@@ -189,6 +183,27 @@ public class ProtegeExporter
 		{
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Create a process builder to run the protege export process.
+	 * @param pathwayId - the DB_ID of the Pathway to export.
+	 * @param fileName - This string will be used to name the output archive file that is created by protege export.
+	 * @return A populated ProcessBuilder that is ready to use.
+	 */
+	private ProcessBuilder createProcessBuilder(String pathwayId, String fileName)
+	{
+		List<String> cmdArgs = new ArrayList<>();
+		cmdArgs.add("perl");
+		cmdArgs.addAll(this.extraIncludes);
+		cmdArgs.addAll(Arrays.asList("-I"+this.releaseDirectory+"/modules", "run_protege_exporter.pl", pathwayId, fileName));
+		// Build the process.
+		ProcessBuilder processBuilder = new ProcessBuilder();
+		processBuilder.command(cmdArgs)
+					.directory(Paths.get(this.pathToWrapperScript).toFile())
+					.inheritIO();
+		logger.info("Command is: `{}`", String.join(" ", processBuilder.command()));
+		return processBuilder;
 	}
 
 	/**
@@ -209,35 +224,7 @@ public class ProtegeExporter
 				if (protegeFile.toFile().isFile() && protegeFile.getFileName().toString().matches("Reactome_pathway_.*\\.tar\\.gz"))
 				{
 					logger.info("Adding {} to protege_files.tar", protegeFile.toString());
-					try(InputStream is = new FileInputStream(protegeFile.toFile());)
-					{
-						// Create an entry with the name being the name of the file.
-						TarArchiveEntry entry = new TarArchiveEntry(protegeFile.getFileName().toString());
-						entry.setSize(protegeFile.toFile().length());
-						tarOutStream.putArchiveEntry(entry);
-						
-						final int len = 1024;
-						byte[] buff = new byte[len];
-						long bytesRead = is.read(buff, 0, len);
-						while (bytesRead > 0)
-						{
-							// If bytesRead + len > entrySize then an exception will be thrown, so always take min of len,bytesRead. 
-							tarOutStream.write(buff, 0, (int) Math.min(len, bytesRead));
-							bytesRead = is.read(buff, 0, len);
-						}
-						
-						tarOutStream.closeArchiveEntry();
-						tarOutStream.flush();
-					}
-					catch (FileNotFoundException e)
-					{
-						e.printStackTrace();
-					}
-					catch (IOException e)
-					{
-						e.printStackTrace();
-					}
-					
+					addFileToTar(tarOutStream, protegeFile);
 				}
 			});
 			tarOutStream.finish();
@@ -255,6 +242,44 @@ public class ProtegeExporter
 		catch (IOException e)
 		{
 			logger.error("An error occurred while trying to move {} to the download directory ({}). You may need to move it manually.", PROTEGE_ARCHIVE_PATH, this.downloadDirectory);
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Adds a file to a tar file.
+	 * @param tarOutStream - the output stream for the tar file that you want to add to.
+	 * @param protegeFile - the Path to the input file.
+	 * @throws IOException
+	 */
+	private static void addFileToTar(TarArchiveOutputStream tarOutStream, Path protegeFile)
+	{
+		try(InputStream is = new FileInputStream(protegeFile.toFile());)
+		{
+			// Create an entry with the name being the name of the file.
+			TarArchiveEntry entry = new TarArchiveEntry(protegeFile.getFileName().toString());
+			entry.setSize(protegeFile.toFile().length());
+			tarOutStream.putArchiveEntry(entry);
+			
+			final int len = 1024;
+			byte[] buff = new byte[len];
+			long bytesRead = is.read(buff, 0, len);
+			while (bytesRead > 0)
+			{
+				// If bytesRead + len > entrySize then an exception will be thrown, so always take min of len,bytesRead. 
+				tarOutStream.write(buff, 0, (int) Math.min(len, bytesRead));
+				bytesRead = is.read(buff, 0, len);
+			}
+			
+			tarOutStream.closeArchiveEntry();
+			tarOutStream.flush();
+		}
+		catch (FileNotFoundException e)
+		{
+			e.printStackTrace();
+		}
+		catch (IOException e)
+		{
 			e.printStackTrace();
 		}
 	}
