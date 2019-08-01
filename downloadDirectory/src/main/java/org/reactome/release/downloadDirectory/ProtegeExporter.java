@@ -40,6 +40,8 @@ import org.gk.persistence.MySQLAdaptor;
  */
 public class ProtegeExporter
 {
+	// The code in GKB::WebUtils always writes protege files to /tmp/ and it doesn't look like that is configurable,
+	// so we'll work in /tmp as well.
 	private static final String PROTEGE_ARCHIVE_PATH = "/tmp/protege_files.tar";
 	private static final String PROTEGE_FILES_DIR = PROTEGE_ARCHIVE_PATH.replace(".tar", "/");
 	private static final Logger logger = LogManager.getLogger();
@@ -49,6 +51,7 @@ public class ProtegeExporter
 	private String pathToWrapperScript = "";
 	private String downloadDirectory;
 	private Set<Long> pathwayIdsToProcess = new HashSet<>();
+	private Set<String> speciesToProcess = new HashSet<>();
 	
 	public ProtegeExporter()
 	{
@@ -76,6 +79,12 @@ public class ProtegeExporter
 		{
 			List<String> ids = Arrays.asList(filterIds.split(","));
 			this.setPathwayIdsToProcess( ids.stream().map(Long::valueOf).collect(Collectors.toSet()) );
+		}
+		
+		String filterSpecies = props.getProperty(propsPrefix+".filterSpecies");
+		if (filterSpecies != null && !filterSpecies.trim().isEmpty())
+		{
+			this.setSpeciesToProcess( new HashSet<>(Arrays.asList(filterSpecies.split(","))) );
 		}
 	}
 	
@@ -112,10 +121,15 @@ public class ProtegeExporter
 					pool.shutdownNow();
 				}));
 				// Filtering is in effect IF the set has something in it.
-				final boolean filterInEffect = !this.pathwayIdsToProcess.isEmpty();
-				if (filterInEffect)
+				final boolean idFilterInEffect = !this.pathwayIdsToProcess.isEmpty();
+				if (idFilterInEffect)
 				{
-					logger.info("Filtering is in effect. ONLY the following pathways will be exported to protege: {}", this.pathwayIdsToProcess.toString());
+					logger.info("Filtering by ID is in effect. ONLY the following pathways will be exported to protege: {}", this.pathwayIdsToProcess.toString());
+				}
+				final boolean speciesFilterInEffect = !this.speciesToProcess.isEmpty();
+				if (speciesFilterInEffect)
+				{
+					logger.info("Filtering by species is in effect. ONLY pathways with the following species will be exported to protege: {}", this.speciesToProcess.toString());
 				}
 				LocalDateTime overallStart = LocalDateTime.now();
 				// submit jobs to pool:
@@ -124,14 +138,8 @@ public class ProtegeExporter
 					// parallelStream should use the degree of parallelism set on the "pool" object.
 					pathways.parallelStream().forEach(pathway -> 
 					{
-						boolean processPathway = true;
-						if (filterInEffect)
-						{
-							if (!this.pathwayIdsToProcess.contains(pathway.getDBID()))
-							{
-								processPathway = false;
-							}
-						}
+						boolean processPathway = shouldPathwayBeProcessed(idFilterInEffect, speciesFilterInEffect, pathway);
+						
 						if (processPathway)
 						{
 							logger.info("Running protegeexport script for Pathway: {}", pathway.toString());
@@ -183,6 +191,45 @@ public class ProtegeExporter
 		{
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Determine if a pathway should be processed. A pathway should be processed IF: <ul>
+	 * <li>An ID filter has been specified and the pathway's ID is in that set.</li>
+	 * <li>A species filter has been specified and the pathway's species is in that set.</li></ul>
+	 * If an ID filter has NOT been specified, then no filtering by ID will occurr. If a species filter has NOT be specified, then no filtering by species will occur.
+	 * If NO filters are specified, then this function will return true for any pathway. 
+	 * @param idFilterInEffect
+	 * @param speciesFilterInEffect
+	 * @param pathway
+	 * @return
+	 */
+	private boolean shouldPathwayBeProcessed(final boolean idFilterInEffect, final boolean speciesFilterInEffect, GKInstance pathway)
+	{
+		boolean processPathway = true;
+		if (idFilterInEffect)
+		{
+			if (!this.pathwayIdsToProcess.contains(pathway.getDBID()))
+			{
+				processPathway = false;
+			}
+		}
+		if (speciesFilterInEffect)
+		{
+			try
+			{
+				String pathwaySpecies = ((GKInstance) pathway.getAttributeValue("species")).getDisplayName();
+				if (!this.speciesToProcess.contains(pathwaySpecies))
+				{
+					processPathway = false;
+				}
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return processPathway;
 	}
 
 	/**
@@ -343,5 +390,15 @@ public class ProtegeExporter
 	public void setPathwayIdsToProcess(Set<Long> pathwayIds)
 	{
 		this.pathwayIdsToProcess = pathwayIds;
+	}
+
+	/**
+	 * If you want to process pathways for specific species, specify them here.
+	 * If none are specified, pathways under ALL species are considered.
+	 * @param speciesToProcess A Set of species names (use the _displayName values from the database to ensure that they can be matched correctly).
+	 */
+	public void setSpeciesToProcess(Set<String> speciesToProcess)
+	{
+		this.speciesToProcess = speciesToProcess;
 	}	
 }

@@ -1,5 +1,7 @@
 package downloadDirectory;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -23,6 +25,7 @@ public class TestProtegeExporter
 	private static String name;
 	private static String user;
 	private static String password;
+	static final String PATH_TO_JAVA_ROOT = "/home/sshorser/workspaces/reactome/ReleaseNG/data-release-pipeline/downloadDirectory/";
 	
 	@Before
 	public void setup() throws FileNotFoundException, IOException
@@ -42,18 +45,23 @@ public class TestProtegeExporter
 	}
 	
 	@Test
-	public void testProtegeExporterIT() throws SQLException
+	public void testProtegeExporterIT() throws SQLException, IOException
 	{
 		MySQLAdaptor adaptor = new MySQLAdaptor(TestProtegeExporter.host, TestProtegeExporter.name, TestProtegeExporter.user, TestProtegeExporter.password);
 		
 		ProtegeExporter testExporter = new ProtegeExporter();
+		
 		testExporter.setReleaseDirectory("/home/sshorser/workspaces/reactome/Release");
-		testExporter.setPathToWrapperScript("/home/sshorser/workspaces/reactome/ReleaseNG/data-release-pipeline/downloadDirectory/src/main/resources/");
+		testExporter.setPathToWrapperScript(PATH_TO_JAVA_ROOT + "src/main/resources/");
 		testExporter.setExtraIncludes(Arrays.asList("-I/home/ubuntu/perl5/lib/perl5/","-I/home/sshorser/perl5/lib/perl5/"));
 		testExporter.setParallelism(4);
 		testExporter.setPathwayIdsToProcess(new HashSet<>(Arrays.asList(1670466L,8963743L,870392L,1500931L,5205647L)));
 		testExporter.setDownloadDirectory(RELEASE_NUM);
+		testExporter.setSpeciesToProcess(new HashSet<>(Arrays.asList("Mycobacterium tuberculosis")));
 		testExporter.execute(adaptor);
+		final String pathToFinalTar = PATH_TO_JAVA_ROOT + RELEASE_NUM + "/protege_files.tar";
+		assertTrue(Files.exists(Paths.get(pathToFinalTar)));
+		assertTrue(Files.size(Paths.get(pathToFinalTar)) > 0);
 	}
 	
 }
