@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
@@ -60,13 +61,16 @@ public class Main {
 
 		// Determine which steps will be run via stepsToRun.config file
 		String pathToStepConfig = props.getProperty("stepsToRunConfigPath");
-		FileReader fr = new FileReader(pathToStepConfig);
-		BufferedReader br = new BufferedReader(fr);
-		List<String> stepsToRun = br.lines().filter(
-				line -> !line.startsWith("#")
-			).collect(Collectors.toList());
-		br.close();
-
+		Set<String> stepsToRun;
+		
+		try(FileReader fr = new FileReader(pathToStepConfig);
+			BufferedReader br = new BufferedReader(fr);)
+		{
+			stepsToRun = br.lines().filter(
+					line -> !line.startsWith("#")
+				).collect(Collectors.toSet());
+			br.close();
+		}
 		// Temporary system for catching failed steps -- this will need to be cleaned up in future
 		List<String> failedSteps = new ArrayList<>();
 		//Begin download directory steps
@@ -191,6 +195,20 @@ public class Main {
 				failedSteps.add("models2pathways.tsv");
 				e.printStackTrace();
 			}
+		}
+		if (stepsToRun.contains("protegeexporter"))
+		{
+			try
+			{
+				ProtegeExporter protegeExporter = new ProtegeExporter(props, releaseDirAbsolute, releaseNumber);
+				protegeExporter.execute(dbAdaptor);
+			}
+			catch (Exception e)
+			{
+				failedSteps.add("protegeexporter");
+				e.printStackTrace();
+			}
+			
 		}
 		if (stepsToRun.contains("CreateReactome2BioSystems"))
 		{
