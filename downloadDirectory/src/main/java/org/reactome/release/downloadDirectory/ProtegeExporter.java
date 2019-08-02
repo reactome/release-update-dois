@@ -48,7 +48,7 @@ public class ProtegeExporter
 	private String releaseDirectory;
 	private int parallelism = ForkJoinPool.getCommonPoolParallelism();
 	private List<String> extraIncludes = new ArrayList<>();
-	private String pathToWrapperScript = "";
+	private String pathToWrapperScript;
 	private String downloadDirectory;
 	private Set<Long> pathwayIdsToProcess = new HashSet<>();
 	private Set<String> speciesToProcess = new HashSet<>();
