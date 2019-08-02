@@ -1,7 +1,6 @@
 package org.reactome.release.downloadDirectory;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,6 +57,13 @@ public class ProtegeExporter
 		// Default no-arg consturctor.
 	}
 	
+	/**
+	 * Creates a ProtegeExporter. Various values needed for this exporter will be configured by passing in a Properties instance.
+	 * @param props - A Properties object that contains "protegeexporter.*" properties: "parallelism", "extraIncludes", "pathToWrapperScript", "filterIds", "filterSpecies".
+	 * With the exception of "pathToWrapperScript", these values are optional. See their individual setter methods for details.
+	 * @param releaseDir - The Release directory which contains the "modules" directory which contains the Reactome GKB code.
+	 * @param downloadDir - The path to where items for download should be placed. The final "protege_files.tar" will be placed in downloadDir.
+	 */
 	public ProtegeExporter(Properties props, String releaseDir, String downloadDir)
 	{
 		this.setReleaseDirectory(releaseDir);
