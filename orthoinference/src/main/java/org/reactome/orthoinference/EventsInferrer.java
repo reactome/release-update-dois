@@ -67,8 +67,9 @@ public class EventsInferrer
 		int port = Integer.valueOf(props.getProperty("port"));
 		
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
-		setDbAdaptors();
 		dbAdaptorPrev = new MySQLAdaptor(host, prevDatabase, username, password, port);
+		setDbAdaptors(dbAdaptor);
+
 
 		releaseVersion = props.getProperty("releaseNumber");
 		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
@@ -241,7 +242,7 @@ public class EventsInferrer
 	}
 	
 	// Statically store the adaptor variable in each class
-	private static void setDbAdaptors()
+	private static void setDbAdaptors(MySQLAdaptor dbAdaptor)
 	{
 		ReactionInferrer.setAdaptor(dbAdaptor);
 		SkipInstanceChecker.setAdaptor(dbAdaptor);
@@ -318,7 +319,7 @@ public class EventsInferrer
 		PathwaysInferrer.setEvidenceTypeInstance(evidenceTypeInst);
 	}
 	
-	private static void setInstanceEdits(int personId) throws Exception 
+	private static void setInstanceEdits(int personId) throws Exception
 	{
 		instanceEditInst = InstanceEditUtils.createInstanceEdit(dbAdaptor, personId, "org.reactome.orthoinference");
 		logger.info("Instance edit: " + instanceEditInst);

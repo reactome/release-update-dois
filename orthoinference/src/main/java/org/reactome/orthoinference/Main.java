@@ -1,6 +1,9 @@
 package org.reactome.orthoinference;
 
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +21,7 @@ public class Main {
 		{
 			pathToConfig = args[0];
 			speciesCode = args[1];
-		} else if (args.length == 1 && args[0].length() == 4){
+		} else if (args.length == 1 && args[0].length() == 4) {
 			speciesCode = args[0];
 		} else {
 			logger.fatal("Please include a 4-letter species code as the first argument (eg: mmus)");
@@ -30,9 +33,10 @@ public class Main {
         EventsInferrer.inferEvents(props, speciesCode);
 
         // Link report file to report_ortho_inference.txt in website_files_update directory
-        String pathtoWebsiteFilesUpdateWithReportFile = props.getProperty("pathToWebsiteFilesUpdateFolder") + "report_ortho_inference.txt";
-        String reportFilename = "report_ortho_inference_test_reactome_" + props.getProperty("releaseNumber") + ".txt";
-        Runtime.getRuntime().exec("ln " + reportFilename + " " + pathtoWebsiteFilesUpdateWithReportFile);
+        Path pathtoWebsiteFilesUpdateWithReportFile = Paths.get(props.getProperty("pathToWebsiteFilesUpdateFolder") + "report_ortho_inference.txt");
+        Path reportFilename = Paths.get("report_ortho_inference_test_reactome_" + props.getProperty("releaseNumber") + ".txt");
+        Files.deleteIfExists(pathtoWebsiteFilesUpdateWithReportFile);
+        Files.createLink(pathtoWebsiteFilesUpdateWithReportFile, reportFilename);
 	}
 
 }

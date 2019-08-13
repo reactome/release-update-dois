@@ -125,8 +125,7 @@ public class EWASInferrer {
 						if (phosFlag && firstPsiModInst.getAttributeValue(name).toString().contains("phospho")) {
 							String phosphoName = "phospho-" + infEWASInst.getAttributeValue(name);
 							List<String> ewasNames = (ArrayList<String>) infEWASInst.getAttributeValuesList(name);
-							String originalName = ewasNames.get(0);
-							ewasNames.remove(0);
+							String originalName = ewasNames.remove(0);
 							infEWASInst.setAttributeValue(name, phosphoName);
 							// In the Perl version, this code block modifies the 'name' attribute to include 'phosopho-', but in the process it drops the other names contained. I believe this is unintentional.
 							// This would mean attributes without the 'phospho- ' addition would retain their array of names, while attributes containing 'phospho-' would only contain a single name attribute.

@@ -78,38 +78,7 @@ public class PathwaysInferrer {
 				logger.info("Generating inferred Pathway: " + sourcePathwayReferralInst);
 				if (inferredEventIdenticals.get(sourcePathwayReferralInst) == null)
 				{
-					GKInstance infPathwayInst = InstanceUtilities.createNewInferredGKInstance(sourcePathwayReferralInst);
-					infPathwayInst.addAttributeValue(name, sourcePathwayReferralInst.getAttributeValuesList(name));
-					infPathwayInst.addAttributeValue(summation, summationInst);
-					if (infPathwayInst.getSchemClass().isValidAttribute(releaseDate))
-					{
-						infPathwayInst.addAttributeValue(releaseDate, dateOfRelease);
-					}
-					infPathwayInst.addAttributeValue(inferredFrom, sourcePathwayReferralInst);
-					infPathwayInst.addAttributeValue(evidenceType, evidenceTypeInst);
-					for (GKInstance goBioProcessInst : (Collection<GKInstance>) sourcePathwayReferralInst.getAttributeValuesList(goBiologicalProcess))
-					{
-						infPathwayInst.addAttributeValue(goBiologicalProcess, goBioProcessInst);
-					}
-					infPathwayInst.addAttributeValue(orthologousEvent, sourcePathwayReferralInst);
-
-					if (sourcePathwayReferralInst.getSchemClass().isa(ReactionlikeEvent))
-					{
-						logger.warn(sourcePathwayReferralInst + " is a ReactionLikeEvent, which is unexpected -- refer to infer_events.pl");
-					}
-					infPathwayInst.setDisplayName(sourcePathwayReferralInst.getDisplayName());
-					inferredEventIdenticals.put(sourcePathwayReferralInst, infPathwayInst);
-					GKInstance orthoStableIdentifierInst = EventsInferrer.getStableIdentifierGenerator().generateOrthologousStableId(infPathwayInst, sourcePathwayReferralInst);
-					infPathwayInst.addAttributeValue(stableIdentifier, orthoStableIdentifierInst);
-					dba.storeInstance(infPathwayInst);
-
-					// This was replaced with addAttributeValueIfNecessary due to a bug where a Pathway instance's 'OrthologousEvent' attribute was being replaced,
-					// instead of being added to the existing array when  the script was executed from a jar (rather than from Eclipse) (Justin Cook 2018)
-					sourcePathwayReferralInst = InstanceUtilities.addAttributeValueIfNecessary(sourcePathwayReferralInst, infPathwayInst, orthologousEvent);
-					dba.updateInstanceAttribute(sourcePathwayReferralInst, orthologousEvent);
-
-					//TODO: At this point, sourcePathwayReferralInst is always a Pathway. Perhaps move to its own data structure? Holdout from Perl...
-					updatedInferrableHumanEvents.add(sourcePathwayReferralInst);
+					inferPathway(sourcePathwayReferralInst);
 				} else {
 					logger.info("Inferred Pathway instance already exists");
 				}
@@ -120,6 +89,41 @@ public class PathwaysInferrer {
 		}
 	}
 
+	private static void inferPathway(GKInstance sourcePathwayReferralInst) throws Exception {
+		GKInstance infPathwayInst = InstanceUtilities.createNewInferredGKInstance(sourcePathwayReferralInst);
+		infPathwayInst.addAttributeValue(name, sourcePathwayReferralInst.getAttributeValuesList(name));
+		infPathwayInst.addAttributeValue(summation, summationInst);
+		if (infPathwayInst.getSchemClass().isValidAttribute(releaseDate))
+		{
+			infPathwayInst.addAttributeValue(releaseDate, dateOfRelease);
+		}
+		infPathwayInst.addAttributeValue(inferredFrom, sourcePathwayReferralInst);
+		infPathwayInst.addAttributeValue(evidenceType, evidenceTypeInst);
+		for (GKInstance goBioProcessInst : (Collection<GKInstance>) sourcePathwayReferralInst.getAttributeValuesList(goBiologicalProcess))
+		{
+			infPathwayInst.addAttributeValue(goBiologicalProcess, goBioProcessInst);
+		}
+		infPathwayInst.addAttributeValue(orthologousEvent, sourcePathwayReferralInst);
+
+		if (sourcePathwayReferralInst.getSchemClass().isa(ReactionlikeEvent))
+		{
+			logger.warn(sourcePathwayReferralInst + " is a ReactionLikeEvent, which is unexpected -- refer to infer_events.pl");
+		}
+		infPathwayInst.setDisplayName(sourcePathwayReferralInst.getDisplayName());
+		inferredEventIdenticals.put(sourcePathwayReferralInst, infPathwayInst);
+		GKInstance orthoStableIdentifierInst = EventsInferrer.getStableIdentifierGenerator().generateOrthologousStableId(infPathwayInst, sourcePathwayReferralInst);
+		infPathwayInst.addAttributeValue(stableIdentifier, orthoStableIdentifierInst);
+		dba.storeInstance(infPathwayInst);
+
+		// This was replaced with addAttributeValueIfNecessary due to a bug where a Pathway instance's 'OrthologousEvent' attribute was being replaced,
+		// instead of being added to the existing array when  the script was executed from a jar (rather than from Eclipse) (Justin Cook 2018)
+		sourcePathwayReferralInst = InstanceUtilities.addAttributeValueIfNecessary(sourcePathwayReferralInst, infPathwayInst, orthologousEvent);
+		dba.updateInstanceAttribute(sourcePathwayReferralInst, orthologousEvent);
+
+		//TODO: At this point, sourcePathwayReferralInst is always a Pathway. Perhaps move to its own data structure? Holdout from Perl...
+		updatedInferrableHumanEvents.add(sourcePathwayReferralInst);
+	}
+
 	// This populates the hasEvent slot of all inferred Pathways that were just generated with corresponding inferred reactions
 	private static void addInferredEventsToInferredPathways() throws Exception {
 		Set<Long> seenInferredPathway = new HashSet<>();
@@ -127,13 +131,7 @@ public class PathwaysInferrer {
 		{
 			if (humanPathwayInst.getSchemClass().isValidAttribute(hasEvent)) {
 				if (!seenInferredPathway.contains(humanPathwayInst.getDBID())) {
-					// Collect inferred Events associated with source Event
-					List<GKInstance> inferredEventInstances = new ArrayList<>();
-					for (GKInstance eventInst : (Collection<GKInstance>) humanPathwayInst.getAttributeValuesList(hasEvent)) {
-						if (inferredEventIdenticals.get(eventInst) != null) {
-							inferredEventInstances.add(inferredEventIdenticals.get(eventInst));
-						}
-					}
+					List<GKInstance> inferredEventInstances = getInferredEventInstances(humanPathwayInst);
 					if (inferredEventIdenticals.get(humanPathwayInst).getSchemClass().isValidAttribute(hasEvent)) {
 						// Add inferred Events to inferred Pathway
 						logger.info("Adding " + inferredEventInstances.size() + " inferred Event(s) to inferred Pathway: " + inferredEventIdenticals.get(humanPathwayInst));
@@ -154,6 +152,18 @@ public class PathwaysInferrer {
 			}
 		}
 	}
+
+	// Collect inferred Events associated with source Event
+	private static List<GKInstance> getInferredEventInstances(GKInstance humanPathwayInst) throws Exception {
+		List<GKInstance> inferredEventInstances = new ArrayList<>();
+		for (GKInstance eventInst : (Collection<GKInstance>) humanPathwayInst.getAttributeValuesList(hasEvent)) {
+			if (inferredEventIdenticals.get(eventInst) != null) {
+				inferredEventInstances.add(inferredEventIdenticals.get(eventInst));
+			}
+		}
+		return inferredEventInstances;
+	}
+
 
 	@SuppressWarnings("unchecked")
 	private static void inferPrecedingEvents() throws Exception

@@ -182,27 +182,25 @@ public class ReactionInferrer {
 				{
 					logger.info("Catalyst PE instance: " + catalystPEInst);
 					GKInstance infCatalystPEInst = OrthologousEntityGenerator.createOrthoEntity(catalystPEInst, false);
-					if (infCatalystPEInst != null) 
+					if (infCatalystPEInst != null)
 					{
 						infCatalystInst.addAttributeValue(physicalEntity, infCatalystPEInst);
 					} else {
 						return false;
 					}
 				}
-				
+
 				List<GKInstance> activeUnits = new ArrayList<>();
 				Collection<GKInstance> activeUnitInstances = (Collection<GKInstance>) catalystInst.getAttributeValuesList(activeUnit);
 				logger.info("Total active unit instances: " + activeUnitInstances);
 				if (activeUnitInstances.size() > 0) {
 					logger.info("Active unit instance(s): " + activeUnitInstances);
-				}
-				for (GKInstance activeUnitInst : activeUnitInstances)
-				{
-					logger.info("Active Unit instance: " + activeUnitInst);
-					GKInstance infActiveUnitInst = OrthologousEntityGenerator.createOrthoEntity(activeUnitInst, false);
-					if (infActiveUnitInst != null)
-					{
-						activeUnits.add(infActiveUnitInst);
+					for (GKInstance activeUnitInst : activeUnitInstances) {
+						logger.info("Active Unit instance: " + activeUnitInst);
+						GKInstance infActiveUnitInst = OrthologousEntityGenerator.createOrthoEntity(activeUnitInst, false);
+						if (infActiveUnitInst != null) {
+							activeUnits.add(infActiveUnitInst);
+						}
 					}
 				}
 				infCatalystInst.addAttributeValue(activeUnit, activeUnits);
@@ -227,46 +225,40 @@ public class ReactionInferrer {
 		logger.info("Total RegulatedBy instances: " + regulationInstances.size());
 		if (regulationInstances.size() > 0) {
 			logger.info("Regulation instances: " + regulationInstances);
-		}
-		for (GKInstance regulationInst : regulationInstances)
-		{
-			logger.info("Attempting Regulation inference: " + regulationInst);
-			GKInstance regulatorInst = (GKInstance) regulationInst.getAttributeValue(regulator);
-			logger.info("Regulator: " + regulatorInst);
-			GKInstance infRegulatorInst = null;
-			if (regulatorInst.getSchemClass().isa(PhysicalEntity))
-			{
-				infRegulatorInst = OrthologousEntityGenerator.createOrthoEntity(regulatorInst, false);
-			} else if (regulatorInst.getSchemClass().isa(CatalystActivity))
-			{
-				// This has never happened since running the new orthoinference (JCook 2019)
-				logger.warn(regulatorInst + " is a CatalystActivity, which is unexpected -- refer to infer_events.pl");
-				System.exit(0);
-			} else if (regulatorInst.getSchemClass().isa(Event))
-			{
-				// This has never happened since running the new orthoinference (JCook 2019)
-				logger.warn(regulatorInst + " is an Event, which is unexpected -- refer to infer_events.pl");
-				System.exit(0);
-			}
-			if (infRegulatorInst == null) 
-			{
-				if (regulationInst.getSchemClass().isa(Requirement))
-				{
-					logger.info("Regulation is a 'Requirement' and regulation inference was unsuccessful -- terminating inference for " + reactionInst);
-					inferredRegulations.clear();
-					GKInstance nullInst = null;
-					inferredRegulations.add(nullInst);
-					return inferredRegulations;
-				} else {
-					continue;
+			for (GKInstance regulationInst : regulationInstances) {
+				logger.info("Attempting Regulation inference: " + regulationInst);
+				GKInstance regulatorInst = (GKInstance) regulationInst.getAttributeValue(regulator);
+				logger.info("Regulator: " + regulatorInst);
+				GKInstance infRegulatorInst = null;
+				if (regulatorInst.getSchemClass().isa(PhysicalEntity)) {
+					infRegulatorInst = OrthologousEntityGenerator.createOrthoEntity(regulatorInst, false);
+				} else if (regulatorInst.getSchemClass().isa(CatalystActivity)) {
+					// This has never happened since running the new orthoinference (JCook 2019)
+					logger.warn(regulatorInst + " is a CatalystActivity, which is unexpected -- refer to infer_events.pl");
+					System.exit(0);
+				} else if (regulatorInst.getSchemClass().isa(Event)) {
+					// This has never happened since running the new orthoinference (JCook 2019)
+					logger.warn(regulatorInst + " is an Event, which is unexpected -- refer to infer_events.pl");
+					System.exit(0);
 				}
+				if (infRegulatorInst == null) {
+					if (regulationInst.getSchemClass().isa(Requirement)) {
+						logger.info("Regulation is a 'Requirement' and regulation inference was unsuccessful -- terminating inference for " + reactionInst);
+						inferredRegulations.clear();
+						GKInstance nullInst = null;
+						inferredRegulations.add(nullInst);
+						return inferredRegulations;
+					} else {
+						continue;
+					}
+				}
+				GKInstance infRegulationInst = InstanceUtilities.createNewInferredGKInstance(regulationInst);
+				infRegulationInst.setDbAdaptor(dba);
+				infRegulationInst.addAttributeValue(regulator, infRegulatorInst);
+				infRegulationInst.addAttributeValue(_displayName, regulationInst.getAttributeValue(_displayName));
+				inferredRegulations.add(infRegulationInst);
+				logger.info("Completed regulator inference");
 			}
-			GKInstance infRegulationInst = InstanceUtilities.createNewInferredGKInstance(regulationInst);
-			infRegulationInst.setDbAdaptor(dba);
-			infRegulationInst.addAttributeValue(regulator, infRegulatorInst);
-			infRegulationInst.addAttributeValue(_displayName, regulationInst.getAttributeValue(_displayName));
-			inferredRegulations.add(infRegulationInst);
-			logger.info("Completed regulator inference");
 		}
 		return inferredRegulations;
 	}
