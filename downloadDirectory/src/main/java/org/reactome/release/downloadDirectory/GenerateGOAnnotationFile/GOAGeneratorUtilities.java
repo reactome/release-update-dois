@@ -119,7 +119,7 @@ public class GOAGeneratorUtilities {
      * @return -- String, value taken from the secondaryIdentifier, geneName or identifier attributes, whichever is not null.
      * @throws Exception -- MySQLAdaptor exception.
      */
-    private static String getSecondaryIdentifier(GKInstance referenceEntityInst) throws Exception {
+    public static String getSecondaryIdentifier(GKInstance referenceEntityInst) throws Exception {
         if (referenceEntityInst.getAttributeValue(ReactomeJavaConstants.secondaryIdentifier) != null) {
             return referenceEntityInst.getAttributeValue(ReactomeJavaConstants.secondaryIdentifier).toString();
         } else if (referenceEntityInst.getAttributeValue(ReactomeJavaConstants.geneName) != null) {

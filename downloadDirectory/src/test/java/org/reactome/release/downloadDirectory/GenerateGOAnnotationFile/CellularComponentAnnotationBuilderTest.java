@@ -13,7 +13,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({CellularComponentAnnotationBuilder.class, GOAGeneratorUtilities.class})
@@ -40,7 +44,7 @@ public class CellularComponentAnnotationBuilderTest {
     private Set<GKInstance> mockProteinSet = new HashSet<>();
 
     @Test
-    public void cellularComponentAnnotationBuilderTest() throws Exception {
+    public void cellularComponentAnnotationLineBuilderTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
 
         mockProteinSet.add(mockProteinInst);
@@ -54,39 +58,18 @@ public class CellularComponentAnnotationBuilderTest {
         Mockito.when(mockStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.compartment)).thenReturn(mockCompartmentInst);
         Mockito.when(mockCompartmentInst.getAttributeValue(ReactomeJavaConstants.accession)).thenReturn("1234");
+        Mockito.when(GOAGeneratorUtilities.getStableIdentifierIdentifier(mockReactionInst)).thenReturn("1234");
         Mockito.when(GOAGeneratorUtilities.isProteinBindingAnnotation("1234")).thenReturn(false);
-        CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
+        Mockito.when(mockReferenceEntityInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("R1234");
+        Mockito.when(GOAGeneratorUtilities.getSecondaryIdentifier(mockReferenceEntityInst)).thenReturn("R5678");
+        Mockito.when(GOAGeneratorUtilities.generateGOALine(mockReferenceEntityInst, GOAGeneratorConstants.CELLULAR_COMPONENT_LETTER, "GO:1234", "REACTOME:1234", GOAGeneratorConstants.TRACEABLE_AUTHOR_STATEMENT_CODE, "1234")).thenCallRealMethod();
+        List<String> goaLines = CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
+        assertThat(goaLines.size(), is(equalTo(1)));
+        assertThat(goaLines.get(0), is((equalTo("UniProtKB\tR1234\tR5678\t\tGO:1234\tREACTOME:1234\tTAS\t\tC\t\t\tprotein\ttaxon:1234"))));
     }
 
     @Test
-    public void cellularComponentInvalidProteinTest() throws Exception {
-        PowerMockito.mockStatic(GOAGeneratorUtilities.class);
-
-        mockProteinSet.add(mockProteinInst);
-        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
-        Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
-        Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(false);
-        CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
-    }
-
-    @Test
-    public void cellularComponentExcludedMicrobialSpeciesTest() throws Exception {
-        PowerMockito.mockStatic(GOAGeneratorUtilities.class);
-
-        mockProteinSet.add(mockProteinInst);
-        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
-        Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
-        Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
-        Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
-        Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
-        Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("562");
-        Mockito.when(GOAGeneratorUtilities.isExcludedMicrobialSpecies("562")).thenReturn(true);
-        CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
-    }
-
-    @Test
-    public void cellularComponentAlternateGOCompartmentTest() throws Exception {
+    public void cellularComponentAlternateGOCompartmentReturnsZeroLinesTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
 
         mockProteinSet.add(mockProteinInst);
@@ -96,11 +79,13 @@ public class CellularComponentAnnotationBuilderTest {
         Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
         Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
         Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("11676");
-        CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
+        List<String> goaLines = CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
+        assertThat(goaLines.size(), is(equalTo(0)));
+
     }
 
     @Test
-    public void cellularComponentEmptyCompartmentTest() throws Exception {
+    public void cellularComponentEmptyCompartmentReturnsNullTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
 
         mockProteinSet.add(mockProteinInst);
@@ -113,6 +98,8 @@ public class CellularComponentAnnotationBuilderTest {
         Mockito.when(mockReactionInst.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).thenReturn(mockStableIdentifierInst);
         Mockito.when(mockStableIdentifierInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("1234");
         Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.compartment)).thenReturn(null);
-        CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
+        List<String> goaLines = CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
+        assertThat(goaLines.size(), is(equalTo(1)));
+        assertThat(goaLines.get(0), is((nullValue())));
     }
 }

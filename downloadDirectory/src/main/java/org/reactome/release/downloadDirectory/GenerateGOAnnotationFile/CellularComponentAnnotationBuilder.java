@@ -22,7 +22,8 @@ public class CellularComponentAnnotationBuilder {
      * @param reactionInst -- GKInstance from ReactionlikeEvent class.
      * @throws Exception -- MySQLAdaptor exception.
      */
-    public static void processCellularComponents(GKInstance reactionInst) throws Exception {
+    public static List<String> processCellularComponents(GKInstance reactionInst) throws Exception {
+        List<String> goaLines = new ArrayList<>();
         // First retrieve proteins, then build GO annotation
         for (GKInstance proteinInst : GOAGeneratorUtilities.retrieveProteins(reactionInst)) {
             GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
@@ -35,7 +36,7 @@ public class CellularComponentAnnotationBuilder {
                 if (!GOAGeneratorUtilities.isExcludedMicrobialSpecies(taxonIdentifier)) {
                     if (!speciesWithAlternateGOCompartment.contains(taxonIdentifier)) {
                         // For CC, we are looking at ALL proteins in a ReactionlikeEvent
-                        generateGOCellularCompartmentLine(proteinInst, reactionInst, taxonIdentifier);
+                        goaLines.add(generateGOCellularCompartmentLine(proteinInst, reactionInst, taxonIdentifier));
                     } else {
                         logger.info("Species has an alternative GO compartment, skipping GO annotation");
                     }
@@ -46,6 +47,7 @@ public class CellularComponentAnnotationBuilder {
                 logger.info("Invalid protein, skipping GO annotation");
             }
         }
+        return goaLines;
     }
 
     /**
@@ -55,16 +57,18 @@ public class CellularComponentAnnotationBuilder {
      * @param taxonIdentifier -- String, CrossReference ID of protein's species.
      * @throws Exception -- MySQLAdaptor exception.
      */
-    private static void generateGOCellularCompartmentLine(GKInstance proteinInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
+    private static String generateGOCellularCompartmentLine(GKInstance proteinInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
         String reactomeIdentifier = REACTOME_IDENTIFIER_PREFIX  + GOAGeneratorUtilities.getStableIdentifierIdentifier(reactionInst);
         GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
         String goCellularCompartmentAccession = getCellularCompartmentGOAccession(proteinInst);
+        String goaLine = null;
         if (!goCellularCompartmentAccession.isEmpty()) {
-            String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, CELLULAR_COMPONENT_LETTER, goCellularCompartmentAccession, reactomeIdentifier, TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
+            goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, CELLULAR_COMPONENT_LETTER, goCellularCompartmentAccession, reactomeIdentifier, TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
             GOAGeneratorUtilities.assignDateForGOALine(proteinInst, goaLine);
         } else {
             logger.info("Protein has no Cellular Compartment accession, skipping GO annotation");
         }
+        return goaLine;
     }
 
     /**
