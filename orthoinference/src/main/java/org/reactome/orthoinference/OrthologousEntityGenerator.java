@@ -106,7 +106,7 @@ public class OrthologousEntityGenerator {
 		}
 		orthologousEntityIdenticals.put(entityInst, infEntityInst);
 			logger.info("PE inference completed: " + entityInst);
-			return orthologousEntityIdenticals.get(entityInst);
+			return infEntityInst;
 	}
 	
 	// Function that first tries to infer any EWAS' associated with the instance. For those that have more than 1 returned EWAS instance, 
