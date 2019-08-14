@@ -13,8 +13,6 @@ import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.GKSchemaAttribute;
 import org.gk.schema.GKSchemaClass;
-import org.gk.schema.InvalidAttributeException;
-import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
 
 
@@ -25,7 +23,7 @@ public class InstanceUtilities {
 	private static MySQLAdaptor dba; 
 	private static GKInstance speciesInst;
 	private static GKInstance instanceEditInst;
-	private static Map<String,GKInstance> mockedIdenticals = new HashMap<String,GKInstance>();
+	private static Map<String,GKInstance> mockedIdenticals = new HashMap<>();
 	
 	// Creates new instance that will be inferred based on the incoming instances class		
 	public static GKInstance createNewInferredGKInstance(GKInstance instanceToBeInferred) throws Exception
@@ -65,7 +63,7 @@ public class InstanceUtilities {
 	// were pulled from the original instance's Compartment attribute could not be added to the new instance, due to them being
 	// a GO_CellularComponent. This function is the workaround, producing a Compartment instance that contains all the same attribute values.
 	@SuppressWarnings("unchecked")
-	public static GKInstance createCompartmentInstance(GKInstance compartmentInstGk) throws InvalidAttributeException, InvalidAttributeValueException, Exception 
+	public static GKInstance createCompartmentInstance(GKInstance compartmentInstGk) throws Exception
 	{
 		logger.warn(compartmentInstGk + " is a " + compartmentInstGk.getSchemClass() + " instead of a Compartment -- creating new Compartment instance");
 		SchemaClass compartmentClass = dba.getSchema().getClassByName(Compartment);
@@ -88,7 +86,7 @@ public class InstanceUtilities {
 
 	// Equivalent to create_ghost from Perl; Returns a mock homologue that is needed in cases where an inference is rejected, but the
 	// component isn't essential for the inference to be completed.
-	public static GKInstance createMockGKInstance(GKInstance instanceToBeMocked) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static GKInstance createMockGKInstance(GKInstance instanceToBeMocked) throws Exception
 	{
 		SchemaClass genomeEncodedEntityClass = dba.getSchema().getClassByName(GenomeEncodedEntity);
 		GKInstance mockedInst = new GKInstance(genomeEncodedEntityClass);
@@ -122,8 +120,7 @@ public class InstanceUtilities {
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> identicalInstances = dba.fetchIdenticalInstances(inferredInst);
 		if (identicalInstances != null) 
-		{			
-			logger.info("\tIdentical instances found -- returning " + identicalInstances.iterator().next());
+		{
 			if (identicalInstances.size() == 1) 
 			{
 				return identicalInstances.iterator().next();
@@ -137,20 +134,18 @@ public class InstanceUtilities {
 				inferredInst.addAttributeValue(stableIdentifier, orthoStableIdentifierInst);
 			}
 			dba.storeInstance(inferredInst);
-			logger.info("\tNo identical instance found -- inserting " + inferredInst);
 			return inferredInst;
 		}
 	}
 	// Checks if the instanceToCheck already contains the instanceToUse in the multi-value attribute
-	//TODO: Naming of incoming variables isn't entirely correct -- Not always an inferredInstance first and the original instance second
 	@SuppressWarnings("unchecked")
-	public static GKInstance addAttributeValueIfNecessary(GKInstance instanceToBeCheckedForExistingAttribute, GKInstance instanceContainingAttributeToBeChecked, String attribute) throws InvalidAttributeException, Exception
+	public static GKInstance addAttributeValueIfNecessary(GKInstance instanceToBeCheckedForExistingAttribute, GKInstance instanceContainingAttributeToBeChecked, String attribute) throws Exception
 	{
 		// Original version of this function had two checks: For 'multivalue attribute' and for 'instance-type object'. 
 		// Now we know the only attributes being passed through here are inferredTo, inferredFrom, orthologousEvent, and hasEvent, which are all multivalue attribute classes.
 		// We also know that it will always be a GKInstance passed through here (see arguments), so we are able to forego both checks.
 		Collection<GKInstance> attributeInstancesFromInferredInstance = instanceToBeCheckedForExistingAttribute.getAttributeValuesList(attribute);
-		Set<Long> dbIdsFromAttributeInstances = new HashSet<Long>();
+		Set<Long> dbIdsFromAttributeInstances = new HashSet<>();
 		for (GKInstance attributeInstance : attributeInstancesFromInferredInstance) 
 		{
 			dbIdsFromAttributeInstances.add(attributeInstance.getDBID());
@@ -172,7 +167,7 @@ public class InstanceUtilities {
 	// Caching. This function goes through each defining attribute of the incoming instance and produces a string of the attribute values (DB IDs if the attribute is an instance).
 	// This allows for identical instances held in memory to be used before trying to use fetchIdenticalInstances, which is expensive. 
 	@SuppressWarnings("unchecked")
-	public static String getCacheKey(GKSchemaClass instanceClass, GKInstance inferredInst) throws InvalidAttributeException, Exception
+	public static String getCacheKey(GKSchemaClass instanceClass, GKInstance inferredInst) throws Exception
 	{
 		String key = "";
 		for (GKSchemaAttribute definingAttr : (Collection<GKSchemaAttribute>) instanceClass.getDefiningAttributes())
@@ -201,7 +196,7 @@ public class InstanceUtilities {
 					key += ((GKInstance) inferredInst.getAttributeValue(definingAttr.getName())).getDBID().toString();
 				} else if (inferredInst.getAttributeValue(definingAttr.getName()) != null) 
 				{
-					key += inferredInst.getAttributeValue(definingAttr.getName().toString());
+					key += inferredInst.getAttributeValue(definingAttr.getName());
 				} else {
 					key += "null";
 				}
@@ -224,11 +219,4 @@ public class InstanceUtilities {
 	{
 		instanceEditInst = instanceEditCopy;
 	}
-	
-	public static void resetVariables()
-	{
-		mockedIdenticals = new HashMap<String,GKInstance>();
-	}
-	
-
 }

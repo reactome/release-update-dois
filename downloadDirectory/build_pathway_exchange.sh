@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+
 URL="https://github.com/reactome/Pathway-Exchange.git"
 DIRECTORY="PathwayExchange"
 BRANCH_OR_TAG=${1:-master}
