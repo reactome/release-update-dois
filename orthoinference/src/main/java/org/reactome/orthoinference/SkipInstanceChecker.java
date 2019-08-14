@@ -22,7 +22,7 @@ public class SkipInstanceChecker {
 	
 	private static final Logger logger = LogManager.getLogger();
 	private static MySQLAdaptor dba;
-	static Set<String> skipList = new HashSet<>();
+	private static Set<String> skipList = new HashSet<>();
 	
 	// Skiplist was traditionally provided in a file, but since it's currently just 3 instances, I've just hard-coded them here.
 	public static void getSkipList(String skipListFilename) throws NumberFormatException, Exception

@@ -1,12 +1,6 @@
 package org.reactome.orthoinference;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,24 +63,29 @@ public class PathwaysInferrer {
 	// Inferred Reactions are not added to the Pathway at this step.
 	private static void createInferredPathwayHierarchy(GKInstance sourceEventInst) throws Exception
 	{
-		List<GKInstance> sourcePathwayReferralInstances = (ArrayList<GKInstance>) sourceEventInst.getReferers(hasEvent);
+		List<GKInstance> sourcePathwayReferralInstances = safeList(sourceEventInst.getReferers(hasEvent));
 
-		if (sourcePathwayReferralInstances != null && sourcePathwayReferralInstances.size() > 0)
+		if (sourcePathwayReferralInstances.isEmpty())
 		{
-			for (GKInstance sourcePathwayReferralInst : sourcePathwayReferralInstances)
-			{
-				logger.info("Generating inferred Pathway: " + sourcePathwayReferralInst);
-				if (inferredEventIdenticals.get(sourcePathwayReferralInst) == null)
-				{
-					inferPathway(sourcePathwayReferralInst);
-				} else {
-					logger.info("Inferred Pathway instance already exists");
-				}
-				createInferredPathwayHierarchy(sourcePathwayReferralInst);
-			}
-		} else {
 			logger.info("Top Level Pathway inferred: " + sourceEventInst);
+			return;
 		}
+
+		for (GKInstance sourcePathwayReferralInst : sourcePathwayReferralInstances)
+		{
+			logger.info("Generating inferred Pathway: " + sourcePathwayReferralInst);
+			if (inferredEventIdenticals.get(sourcePathwayReferralInst) == null)
+			{
+				inferPathway(sourcePathwayReferralInst);
+			} else {
+				logger.info("Inferred Pathway instance already exists");
+			}
+			createInferredPathwayHierarchy(sourcePathwayReferralInst);
+		}
+	}
+
+	private static <E> List<E> safeList(Collection<E> collection) {
+		return Optional.ofNullable((List<E>) collection).orElse(Collections.emptyList());
 	}
 
 	private static void inferPathway(GKInstance sourcePathwayReferralInst) throws Exception {

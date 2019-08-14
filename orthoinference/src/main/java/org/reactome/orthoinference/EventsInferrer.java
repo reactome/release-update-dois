@@ -68,6 +68,10 @@ public class EventsInferrer
 		
 		dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 		dbAdaptorPrev = new MySQLAdaptor(host, prevDatabase, username, password, port);
+		if (dbAdaptor == null || dbAdaptorPrev == null) {
+			logger.fatal("Null MySQLAdaptor, terminating orthoinference");
+			return;
+		}
 		setDbAdaptors(dbAdaptor);
 
 
@@ -111,7 +115,7 @@ public class EventsInferrer
 			ProteinCountUtility.setHomologueMappingFile(homologueMappings);
 			EWASInferrer.setHomologueMappingFile(homologueMappings);
 		} catch (FileNotFoundException e) {
-			logger.warn("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
+			logger.fatal("Unable to locate " + speciesName +" mapping file: hsap_" + species + "_mapping.txt. Orthology prediction not possible.");
 			return;
 		}
 		EWASInferrer.readENSGMappingFile(species, pathToOrthopairs);

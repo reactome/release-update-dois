@@ -43,71 +43,70 @@ public class OrthologousEntityGenerator {
 	{
 		logger.info("Attempting PE inference: " + entityInst);
 		GKInstance infEntityInst = null;
-		if (entityInst.getSchemClass().isValidAttribute(species))
-		{
-			if (orthologousEntityIdenticals.get(entityInst) == null)
-			{
-				// Checks that a species attribute exists in either the current instance or in constituent instances.
-				if (!SpeciesCheckUtility.checkForSpeciesAttribute(entityInst))
-				{
-					logger.info("No species attribute found in PE, using original instance");
-					infEntityInst = entityInst;
-				// Will either infer an EWAS or return a mock GEE instance if needed (i.e. if override is currently 'True')
-				} else if (entityInst.getSchemClass().isa(GenomeEncodedEntity))
-				{
-					// TODO: Try using 'isa' here instead of contains
-					if (entityInst.getSchemClass().toString().contains(EntityWithAccessionedSequence))
-					{
-						infEntityInst = createInfEWAS(entityInst, override);
-					} else {
-						if (override)
-						{
-							logger.info("Mock GEE instance needed");
-							GKInstance mockedInst = InstanceUtilities.createMockGKInstance(entityInst);						
-							return mockedInst;
-						}
-					}
-				// Infers Complex or Polymer instances -- Will recursively call createOrthoEntity with override on its constituent PEs
-				} else if (entityInst.getSchemClass().isa(Complex) || entityInst.getSchemClass().isa(Polymer))
-				{
-					infEntityInst = createInfComplexPolymer(entityInst, override);
-				// Infers EntitySetInstances that themselves contain the species attribute (Not just constituent instances as when hasSpecies is called above),
-				// returning the current instance if it doesn't.
-				} else if (entityInst.getSchemClass().isa(EntitySet))
-				{
-					if (entityInst.getAttributeValue(species) != null)
-					{
-						infEntityInst = createInfEntitySet(entityInst, override);
-					} else {
-						logger.info("EntitySet has no species attribute, using original instance: " + entityInst);
-						infEntityInst = entityInst;
-					}
-				// Handles SimpleEntities by returning the current instance. The idea behind this is that SimpleEntities wouldn't need
-				// to be inferred since they wouldn't change between species {Note from infer_events.pl -- David Croft}.
-				} else if (entityInst.getSchemClass().isa(SimpleEntity))
-				{
-					logger.info("PE is a SimplyEntity, using original instance");
-					infEntityInst = entityInst;
-				} else {
-					logger.warn("Unknown PhysicalEntity class: " + entityInst.getClass());
-				}
-				if (override)
-				{
-					return infEntityInst;
-				}
-				orthologousEntityIdenticals.put(entityInst, infEntityInst);
-			} else {
-				logger.info("Inferred PE instance already exists");
-			}
-			logger.info("PE inference completed: " + entityInst);
-			return orthologousEntityIdenticals.get(entityInst);
-		} else {
+		if (!entityInst.getSchemClass().isValidAttribute(species)) {
 			// This used to have a conditional statement based on the returned value of the 'check_intracellular' function.
 			// That function doesn't exist anymore (only seemed to apply to the 'mtub' species, which hasn't been inferred for a while).
 			// Since the instance is species-agnostic, just returns the original instance.
 			logger.info("Could not find valid species attribute, returning original instance: " + entityInst);
 			return entityInst;
 		}
+
+		if (orthologousEntityIdenticals.get(entityInst) != null) {
+			logger.info("Inferred PE instance already exists");
+			return orthologousEntityIdenticals.get(entityInst);
+		}
+
+		// Checks that a species attribute exists in either the current instance or in constituent instances.
+		if (!SpeciesCheckUtility.checkForSpeciesAttribute(entityInst))
+		{
+			logger.info("No species attribute found in PE, using original instance");
+			infEntityInst = entityInst;
+		// Will either infer an EWAS or return a mock GEE instance if needed (i.e. if override is currently 'True')
+		} else if (entityInst.getSchemClass().isa(GenomeEncodedEntity))
+		{
+			// TODO: Try using 'isa' here instead of contains
+			if (entityInst.getSchemClass().toString().contains(EntityWithAccessionedSequence))
+			{
+				infEntityInst = createInfEWAS(entityInst, override);
+			} else {
+				if (override)
+				{
+					logger.info("Mock GEE instance needed");
+					GKInstance mockedInst = InstanceUtilities.createMockGKInstance(entityInst);
+					return mockedInst;
+				}
+			}
+		// Infers Complex or Polymer instances -- Will recursively call createOrthoEntity with override on its constituent PEs
+		} else if (entityInst.getSchemClass().isa(Complex) || entityInst.getSchemClass().isa(Polymer))
+		{
+			infEntityInst = createInfComplexPolymer(entityInst, override);
+		// Infers EntitySetInstances that themselves contain the species attribute (Not just constituent instances as when hasSpecies is called above),
+		// returning the current instance if it doesn't.
+		} else if (entityInst.getSchemClass().isa(EntitySet))
+		{
+			if (entityInst.getAttributeValue(species) != null)
+			{
+				infEntityInst = createInfEntitySet(entityInst, override);
+			} else {
+				logger.info("EntitySet has no species attribute, using original instance: " + entityInst);
+				infEntityInst = entityInst;
+			}
+		// Handles SimpleEntities by returning the current instance. The idea behind this is that SimpleEntities wouldn't need
+		// to be inferred since they wouldn't change between species {Note from infer_events.pl -- David Croft}.
+		} else if (entityInst.getSchemClass().isa(SimpleEntity))
+		{
+			logger.info("PE is a SimplyEntity, using original instance");
+			infEntityInst = entityInst;
+		} else {
+			logger.warn("Unknown PhysicalEntity class: " + entityInst.getClass());
+		}
+		if (override)
+		{
+			return infEntityInst;
+		}
+		orthologousEntityIdenticals.put(entityInst, infEntityInst);
+			logger.info("PE inference completed: " + entityInst);
+			return orthologousEntityIdenticals.get(entityInst);
 	}
 	
 	// Function that first tries to infer any EWAS' associated with the instance. For those that have more than 1 returned EWAS instance, 
@@ -202,25 +201,25 @@ public class OrthologousEntityGenerator {
 			GKInstance infComplexInst = InstanceUtilities.createNewInferredGKInstance(complexInst);
 			infComplexInst.addAttributeValue(summation, complexSummationInst);
 			infComplexInst.addAttributeValue(name, complexInst.getAttributeValue(name));
-			ArrayList<GKInstance> infComponentInstances = new ArrayList<>();
+			List<GKInstance> infComponentInstances = new ArrayList<>();
 			// Inference handling is different depending on if it is a Complex or a Polymer. Complexes will infer all 'components' while Polymers will infer all 'repeatedUnits'.
 			// TODO: Log the ratio of inferred complex/polyer from human?
 			if (complexInst.getSchemClass().isa(Complex))
 			{
 				Collection<GKInstance> componentInstances = complexInst.getAttributeValuesList(hasComponent);
 				logger.info("Complex components: " + componentInstances);
-				for (Object componentInst : componentInstances)
+				for (GKInstance componentInst : componentInstances)
 				{	
-					infComponentInstances.add(createOrthoEntity((GKInstance) componentInst, true));
+					infComponentInstances.add(createOrthoEntity(componentInst, true));
 				}
 				infComplexInst.addAttributeValue(hasComponent, infComponentInstances);
 			} else  if (complexInst.getSchemClass().isa(Polymer))
 			{
 				Collection<GKInstance> repeatedUnitInstances = complexInst.getAttributeValuesList(repeatedUnit);
 				logger.info("Polymer repeated units: " + repeatedUnitInstances);
-				for (Object repeatedUnitInst : repeatedUnitInstances)
+				for (GKInstance repeatedUnitInst : repeatedUnitInstances)
 				{		
-					infComponentInstances.add(createOrthoEntity((GKInstance) repeatedUnitInst, true));
+					infComponentInstances.add(createOrthoEntity(repeatedUnitInst, true));
 				}
 				infComplexInst.addAttributeValue(repeatedUnit, infComponentInstances);
 			} else {
@@ -265,8 +264,8 @@ public class OrthologousEntityGenerator {
 		if (inferredEntitySetIdenticals.get(entitySetInst) == null)
 		{
 			// Equivalent to infer_members function in infer_events.pl
-			HashSet<String> existingMemberInstances = new HashSet<>();
-			ArrayList<GKInstance> infMembersList = new ArrayList<>();
+			Set<String> existingMemberInstances = new HashSet<>();
+			List<GKInstance> infMembersList = new ArrayList<>();
 			Collection<GKInstance> memberInstances = (Collection<GKInstance>) entitySetInst.getAttributeValuesList(hasMember);
 			if (!entitySetInst.getSchemClass().isa(CandidateSet)) {
 				logger.info("Total member instances: " + memberInstances.size());
