@@ -155,7 +155,6 @@ public class BiologicalProcessAnnotationBuilder {
                         Map<String, String> goBiologicalProcessAccession = new HashMap<>();
                         goBiologicalProcessAccession.put(ACCESSION_STRING, GO_IDENTIFIER_PREFIX + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
                         String reactomeIdentifier = REACTOME_IDENTIFIER_PREFIX + GOAGeneratorUtilities.getStableIdentifierIdentifier(eventInst);
-                        System.out.println(reactomeIdentifier);
                         goBiologicalProcessAccession.put(EVENT_STRING, reactomeIdentifier);
                         goBiologicalProcessAccessions.add(goBiologicalProcessAccession);
                     } else {
