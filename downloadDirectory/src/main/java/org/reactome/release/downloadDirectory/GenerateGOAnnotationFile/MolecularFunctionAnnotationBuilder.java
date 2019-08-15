@@ -163,7 +163,7 @@ public class MolecularFunctionAnnotationBuilder {
         String goaLine = "";
         if (!GOAGeneratorUtilities.isProteinBindingAnnotation(activityInst)) {
             String goAccession = GO_IDENTIFIER_PREFIX + activityInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
-            if (pubMedIdentifiers.isEmpty()) {
+            if (!pubMedIdentifiers.isEmpty()) {
                 for (String pubmedIdentifier : pubMedIdentifiers) {
                     goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, MOLECULAR_FUNCTION_LETTER, goAccession, pubmedIdentifier, INFERRED_FROM_EXPERIMENT_CODE, taxonIdentifier);
                     GOAGeneratorUtilities.assignDateForGOALine(catalystInst, goaLine);

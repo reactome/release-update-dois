@@ -87,7 +87,7 @@ public class CellularComponentAnnotationBuilderTest {
     }
 
     @Test
-    public void cellularComponentEmptyCompartmentReturnsNullTest() throws Exception {
+    public void cellularComponentEmptyCompartmentReturnsArrayWithEmptyStringTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
         mockProteinSet.add(mockProteinInst);
 
@@ -104,5 +104,22 @@ public class CellularComponentAnnotationBuilderTest {
 
         assertThat(goaLines.size(), is(equalTo(1)));
         assertThat(goaLines.get(0), is(equalTo("")));
+    }
+
+    @Test
+    public void cellularComponentExcludedMicrobialSpeciesReturnsArrayWithEmptyStringTest() throws Exception {
+        PowerMockito.mockStatic(GOAGeneratorUtilities.class);
+        mockProteinSet.add(mockProteinInst);
+
+        Mockito.when(GOAGeneratorUtilities.retrieveProteins(mockReactionInst)).thenReturn(mockProteinSet);
+        Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity)).thenReturn(mockReferenceEntityInst);
+        Mockito.when(mockProteinInst.getAttributeValue(ReactomeJavaConstants.species)).thenReturn(mockSpeciesInst);
+        Mockito.when((GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst))).thenReturn(true);
+        Mockito.when(((GKInstance) mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference))).thenReturn(mockCrossReferenceInst);
+        Mockito.when(mockCrossReferenceInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("813");
+        Mockito.when(GOAGeneratorUtilities.isExcludedMicrobialSpecies("813")).thenCallRealMethod();
+        List<String> goaLines = CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
+
+        assertThat(goaLines.size(), is(equalTo(0)));
     }
 }

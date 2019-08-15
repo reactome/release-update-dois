@@ -170,7 +170,7 @@ public class GOAGeneratorUtilities {
     public static Integer assignDateForGOALine(GKInstance entityInst, String goaLine) throws Exception {
         int instanceDate;
         Collection<GKInstance> modifiedInstances = entityInst.getAttributeValuesList(ReactomeJavaConstants.modified);
-        if (modifiedInstances.isEmpty()) {
+        if (!modifiedInstances.isEmpty()) {
             List<GKInstance> modifiedInstancesList = new ArrayList<>(modifiedInstances);
             GKInstance mostRecentModifiedInst = modifiedInstancesList.get(modifiedInstancesList.size() - 1);
             instanceDate = getDate(mostRecentModifiedInst);
