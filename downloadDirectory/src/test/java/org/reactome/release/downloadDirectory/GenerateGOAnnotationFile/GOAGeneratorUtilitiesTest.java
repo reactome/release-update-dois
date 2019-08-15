@@ -54,17 +54,20 @@ public class GOAGeneratorUtilitiesTest {
         Mockito.when(mockReferenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase)).thenReturn(mockRefDatabaseInst);
         Mockito.when(mockRefDatabaseInst.getDisplayName()).thenReturn("UniProt");
         Mockito.when(mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).thenReturn(mockCrossReferenceInst);
+
         assertTrue(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst));
 
         Mockito.when(mockReferenceEntityInst.getAttributeValue(ReactomeJavaConstants.referenceDatabase)).thenReturn(mockRefDatabaseInst);
         Mockito.when(mockRefDatabaseInst.getDisplayName()).thenReturn("UniProt");
         Mockito.when(mockSpeciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).thenReturn(null);
+
         assertFalse(GOAGeneratorUtilities.isValidProtein(mockReferenceEntityInst, mockSpeciesInst));
     }
 
     @Test
     public void validateCatalystPETest() throws Exception {
         Mockito.when(mockCatatlystPEInst.getAttributeValue(ReactomeJavaConstants.compartment)).thenReturn(mockCompartmentInst);
+
         assertTrue(GOAGeneratorUtilities.isValidCatalystPE(mockCatatlystPEInst));
     }
 
@@ -72,6 +75,7 @@ public class GOAGeneratorUtilitiesTest {
     public void multiInstancePhysicalEntityTest() {
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntitySet)).thenReturn(true);
         assertTrue(GOAGeneratorUtilities.isMultiInstancePhysicalEntity(mockSchemaClass));
+
         Mockito.when(mockSchemaClass.isa(ReactomeJavaConstants.EntitySet)).thenReturn(false);
         assertFalse(GOAGeneratorUtilities.isMultiInstancePhysicalEntity(mockSchemaClass));
     }
@@ -81,6 +85,7 @@ public class GOAGeneratorUtilitiesTest {
         Mockito.when(mockReferenceEntityInst.getAttributeValue(ReactomeJavaConstants.identifier)).thenReturn("ABCD1234");
         Mockito.when(mockReferenceEntityInst.getAttributeValue(ReactomeJavaConstants.geneName)).thenReturn("ABCD1");
         String goaLine = GOAGeneratorUtilities.generateGOALine(mockReferenceEntityInst, "C", "A12345", "REACTOME:123456", "TAS", "54321A");
+
         assertEquals(testGOALine, goaLine);
     }
 
@@ -91,9 +96,12 @@ public class GOAGeneratorUtilitiesTest {
     }
 
     @Test
-    public void proteinBindingAnnotationTest() {
-        assertTrue(GOAGeneratorUtilities.isProteinBindingAnnotation("0005515"));
-        assertFalse(GOAGeneratorUtilities.isProteinBindingAnnotation("1234567"));
+    public void proteinBindingAnnotationTest() throws Exception {
+        Mockito.when(mockCompartmentInst.getAttributeValue(ReactomeJavaConstants.accession)).thenReturn("0005515");
+        assertTrue(GOAGeneratorUtilities.isProteinBindingAnnotation(mockCompartmentInst));
+
+        Mockito.when(mockCompartmentInst.getAttributeValue(ReactomeJavaConstants.accession)).thenReturn("1234567");
+        assertFalse(GOAGeneratorUtilities.isProteinBindingAnnotation(mockCompartmentInst));
     }
 
     @Test
@@ -103,6 +111,7 @@ public class GOAGeneratorUtilitiesTest {
         Mockito.when(mockReactionInst.getAttributeValuesList(ReactomeJavaConstants.modified)).thenReturn(mockModifiedSet);
         Mockito.when(mockModifiedInst.getAttributeValue(ReactomeJavaConstants.dateTime)).thenReturn("2019-01-01 01:01:01.0");
         int testDate = GOAGeneratorUtilities.assignDateForGOALine(mockReactionInst, testGOALine);
+
         assertEquals(20190101, testDate);
     }
 }

@@ -109,7 +109,7 @@ public class BiologicalProcessAnnotationBuilder {
             if (validProtein) {
                 String taxonIdentifier = ((GKInstance) speciesInst.getAttributeValue(ReactomeJavaConstants.crossReference)).getAttributeValue(ReactomeJavaConstants.identifier).toString();
                 if (!GOAGeneratorUtilities.isExcludedMicrobialSpecies(taxonIdentifier)) {
-                    goaLines.add(getGOBiologicalProcessLine(referenceEntityInst, reactionInst, taxonIdentifier));
+                    goaLines.addAll(getGOBiologicalProcessLine(referenceEntityInst, reactionInst, taxonIdentifier));
                 } else {
                     logger.info("Protein is from an excluded microbial species, skipping GO annotation");
                 }
@@ -128,13 +128,14 @@ public class BiologicalProcessAnnotationBuilder {
      * @param taxonIdentifier -- String, CrossReference ID of protein's species. Example: 9606 (Human Species crossReference identifier from NCBI)
      * @throws Exception -- MySQLAdaptor exception.
      */
-    private static String getGOBiologicalProcessLine(GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
-        String goaLine = null;
+    private static List<String> getGOBiologicalProcessLine(GKInstance referenceEntityInst, GKInstance reactionInst, String taxonIdentifier) throws Exception {
+        List<String> goaLines = new ArrayList<>();
         for (Map<String, String> biologicalProcessAccession : getGOBiologicalProcessAccessions(reactionInst, 0)) {
-            goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, BIOLOGICAL_PROCESS_LETTER, biologicalProcessAccession.get(ACCESSION_STRING), biologicalProcessAccession.get(EVENT_STRING), TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
+            String goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, BIOLOGICAL_PROCESS_LETTER, biologicalProcessAccession.get(ACCESSION_STRING), biologicalProcessAccession.get(EVENT_STRING), TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
             GOAGeneratorUtilities.assignDateForGOALine(reactionInst, goaLine);
+            goaLines.add(goaLine);
         }
-        return goaLine;
+        return goaLines;
     }
 
     /**
@@ -151,7 +152,7 @@ public class BiologicalProcessAnnotationBuilder {
             Collection<GKInstance> goBiologicalProcessInstances = eventInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess);
             if (goBiologicalProcessInstances.size() > 0) {
                 for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
-                    if (!GOAGeneratorUtilities.isProteinBindingAnnotation(goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString())) {
+                    if (!GOAGeneratorUtilities.isProteinBindingAnnotation(goBiologicalProcessInst)) {
                         Map<String, String> goBiologicalProcessAccession = new HashMap<>();
                         goBiologicalProcessAccession.put(ACCESSION_STRING, GO_IDENTIFIER_PREFIX + goBiologicalProcessInst.getAttributeValue(ReactomeJavaConstants.accession).toString());
                         String reactomeIdentifier = REACTOME_IDENTIFIER_PREFIX + GOAGeneratorUtilities.getStableIdentifierIdentifier(eventInst);

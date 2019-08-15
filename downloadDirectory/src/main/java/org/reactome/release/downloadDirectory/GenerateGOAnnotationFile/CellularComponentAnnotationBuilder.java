@@ -80,7 +80,7 @@ public class CellularComponentAnnotationBuilder {
     private static String getCellularCompartmentGOAccession(GKInstance proteinInst) throws Exception {
         GKInstance compartmentInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.compartment);
         String cellularComponentAccession = "";
-        if (compartmentInst != null && !GOAGeneratorUtilities.isProteinBindingAnnotation(compartmentInst.getAttributeValue(ReactomeJavaConstants.accession).toString())) {
+        if (compartmentInst != null && !GOAGeneratorUtilities.isProteinBindingAnnotation(compartmentInst)) {
             cellularComponentAccession = GO_IDENTIFIER_PREFIX + compartmentInst.getAttributeValue(ReactomeJavaConstants.accession).toString();
         }
         return cellularComponentAccession;

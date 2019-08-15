@@ -140,10 +140,11 @@ public class GOAGeneratorUtilities {
 
     /**
      * Checks that the GO accession is not for Protein Binding. These don't receive a GO annotation since they require an "IPI" evidence code.
-     * @param goAccession -- Object, GO accession string.
+     * @param instance -- GKInstance
      * @return -- true if goAccession matches the protein binding annotation value, false if not.
      */
-    public static boolean isProteinBindingAnnotation(String goAccession) {
+    public static boolean isProteinBindingAnnotation(GKInstance instance) throws Exception {
+        String goAccession = instance.getAttributeValue(ReactomeJavaConstants.accession).toString();
         return goAccession.equals(PROTEIN_BINDING_ANNOTATION);
     }
 

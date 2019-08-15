@@ -60,7 +60,6 @@ public class BiologicalProcessAnnotationBuilderTest {
     @Test
     public void biologicalProcessAnnotationWithCatalystLineBuilderTest() throws Exception {
         PowerMockito.mockStatic(GOAGeneratorUtilities.class);
-
         mockCatalystSet.add(mockCatalystInst);
         mockMemberSet.add(mockCatalystPEMemberInst);
         mockEventReferralSet.add(mockEventReferralInst);
@@ -90,6 +89,7 @@ public class BiologicalProcessAnnotationBuilderTest {
         Mockito.when(GOAGeneratorUtilities.getSecondaryIdentifier(mockReferenceEntityInst)).thenReturn("R5678");
         Mockito.when(GOAGeneratorUtilities.generateGOALine(mockReferenceEntityInst, GOAGeneratorConstants.BIOLOGICAL_PROCESS_LETTER, "GO:1234", "REACTOME:1234", GOAGeneratorConstants.TRACEABLE_AUTHOR_STATEMENT_CODE, "1234")).thenCallRealMethod();
         List<String> goaLines = BiologicalProcessAnnotationBuilder.processBiologicalFunctions(mockReactionInst);
+
         assertThat(goaLines.size(), is(equalTo(1)));
         assertThat(goaLines.get(0), is((equalTo("UniProtKB\tR1234\tR5678\t\tGO:1234\tREACTOME:1234\tTAS\t\tP\t\t\tprotein\ttaxon:1234"))));
     }
@@ -114,6 +114,7 @@ public class BiologicalProcessAnnotationBuilderTest {
         Mockito.when(GOAGeneratorUtilities.getSecondaryIdentifier(mockReferenceEntityInst)).thenReturn("R5678");
         Mockito.when(GOAGeneratorUtilities.generateGOALine(mockReferenceEntityInst, GOAGeneratorConstants.BIOLOGICAL_PROCESS_LETTER, "GO:1234", "REACTOME:1234", GOAGeneratorConstants.TRACEABLE_AUTHOR_STATEMENT_CODE, "1234")).thenCallRealMethod();
         List<String> goaLines = BiologicalProcessAnnotationBuilder.processBiologicalFunctions(mockReactionInst);
+
         assertThat(goaLines.size(), is(equalTo(1)));
         assertThat(goaLines.get(0), is((equalTo("UniProtKB\tR1234\tR5678\t\tGO:1234\tREACTOME:1234\tTAS\t\tP\t\t\tprotein\ttaxon:1234"))));
 
