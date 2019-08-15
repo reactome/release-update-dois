@@ -5,18 +5,20 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.GKSchemaClass;
 import org.gk.schema.InvalidAttributeException;
-import org.gk.schema.InvalidAttributeValueException;
 import org.gk.schema.SchemaClass;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 public class EWASInferrer {
 
+	private static final Logger logger = LogManager.getLogger();
 	private static MySQLAdaptor dba;
 	static boolean altRefDbExists = false;
 	private static String altRefDbId;
@@ -26,30 +28,32 @@ public class EWASInferrer {
 	private static GKInstance alternateDbInst;
 	private static GKInstance uniprotDbInst;
 	private static GKInstance speciesInst;
-	private static Map<String, String[]> homologueMappings = new HashMap<String,String[]>();
+	private static Map<String, String[]> homologueMappings = new HashMap<>();
 	private static Map<String, List<String>> ensgMappings = new HashMap<>();
-	private static Map<String, GKInstance> referenceGeneProductIdenticals = new HashMap<String,GKInstance>();
-	private static Map<String,GKInstance> ewasIdenticals = new HashMap<String,GKInstance>();
-	private static Map<String,GKInstance> residueIdenticals = new HashMap<String,GKInstance>();
+	private static Map<String, GKInstance> referenceGeneProductIdenticals = new HashMap<>();
+	private static Map<String,GKInstance> ewasIdenticals = new HashMap<>();
+	private static Map<String,GKInstance> residueIdenticals = new HashMap<>();
 
 	// Creates an array of inferred EWAS instances from the homologue mappings file (hsap_species_mapping.txt).
 	@SuppressWarnings("unchecked")
 	public static List<GKInstance> inferEWAS(GKInstance ewasInst) throws InvalidAttributeException, Exception
 	{
-		List<GKInstance> infEWASInstances = new ArrayList<GKInstance>();
+		List<GKInstance> infEWASInstances = new ArrayList<>();
 		String referenceEntityId = ((GKInstance) ewasInst.getAttributeValue(referenceEntity)).getAttributeValue(identifier).toString();
 		if (homologueMappings.get(referenceEntityId) != null)
 		{
 			// Iterate through the array of homologue mappings, attempting to infer EWAS instances for each.
+			logger.info("EWAS homologue(s): " + Arrays.toString(homologueMappings.get(referenceEntityId)));
 			for (String homologue : homologueMappings.get(referenceEntityId)) {
-
+				logger.info("Homologue:" + homologue + "  Source:" + referenceEntityId);
 				// Handles homologues formatted as either DB:ID or just ID
 				String homologueSource = homologue.contains(":") ? homologue.split(":")[0] : "";
 				String homologueId = homologue.contains(":") ? homologue.split(":")[1] : homologue;
 
 				if (checkValidSpeciesProtein(homologueId)) {
-					GKInstance infReferenceGeneProductInst = null;
+					GKInstance infReferenceGeneProductInst;
 					if (referenceGeneProductIdenticals.get(homologueId) == null) {
+						logger.info("Creating ReferenceGeneProduct for " + homologue);
 						infReferenceGeneProductInst = InstanceUtilities.createNewInferredGKInstance((GKInstance) ewasInst.getAttributeValue(referenceEntity));
 						infReferenceGeneProductInst.addAttributeValue(identifier, homologueId);
 						// Reference DB can differ between homologue mappings, but can be differentiated by the 'homologueSource' found in each mapping.
@@ -64,9 +68,11 @@ public class EWASInferrer {
 						infReferenceGeneProductInst.addAttributeValue(species, speciesInst);
 						String referenceGeneProductSource = homologueSource.equals("ENSP") ? "ENSEMBL:" : "UniProt:";
 						infReferenceGeneProductInst.setAttributeValue(_displayName, referenceGeneProductSource + homologueId);
+						logger.info("ReferenceGeneProduct instance created");
 						infReferenceGeneProductInst = InstanceUtilities.checkForIdenticalInstances(infReferenceGeneProductInst, null);
 						referenceGeneProductIdenticals.put(homologueId, infReferenceGeneProductInst);
 					} else {
+						logger.info("Orthologous ReferenceGeneProduct already exists");
 						infReferenceGeneProductInst = referenceGeneProductIdenticals.get(homologueId);
 					}
 					// Creating inferred EWAS
@@ -82,22 +88,23 @@ public class EWASInferrer {
 						infEWASInst.addAttributeValue(endCoordinate, endCoord);
 					}
 					if (infEWASInst.getAttributeValue(startCoordinate) != null && (int) infEWASInst.getAttributeValue(startCoordinate) > 1 || infEWASInst.getAttributeValue(endCoordinate) != null && (int) infEWASInst.getAttributeValue(endCoordinate) > 1) {
-						List<String> infEWASInstNames = (ArrayList<String>) ((GKInstance) ewasInst).getAttributeValuesList(name);
+						List<String> infEWASInstNames = (ArrayList<String>) (ewasInst).getAttributeValuesList(name);
 						infEWASInst.addAttributeValue(name, infEWASInstNames.get(0));
 						infEWASInst.addAttributeValue(name, homologueId);
 					} else {
 						infEWASInst.addAttributeValue(name, homologueId);
 					}
 
-					String ewasDisplayName = (String) infEWASInst.getAttributeValue(name) + " [" + ((GKInstance) ewasInst.getAttributeValue(compartment)).getDisplayName() + "]";
+					String ewasDisplayName = infEWASInst.getAttributeValue(name) + " [" + ((GKInstance) ewasInst.getAttributeValue(compartment)).getDisplayName() + "]";
 					infEWASInst.setAttributeValue(_displayName, ewasDisplayName);
 
 					// Infer residue modifications. This was another step where the name of an EWAS can change.
 					// For this, it is based on the existence of the string 'phospho' in the name of the psiMod attribute.
 					// If true, 'phospho-' is prepended to the EWAS' name attribute.
-					List<GKInstance> infModifiedResidueInstances = new ArrayList<GKInstance>();
+					List<GKInstance> infModifiedResidueInstances = new ArrayList<>();
 					boolean phosFlag = true;
 					for (GKInstance modifiedResidueInst : (Collection<GKInstance>) ewasInst.getAttributeValuesList(hasModifiedResidue)) {
+						logger.info("Inferring ModifiedResidue: " + modifiedResidueInst);
 						String infModifiedResidueDisplayName = "";
 						GKInstance infModifiedResidueInst = InstanceUtilities.createNewInferredGKInstance(modifiedResidueInst);
 						infModifiedResidueInst.addAttributeValue(referenceSequence, infReferenceGeneProductInst);
@@ -117,8 +124,8 @@ public class EWASInferrer {
 						GKInstance firstPsiModInst = (GKInstance) modifiedResidueInst.getAttributeValue(psiMod);
 						if (phosFlag && firstPsiModInst.getAttributeValue(name).toString().contains("phospho")) {
 							String phosphoName = "phospho-" + infEWASInst.getAttributeValue(name);
-							List<GKInstance> ewasNames = (ArrayList<GKInstance>) infEWASInst.getAttributeValuesList(name);
-							ewasNames.remove(0);
+							List<String> ewasNames = (ArrayList<String>) infEWASInst.getAttributeValuesList(name);
+							String originalName = ewasNames.remove(0);
 							infEWASInst.setAttributeValue(name, phosphoName);
 							// In the Perl version, this code block modifies the 'name' attribute to include 'phosopho-', but in the process it drops the other names contained. I believe this is unintentional.
 							// This would mean attributes without the 'phospho- ' addition would retain their array of names, while attributes containing 'phospho-' would only contain a single name attribute.
@@ -127,6 +134,7 @@ public class EWASInferrer {
 							String phosphoDisplayName = phosphoName + " [" + ((GKInstance) ewasInst.getAttributeValue(compartment)).getDisplayName() + "]";
 							infEWASInst.setAttributeValue(_displayName, phosphoDisplayName);
 							// This flag ensures the 'phospho-' is only prepended once.
+							logger.info("Updated EWAS name to reflect phosphorylation. Original: " + originalName + ". Updated: " + phosphoName);
 							phosFlag = false;
 						}
 						for (GKInstance psiModInst : (Collection<GKInstance>) modifiedResidueInst.getAttributeValuesList(psiMod)) {
@@ -168,7 +176,8 @@ public class EWASInferrer {
 							infModifiedResidueInst = InstanceUtilities.checkForIdenticalInstances(infModifiedResidueInst, null);
 							residueIdenticals.put(cacheKey, infModifiedResidueInst);
 						}
-						infModifiedResidueInstances.add((GKInstance) infModifiedResidueInst);
+						infModifiedResidueInstances.add(infModifiedResidueInst);
+						logger.info("Successfully inferred ModifiedResidue");
 					}
 					infEWASInst.addAttributeValue(hasModifiedResidue, infModifiedResidueInstances);
 					// Caching based on an instance's defining attributes. This reduces the number of 'checkForIdenticalInstance' calls, which slows things.
@@ -184,11 +193,16 @@ public class EWASInferrer {
 					dba.updateInstanceAttribute(infEWASInst, inferredFrom);
 					ewasInst = InstanceUtilities.addAttributeValueIfNecessary(ewasInst, infEWASInst, inferredTo);
 					dba.updateInstanceAttribute(ewasInst, inferredTo);
-
-					infEWASInstances.add((GKInstance) infEWASInst);
+					logger.info("Successfully inferred EWAS instance for " + homologue + " homologue");
+					infEWASInstances.add(infEWASInst);
+				} else {
+					logger.info("Gene ID corresponding to " + homologue + " not found in gene_protein_mapping file -- skipping EWAS inference");
 				}
 			}
-		}
+		} else {
+			logger.info("Could not infer EWAS, unable to find homologue for " + referenceEntityId);
+        }
+		logger.info("Total orthologous EWAS' created: " + infEWASInstances.size());
 		return infEWASInstances;
 	}
 
@@ -200,12 +214,14 @@ public class EWASInferrer {
 	}
 
 	// Creates ReferenceGeneSequence instance based on ENSG identifier mapped to protein. Creates an instance for the primary database and an alternate, if it exists.
-	private static List<GKInstance> createReferenceDNASequence(String homologueId) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	private static List<GKInstance> createReferenceDNASequence(String homologueId) throws Exception
 	{
-		List<GKInstance> referenceDNAInstances = new ArrayList<GKInstance>();
+		List<GKInstance> referenceDNAInstances = new ArrayList<>();
 		List<String> ensgIds = ensgMappings.get(homologueId);
+		logger.info("Gene ID(s): " + ensgIds);
 		for (String ensgId : ensgIds)
 		{
+			logger.info("Creating ReferenceDNASequence for " + ensgId);
 			SchemaClass referenceDNAClass = dba.getSchema().getClassByName(ReferenceDNASequence);
 			GKInstance referenceDNAInst = new GKInstance(referenceDNAClass);
 			referenceDNAInst.setDbAdaptor(dba);
@@ -218,9 +234,10 @@ public class EWASInferrer {
 			referenceDNAInstances.add(referenceDNAInst);
 			if (altRefDbExists)
 			{
+				logger.info("Creating ReferenceDNASequence for " + ensgId + " using alternate reference database");
 				GKInstance alternateRefDNAInst = new GKInstance(referenceDNAClass);
 				alternateRefDNAInst.setDbAdaptor(dba);
-				String altDbIdentifier = (String) ensgId;
+				String altDbIdentifier = ensgId;
 				if (altRefDbId != null)
 				{
 					altDbIdentifier = altDbIdentifier.replaceAll(altRefDbId, "");
@@ -234,6 +251,7 @@ public class EWASInferrer {
 				referenceDNAInstances.add(alternateRefDNAInst);
 			}
 		}
+		logger.info("Total ReferenceDNASequence instance(s) created: " + referenceDNAInstances.size());
 		return referenceDNAInstances;
 	}
 
@@ -249,16 +267,14 @@ public class EWASInferrer {
 	}
 
 	// Sets the HashMap of species-specific homologue-identifier mappings
-	public static void setHomologueMappingFile(Map<String, String[]> homologueMappingsCopy) throws IOException
-	{
-		homologueMappings = homologueMappingsCopy;
-	}
+	public static void setHomologueMappingFile(Map<String, String[]> homologueMappingsCopy) { homologueMappings = homologueMappingsCopy; }
 
 	// Read the species-specific ENSG gene-protein mappings, and create a Hashmap with the contents
 	public static void readENSGMappingFile(String toSpecies, String pathToOrthopairs) throws IOException
 	{
 		String mappingFileName = toSpecies + "_gene_protein_mapping.txt";
 		String mappingFilePath = pathToOrthopairs + mappingFileName;
+		logger.info("Reading in " + mappingFilePath);
 		FileReader fr = new FileReader(mappingFilePath);
 		BufferedReader br = new BufferedReader(fr);
 
@@ -295,7 +311,7 @@ public class EWASInferrer {
 	}
 
 	// Creates instance pertaining to the species Ensembl Protein DB
-	public static void createEnsemblProteinDbInstance(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static void createEnsemblProteinDbInstance(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnspAccessUrl) throws Exception
 	{
 		String enspSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_PROTEIN";
 		enspDbInst = new GKInstance(dba.getSchema().getClassByName(ReferenceDatabase));
@@ -310,7 +326,7 @@ public class EWASInferrer {
 	}
 
 	// Creates instance pertaining to the species Ensembl Gene DB
-	public static void createEnsemblGeneDBInstance(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static void createEnsemblGeneDBInstance(String toSpeciesLong, String toSpeciesReferenceDbUrl, String toSpeciesEnsgAccessUrl) throws Exception
 	{
 		String ensgSpeciesDb = "ENSEMBL_" + toSpeciesLong + "_GENE";
 		ensgDbInst = new GKInstance(dba.getSchema().getClassByName(ReferenceDatabase));
@@ -325,7 +341,7 @@ public class EWASInferrer {
 	}
 
 	// Create instance pertaining to any alternative reference DB for the species
-	public static void createAlternateReferenceDBInstance(String toSpeciesLong, JSONObject altRefDbJSON) throws InvalidAttributeException, InvalidAttributeValueException, Exception
+	public static void createAlternateReferenceDBInstance(JSONObject altRefDbJSON) throws Exception
 	{
 		alternateDbInst = new GKInstance(dba.getSchema().getClassByName(ReferenceDatabase));
 		alternateDbInst.setDbAdaptor(dba);
@@ -351,14 +367,5 @@ public class EWASInferrer {
 	public static void setSpeciesInstance(GKInstance speciesInstCopy)
 	{
 		speciesInst = speciesInstCopy;
-	}
-
-	public static void resetVariables()
-	{
-		homologueMappings = new HashMap<>();
-		ensgMappings = new HashMap<>();
-		referenceGeneProductIdenticals = new HashMap<>();
-		ewasIdenticals = new HashMap<>();
-		residueIdenticals = new HashMap<>();
 	}
 }

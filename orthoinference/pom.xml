@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome.datapipeline</groupId>
 	<artifactId>orthoinference</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 
 	<dependencies>
 		<dependency>
@@ -15,7 +15,7 @@
 		<dependency>
 			<groupId>org.reactome.base</groupId>
 			<artifactId>reactome-base</artifactId>
-			<version>1.2.20</version>
+			<version>1.2.21</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome.release</groupId>

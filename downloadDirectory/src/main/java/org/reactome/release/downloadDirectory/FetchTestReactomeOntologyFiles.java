@@ -65,32 +65,29 @@ public class FetchTestReactomeOntologyFiles {
 				if (splitLine.length > 1 && splitLine[1].matches("( [A-Z][a-z]{2}){2} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3} [0-9]{4}")) {
 					String dateTime = ";" + splitLine[1] + "\n";
 					dateTimeCounter++;
-					if (pprjSwitch && dateTimeCounter == 1) {
-						Files.write(Paths.get(pprjFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
+					if (pinsSwitch && dateTimeCounter == 1) {
+						Files.write(Paths.get(pinsFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
 					}
 					if (dateTimeCounter == 2) {
 						Files.write(Paths.get(pontFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
 					}
 					if (dateTimeCounter == 3) {
-						Files.write(Paths.get(pinsFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
+						Files.write(Paths.get(pprjFilename), dateTime.getBytes(), StandardOpenOption.APPEND);
 					}
 					continue;
 				}
 				line += "\n";
 
-				// Generate pprj file
-				if (dateTimeCounter == 1 && pprjSwitch) {
+				// Generate pins file
+				if (dateTimeCounter == 1 && pinsSwitch) { 
 					if (line.contains("pprj_file_content")) {
 						line = "\n";
-						pprjSwitch = false;
+						pinsSwitch = false;
 					}
 					if (line.contains(".pont")) {
 						line = line.replaceAll("[a-zA-Z0-9]+.pont", pontFilename);
 					}
-					if (line.contains(".pins")) {
-						line = line.replaceAll("[a-zA-Z0-9]+.pins", pinsFilename);
-					}
-					Files.write(Paths.get(pprjFilename), line.getBytes(), StandardOpenOption.APPEND);
+					Files.write(Paths.get(pinsFilename), line.getBytes(), StandardOpenOption.APPEND);
 				}
 
 				// Generate pont file
@@ -106,17 +103,17 @@ public class FetchTestReactomeOntologyFiles {
 					Files.write(Paths.get(pontFilename), line.getBytes(), StandardOpenOption.APPEND);
 				}
 
-				// Generate pins file
+				// Generate pprj file
 				if (dateTimeCounter == 3) {
 					if (line.contains("pins_file_stub")) {
 						line = "\n";
 					}
 
-					if (pinsSwitch) {
+					if (pprjSwitch) { 
 						if (line.startsWith(";") || line.startsWith("(") || line.startsWith(")") || line.startsWith("\n") || line.startsWith("\t")) {
-							Files.write(Paths.get(pinsFilename), line.getBytes(), StandardOpenOption.APPEND);
+							Files.write(Paths.get(pprjFilename), line.getBytes(), StandardOpenOption.APPEND);
 						} else {
-							pinsSwitch = false;
+							pprjSwitch = false; 
 						}
 					}
 				}

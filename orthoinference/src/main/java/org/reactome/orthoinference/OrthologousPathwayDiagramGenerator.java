@@ -34,7 +34,7 @@ public class OrthologousPathwayDiagramGenerator {
      */
     public void generateOrthologousPathwayDiagrams() throws Exception {
 
-        logger.info("Generating pathway diagrams for inferred " + targetSpeciesInst.getDisplayName() + " pathways");
+        logger.info("Generating pathway diagrams for inferred " + targetSpeciesInst.getDisplayName() + " Pathway instances");
         // Create PredictedPathwayDiagramGeneratorFromDB object and set db adaptor and author ID.
         PredictedPathwayDiagramGeneratorFromDB diagramGenerator = new PredictedPathwayDiagramGeneratorFromDB();
         diagramGenerator.setMySQLAdaptor(dba);
@@ -63,7 +63,7 @@ public class OrthologousPathwayDiagramGenerator {
         if (isSameSpecies(orthoPathwayInst, targetSpeciesInst) && isElectronicallyInferred(orthoPathwayInst)) {
             // Generate Orthologous PathwayDiagram instance using generatePredictedDiagram method from PredictedPathwayDiagramGeneratorFromDB.
             // This method is the one needed to build PathwayDiagrams for species-specific Pathway instances.
-            logger.info("Building Pathway diagram for " + orthoPathwayInst);
+            logger.info("Building inferred Pathway diagram for " + orthoPathwayInst);
             orthoDiagram = diagramGenerator.generatePredictedDiagram(orthoPathwayInst, pathwayInst, diagramInst);
         }
         return orthoDiagram;
