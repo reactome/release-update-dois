@@ -3,6 +3,7 @@ package org.reactome.release.orthopairs;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
@@ -77,6 +78,12 @@ public class Main
         List<String> pantherFiles = new ArrayList<String>(Arrays.asList(pantherQfOFilename, pantherHCOPFilename));
         for (String pantherFilename : pantherFiles) {
             downloadAndExtractTarFile(pantherFilename, pantherFilepath);
+        }
+        // QfO_Genome_Orthologs.tar.gz extracts a file named 'QfO_Genome_Orthologs_pairwise', which is unexpected.
+        // This just prunes the '_pairwise' string from the filename.
+        Path extractedPantherQfOFilePath = Paths.get(pantherQfOFilename.replace(".tar.gz", ""));
+        if (!Files.exists(extractedPantherQfOFilePath)) {
+            Files.move(Paths.get(extractedPantherQfOFilePath + "_pairwise"), extractedPantherQfOFilePath);
         }
 
         // Download ID files from various model organism databases (Mouse Genome Informatics, Rat Genome Database, Xenbase (frog), ZFIN (Zebrafish))

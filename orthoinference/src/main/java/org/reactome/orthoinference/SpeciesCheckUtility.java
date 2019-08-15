@@ -4,7 +4,6 @@ import java.util.Collection;
 
 import org.gk.model.GKInstance;
 import static org.gk.model.ReactomeJavaConstants.*;
-import org.gk.schema.InvalidAttributeException;
 
 public class SpeciesCheckUtility {
 
@@ -12,7 +11,7 @@ public class SpeciesCheckUtility {
 	// Unless its an 'OtherEntity' (which will return false), the function will check the instance or iterate on it's
 	// sub-instances until it finds an existing 'species' attribute, or else it will return false.
 	@SuppressWarnings("unchecked")
-	public static boolean checkForSpeciesAttribute(GKInstance entityInst) throws InvalidAttributeException, Exception
+	public static boolean checkForSpeciesAttribute(GKInstance entityInst) throws Exception
 	{
 		if (entityInst.getSchemClass().isa(OtherEntity))
 		{

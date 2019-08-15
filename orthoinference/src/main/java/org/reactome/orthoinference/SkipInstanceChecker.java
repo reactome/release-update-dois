@@ -17,13 +17,12 @@ import org.gk.model.GKInstance;
 import org.gk.model.InstanceUtilities;
 import static org.gk.model.ReactomeJavaConstants.*;
 import org.gk.persistence.MySQLAdaptor;
-import org.gk.schema.InvalidAttributeException;
 
 public class SkipInstanceChecker {
 	
 	private static final Logger logger = LogManager.getLogger();
 	private static MySQLAdaptor dba;
-	static Set<String> skipList = new HashSet<String>();
+	private static Set<String> skipList = new HashSet<>();
 	
 	// Skiplist was traditionally provided in a file, but since it's currently just 3 instances, I've just hard-coded them here.
 	public static void getSkipList(String skipListFilename) throws NumberFormatException, Exception
@@ -35,7 +34,7 @@ public class SkipInstanceChecker {
 			if (pathwayInst != null)
 			{
 				// Finds all ReactionLikeEvents associated with the skiplists Pathway and hasEvent attributes, and adds them to skiplist.
-				List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<ClassAttributeFollowingInstruction>();
+				List<ClassAttributeFollowingInstruction> classesToFollow = new ArrayList<>();
 				classesToFollow.add(new ClassAttributeFollowingInstruction(Pathway, new String[]{hasEvent}, new String[]{}));
 				String[] outClasses = new String[] {ReactionlikeEvent};
 				@SuppressWarnings("unchecked")
@@ -60,7 +59,7 @@ public class SkipInstanceChecker {
 		fr.close();
 	}
 	// Skip orthoinference of this instance if:
-	public static boolean checkIfInstanceShouldBeSkipped(GKInstance reactionInst) throws NumberFormatException, Exception
+	public static boolean checkIfInstanceShouldBeSkipped(GKInstance reactionInst) throws Exception
 	{
 		// it is found in skiplist array
 		if (skipList.contains(reactionInst.getDBID().toString()))
@@ -96,7 +95,7 @@ public class SkipInstanceChecker {
 			return true;
 		}
 		// it contains multiple species
-		Collection<GKInstance> speciesInstances = (Collection<GKInstance>) checkIfEntitiesContainMultipleSpecies(reactionInst);
+		Collection<GKInstance> speciesInstances = checkIfEntitiesContainMultipleSpecies(reactionInst);
 		if (speciesInstances.size() > 1)
 		{
 			logger.info(reactionInst + " has multiple species -- skipping");
@@ -107,9 +106,9 @@ public class SkipInstanceChecker {
 	
 	// Goes through all input/output/catalystActivity/regulatedBy attribute instances, and captures all species associates with them. Returns a collection of species instances.
 	@SuppressWarnings("unchecked")
-	private static Collection<GKInstance> checkIfEntitiesContainMultipleSpecies(GKInstance reactionInst) throws InvalidAttributeException, Exception
+	private static Collection<GKInstance> checkIfEntitiesContainMultipleSpecies(GKInstance reactionInst) throws Exception
 	{
-		List<GKInstance> physicalEntityInstances = new ArrayList<GKInstance>();
+		List<GKInstance> physicalEntityInstances = new ArrayList<>();
 		physicalEntityInstances.addAll(reactionInst.getAttributeValuesList(input));
 		physicalEntityInstances.addAll(reactionInst.getAttributeValuesList(output));
 		for (GKInstance catalystActivityInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(catalystActivity))
@@ -131,13 +130,13 @@ public class SkipInstanceChecker {
 				}
 			}
 		}
-		Map<String, GKInstance> physicalEntityHash = new HashMap<String, GKInstance>();
+		Map<String, GKInstance> physicalEntityHash = new HashMap<>();
 		// Remove duplicates using HashMap
 		for (GKInstance physicalEntityInst : physicalEntityInstances)
 		{
 			physicalEntityHash.put(physicalEntityInst.getDBID().toString(), physicalEntityInst);
 		}
-		Map<String, GKInstance> physicalEntitiesFinal = new HashMap<String, GKInstance>();
+		Map<String, GKInstance> physicalEntitiesFinal = new HashMap<>();
 		for (GKInstance physicalEntityInst : physicalEntityHash.values())
 		{
 			physicalEntitiesFinal.put(physicalEntityInst.getDBID().toString(), physicalEntityInst);
@@ -150,7 +149,7 @@ public class SkipInstanceChecker {
 				}
 			}
 		}
-		Map<String, GKInstance> speciesHash = new HashMap<String, GKInstance>();
+		Map<String, GKInstance> speciesHash = new HashMap<>();
 		for (GKInstance physicalEntityInst : physicalEntitiesFinal.values())
 		{
 			if (physicalEntityInst.getSchemClass().isValidAttribute(species))
@@ -167,9 +166,9 @@ public class SkipInstanceChecker {
 	// Looks at referrals of the constituent instances for the species attribute as well
 	// The term 'constituent' is used as a catch-all for instances under the hasMember/hasComponent/repeatedUnit attributes
 	@SuppressWarnings("unchecked")
-	private static Collection<GKInstance> recursePhysicalEntityConstituentInstances(GKInstance physicalEntity) throws InvalidAttributeException, Exception
+	private static Collection<GKInstance> recursePhysicalEntityConstituentInstances(GKInstance physicalEntity) throws Exception
 	{
-		Map<String, GKInstance> constituentInstances = new HashMap<String, GKInstance>();
+		Map<String, GKInstance> constituentInstances = new HashMap<>();
 		if (physicalEntity.getSchemClass().isValidAttribute(hasMember))
 		{
 			for (GKInstance memberInst : (Collection<GKInstance>) physicalEntity.getAttributeValuesList(hasMember))
@@ -193,7 +192,7 @@ public class SkipInstanceChecker {
 		}
 		if (constituentInstances.size() > 0)
 		{
-			Map<String, GKInstance> finalConstituentInstancesMap = new HashMap<String, GKInstance>();
+			Map<String, GKInstance> finalConstituentInstancesMap = new HashMap<>();
 			for (GKInstance constituentInst : constituentInstances.values())
 			{	
 				finalConstituentInstancesMap.put(constituentInst.getDBID().toString(), constituentInst);

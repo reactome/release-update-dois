@@ -19,6 +19,7 @@ public class UpdateDOIs {
 
 	private static final Logger logger = LogManager.getLogger();
 	private static final Logger warningsLog = LogManager.getLogger("warningsLog");
+	private static final String REACTOME_DOI_PREFIX = "10.3180";
 
 	private static MySQLAdaptor dbaTestReactome;
 	private static MySQLAdaptor dbaGkCentral;
@@ -58,7 +59,7 @@ public class UpdateDOIs {
 		try 
 		{
 			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
-			 doisTR = dbaTestReactome.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^10.3180");
+			 doisTR = dbaTestReactome.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^" + REACTOME_DOI_PREFIX);
 			 logger.info("Found " + doisTR.size() + " Pathway instances that need a DOI");
 			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
@@ -71,7 +72,7 @@ public class UpdateDOIs {
 						// The dois are constructed from the instances 'stableIdentifier', which should be in the db already
 						String stableIdFromDb = ((GKInstance) trDOI.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
 						String nameFromDb = trDOI.getAttributeValue(ReactomeJavaConstants.name).toString();
-						String updatedDoi = "10.3180/" + stableIdFromDb;
+						String updatedDoi = REACTOME_DOI_PREFIX + "/" + stableIdFromDb;
 						String dbId = trDOI.getAttributeValue(ReactomeJavaConstants.DB_ID).toString();
 
 						// Used to verify that report contents are as expected, based on provided list from curators
@@ -124,7 +125,7 @@ public class UpdateDOIs {
 							dbaTestReactome.updateInstanceAttribute(trDOI, "doi");
 						}
 					}
-					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updated, notUpdated, doisTR.size());
+					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updated, notUpdated, doisTR.size(), REACTOME_DOI_PREFIX);
 				} else {
 					logger.info("No DOIs to update");
 				}
@@ -166,7 +167,7 @@ public class UpdateDOIs {
 				String displayName = commaSplit[1];
 				int lastPeriodIndex = commaSplit[0].lastIndexOf(".");
 				String[] versionSplit = {reactomeDoi.substring(0, lastPeriodIndex), reactomeDoi.substring(lastPeriodIndex+1)};
-				String stableId = versionSplit[0].replace("10.3180/", "");
+				String stableId = versionSplit[0].replace(REACTOME_DOI_PREFIX + "/", "");
 				String stableIdVersion = versionSplit[1];
 				doiAttributes.put("displayName", displayName);
 				doiAttributes.put("stableId", stableId);

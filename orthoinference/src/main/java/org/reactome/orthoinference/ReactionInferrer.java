@@ -25,22 +25,21 @@ public class ReactionInferrer {
 	private static String inferredFilehandle;
 	private static GKInstance summationInst;
 	private static GKInstance evidenceTypeInst;
-	private static Map<GKInstance, GKInstance> inferredCatalyst = new HashMap<GKInstance,GKInstance>();
-	private static Map<GKInstance, GKInstance> inferredEvent = new HashMap<GKInstance,GKInstance>();
+	private static Map<GKInstance, GKInstance> inferredCatalyst = new HashMap<>();
+	private static Map<GKInstance, GKInstance> inferredEvent = new HashMap<>();
 	private static Integer eligibleCount = 0;
 	private static Integer inferredCount = 0;
-	private static List<GKInstance> inferrableHumanEvents = new ArrayList<GKInstance>();
+	private static List<GKInstance> inferrableHumanEvents = new ArrayList<>();
 	
 	// Infers PhysicalEntity instances of input, output, catalyst activity, and regulations that are associated with incoming reactionInst.
-	public static void inferReaction(GKInstance reactionInst) throws InvalidAttributeException, Exception
+	public static void inferReaction(GKInstance reactionInst) throws Exception
 	{
-		// Checks if an instance's inference should be skipped, based on a variety of factors such as a manual skip list, if it's chimeric, etc. 
-		logger.info("\tChecking if instance should be skipped...");
+		// Checks if an instance's inference should be skipped, based on a variety of factors such as a manual skip list, if it's chimeric, etc.
 		if (SkipInstanceChecker.checkIfInstanceShouldBeSkipped(reactionInst))
 		{
 			return;
 		}
-		logger.info("\tInstance eligible for inference");
+		logger.info("Passed skip tests, RlE eligible for inference");
 		// HashMaps are used to prevent redundant inferences.
 		if (inferredEvent.get(reactionInst) == null)
 		{
@@ -60,6 +59,7 @@ public class ReactionInferrer {
 			int reactionTotalProteinCounts = reactionProteinCounts.get(0);
 			if (reactionTotalProteinCounts > 0) 
 			{
+				logger.info("Total protein count for RlE: " + reactionTotalProteinCounts);
 				String eligibleEventName = reactionInst.getAttributeValue(DB_ID).toString() + "\t" + reactionInst.getDisplayName() + "\n";	
 				// Having passed all tests/filters until now, the reaction is recorded in the 'eligible reactions' file, meaning inference is continued.
 				eligibleCount++;
@@ -81,7 +81,6 @@ public class ReactionInferrer {
 							List<GKInstance> inferredRegulations = inferReactionRegulations(reactionInst);
 							if (inferredRegulations.size() == 1 && inferredRegulations.get(0) == null)
 							{
-								logger.info("\tRegulation is a 'Requirement' and regulation inference was unsuccessful -- terminating inference");
 								return;
 							}
 							if (infReactionInst.getSchemClass().isValidAttribute(releaseDate)) 
@@ -89,9 +88,12 @@ public class ReactionInferrer {
 								infReactionInst.addAttributeValue(releaseDate, dateOfRelease);
 							}
 							// FetchIdenticalInstances would just return the instance being inferred. Since this step is meant to always
-							// add a new inferred instance, the storeInstance method is just called here. 
+							// add a new inferred instance, the storeInstance method is just called here.
+							GKInstance orthoStableIdentifierInst = EventsInferrer.getStableIdentifierGenerator().generateOrthologousStableId(infReactionInst, reactionInst);
+							infReactionInst.addAttributeValue(stableIdentifier, orthoStableIdentifierInst);
 							dba.storeInstance(infReactionInst);
-							logger.info("\tInference complete -- " + infReactionInst + " inserted");
+							logger.info("Inferred RlE instance: " + infReactionInst);
+
 							if (infReactionInst.getSchemClass().isValidAttribute(inferredFrom))
 							{
 								infReactionInst = InstanceUtilities.addAttributeValueIfNecessary(infReactionInst, reactionInst, inferredFrom);
@@ -107,10 +109,10 @@ public class ReactionInferrer {
 							// Regulations instances require the DB to contain the inferred ReactionlikeEvent, so Regulations inference happens post-inference
 							if (inferredRegulations.size() > 0)
 							{
-								logger.info("\t" + inferredRegulations.size() + " regulators inferred");
+								logger.info("Number of regulator(s) inferred: " + inferredRegulations.size());
 								for (GKInstance infRegulation : inferredRegulations)
 								{
-									infRegulation = InstanceUtilities.checkForIdenticalInstances(infRegulation);
+									infRegulation = InstanceUtilities.checkForIdenticalInstances(infRegulation, null);
 									infReactionInst.addAttributeValue("regulatedBy", infRegulation);
 									dba.updateInstanceAttribute(infReactionInst, "regulatedBy");
 								}
@@ -121,116 +123,142 @@ public class ReactionInferrer {
 							String inferredEvent = infReactionInst.getAttributeValue(DB_ID).toString() + "\t" + infReactionInst.getDisplayName() + "\n";	
 							Files.write(Paths.get(inferredFilehandle), inferredEvent.getBytes(), StandardOpenOption.APPEND);
 						} else {
-							logger.info("\tCatalyst inference unsuccessful -- terminating inference for " + reactionInst);
+							logger.info("Catalyst inference unsuccessful -- terminating inference for " + reactionInst);
 						}
 					} else {
-						logger.info("\tOutput inference unsuccessful -- terminating inference for " + reactionInst);
+						logger.info("Output inference unsuccessful -- terminating inference for " + reactionInst);
 					}
 				} else {
-					logger.info("\tInput inference unsuccessful -- terminating inference for " + reactionInst);
+					logger.info("Input inference unsuccessful -- terminating inference for " + reactionInst);
 				}
 			} else {
-				logger.info("\tNo distinct proteins found in instance -- terminating inference for " + reactionInst);
+				logger.info("No distinct proteins found in instance -- terminating inference for " + reactionInst);
 			}
 		}
 	}
 	
 	// Function used to create inferred PhysicalEntities contained in the 'input' or 'output' attributes of the current reaction instance.
 	@SuppressWarnings("unchecked")
-	private static boolean inferReactionInputsOrOutputs(GKInstance reactionInst, GKInstance infReactionInst, String attribute) throws InvalidAttributeException, Exception
+	private static boolean inferReactionInputsOrOutputs(GKInstance reactionInst, GKInstance infReactionInst, String attribute) throws Exception
 	{
-		List<GKInstance> infAttributeInstances = new ArrayList<GKInstance>();
-		for (GKInstance attributeInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute))
+		List<GKInstance> infAttributeInstances = new ArrayList<>();
+		Collection<GKInstance> attributeInstances = (Collection<GKInstance>) reactionInst.getAttributeValuesList(attribute);
+		logger.info("Total " + attribute + " instances: " + attributeInstances.size());
+		logger.info(attribute.substring(0,1).toUpperCase() + attribute.substring(1) + " instances: " + attributeInstances);
+		for (GKInstance attributeInst : attributeInstances)
 		{
 			GKInstance infAttributeInst = OrthologousEntityGenerator.createOrthoEntity(attributeInst, false);
 			if (infAttributeInst == null)
 			{
 				return false;
-			} 
+			}
 			infAttributeInstances.add(infAttributeInst);
 		}
 		infReactionInst.addAttributeValue(attribute, infAttributeInstances);
+		logger.info("Completed " + attribute + " inference");
 		return true;
 	}
 	
 	// Function used to create inferred catalysts associated with the current reaction instance.
 	// Infers all PhysicalEntity's associated with the reaction's 'catalystActivity' and 'activeUnit' attributes
 	@SuppressWarnings("unchecked")
-	private static boolean inferReactionCatalysts(GKInstance reactionInst, GKInstance infReactionInst) throws InvalidAttributeException, Exception
+	private static boolean inferReactionCatalysts(GKInstance reactionInst, GKInstance infReactionInst) throws Exception
 	{
-		for (GKInstance catalystInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList(catalystActivity))
+		Collection<GKInstance> catalystInstances = (Collection<GKInstance>) reactionInst.getAttributeValuesList(catalystActivity);
+		logger.info("Total CatalystActivity instances: " + catalystInstances.size());
+		if (catalystInstances.size() > 0) {
+			logger.info("Catalyst instance(s): " + catalystInstances);
+		}
+		for (GKInstance catalystInst : catalystInstances)
 		{
+			logger.info("Attempting catalyst inference: " + catalystInst);
 			if (inferredCatalyst.get(catalystInst) == null)
 			{
 				GKInstance infCatalystInst = InstanceUtilities.createNewInferredGKInstance(catalystInst);
 				infCatalystInst.setDbAdaptor(dba);
 				infCatalystInst.addAttributeValue(activity, catalystInst.getAttributeValue(activity));
-				if (catalystInst.getAttributeValuesList(physicalEntity) != null)
+				GKInstance catalystPEInst = (GKInstance) catalystInst.getAttributeValue(physicalEntity);
+				if (catalystPEInst != null)
 				{
-					GKInstance infCatalystPEInst = OrthologousEntityGenerator.createOrthoEntity((GKInstance) catalystInst.getAttributeValue(physicalEntity), false);
-					if (infCatalystPEInst != null) 
+					logger.info("Catalyst PE instance: " + catalystPEInst);
+					GKInstance infCatalystPEInst = OrthologousEntityGenerator.createOrthoEntity(catalystPEInst, false);
+					if (infCatalystPEInst != null)
 					{
 						infCatalystInst.addAttributeValue(physicalEntity, infCatalystPEInst);
 					} else {
 						return false;
 					}
 				}
-				
-				List<GKInstance> activeUnits = new ArrayList<GKInstance>();
-				for (GKInstance activeUnitInst : (Collection<GKInstance>) catalystInst.getAttributeValuesList(activeUnit))
-				{
-					GKInstance infActiveUnitInst = OrthologousEntityGenerator.createOrthoEntity(activeUnitInst, false);
-					if (infActiveUnitInst != null)
-					{
-						activeUnits.add(infActiveUnitInst);
+
+				List<GKInstance> activeUnits = new ArrayList<>();
+				Collection<GKInstance> activeUnitInstances = (Collection<GKInstance>) catalystInst.getAttributeValuesList(activeUnit);
+				logger.info("Total active unit instances: " + activeUnitInstances);
+				if (activeUnitInstances.size() > 0) {
+					logger.info("Active unit instance(s): " + activeUnitInstances);
+					for (GKInstance activeUnitInst : activeUnitInstances) {
+						logger.info("Active Unit instance: " + activeUnitInst);
+						GKInstance infActiveUnitInst = OrthologousEntityGenerator.createOrthoEntity(activeUnitInst, false);
+						if (infActiveUnitInst != null) {
+							activeUnits.add(infActiveUnitInst);
+						}
 					}
 				}
 				infCatalystInst.addAttributeValue(activeUnit, activeUnits);
 				infCatalystInst.addAttributeValue(_displayName, catalystInst.getAttributeValue(_displayName));
-				infCatalystInst = InstanceUtilities.checkForIdenticalInstances(infCatalystInst);
+				infCatalystInst = InstanceUtilities.checkForIdenticalInstances(infCatalystInst, null);
 				inferredCatalyst.put(catalystInst, infCatalystInst);
-				infReactionInst.addAttributeValue(catalystActivity, infCatalystInst);
-			} 
-		} 
+			} else {
+				logger.info("Inferred catalyst already exists");
+			}
+			infReactionInst.addAttributeValue(catalystActivity, inferredCatalyst.get(catalystInst));
+		}
+		logger.info("Completed catalyst inference");
 		return true;
 	}
 	
 	@SuppressWarnings("unchecked")
 	// Function used to infer regulation instances. Logic existed for regulators that had CatalystActivity and Event instances, but they have never come up in the many times this has been run.
-	private static List<GKInstance> inferReactionRegulations(GKInstance reactionInst) throws InvalidAttributeException, Exception
+	private static List<GKInstance> inferReactionRegulations(GKInstance reactionInst) throws Exception
 	{
-		List<GKInstance> inferredRegulations = new ArrayList<GKInstance>();
-		for (GKInstance regulatedInst : (Collection<GKInstance>) reactionInst.getAttributeValuesList("regulatedBy"))
-		{
-			GKInstance regulatorInst = (GKInstance) regulatedInst.getAttributeValue(regulator);
-			GKInstance infRegulatorInst = null;
-			if (regulatorInst.getSchemClass().isa(PhysicalEntity))
-			{
-				infRegulatorInst = OrthologousEntityGenerator.createOrthoEntity(regulatorInst, false);
-			} else if (regulatorInst.getSchemClass().isa(CatalystActivity))
-			{
-				logger.warn(regulatorInst + " is a CatalystActivity, which is unexpected -- refer to infer_events.pl");
-			} else if (regulatorInst.getSchemClass().isa(Event))
-			{
-				logger.warn(regulatorInst + " is an Event, which is unexpected -- refer to infer_events.pl");
-			}
-			if (infRegulatorInst == null) 
-			{
-				if (regulatedInst.getSchemClass().isa(Requirement)) 
-				{
-					inferredRegulations.clear();
-					GKInstance nullInst = null;
-					inferredRegulations.add(nullInst);
-					return inferredRegulations;
-				} else {
-					continue;
+		List<GKInstance> inferredRegulations = new ArrayList<>();
+		Collection<GKInstance> regulationInstances = (Collection<GKInstance>) reactionInst.getAttributeValuesList("regulatedBy");
+		logger.info("Total RegulatedBy instances: " + regulationInstances.size());
+		if (regulationInstances.size() > 0) {
+			logger.info("Regulation instances: " + regulationInstances);
+			for (GKInstance regulationInst : regulationInstances) {
+				logger.info("Attempting Regulation inference: " + regulationInst);
+				GKInstance regulatorInst = (GKInstance) regulationInst.getAttributeValue(regulator);
+				logger.info("Regulator: " + regulatorInst);
+				GKInstance infRegulatorInst = null;
+				if (regulatorInst.getSchemClass().isa(PhysicalEntity)) {
+					infRegulatorInst = OrthologousEntityGenerator.createOrthoEntity(regulatorInst, false);
+				} else if (regulatorInst.getSchemClass().isa(CatalystActivity)) {
+					// This has never happened since running the new orthoinference (JCook 2019)
+					logger.warn(regulatorInst + " is a CatalystActivity, which is unexpected -- refer to infer_events.pl");
+					System.exit(0);
+				} else if (regulatorInst.getSchemClass().isa(Event)) {
+					// This has never happened since running the new orthoinference (JCook 2019)
+					logger.warn(regulatorInst + " is an Event, which is unexpected -- refer to infer_events.pl");
+					System.exit(0);
 				}
+				if (infRegulatorInst == null) {
+					if (regulationInst.getSchemClass().isa(Requirement)) {
+						logger.info("Regulation is a 'Requirement' and regulation inference was unsuccessful -- terminating inference for " + reactionInst);
+						inferredRegulations.clear();
+						GKInstance nullInst = null;
+						inferredRegulations.add(nullInst);
+						return inferredRegulations;
+					} else {
+						continue;
+					}
+				}
+				GKInstance infRegulationInst = InstanceUtilities.createNewInferredGKInstance(regulationInst);
+				infRegulationInst.setDbAdaptor(dba);
+				infRegulationInst.addAttributeValue(regulator, infRegulatorInst);
+				infRegulationInst.addAttributeValue(_displayName, regulationInst.getAttributeValue(_displayName));
+				inferredRegulations.add(infRegulationInst);
+				logger.info("Completed regulator inference");
 			}
-			GKInstance infRegulationInst = InstanceUtilities.createNewInferredGKInstance(regulatedInst);
-			infRegulationInst.setDbAdaptor(dba);
-			infRegulationInst.addAttributeValue(regulator, infRegulatorInst);
-			infRegulationInst.addAttributeValue(_displayName, regulatedInst.getAttributeValue(_displayName));
-			inferredRegulations.add(infRegulationInst);
 		}
 		return inferredRegulations;
 	}
@@ -255,12 +283,12 @@ public class ReactionInferrer {
 		inferredFilehandle = inferredFilename;
 	}
 	
-	public static void setEvidenceTypeInstance(GKInstance evidenceTypeInstCopy) throws Exception
+	public static void setEvidenceTypeInstance(GKInstance evidenceTypeInstCopy)
 	{
 		evidenceTypeInst = evidenceTypeInstCopy;
 	}
 	
-	public static void setSummationInstance(GKInstance summationInstCopy) throws Exception
+	public static void setSummationInstance(GKInstance summationInstCopy)
 	{
 		summationInst = summationInstCopy;
 	}
@@ -284,13 +312,5 @@ public class ReactionInferrer {
 	{
 		return inferredCount;
 	}
-	
-	public static void resetVariables() 
-	{
-		inferredCatalyst = new HashMap<GKInstance,GKInstance>();
-		inferredEvent = new HashMap<GKInstance,GKInstance>();
-		eligibleCount = 0;
-		inferredCount = 0;
-		inferrableHumanEvents = new ArrayList<GKInstance>();
-	}
+
 }

@@ -1,13 +1,7 @@
 package org.reactome.release.chebiupdate;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,7 +10,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -30,8 +23,6 @@ import org.gk.schema.InvalidAttributeException;
 import org.gk.schema.InvalidAttributeValueException;
 import org.reactome.release.common.database.InstanceEditUtils;
 
-import uk.ac.ebi.chebi.webapps.chebiWS.client.ChebiWebServiceClient;
-import uk.ac.ebi.chebi.webapps.chebiWS.model.ChebiWebServiceFault_Exception;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.DataItem;
 import uk.ac.ebi.chebi.webapps.chebiWS.model.Entity;
 
@@ -50,11 +41,10 @@ public class ChebiUpdater
 	private static final Logger failedChebiLookupsLog = LogManager.getLogger("failedChebiLookupsLog");
 	private boolean testMode = true;
 	private MySQLAdaptor adaptor;
-	private ChebiWebServiceClient chebiClient = new ChebiWebServiceClient();
 	private StringBuilder formulaUpdateSB = new StringBuilder();
 	private StringBuilder formulaFillSB = new StringBuilder();
 	private StringBuilder duplicatesSB = new StringBuilder();
-	private Map<GKInstance, List<String>> referenceEntityChanges = new HashMap<GKInstance, List<String>>();
+	private Map<GKInstance, List<String>> referenceEntityChanges = new HashMap<>();
 	private long personID;
 	private boolean useCache;
 	private Comparator<GKInstance> personComparator;
@@ -123,6 +113,11 @@ public class ChebiUpdater
 		@SuppressWarnings("unchecked")
 		String chebiRefDBID = (new ArrayList<GKInstance>( adaptor.fetchInstanceByAttribute("ReferenceDatabase", "name", "=", "ChEBI"))).get(0).getDBID().toString();
 
+		if (chebiRefDBID == null || chebiRefDBID.trim().equals(""))
+		{
+			throw new RuntimeException("No ReferenceDatabase instance could be found for the name \"ChEBI\"! This program REQUIRES a ReferenceDatabase object with the name \"ChEBI\". Exiting now.");
+		}
+		
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> refMolecules = (Collection<GKInstance>) adaptor.fetchInstanceByAttribute("ReferenceMolecule", "referenceDatabase", "=", chebiRefDBID);
 
@@ -134,20 +129,22 @@ public class ChebiUpdater
 
 		// A map: key is the DB_ID of a ReferneceMolecule, value is the
 		// uk.ac.ebi.chebi.webapps.chebiWS.model.Entity from ChEBI.
-		Map<Long, Entity> entityMap = retrieveUpdatesFromChebi(refMolecules, failedEntitiesMap);
+		ChebiDataRetriever dataRetriever = new ChebiDataRetriever(this.useCache);
+		Map<Long, Entity> entityMap = dataRetriever.retrieveUpdatesFromChebi(refMolecules, failedEntitiesMap);
 
 		logger.info("Number of entities we were able to retrieve information about: {}", entityMap.size());
 		logger.info("Number of entities we were NOT able to retrieve information about: {}", failedEntitiesMap.size());
 
-		failedChebiLookupsLog.info("# DB_ID\tReferenceMolecule\tReason");
+		failedChebiLookupsLog.info("# DB_ID\tCreator\tReferenceMolecule\tReason");
 		for (GKInstance molecule : failedEntitiesMap.keySet())
 		{
-			failedChebiLookupsLog.info("{}\t{}\t{}", molecule.getDBID(), molecule.toString(), failedEntitiesMap.get(molecule));
+			GKInstance creator = ChebiUpdater.getCreator(molecule);
+			failedChebiLookupsLog.info("{}\t{}\t{}\t{}", molecule.getDBID(), creator.toString(), molecule.toString(), failedEntitiesMap.get(molecule));
 		}
 		
 		// print headers for log files
-		refMolIdentChangeLog.info("# DB_ID\tReference Molecule\tDeprecated Identifier\tReplacement Identifier\tAffected referenceEntity DB_IDs\tDB_ID of Molecule with Replacement Identifier\tDB_IDs of referenceEntities of Molecule with Replacement Identifier");
-		refMolNameChangeLog.info("# DB_ID\tReference Molecule\tOld Name\tNew Name");
+		refMolIdentChangeLog.info("# DB_ID\tCreator\tReference Molecule\tDeprecated Identifier\tReplacement Identifier\tAffected referenceEntity DB_IDs\tDB_ID of Molecule with Replacement Identifier\tDB_IDs of referenceEntities of Molecule with Replacement Identifier");
+		refMolNameChangeLog.info("# DB_ID\tCreator\tReference Molecule\tOld Name\tNew Name");
 		// Begin the transaction (all database-write activities in this process should take place within a single transaction).
 		adaptor.startTransaction();
 		GKInstance instanceEdit = InstanceEditUtils.createInstanceEdit(this.adaptor, this.personID, this.getClass().getCanonicalName());
@@ -210,7 +207,7 @@ public class ChebiUpdater
 		{
 			for (String message : this.referenceEntityChanges.get(creator))
 			{
-				refEntChangeLog.info("{}\t{}",creator.toString(), message);
+				refEntChangeLog.info("{}", message);
 			}
 		}
 	}
@@ -287,7 +284,8 @@ public class ChebiUpdater
 		if (!chebiName.equals(moleculeName))
 		{
 			molecule.setAttributeValue(ReactomeJavaConstants.name, chebiName);
-			refMolNameChangeLog.info("{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString() , moleculeName, chebiName);
+			GKInstance creator = ChebiUpdater.getCreator(molecule);
+			refMolNameChangeLog.info("{}\t{}\t{}\t{}\t{}", molecule.getDBID(), creator.toString(), molecule.toString() , moleculeName, chebiName);
 			adaptor.updateInstanceAttribute(molecule, ReactomeJavaConstants.name);
 			return true;
 		}
@@ -310,7 +308,7 @@ public class ChebiUpdater
 		if (!newChebiID.equals(oldMoleculeIdentifier))
 		{
 			 //Need to get list of DB_IDs of referrers for *old* Identifier and also for *new* Identifier.
-			String oldIdentifierReferrersString = referrerIDJoiner(molecule);
+			String oldIdentifierReferrersString = ChebiUpdater.referrerIDJoiner(molecule);
 
 			// It's possible that the "new" identifier is already in our system. And duplicate ReferenceMolecules are also *possible*, so this will
 			// get a little bit messy...
@@ -324,12 +322,14 @@ public class ChebiUpdater
 				for (GKInstance refMol : refMolsWithNewIdentifier)
 				{
 					String newIdentifierReferrersString = referrerIDJoiner(refMol);
-					refMolIdentChangeLog.info("{}\t{}\t{}\t{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString(), oldMoleculeIdentifier, newChebiID, refMol.getDBID(), oldIdentifierReferrersString, newIdentifierReferrersString);
+					GKInstance creator = ChebiUpdater.getCreator(molecule);
+					refMolIdentChangeLog.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", molecule.getDBID(), creator.toString(), molecule.toString(), oldMoleculeIdentifier, newChebiID, refMol.getDBID(), oldIdentifierReferrersString, newIdentifierReferrersString);
 				}
 			}
 			else // the report line will have and Empty String for the DB_ID of the existing molecule and referrers to that molecule.
 			{
-				refMolIdentChangeLog.info("{}\t{}\t{}\t{}\t{}\t{}\t{}", molecule.getDBID(), molecule.toString(), oldMoleculeIdentifier, newChebiID, "", oldIdentifierReferrersString, "");
+				GKInstance creator = ChebiUpdater.getCreator(molecule);
+				refMolIdentChangeLog.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", molecule.getDBID(), creator.toString(), molecule.toString(), oldMoleculeIdentifier, newChebiID, "", oldIdentifierReferrersString, "");
 			}
 		}
 	}
@@ -342,11 +342,11 @@ public class ChebiUpdater
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	private String referrerIDJoiner(GKInstance molecule) throws Exception
+	private static String referrerIDJoiner(GKInstance molecule) throws Exception
 	{
 		return ((Collection<GKInstance>) molecule.getReferers(ReactomeJavaConstants.referenceEntity)).stream()
-												.map(referrer -> referrer.getDBID().toString())
-												.collect(Collectors.joining("|"));
+				.map(referrer -> referrer.getDBID().toString())
+				.collect(Collectors.joining("|"));
 	}
 
 	/**
@@ -360,7 +360,7 @@ public class ChebiUpdater
 	 */
 	private void updateReferenceEntities(GKInstance molecule, String chebiName, GKInstance instanceEdit) throws Exception, InvalidAttributeException, InvalidAttributeValueException
 	{
-		// now, update the any Entities that refer to the ReferenceMolecule by appending chebiName to the list of names. TODO: Refactor to a function.
+		// now, update the any Entities that refer to the ReferenceMolecule by appending chebiName to the list of names.
 		@SuppressWarnings("unchecked")
 		Collection<GKInstance> referrers = molecule.getReferers(ReactomeJavaConstants.referenceEntity);
 		if (referrers != null && referrers.size() > 0)
@@ -384,11 +384,10 @@ public class ChebiUpdater
 							referrer.setAttributeValue(ReactomeJavaConstants.name, names);
 							adaptor.updateInstanceAttribute(referrer, ReactomeJavaConstants.name);
 							addInstanceEditToExistingModifieds(instanceEdit, referrer);
-							GKInstance createdInstanceEdit = (GKInstance) referrer.getAttributeValue(ReactomeJavaConstants.created);
-							GKInstance creator = (GKInstance) createdInstanceEdit.getAttributeValue(ReactomeJavaConstants.author);
+							GKInstance creator = ChebiUpdater.getCreator(referrer);
 
 							@SuppressWarnings("unchecked")
-							String message = referrer.getDBID()+"\t"+referrer.toString()+"\t"+chebiName+"\t"+((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
+							String message = referrer.getDBID()+"\t"+creator.toString()+"\t"+referrer.toString()+"\t"+chebiName+"\t"+((List<String>)referrer.getAttributeValuesList(ReactomeJavaConstants.name)).toString();
 							// Add the message to the map of messages, keyed by the creator.
 							if (this.referenceEntityChanges.containsKey(creator))
 							{
@@ -411,6 +410,20 @@ public class ChebiUpdater
 				}
 			}
 		}
+	}
+
+	/**
+	 * Gets the Creator of some instance.
+	 * @param inst - the Instance to get the creator of.
+	 * @return A GKInstance. It is the value in the "author" attribute (most likely, it will be a Person object) of the InstanceEdit that is associated with "created" attribute of <code>inst</code>.
+	 * @throws InvalidAttributeException
+	 * @throws Exception
+	 */
+	private static GKInstance getCreator(GKInstance inst) throws InvalidAttributeException, Exception
+	{
+		GKInstance createdInstanceEdit = (GKInstance) inst.getAttributeValue(ReactomeJavaConstants.created);
+		GKInstance creator = (GKInstance) createdInstanceEdit.getAttributeValue(ReactomeJavaConstants.author);
+		return creator;
 	}
 
 	/**
@@ -442,6 +455,7 @@ public class ChebiUpdater
 	public void checkForDuplicates() throws SQLException, Exception
 	{
 		this.duplicatesSB = new StringBuilder();
+		// This query should find duplicated ChEBI Identifiers.
 		String findDuplicateReferenceMolecules = "select ReferenceEntity.identifier, count(ReferenceMolecule.DB_ID)\n"
 				+ "from ReferenceMolecule\n"
 				+ "inner join ReferenceEntity on ReferenceEntity.DB_ID = ReferenceMolecule.DB_ID\n"
@@ -450,34 +464,54 @@ public class ChebiUpdater
 				+ "where ReferenceDatabase_2_name.name = 'ChEBI' and identifier is not null\n" + "group by ReferenceEntity.identifier\n"
 				+ "having count(ReferenceMolecule.DB_ID) > 1;\n";
 
-		ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null);
-		duplicatesLog.info("# DB_ID\tDuplicated Identifier\tReferenceMolecule");
-
-		// Should only be one, but API returns collection.
-		@SuppressWarnings("unchecked")
-		Collection<GKInstance> chebiDBInsts = (Collection<GKInstance>)adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "ChEBI");
-		GKInstance chebiDBInst = chebiDBInsts.stream().findFirst().orElse(null);
-		
-		AttributeQueryRequest chebiAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.referenceDatabase, "=", chebiDBInst);
-		
-		while (duplicates.next())
+		try(ResultSet duplicates = adaptor.executeQuery(findDuplicateReferenceMolecules, null))
 		{
-			String identifier = duplicates.getString(1);
-			int numberOfDuplicates = duplicates.getInt(2);
-			this.duplicatesSB.append("\n** ReferenceMolecule with identifier " + identifier + " occurs " + numberOfDuplicates + " times:\n\n");
-			String operator = identifier == null ? "IS NULL" : "=";
-			
-			AttributeQueryRequest identifierAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, operator, identifier);
-			
+			// write the header for the Duplicates report.
+			duplicatesLog.info("# DB_ID\tCreator\tDuplicated Identifier\tReferenceMolecule");
+	
+			// Should only be one, but API returns collection.
 			@SuppressWarnings("unchecked")
-			Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(chebiAQR, identifierAQR));
-			for (GKInstance duplicate : dupesOfIdentifier)
+			Collection<GKInstance> chebiDBInsts = (Collection<GKInstance>)adaptor.fetchInstanceByAttribute(ReactomeJavaConstants.ReferenceDatabase, ReactomeJavaConstants.name, "=", "ChEBI");
+			GKInstance chebiDBInst = chebiDBInsts.stream().findFirst().orElse(null);
+			// It is ***HIGHLY*** unlikely this will happen (since it should have already been verified to exist at the beginning of updateChebiReferenceMolecules()),
+			// but just to be sure, terminate if the ChEBI ReferenceDatabase does not exist. If this *does* happen (despite the earlier check), maybe buy a lottery ticket tonight! ;)
+			if (chebiDBInst == null)
 			{
-				duplicatesLog.info("{}\t{}\t{}", duplicate.getDBID(), identifier, duplicate.toString());
+				throw new RuntimeException("No ReferenceDatabase instance could be found for the name \"ChEBI\"! This program REQUIRES a ReferenceDatabase object with the name \"ChEBI\". Exiting now.");
+			}
+			
+			// Create an AQR to query for ReferenceMolecules associated with the ChEBI ReferenceDatabase
+			AttributeQueryRequest chebiAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.referenceDatabase, "=", chebiDBInst);
+			// for each duplicate that was found...
+			while (duplicates.next())
+			{
+				String identifier = duplicates.getString(1);
+				int numberOfDuplicates = duplicates.getInt(2);
+				// report the number of TIMES the duplicate was found.
+				this.duplicatesSB.append("\n** ReferenceMolecule with identifier " + identifier + " occurs " + numberOfDuplicates + " times:\n\n");
+
+				// If the identifier is null, then the SQL operator must be IS NULL.
+				// This seems like it *should not* be necessary, but if there are instances
+				// with a NULL identifier, this logic should catch them in the report. NULL
+				// identifiers were observed in the initial runs of this application.
+				String operator = identifier == null ? "IS NULL" : "=";
+				
+				// Create an AQR for ReferenceMolecules with an identifier (that is based on the current loop).
+				AttributeQueryRequest identifierAQR = adaptor.new AttributeQueryRequest(ReactomeJavaConstants.ReferenceMolecule, ReactomeJavaConstants.identifier, operator, identifier);
+				
+				// Query using two AQRs: One for making sure the object is associated with the ChEBI ReferenceDatabase, the other for checking that
+				// the identifier matches the one from the duplicate OR that the identifier is null.
+				@SuppressWarnings("unchecked")
+				Collection<GKInstance> dupesOfIdentifier = (Collection<GKInstance>) adaptor._fetchInstance(Arrays.asList(chebiAQR, identifierAQR));
+				
+				// Log information about the duplicate instances for the identifier.
+				for (GKInstance duplicate : dupesOfIdentifier)
+				{
+					GKInstance creator = ChebiUpdater.getCreator(duplicate);
+					duplicatesLog.info("{}\t{}\t{}\t{}", duplicate.getDBID(), creator.toString(), identifier, duplicate.toString());
+				}
 			}
 		}
-
-		duplicates.close();
 		if (this.duplicatesSB.length() > 0)
 		{
 			logger.info(this.duplicatesSB.toString());
@@ -486,182 +520,5 @@ public class ChebiUpdater
 		{
 			logger.info("No duplicate ChEBI ReferenceMolecules detected.");
 		}
-	}
-
-	/**
-	 * This looks weird, I know. I needed to be able to set the Formulae on an Entity 
-	 * and the Entity class provided by ChEBI does not have a setter for that. It has setters for
-	 * other members, just not all of them. So I added a setter, hence the "accessible" name.
-	 * @author sshorser
-	 *
-	 */
-	private class AccessibleEntity extends Entity
-	{
-		public void setFormulae(List<DataItem> formulae)
-		{
-			this.formulae = formulae;
-		}
-	}
-	
-	/**
-	 * Makes calls to the ChEBI web service to get info for speciefied ChEBI
-	 * identifiers.
-	 * 
-	 * @param updator
-	 * @param refMolecules - a list of ReferenceMolecules. The Identifier of each of these molecules will be sent to ChEBI to get up-to-date information for that Identifier.
-	 * @param failedEntitiesList - A list of ReferenceMolecules for which no information was returned by ChEBI. Will be updated by this method.
-	 * @return A ReferenceMolecule DB_ID-to-ChEBI Entity map.
-	 * @throws IOException 
-	 */
-	private Map<Long, Entity> retrieveUpdatesFromChebi(Collection<GKInstance> refMolecules, Map<GKInstance, String> failedEntitiesList) throws IOException
-	{
-		Map<Long, Entity> entityMap = Collections.synchronizedMap(new HashMap<Long, Entity>());
-		final Map<String,List<String>> chebiCache = loadCacheFromFile();
-		FileWriter fileWriter = new FileWriter("chebi-cache", true);
-		// BufferedWriter is supposed to be thread-safe.
-		BufferedWriter bw = new BufferedWriter(fileWriter);
-		AtomicInteger counter = new AtomicInteger(0);
-		// The web service calls are a bit slow to respond, so do them in parallel.
-		refMolecules.parallelStream().forEach(molecule ->
-		{
-			String identifier = null;
-			try
-			{
-				identifier = (String) molecule.getAttributeValue("identifier");
-				if (identifier != null && !identifier.trim().equals(""))
-				{
-					Entity entity;
-					// only query web service if the data is not in the chebi-cache - NOTE: chebiCache will always be empty if this.useCache == false
-					if (!chebiCache.containsKey("CHEBI:"+identifier))
-					{
-						if (this.useCache && chebiCache.size() > 0)
-						{
-							logger.trace("Cache miss for CHEBI:{}", identifier);
-						}
-						entity = this.chebiClient.getCompleteEntity(identifier);
-						if (entity != null && this.useCache)
-						{
-							bw.write("CHEBI:"+identifier+"\t"+entity.getChebiId()+"\t"+entity.getChebiAsciiName()+"\t"+ (entity.getFormulae().size() > 0 ? entity.getFormulae().get(0).getData() : "") + "\t" + LocalDateTime.now().toString() + "\n");
-							bw.flush();
-						}
-						else
-						{
-							if (entity == null)
-							{
-								failedEntitiesList.put(molecule, "ChEBI WebService response was NULL.");
-							}
-						}
-					}
-					else // ...Load data from the cache.
-					{
-						entity = extractChEBIEntityFromCache(chebiCache, identifier);
-					}
-					// Add entity to map (if it's non-null)
-					if (entity != null)
-					{
-						entityMap.put(molecule.getDBID(), entity);
-					}
-				}
-				else
-				{
-					logger.error("ERROR: Instance \"{}\" has an empty/null identifier. This should not be allowed.", molecule.toString());
-					failedEntitiesList.put(molecule, molecule.toString() + " has an empty/NULL identifier.");
-				}
-				int i = counter.getAndIncrement();
-				if (i % 250 == 0)
-				{
-					logger.debug("{} ChEBI identifiers checked", i);
-				}
-			}
-			catch (ChebiWebServiceFault_Exception e)
-			{
-				// "invalid ChEBI identifier" probably shouldn't break execution but should be logged for further investigation.
-				if (e.getMessage().contains("invalid ChEBI identifier"))
-				{
-					logger.error("ERROR: ChEBI Identifier \"{}\" is not formatted correctly.", identifier);
-					failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is not formatted correctly.");
-				}
-				// Log this identifier, but don't fail.
-				else if (e.getMessage().contains("the entity in question is deleted, obsolete, or not yet released"))
-				{
-					logger.error("ERROR: ChEBI Identifier \"{}\" is deleted, obsolete, or not yet released.", identifier);
-					failedEntitiesList.put(molecule, "ChEBI Identifier \""+identifier+"\" is deleted, obsolete, or not yet released.");
-				}
-				else
-				{
-					// Other Webservice errors should probably break execution - if one fails, they will all probably fail.
-					// This is *not* a general principle, but is based on my experience with the ChEBI webservice specifically -
-					// it's a pretty stable service so it's unlikely that if one service call fails, the others will succeed.
-					logger.error("WebService error occurred! Message is: {}", e.getMessage());
-					e.printStackTrace();
-					throw new RuntimeException(e);
-				}
-			}
-			catch (InvalidAttributeException e)
-			{
-				logger.error("InvalidAttributeException caught while trying to get the \"identifier\" attribute on " + molecule.toString());
-				// stack trace should be printed, but I don't think this should break execution, though the only way I can think
-				// of this happening is if the data model changes - otherwise, this exception would probably never be caught.
-				e.printStackTrace();
-			}
-			catch (Exception e)
-			{
-				// general exceptions - print stack trace but keep going.
-				e.printStackTrace();
-			}
-		});
-		bw.close();
-		return entityMap;
-	}
-
-	/**
-	 * Returns the data from the cache file (if it exists). If it doesn't exit, then an empty map will be returned.
-	 * @return A mapping of ChEBI ID to a list with items in this order: ChEBI (might be different if ChEBI has changed identifiers), ChEBI Name, Formula.
-	 * @throws IOException
-	 */
-	private Map<String,List<String>> loadCacheFromFile() throws IOException
-	{
-		Map<String,List<String>> chebiCache = Collections.synchronizedMap(new HashMap<String, List<String>>());
-		if (this.useCache)
-		{
-			logger.info("useCache is TRUE - chebi-cache file will be read, and populated. Identifiers not in the cache will be queried from ChEBI.");
-			// if the cache exists, load it.
-			if (Files.exists(Paths.get("chebi-cache")))
-			{
-				Files.readAllLines(Paths.get("chebi-cache")).parallelStream().forEach( line -> {
-					String[] parts = line.split("\t");
-					String oldChebiID = parts[0];
-					String newChebiID = parts[1];
-					String name = parts[2];
-					String formula = parts.length > 2 ? parts[3] : "";
-					chebiCache.put(oldChebiID, Arrays.asList(newChebiID, name, formula));
-				});
-			}
-			logger.debug("{} entries in the chebi-cache", chebiCache.size());
-		}
-		else
-		{
-			logger.info("useCache is FALSE - chebi-cache will NOT be read. ChEBI will be queried for ALL identifiers.");
-		}
-		return chebiCache;
-	}
-
-	/**
-	 * Extract a ChEBI entity from the cache, based on the identifier.
-	 * @param chebiCache - The cache from a file.
-	 * @param identifier - The chebi Identifier.
-	 * @return A ChEBI Entity that will be built from the data in the cache. It will only have: an Identifier, ChEBI Name, Formula.
-	 */
-	private Entity extractChEBIEntityFromCache(Map<String, List<String>> chebiCache, String identifier)
-	{
-		Entity entity;
-		// Use the AccessibleEntity to set the formula.
-		entity = new AccessibleEntity();
-		entity.setChebiId(chebiCache.get("CHEBI:"+identifier).get(0));
-		entity.setChebiAsciiName(chebiCache.get("CHEBI:"+identifier).get(1) );
-		DataItem formula = new DataItem();
-		formula.setData(chebiCache.get("CHEBI:"+identifier).get(2));
-		((AccessibleEntity)entity).setFormulae(Arrays.asList(formula));
-		return entity;
 	}
 }

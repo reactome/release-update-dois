@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="info">
+	<Properties>
+		<Property name="baseDir">logs</Property>
+		<Property name="logPattern">%d{YYYY-MM-dd HH:mm:ss.SSS} [%t] %-5level %l - %msg%n</Property>
+	</Properties>
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="${logPattern}" />
+		</Console>
+		<RollingFile
+			name="LogFile"
+			fileName="${baseDir}/Main-${date:MM-dd-yyyy_HH.mm.ss}.log"
+			filePattern="${baseDir}/Main-%d{MM-dd-yyyy_HH.mm.ss}.log"
+		>
+			<PatternLayout>
+				<Pattern>${logPattern}</Pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+		<RollingFile
+			name="warningsLogFile"
+			fileName="${baseDir}/Main-${date:MM-dd-yyyy_HH.mm.ss}.err"
+			filePattern="${baseDir}/Main-%d{MM-dd-yyyy_HH.mm.ss}.err"
+		>
+			<PatternLayout>
+				<Pattern>${logPattern}</Pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+		<RollingFile
+			name="ncbiGeneLogFile"
+			fileName="${baseDir}/NCBIGene-${date:MM-dd-yyyy_HH.mm.ss}.log"
+			filePattern="${baseDir}/NCBIGene-%d{MM-dd-yyyy_HH.mm.ss}.log"
+		>
+			<PatternLayout>
+				<Pattern>${logPattern}</Pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+	</Appenders>
+	<Loggers>
+		<Root level="debug">
+			<AppenderRef ref="Console" level="debug"/>
+			<AppenderRef ref="LogFile" level="info"/>
+		</Root>
+		<Logger name="warningsLog" level="warn" additivity="false">
+			<AppenderRef ref="warningsLogFile"/>
+		</Logger>
+		<Logger name="ncbiGeneLog" level="info" additivity="false">
+			<AppenderRef ref="ncbiGeneLogFile"/>
+		</Logger>
+	</Loggers>
+</Configuration>

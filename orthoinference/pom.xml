@@ -4,13 +4,18 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome.datapipeline</groupId>
 	<artifactId>orthoinference</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.reactome.server</groupId>
 			<artifactId>reactome-core</artifactId>
 			<version>1.1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.reactome.base</groupId>
+			<artifactId>reactome-base</artifactId>
+			<version>1.2.21</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome.release</groupId>
@@ -23,11 +28,41 @@
 		    <artifactId>json-simple</artifactId>
 		    <version>1.1.1</version>
 		</dependency>
+		<!-- Used in PredictedPathwayDiagramGeneratorFromDB -->
+		<dependency>
+			<groupId>org.jdom</groupId>
+			<artifactId>jdom</artifactId>
+			<version>1.1</version>
+		</dependency>
 		<dependency>
 		  <groupId>org.apache.logging.log4j</groupId>
 		  <artifactId>log4j-core</artifactId>
 		  <version>2.11.0</version>
-	</dependency>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest</artifactId>
+			<version>2.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito</artifactId>
+			<version>1.6.5</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>1.6.5</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<properties>
@@ -65,6 +100,25 @@
 			<releases>
 				<enabled>true</enabled>
 			</releases>
+		</repository>
+		<repository>
+			<id>oicr-central</id>
+			<name>artifacts.oicr.on.ca-releases</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+		<repository>
+			<id>oicr-snapshots</id>
+			<name>artifacts.oicr.on.ca-snapshots</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
 	

@@ -31,7 +31,7 @@ public class ReportTests {
 		
 	}
 	
-	public static void expectedUpdatesTests(Map<String,Map<String,String>> expectedUpdatedDOIs, List<String> updated, List<String> notUpdated, int expectedNumberOfUpdatedDOIs ) {
+	public static void expectedUpdatesTests(Map<String,Map<String,String>> expectedUpdatedDOIs, List<String> updated, List<String> notUpdated, int expectedNumberOfUpdatedDOIs, String REACTOME_DOI_PREFIX) {
 		// Checking if provided list matched updated instances. Any that don't, it attempts to determine why they might not of been updated.
 		// This entails comparing the DB ID, display name and the stable ID version of the provided list (UpdateDOIs.report) with the actual updated instances
 		if (notUpdated.size() > 0)
@@ -42,7 +42,7 @@ public class ReportTests {
 			{
 				String missedDoi = missed.split(":")[0];
 				String missedName = missed.split(":")[1];
-				String missedClean = missedDoi.replace("10.3180/", "");
+				String missedClean = missedDoi.replace(REACTOME_DOI_PREFIX + "/", "");
 				String missedStableId = missedClean.split("\\.")[0];
 				String missedStableIdVersion = missedClean.split("\\.")[1];
 				int resolved = 0;

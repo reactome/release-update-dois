@@ -1,4 +1,4 @@
-package org.reactome.release.test.chebiupdate;
+package org.reactome.release.chebiupdate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
