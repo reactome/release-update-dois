@@ -18,6 +18,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
+import org.reactome.release.downloadDirectory.GenerateGOAnnotationFile.CreateGOAFile;
 
 public class Main {
 	private static final Logger logger = LogManager.getLogger();
@@ -117,17 +118,7 @@ public class Main {
 				e.printStackTrace();
 			}
 		}
-		if (stepsToRun.contains("ReactomeBookPDF") || stepsToRun.contains("ReactomeBookRTF"))
-		{
-			// This step currently calls the Perl scripts that generate the ReactomeBookPDF and ReactomeBookRTF
-			//Outputs: TheReactomeBook.pdf.zip, TheReactomeBook.rtf.zip
-			try {
-				ReactomeBookGenerator.execute(username, password, host, port, database, releaseNumber, releaseDownloadDir, stepsToRun.contains("ReactomeBookPDF"), stepsToRun.contains("ReactomeBookRTF"));
-			} catch (Exception e) {
-				failedSteps.add("ReactomeBook");
-				e.printStackTrace();
-			}
-		}
+
 		if (stepsToRun.contains("FetchTestReactomeOntologyFiles"))
 		{
 			// This step, (formerly fetchEmptyProject), takes the blob output from the Ontology.ontology and parses it into 3 files
@@ -139,17 +130,7 @@ public class Main {
 				e.printStackTrace();
 			}
 		}
-//		if (stepsToRun.contains("CreateReleaseTarball"))
-//		{
-//			// This step clones the Release repo from github, and generates an archive tarball from it and other files on the release server. Currently just runs make_release_tarball.pl.
-//			// Output: reactome.tar.gz
-//			try {
-//				CreateReleaseTarball.execute(releaseNumber, releaseDownloadDir);
-//			} catch (Exception e) {
-//				failedSteps.add("CreateReleaseTarball");
-//				e.printStackTrace();
-//			}
-//		}
+
 		if (stepsToRun.contains("PathwaySummationMappingFile"))
 		{
 			// This step takes all Human Pathway and creates a tab-separated file with columns containing the stableIdentifier, name, and summation of the instance
@@ -173,15 +154,15 @@ public class Main {
 			}
 		}
 		// These file copy commands now use absolute paths instead of relative ones
-		if (stepsToRun.contains("gene_association.reactome"))
+		if (stepsToRun.contains("GenerateGOAnnotationFile"))
 		{
-			// This step copies the gene_association.reactome file generated during the goa_prepare step of Release to the download_directory folder
+			// This step generates the gene_association.reactome file
 			// Output: gene_association.reactome
-			logger.info("Copying gene_association.reactome to release directory");
 			try {
-				Files.copy(Paths.get(releaseDirAbsolute + "goa_prepare/gene_association.reactome"), Paths.get(releaseNumber + "/gene_association.reactome"), StandardCopyOption.REPLACE_EXISTING);
+				CreateGOAFile.execute(dbAdaptor, releaseNumber);
+
 			} catch (Exception e) {
-				failedSteps.add("gene_association.reactome");
+				failedSteps.add("GenerateGOAnnotationFile");
 				e.printStackTrace();
 			}
 		}
