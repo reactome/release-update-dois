@@ -9,10 +9,7 @@ import org.gk.schema.SchemaClass;
 import static org.reactome.release.downloadDirectory.GenerateGOAnnotationFile.GOAGeneratorConstants.*;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
@@ -205,15 +202,17 @@ public class GOAGeneratorUtilities {
      */
     public static void outputGOAFile() throws IOException {
 
+        Path goaFilepath = Paths.get(GOA_FILENAME);
+
         final String GAF_HEADER = "!gaf-version: 2.1\n";
 
-        Files.deleteIfExists(Paths.get(GOA_FILENAME));
-        Files.write(Paths.get(GOA_FILENAME), GAF_HEADER.getBytes());
+        Files.deleteIfExists(goaFilepath);
+        Files.write(goaFilepath, GAF_HEADER.getBytes());
 
         List<String> lines = goaLines.stream().sorted().map(
                 line -> String.join("\t", line, dates.get(line).toString(), REACTOME_STRING, "","")
         ).collect(Collectors.toList());
-        Files.write(Paths.get(GOA_FILENAME), lines, StandardOpenOption.APPEND);
+        Files.write(goaFilepath, lines, StandardOpenOption.APPEND);
 
         gzipGOAFile();
     }
