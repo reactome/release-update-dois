@@ -61,7 +61,7 @@ public class CellularComponentAnnotationBuilder {
         String reactomeIdentifier = REACTOME_IDENTIFIER_PREFIX  + GOAGeneratorUtilities.getStableIdentifierIdentifier(reactionInst);
         GKInstance referenceEntityInst = (GKInstance) proteinInst.getAttributeValue(ReactomeJavaConstants.referenceEntity);
         String goCellularCompartmentAccession = getCellularCompartmentGOAccession(proteinInst);
-        String goaLine = null;
+        String goaLine = "";
         if (!goCellularCompartmentAccession.isEmpty()) {
             goaLine = GOAGeneratorUtilities.generateGOALine(referenceEntityInst, CELLULAR_COMPONENT_LETTER, goCellularCompartmentAccession, reactomeIdentifier, TRACEABLE_AUTHOR_STATEMENT_CODE, taxonIdentifier);
             GOAGeneratorUtilities.assignDateForGOALine(proteinInst, goaLine);

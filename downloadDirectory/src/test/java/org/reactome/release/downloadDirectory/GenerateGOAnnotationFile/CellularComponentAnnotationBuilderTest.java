@@ -103,6 +103,6 @@ public class CellularComponentAnnotationBuilderTest {
         List<String> goaLines = CellularComponentAnnotationBuilder.processCellularComponents(mockReactionInst);
 
         assertThat(goaLines.size(), is(equalTo(1)));
-        assertThat(goaLines.get(0), is((nullValue())));
+        assertThat(goaLines.get(0), is(equalTo("")));
     }
 }
