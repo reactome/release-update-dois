@@ -74,7 +74,6 @@ public class EventsInferrer
 		}
 		setDbAdaptors(dbAdaptor);
 
-
 		releaseVersion = props.getProperty("releaseNumber");
 		String pathToOrthopairs = props.getProperty("pathToOrthopairs");
 		String pathToSpeciesConfig = props.getProperty("pathToSpeciesConfig");
@@ -240,7 +239,9 @@ public class EventsInferrer
 		// Create file if it doesn't exist
 		String reportFilename = "report_ortho_inference_test_reactome_" + releaseVersion + ".txt";
 		logger.info("Updating " + reportFilename);
-		createNewFile(reportFilename);
+		if (!Files.exists(Paths.get(reportFilename))) {
+			createNewFile(reportFilename);
+		}
 		String results = "hsap to " + species + ":\t" + inferredCount + " out of " + eligibleCount + " eligible reactions (" + String.format("%.2f", percentInferred) + "%)\n";
 		Files.write(Paths.get(reportFilename), results.getBytes(), StandardOpenOption.APPEND);
 	}
