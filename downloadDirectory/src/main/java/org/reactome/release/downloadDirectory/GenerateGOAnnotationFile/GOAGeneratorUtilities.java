@@ -242,7 +242,7 @@ public class GOAGeneratorUtilities {
      * @throws IOException -- If file or targetDirectory do not exist, this will be thrown.
      */
     public static void moveFile(String targetDirectory) throws IOException {
-        String updatedTargetDirectory = targetDirectory + GOA_FILENAME + ".gz";
-        Files.move(Paths.get(GOA_FILENAME + ".gz"), Paths.get(updatedTargetDirectory), StandardCopyOption.REPLACE_EXISTING);
+        String targetFilepath = targetDirectory + GOA_FILENAME + ".gz";
+        Files.move(Paths.get(GOA_FILENAME + ".gz"), Paths.get(targetFilepath), StandardCopyOption.REPLACE_EXISTING);
     }
 }

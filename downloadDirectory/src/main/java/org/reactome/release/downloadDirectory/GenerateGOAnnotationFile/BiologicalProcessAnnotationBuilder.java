@@ -143,7 +143,7 @@ public class BiologicalProcessAnnotationBuilder {
      * it's 'hasEvent' referral is checked for it. Once finding it, it returns the 'accession' and 'identifier' for each one, which will be used to generate a GOA line.
      * @param eventInst -- GKInstance, Can be the original reaction instance, or, if it had no Biological Process accessions, its Event referrals.
      * @param recursion -- int, Indicates number of times the method has been recursively called.
-     * @return -- 1 or more Maps containing the GO accession string and event instance it is associated with.
+     * @return -- 1 or more Maps containing the GO accession string and event instance it is associated with. These maps contain two fields: {"event":"Reactome:identifier"}, and {"accession":"GO:Accession}"
      * @throws Exception -- MySQLAdaptor exception.
      */
     private static List<Map<String, String>> getGOBiologicalProcessAccessions(GKInstance eventInst, int recursion) throws Exception {
