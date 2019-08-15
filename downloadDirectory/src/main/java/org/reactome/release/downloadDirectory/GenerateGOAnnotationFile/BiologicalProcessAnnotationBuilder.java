@@ -26,7 +26,7 @@ public class BiologicalProcessAnnotationBuilder {
 
         List<String> goaLines = new ArrayList<>();
         Collection<GKInstance> catalystInstances = reactionInst.getAttributeValuesList(ReactomeJavaConstants.catalystActivity);
-        if (catalystInstances.size() == 0) {
+        if (catalystInstances.isEmpty()) {
             Set<GKInstance> proteinInstances = GOAGeneratorUtilities.retrieveProteins(reactionInst);
             goaLines.addAll(processProteins(proteinInstances, reactionInst));
         } else {
@@ -150,7 +150,7 @@ public class BiologicalProcessAnnotationBuilder {
         List<Map<String, String>> goBiologicalProcessAccessions = new ArrayList<>();
         if (recursion <= MAX_RECURSION_LEVEL) {
             Collection<GKInstance> goBiologicalProcessInstances = eventInst.getAttributeValuesList(ReactomeJavaConstants.goBiologicalProcess);
-            if (goBiologicalProcessInstances.size() > 0) {
+            if (!goBiologicalProcessInstances.isEmpty()) {
                 for (GKInstance goBiologicalProcessInst : goBiologicalProcessInstances) {
                     if (!GOAGeneratorUtilities.isProteinBindingAnnotation(goBiologicalProcessInst)) {
                         Map<String, String> goBiologicalProcessAccession = new HashMap<>();
