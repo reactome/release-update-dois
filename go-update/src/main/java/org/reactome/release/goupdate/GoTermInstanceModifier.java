@@ -1,5 +1,8 @@
 package org.reactome.release.goupdate;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -135,20 +138,33 @@ class GoTermInstanceModifier
 				// match the name in the file or if the existing definition does not match
 				// the one in the file, we update with the new name and def'n, and then set
 				// InstanceOf and ComponentOf to NULL, and those get updated later, from whatever's in the GO file.
-				if ((newName!=null && !newName.equals(oldName))
-					|| (newDefinition != null && !newDefinition.equals(oldDefinition)))
+				if ( (newName!=null && !newName.equals(oldName)) || (newDefinition != null && !newDefinition.equals(oldDefinition)))
 				{
-					String nameUpdate = newName.equals(oldName) ? "" : "\n\tNew name:\t\""+newName+"\"\n\told name:\t\""+this.goInstance.getAttributeValue(ReactomeJavaConstants.name)+"\"";
-					String defnUpdate = newDefinition.equals(oldDefinition) ? "" : "\n\tNew def'n:\t\""+newDefinition+"\"\n\told def'n:\t\""+this.goInstance.getAttributeValue(ReactomeJavaConstants.definition)+"\"";
-					nameOrDefinitionChangeStringBuilder.append("\nChange in name/definition for GO:").append(currentGOID).append(nameUpdate).append(defnUpdate);
-					this.goInstance.setAttributeValue(ReactomeJavaConstants.instanceOf, null);
-					this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants.instanceOf);
-					this.goInstance.setAttributeValue(ReactomeJavaConstants.componentOf, null);
-					this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants.componentOf);
-					this.goInstance.setAttributeValue(ReactomeJavaConstants.name, goTerms.get(currentGOID).get(GoUpdateConstants.NAME));
-					this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants.name);
-					this.goInstance.setAttributeValue(ReactomeJavaConstants.definition, newDefinition);
-					this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants.definition);
+					// Changes for name
+					if (newName!=null && !newName.equals(oldName))
+					{
+						String nameUpdate = "\n\tNew name:\t\""+newName+"\"\n\told name:\t\""+this.goInstance.getAttributeValue(ReactomeJavaConstants.name)+"\"";
+						nameOrDefinitionChangeStringBuilder.append("\nChange in name/definition for GO:").append(currentGOID).append(nameUpdate);
+						this.goInstance.setAttributeValue(ReactomeJavaConstants.name, newName);
+						this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants.name);
+					}
+					// Changes for definition  
+					if (newDefinition != null && !newDefinition.equals(oldDefinition))
+					{
+						String defnUpdate = "\n\tNew def'n:\t\""+newDefinition+"\"\n\told def'n:\t\""+this.goInstance.getAttributeValue(ReactomeJavaConstants.definition)+"\"";
+						nameOrDefinitionChangeStringBuilder.append("\nChange in name/definition for GO:").append(currentGOID).append(defnUpdate);
+						this.goInstance.setAttributeValue(ReactomeJavaConstants.definition, newDefinition);
+						this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants.definition);
+					}
+					// Now, instanceOf and componentOf are *ONLY* valid for GO_CellularComponent
+					// instanceOf and componentOf get set to NULL and will be corrected later in the process.
+					if (this.goInstance.getSchemClass().isa(ReactomeJavaConstants.GO_CellularComponent))
+					{
+						this.goInstance.setAttributeValue(ReactomeJavaConstants.instanceOf, null);
+						this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants.instanceOf);
+						this.goInstance.setAttributeValue(ReactomeJavaConstants.componentOf, null);
+						this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants.componentOf);
+					}
 					modified = true;
 				}
 				
@@ -172,15 +188,18 @@ class GoTermInstanceModifier
 					InstanceDisplayNameGenerator.setDisplayName(this.goInstance);
 					this.adaptor.updateInstanceAttribute(this.goInstance, ReactomeJavaConstants._displayName);
 				}
+				// Referrers might need to be updated, if their DisplayName depends on the GO_* entity which they referr to.
+				this.updateReferrersDisplayNames();
+				
 			}
 			catch (InvalidAttributeException | InvalidAttributeValueException e)
 			{
-				logger.error("Attribute/Value problem with "+this.goInstance.toString()+ " " + e.getMessage());
+				logger.error("Attribute/Value problem with \""+this.goInstance.toString()+ "\" " + e.getMessage());
 				e.printStackTrace();
 			}
 			catch (NullPointerException e)
 			{
-				logger.error("NullPointerException occurred! GO ID: "+currentGOID+" GO Instance: "+this.goInstance + " GO Term: "+goTerms.get(currentGOID));
+				logger.error("NullPointerException occurred! GO ID: "+currentGOID+" GO Instance: \""+this.goInstance + "\" GO Term: "+goTerms.get(currentGOID));
 				e.printStackTrace();
 			}
 			catch (Exception e)
@@ -189,7 +208,7 @@ class GoTermInstanceModifier
 			}
 		}
 	}
-	
+
 	/**
 	 * Update the Instances that refer to the instance being modified by *this* GoTermInstanceModifier.
 	 * @throws Exception 
@@ -236,19 +255,20 @@ class GoTermInstanceModifier
 	{
 		Collection<GKInstance> referrers = null;
 		
-		if (instance.getSchemClass().getName().equals(ReactomeJavaConstants.GO_BiologicalProcess))
+		SchemaClass instanceSchemaClass = instance.getSchemClass();
+		if (instanceSchemaClass.isa(ReactomeJavaConstants.GO_BiologicalProcess))
 		{
-			referrers = (Collection<GKInstance>)instance.getReferers(ReactomeJavaConstants.goBiologicalProcess);
+			referrers = (Collection<GKInstance>) instance.getReferers(ReactomeJavaConstants.goBiologicalProcess);
 			
 		}
-		else if (instance.getSchemClass().getName().equals(ReactomeJavaConstants.GO_CellularComponent))
+		else if (instanceSchemaClass.isa(ReactomeJavaConstants.GO_CellularComponent))
 		{
-			referrers = (Collection<GKInstance>)instance.getReferers(ReactomeJavaConstants.compartment);
+			referrers = (Collection<GKInstance>) instance.getReferers(ReactomeJavaConstants.compartment);
 			
 		}
-		else if (instance.getSchemClass().getName().equals(ReactomeJavaConstants.GO_MolecularFunction))
+		else if (instanceSchemaClass.isa(ReactomeJavaConstants.GO_MolecularFunction))
 		{
-			referrers = (Collection<GKInstance>)instance.getReferers(ReactomeJavaConstants.activity);
+			referrers = (Collection<GKInstance>) instance.getReferers(ReactomeJavaConstants.activity);
 		}
 		
 		return referrers;
@@ -308,6 +328,7 @@ class GoTermInstanceModifier
 		try
 		{
 			String goId = (String) this.goInstance.getAttributeValue(ReactomeJavaConstants.accession);
+
 			// A GO term can be deleted if it has a replacement value
 			if (goTerms.get(goId).get(GoUpdateConstants.REPLACED_BY)!= null)
 			{
@@ -324,9 +345,11 @@ class GoTermInstanceModifier
 				adaptor.deleteInstance(this.goInstance);
 			}
 			// A GO term that has no replacement value can still be deleted if it has no referrers.
-			else if (GoTermsUpdater.getReferrerCounts(this.goInstance).isEmpty())
+			else if (GoTermsUpdater.getReferrerCountsExcludingGOEntities(this.goInstance).isEmpty())
 			{
 				deletionStringBuilder.append("Deleting GO instance: \"").append(this.goInstance.toString()).append("\" (GO:").append(goId).append(")\n");
+				// But... we still need to clear GO Entity *references* to this.goInstance before deleting THIS instance.
+				this.clearAttributesFromReferringGOEntities();
 				adaptor.deleteInstance(this.goInstance);
 			}
 			else
@@ -340,6 +363,66 @@ class GoTermInstanceModifier
 			e.printStackTrace();
 		}
 	}
+
+	/*
+	 * Clears reference attributes that point TO *this* goInstance FROM other GO entities. To be used when an instance is being deleted.
+	 */
+	private void clearAttributesFromReferringGOEntities() throws Exception
+	{
+		Map<GKSchemaAttribute, Integer> goReferrerCounts = GoTermsUpdater.getReferrerCountsFilteredByClass(this.goInstance, GoTermsUpdater.isNotGOEntity.negate());
+		for (GKSchemaAttribute attrib : goReferrerCounts.keySet())
+		{
+			// set the referring attributes to NULL so that we don't end up with "dangling pointers" in the database.
+			Collection<GKInstance> attribReferrers = (Collection<GKInstance>) this.goInstance.getReferers(attrib);
+			for (GKInstance attribReferrer : attribReferrers)
+			{
+				// From a few tests, it seems that 55 is a good target length to abbreviate to.
+				final int abbrevLength = 55;
+				try
+				{
+					updatedGOTermLogger.info("CLEARING the attribute {} on \"{}\" because it refers to \"{}\", which is flagged for deletion.", attrib.getName(), abbreviate(attribReferrer.toString(), abbrevLength), abbreviate(this.goInstance.toString(), abbrevLength));
+					// if the attribute is multi-valued, we need to be a little more careful and remove *this* instance from the list, but not affect other items in the list.
+					if (attrib.isMultiple())
+					{
+						List<GKInstance> refVals = attribReferrer.getAttributeValuesList(attrib.getName());
+						int i = 0;
+						boolean done = false;
+						while (!done && i < refVals.size())
+						{
+							GKInstance refVal = refVals.get(i);
+							// Using DB_ID match for equality test. There is a compare method in InstanceUtilities, but it looks much deeper
+							// into the objects than I think is necessary in this case. I can't think of a situation where two objects are
+							// different despite having the same DB_ID!
+							if (refVal.getDBID().equals(this.goInstance.getDBID()))
+							{
+								refVals.remove(refVal);
+								done = true;
+							}
+							i++;
+						}
+						// SET the attribute to the list, which has had the offending object removed from it.
+						attribReferrer.setAttributeValue(attrib.getName(), refVals);
+						this.adaptor.updateInstanceAttribute(attribReferrer, attrib.getName());
+					}
+					// Single-valued attributes are SO much easier!
+					else
+					{
+						attribReferrer.setAttributeValue(attrib.getName(), null);
+						this.adaptor.updateInstanceAttribute(attribReferrer, attrib.getName());
+					}
+					// now that the references to *this* GO Instance have been removed, record this operation by adding a "modified" InstanceEdit.
+					attribReferrer.getAttributeValuesList(ReactomeJavaConstants.modified);
+					attribReferrer.addAttributeValue(ReactomeJavaConstants.modified, this.instanceEdit);
+					this.adaptor.updateInstanceAttribute(attribReferrer, ReactomeJavaConstants.modified);
+				}
+				catch (Exception  e)
+				{
+					logger.error("Error trying to clear {} attribute on \"{}\", referring to \"{}\" (which is to be deleted).", attrib.getName(), abbreviate(attribReferrer.toString(), abbrevLength), abbreviate(this.goInstance.toString(), abbrevLength));
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 	
 	private void pointAllReferrersToOtherInstance(GKInstance replacementGOTerm) throws Exception
 	{
@@ -347,27 +430,67 @@ class GoTermInstanceModifier
 		Collection<GKSchemaAttribute> attributes = (Collection<GKSchemaAttribute>) this.goInstance.getSchemClass().getReferers();
 		for (GKSchemaAttribute attribute : attributes)
 		{
+			GKInstance currentReferrer = null;
 			String attributeName = attribute.getName();
-			@SuppressWarnings("unchecked")
-			Set<GKInstance> referrers = (Set<GKInstance>) this.goInstance.getReferers(attribute);
-			if (referrers != null)
+			try
 			{
-				for (GKInstance referrer : referrers)
+				@SuppressWarnings("unchecked")
+				Set<GKInstance> referrers = (Set<GKInstance>) this.goInstance.getReferers(attribute);
+				if (referrers != null)
 				{
-					// the referrer could refer to many things via the attribute.
-					// we should ONLY remove *this* GO instance that will probably be deleted
-					// and add the replacement GO term. All other values should be left alone.
-					@SuppressWarnings("unchecked")
-					List<GKInstance> referrerAttributeValues = (List<GKInstance>) referrer.getAttributeValuesList(attribute);
-					// remove *this* goInstance from the referrer
-					referrerAttributeValues = referrerAttributeValues.parallelStream().filter(v -> !v.getDBID().equals(this.goInstance.getDBID())).collect(Collectors.toList());
-					// add the replacement to the referrer
-					referrerAttributeValues.add(replacementGOTerm);
-					referrer.setAttributeValue(attributeName, referrerAttributeValues);
-					// update in db.
-					adaptor.updateInstanceAttribute(referrer, attributeName);
-					logger.debug("\"{}\" now refers to \"{}\" via {}, instead of referring to \"{}\"", referrer.toString(), replacementGOTerm.toString(), attributeName, this.goInstance.toString());
+					for (GKInstance referrer : referrers)
+					{
+						currentReferrer = referrer;
+						// the referrer could refer to many things via the attribute.
+						// we should ONLY remove *this* GO instance that will probably be deleted
+						// and add the replacement GO term. All other values should be left alone.
+						if (referrer.getSchemClass().isValidAttribute(attributeName))
+						{
+							@SuppressWarnings("unchecked")
+							List<GKInstance> referrerAttributeValues = (List<GKInstance>) referrer.getAttributeValuesList(attributeName);
+							// remove *this* goInstance from the referrer
+							referrerAttributeValues = referrerAttributeValues.parallelStream().filter(v -> !v.getDBID().equals(this.goInstance.getDBID())).collect(Collectors.toList());
+							// add the replacement to the referrer
+							if (attribute.isMultiple())
+							{
+								referrerAttributeValues.add(replacementGOTerm);
+								referrer.setAttributeValue(attributeName, referrerAttributeValues);
+							}
+							else
+							{
+								referrer.setAttributeValue(attributeName, replacementGOTerm);
+							}
+							// The old Perl code would update referrers' displayNames if they were PhysicalEntities or CatalystActivities.
+							if (referrer.getSchemClass().isa(ReactomeJavaConstants.PhysicalEntity) || referrer.getSchemClass().isa(ReactomeJavaConstants.CatalystActivity))
+							{
+								String newReferrerDisplayName = InstanceDisplayNameGenerator.generateDisplayName(referrer);
+								referrer.setAttributeValue(ReactomeJavaConstants._displayName, newReferrerDisplayName);
+								adaptor.updateInstanceAttribute(referrer, ReactomeJavaConstants._displayName);
+							}
+							referrer.getAttributeValuesList(ReactomeJavaConstants.modified);
+							referrer.addAttributeValue(ReactomeJavaConstants.modified, this.instanceEdit);
+							// update in db.
+							adaptor.updateInstanceAttribute(referrer, attributeName);
+							adaptor.updateInstanceAttribute(referrer, ReactomeJavaConstants.modified);
+							logger.debug("\"{}\" now refers to \"{}\" via {}, instead of referring to \"{}\"", referrer.toString(), replacementGOTerm.toString(), attributeName, this.goInstance.toString());
+							
+						}
+						else
+						{
+							logger.error("Sorry, but the attribute \"{}\" is not valid for the referrer \"{}\". This happened while trying to make \"{}\" refer to \"{}\", instead of currently referring to \"GO ID: {}; {}\"",
+										attributeName, abbreviate(referrer.toString()), abbreviate(referrer.toString()),
+										abbreviate(replacementGOTerm.toString()), this.goInstance.getAttributeValue(ReactomeJavaConstants.accession) , abbreviate(this.goInstance.toString()));
+						}
+					}
 				}
+			}
+			catch (InvalidAttributeException e)
+			{
+				logger.error("Invalid Attribute Error: {}; Attribute was: \"{}\"; GO instance being processed was: \"{}\"; Referrer was: \"{}\"", e.getMessage(), attribute.toString(), goInstance.toString(), currentReferrer != null ? currentReferrer.toString() : "NULL");
+				OutputStream out = new ByteArrayOutputStream();
+				PrintStream s = new PrintStream(out);
+				e.printStackTrace(s);
+				logger.error(out.toString());
 			}
 		}
 	}
@@ -436,5 +559,16 @@ class GoTermInstanceModifier
 			}
 		}
 	}
-
+	
+	private static String abbreviate(String s, int maxLength)
+	{
+		return s.substring(0,Math.min(s.length(), maxLength)) + ( s.length() > maxLength ? "..." : "" );
+	}
+	
+	private static String abbreviate(String s)
+	{
+		// 47 is used because if the input string is too long it will be shortened to 47 characters, plus 3 for "..." so it will be
+		// EXCATLY 50 characters long.
+		return abbreviate(s, 47);
+	}
 }

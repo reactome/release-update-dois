@@ -7,8 +7,10 @@ public final class GoUpdateConstants {
 	static final String ALT_ID = "alt_id";
 	static final String NAME = "name";
 	static final String NAMESPACE = "namespace";
+	/**
+	 * DEF refers to "def", which is GO's abbreviation for "definition.
+	 */
 	static final String DEF = "def";
-	//private static final String SUBSET = "subset";
 	static final String RELATIONSHIP = "relationship";
 	static final String IS_A = "is_a";
 	static final String CONSIDER = "consider";
@@ -16,9 +18,6 @@ public final class GoUpdateConstants {
 	static final String SYNONYM = "synonym";
 	static final String HAS_PART = "has_part";
 	static final String PART_OF = "part_of";
-	static final String REGULATES = "regulates";
-	static final String POSITIVELY_REGULATES = "positively_"+REGULATES;
-	static final String NEGATIVELY_REGULATES = "negatively_"+REGULATES;
 	static final String IS_OBSOLETE = "is_obsolete";
 	static final String PENDING_OBSOLETION = "pending_obsoletion";
 	
@@ -37,9 +36,6 @@ public final class GoUpdateConstants {
 	static final Pattern REPLACED_BY_REGEX = Pattern.compile("^"+REPLACED_BY+": GO:([0-9]+).*");
 	static final Pattern RELATIONSHIP_PART_OF_REGEX = Pattern.compile("^"+RELATIONSHIP+": "+PART_OF+" GO:([0-9]+).*");
 	static final Pattern RELATIONSHIP_HAS_PART_REGEX = Pattern.compile("^"+RELATIONSHIP+": "+HAS_PART+" GO:([0-9]+).*");
-	static final Pattern RELATIONSHIP_REGULATES_REGEX = Pattern.compile("^"+RELATIONSHIP+": "+REGULATES+" GO:([0-9]+).*");
-	static final Pattern RELATIONSHIP_POSITIVELY_REGULATES_REGEX = Pattern.compile("^"+RELATIONSHIP+": "+POSITIVELY_REGULATES+" GO:([0-9]+).*");
-	static final Pattern RELATIONSHIP_NEGATIVELY_REGULATES_REGEX = Pattern.compile("^"+RELATIONSHIP+": "+NEGATIVELY_REGULATES+" GO:([0-9]+).*");
 	static final Pattern EC_NUMBER_REGEX = Pattern.compile("^EC:([0-9\\.]+) > GO:.*GO:([0-9]+)");
 	
 	// prevent instantiation.
