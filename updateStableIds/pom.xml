@@ -73,6 +73,25 @@
 			<enabled>false</enabled>
 		</snapshots>
 	</repository>
+		<repository>
+			<id>oicr-central</id>
+			<name>artifacts.oicr.on.ca-releases</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+		<repository>
+			<id>oicr-snapshots</id>
+			<name>artifacts.oicr.on.ca-snapshots</name>
+			<url>https://artifacts.oicr.on.ca/artifactory/reactome</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
   </repositories>
   
   <build>

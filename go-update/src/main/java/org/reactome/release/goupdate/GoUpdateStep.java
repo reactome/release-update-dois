@@ -5,12 +5,17 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.persistence.TransactionsNotSupportedException;
 import org.reactome.release.common.ReleaseStep;
@@ -19,10 +24,12 @@ public class GoUpdateStep extends ReleaseStep
 {
 	private static final Logger logger = LogManager.getLogger();
 	
+	private CSVPrinter duplicatePrinter ;
+	
 	@Override
 	public void executeStep(Properties props) throws SQLException
 	{
-		Long startTime = System.currentTimeMillis();
+		long startTime = System.currentTimeMillis();
 		try
 		{
 			// First part:
@@ -50,19 +57,30 @@ public class GoUpdateStep extends ReleaseStep
 			// 5) delete the marked-for-deletion instances.
 			// 6) update relationships between remaining instances, based on content of data structure.
 			
+			// ***UPDATE***
+			// URL to main GO file is now:
+			// http://current.geneontology.org/ontology/go.obo
+			// ...the ec2go file is the same.
+			
 			MySQLAdaptor adaptor = getMySQLAdaptorFromProperties(props);
 			this.loadTestModeFromProperties(props);
 			
-			long personID = new Long(props.getProperty("person.id"));
+			long personID = Long.valueOf(props.getProperty("person.id")).longValue();
 			
-			String pathToGOFile = props.getProperty("pathToGOFile","src/main/resources/gene_ontology_ext.obo");
+			String pathToGOFile = props.getProperty("pathToGOFile","src/main/resources/go.obo");
 			String pathToEC2GOFile = props.getProperty("pathToEC2GOFile","src/main/resources/ec2go");
 			
 			// Load the files.
 			List<String> goLines = Files.readAllLines(Paths.get(pathToGOFile));
 			List<String> ec2GoLines = Files.readAllLines(Paths.get(pathToEC2GOFile));
 
-			reportOnDuplicateAccessions(adaptor);
+			String dateString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+			if (!Files.exists(Paths.get("reports")))
+			{
+				Files.createDirectory(Paths.get("reports"));
+			}
+			duplicatePrinter = new CSVPrinter(Files.newBufferedWriter(Paths.get("reports/duplicate_GO_terms_"+dateString+".csv")), CSVFormat.DEFAULT.withAutoFlush(true).withHeader("DB_ID", "Accession", "GO type", "Before or After GO Update process?", "Number of referrers"));
+			reportOnDuplicateAccessions(adaptor, "BEFORE GO Update");
 			// Start a transaction. If that fails, the program will exit.
 			try
 			{
@@ -81,8 +99,8 @@ public class GoUpdateStep extends ReleaseStep
 			logger.info(report);
 
 			logger.info("Post-GO Update check for duplicated accessions...");
-			reportOnDuplicateAccessions(adaptor);
-			
+			reportOnDuplicateAccessions(adaptor, "AFTER GO Update");
+			duplicatePrinter.close();
 			if (testMode)
 			{
 				adaptor.rollback();
@@ -91,6 +109,7 @@ public class GoUpdateStep extends ReleaseStep
 			{
 				adaptor.commit();
 			}
+			
 		}
 		catch (IOException e)
 		{
@@ -101,23 +120,24 @@ public class GoUpdateStep extends ReleaseStep
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		Long endTime = System.currentTimeMillis();
+		long endTime = System.currentTimeMillis();
 		logger.info("Elapsed time: " + Duration.ofMillis(endTime-startTime).toString());
 	}
 
-	private void reportOnDuplicateAccessions(MySQLAdaptor adaptor) throws Exception
+	private void reportOnDuplicateAccessions(MySQLAdaptor adaptor, String when) throws Exception
 	{
 		DuplicateReporter duplicateReporter = new DuplicateReporter(adaptor);
 		Map<String, Integer> duplicatedAccessions = duplicateReporter.getDuplicateAccessions();
 		if (duplicatedAccessions!=null && !duplicatedAccessions.keySet().isEmpty())
 		{
-			logger.warn("Duplicated GO accessions exist! Report follows:");
+			logger.warn("Duplicated GO accessions exist! Check report.");
 			for (String accession : duplicatedAccessions.keySet())
 			{
 				Map<Long,Integer> referrerCounts = duplicateReporter.getReferrerCountForAccession(accession);
 				for (Long dbId : referrerCounts.keySet())
 				{
-					logger.warn("Duplicated accession GO:{} with DB_ID {} has {} referrers", accession, dbId, referrerCounts.get(dbId));
+					GKInstance inst = (GKInstance)adaptor.fetchInstance(dbId);
+					duplicatePrinter.printRecord(dbId, accession, inst.getSchemClass().getName(), when, referrerCounts.get(dbId));
 				}
 			}
 		}
