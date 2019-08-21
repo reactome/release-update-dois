@@ -52,7 +52,6 @@ public class UpdateDOIs {
 		Map<String, Map<String,String>> expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport);
 		if (expectedUpdatedDOIs.size() == 0) {
 			logger.warn("No DOIs listed in UpdateDOIs.report. Please add expected DOI and displayName to UpdateDOIs.report.");
-			//return;
 		}
 		List<String> updated = new ArrayList<>();
 		List<String> notUpdated = new ArrayList<>();
