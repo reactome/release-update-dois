@@ -4,7 +4,7 @@
 
   <groupId>org.reactome.release</groupId>
   <artifactId>updateStableIds</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>updateStableIds</name>
@@ -20,15 +20,10 @@
    	  <artifactId>reactome-core</artifactId>
 	  <version>1.1.2</version>
 	</dependency>
-	  <dependency>
-	  <groupId>org.reactome.base</groupId>
-	  <artifactId>reactome-base</artifactId>
-	  <version>1.2.15</version>
-	</dependency>
 	<dependency>
 	  <groupId>org.reactome.release</groupId>
    	  <artifactId>release-common-lib</artifactId>
-	  <version>1.0.2</version>
+	  <version>1.0.3</version>
 	</dependency>
 	<dependency>
 	  <groupId>org.apache.logging.log4j</groupId>
@@ -60,7 +55,7 @@
 		  <scope>test</scope>
 	  </dependency>
   </dependencies>
-  
+
   <repositories>
 	<repository>
 		<id>nexus-ebi-repo</id>
@@ -93,7 +88,7 @@
 			</snapshots>
 		</repository>
   </repositories>
-  
+
   <build>
 	  <plugins>
 	    <plugin>
