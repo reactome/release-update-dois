@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome.release</groupId>
 	<artifactId>release-common-lib</artifactId>
-	<version>1.0.3</version>
+	<version>1.1.0</version>
 	<description>Common components used throughout the Release process.</description>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
