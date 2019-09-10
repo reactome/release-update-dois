@@ -17,7 +17,7 @@
 		<reactome-graph-core.version>1.1.17</reactome-graph-core.version>
 		<neo4j.version>3.4.9</neo4j.version>
 		<neo4j-java-driver.version>1.7.2</neo4j-java-driver.version>
-		<junit.version>5.4.0-M1</junit.version>
+		<junit.version>5.5.2</junit.version>
 		<hamcrest.version>2.1</hamcrest.version>
 		<mockito.version>2.23.4</mockito.version>
 	</properties>
