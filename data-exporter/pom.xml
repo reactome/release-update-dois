@@ -14,7 +14,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 
 		<reactome-release-common-lib.version>1.0.2</reactome-release-common-lib.version>
-		<reactome-graph-core.version>1.1.17</reactome-graph-core.version>
+		<reactome-graph-core.version>1.1.20</reactome-graph-core.version>
 		<neo4j.version>3.5.9</neo4j.version>
 		<neo4j-java-driver.version>1.7.5</neo4j-java-driver.version>
 		<junit.version>5.5.2</junit.version>
