@@ -50,5 +50,5 @@ else
 fi
 
 ## Link and run the jar file
-ln -sf target/data-exporter-1.1.0-jar-with-dependencies.jar $jar_file
+ln -sf target/data-exporter-1.1.1-jar-with-dependencies.jar $jar_file
 java -jar data-exporter.jar $config_file
