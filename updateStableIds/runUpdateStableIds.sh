@@ -10,6 +10,6 @@ git pull
 mvn clean compile assembly:single
 
 ## Run program
-echo "java -jar target/updateStableIds-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
-java -jar target/updateStableIds-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+echo "java -jar target/updateStableIds-1.0.0-jar-with-dependencies.jar"
+java -jar target/updateStableIds-1.0.0-jar-with-dependencies.jar
 echo "Finished Updating Stable Identifiers"
