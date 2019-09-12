@@ -5,9 +5,8 @@
   <groupId>org.reactome.release.updateDOIs</groupId>
   <artifactId>update-dois</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.1</version>
+  <version>1.0.0</version>
   <name>update-dois</name>
-  <url>http://maven.apache.org</url>
 
   <build>
     <plugins>
