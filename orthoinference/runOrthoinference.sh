@@ -13,7 +13,7 @@ mvn clean compile assembly:single
 allSpecies=(mmus rnor cfam btau sscr drer xtro ggal dmel cele ddis spom scer pfal)
 for species in "${allSpecies[@]}"
 do
-	echo "java -jar target/orthoinference-0.0.3-SNAPSHOT-jar-with-dependencies.jar $species > orthoinference_$species.out";
-	java -jar target/orthoinference-0.0.3-SNAPSHOT-jar-with-dependencies.jar $species > orthoinference_$species.out;
+	echo "java -jar target/orthoinference-1.0.0-jar-with-dependencies.jar $species > orthoinference_$species.out";
+	java -jar target/orthoinference-1.0.0-jar-with-dependencies.jar $species > orthoinference_$species.out;
 done
 echo "Orthoinference complete"
