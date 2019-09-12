@@ -5,7 +5,7 @@
 	<groupId>org.reactome.release</groupId>
 	<artifactId>data-exporter</artifactId>
 	<packaging>jar</packaging>
-	<version>1.1.0</version>
+	<version>1.1.1</version>
 	<name>data-exporter</name>
 
 	<properties>
@@ -13,13 +13,14 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 
-		<reactome-release-common-lib.version>1.0.2</reactome-release-common-lib.version>
-		<reactome-graph-core.version>1.1.17</reactome-graph-core.version>
-		<neo4j.version>3.4.9</neo4j.version>
-		<neo4j-java-driver.version>1.7.2</neo4j-java-driver.version>
-		<junit.version>5.4.0-M1</junit.version>
+		<reactome-release-common-lib.version>1.1.0</reactome-release-common-lib.version>
+		<reactome-graph-core.version>1.1.20</reactome-graph-core.version>
+		<neo4j.version>3.5.9</neo4j.version>
+		<neo4j-java-driver.version>1.7.5</neo4j-java-driver.version>
+		<junit.version>5.5.2</junit.version>
+
 		<hamcrest.version>2.1</hamcrest.version>
-		<mockito.version>2.23.4</mockito.version>
+		<mockito.version>3.0.0</mockito.version>
 	</properties>
 
 	<dependencies>
@@ -28,11 +29,6 @@
 			<groupId>org.reactome.release</groupId>
 			<artifactId>release-common-lib</artifactId>
 			<version>${reactome-release-common-lib.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.reactome.base</groupId>
-			<artifactId>reactome-base</artifactId>
-			<version>RELEASE</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome.server.graph</groupId>
@@ -81,7 +77,7 @@
 		<dependency>
 			<groupId>org.jetbrains</groupId>
 			<artifactId>annotations</artifactId>
-			<version>16.0.2</version>
+			<version>17.0.0</version>
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>
@@ -113,7 +109,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.1</version>
+				<version>2.22.2</version>
 			</plugin>
 		</plugins>
 
