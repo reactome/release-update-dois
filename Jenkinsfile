@@ -29,10 +29,10 @@ pipeline {
           			def userInput = input(
           				id: 'userInput', message: 'Has the list of updateable DOIs output by the UpdateDOIs Test Run been confirmed by a curator? (yes/no)',
           				parameters: [
-                      				[$class: 'TextParameterDefinition', defaultValue: 'None', description: 'Confirmation of updateable DOIs', name: 'response']
+                      				[$class: 'TextParameterDefinition', defaultValue: '', description: 'Confirmation of updateable DOIs', name: 'response']
                       			])
 					
-          			if (userInput.startsWith("y")) {
+          			if (userInput.toLowerCase().startsWith("y")) {
 						echo("Proceeding to UpdateDOIs step.")
 					} else {
 						error("Please confirm output of UpdateDOIs Test Run matches DOIs that should be updated")
