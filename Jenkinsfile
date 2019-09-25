@@ -27,10 +27,10 @@ pipeline {
 			steps{
 				script{
           			def userInput = input(
-          				id: 'userInput', message: 'What is the release number?',
+          				id: 'userInput', message: 'Has the list of updateable DOIs output by the UpdateDOIs Test Run been confirmed by a curator? (yes/no)',
           				parameters: [
-                      [$class: 'TextParameterDefinition', defaultValue: '', description: 'Release Version', name: 'ReleaseNumber']
-                      ])
+                      				[$class: 'TextParameterDefinition', defaultValue: 'None', description: 'Confirmation of updateable DOIs', name: 'response']
+                      			])
           			echo("The release number: " + userInput)
 				}
 			}
