@@ -26,16 +26,12 @@ pipeline {
 		stage('User Input Required: Confirm DOIs'){
 			steps{
 				script{
-					def releaseNumber
-					def userInput = input(
-					id: 'userInput', message: 'Has the list of updateable DOIs output by the UpdateDOIs Test Run been confirmed by a curator? (yes/no)',
-					parameters: [
-                		string($class: 'TextParameterDefinition',
-							   defaultValue: 'None',
-                               description: 'Confirmation of updateable DOIs',
-                               name: 'response'),
-					])
-					echo("The user input: " + userInput)
+          			def userInput = input(
+          				id: 'userInput', message: 'What is the release number?',
+          				parameters: [
+                      [$class: 'TextParameterDefinition', defaultValue: '', description: 'Release Version', name: 'ReleaseNumber']
+                      ])
+          			echo("The release number: " + userInput)
 				}
 			}
 		}
