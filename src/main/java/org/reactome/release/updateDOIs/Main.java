@@ -19,11 +19,14 @@ public class Main {
 	 // TODO: Lots of room for error here if only 1 argument provided, or if the report file isn't updated
     String pathToConfig = "src/main/resources/config.properties";
     String pathToReport = "src/main/resources/UpdateDOIs.report";
+	  
+    boolean testMode = true;
     if (args.length > 0 && !args[0].equals(""))
     {
       pathToConfig = args[0];
       if (args.length > 1 && !args[1].equals("")) {
         pathToReport = args[1];
+        testMode = false;
       }
     }
 
@@ -31,7 +34,6 @@ public class Main {
     MySQLAdaptor dbaGkCentral = null;
     long authorIdTR = 0;
     long authorIdGK = 0;
-    boolean testMode = true;
 
     // Properties file should contain information needed to access current Test Reactome and GKCentral databases
     try 
@@ -50,9 +52,9 @@ public class Main {
       authorIdTR = Integer.valueOf(props.getProperty("personId"));
       authorIdGK = Integer.valueOf(props.getProperty("gkPersonId"));
       int port = Integer.valueOf(props.getProperty("port"));
-      if (props.getProperty("testMode") != null) {
-        testMode = Boolean.valueOf(props.getProperty("testMode"));
-      }
+      //if (props.getProperty("testMode") != null) {
+      //  testMode = Boolean.valueOf(props.getProperty("testMode"));
+      //}
 
       // Set up db connections.
       dbaTestReactome = new MySQLAdaptor(hostTR, databaseTR, userTR, passwordTR, port);
