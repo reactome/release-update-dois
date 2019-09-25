@@ -31,7 +31,12 @@ pipeline {
           				parameters: [
                       				[$class: 'TextParameterDefinition', defaultValue: 'None', description: 'Confirmation of updateable DOIs', name: 'response']
                       			])
-          			echo("The release number: " + userInput)
+					
+          			if (userInput.startsWith("y")) {
+						echo("Proceeding to UpdateDOIs step.")
+					} else {
+						error("Please confirm output of UpdateDOIs Test Run matches DOIs that should be updated")
+					}
 				}
 			}
 		}
