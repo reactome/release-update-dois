@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
+        stage('Setup: Build jar file') {
             steps {
 				script {
-                    dir ('orthopairs') {
+                    dir ('update-dois') {
                   	    sh 'mvn clean compile assembly:single'
                     }
           		}
