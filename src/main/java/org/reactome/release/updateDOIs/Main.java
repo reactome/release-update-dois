@@ -37,16 +37,16 @@ public class Main {
       Properties props = new Properties();
       props.load(new FileInputStream(pathToConfig));
 
-      String userTR = props.getProperty("userTR");
-      String userGK = props.getProperty("userGK");
-      String passwordTR = props.getProperty("passwordTR");
-      String passwordGK = props.getProperty("passwordGK");
-      String hostTR = props.getProperty("hostTR");
-      String hostGK = props.getProperty("hostGK");
-      String databaseTR = props.getProperty("databaseTR");
-      String databaseGK = props.getProperty("databaseGK");
-      authorIdTR = Integer.valueOf(props.getProperty("authorIdTR"));
-      authorIdGK = Integer.valueOf(props.getProperty("authorIdGK"));
+      String userTR = props.getProperty("username");
+      String userGK = props.getProperty("gkCentralUsername");
+      String passwordTR = props.getProperty("password");
+      String passwordGK = props.getProperty("gkCentralPassword");
+      String hostTR = props.getProperty("host");
+      String hostGK = props.getProperty("gkCentralHost");
+      String databaseTR = props.getProperty("currentDatabase");
+      String databaseGK = props.getProperty("gkCentralDatabase");
+      authorIdTR = Integer.valueOf(props.getProperty("personId"));
+      authorIdGK = Integer.valueOf(props.getProperty("gkPersonId"));
       int port = Integer.valueOf(props.getProperty("port"));
       if (props.getProperty("testMode") != null) {
         testMode = Boolean.valueOf(props.getProperty("testMode"));
