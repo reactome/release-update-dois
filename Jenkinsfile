@@ -23,5 +23,24 @@ pipeline {
 				}
 			}
 		}
+		stage('User Input Required: Confirm DOIs'){
+			steps{
+				script{
+					def releaseNumber
+					def userInput = input(
+					id: 'userInput', message: 'Has the list of updateable DOIs output by the UpdateDOIs Test Run been confirmed by a curator? (yes/no)',
+					parameters: [
+                		string(defaultValue: 'None',
+                               description: 'Confirmation of updateable DOIs',
+                               name: 'response'),
+					])
+					if (userInput['response'].startsWith("y")) {
+						echo("Proceeding to UpdateDOIs step.")
+					} else {
+						error("Please confirm output of UpdateDOIs Test Run matches DOIs that should be updated")
+					}
+				}
+			}
+		}
     }
 }
