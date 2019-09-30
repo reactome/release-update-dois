@@ -2,18 +2,6 @@ pipeline {
     agent any
 
     stages {
-		stage('Send email notificatio'){
-			steps{
-				script{
-					emailext (
-						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!", 
-						to: '$DEFAULT_RECIPIENTS', 
-						subject: "UpdateDOIs List for v${env.RELEASE_NUMBER}",
-						attachmentsPattern: '**/README.md'
-					)
-				}
-			}
-		}
 		stage('Setup: Back up DBs'){
 			steps{
 				script{
@@ -49,6 +37,18 @@ pipeline {
 				}
 			}
 		}
+		stage('Send email notificatio'){
+			steps{
+				script{
+					emailext (
+						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!", 
+						to: '$DEFAULT_RECIPIENTS', 
+						subject: "UpdateDOIs List for v${env.RELEASE_NUMBER}",
+						attachmentsPattern: "**/doisToBeUpdated-v${env.RELEASE_NUMBER}"
+					)
+				}
+			}
+		}
 		stage('User Input Required: Confirm DOIs'){
 			steps{
 				script{
@@ -71,9 +71,7 @@ pipeline {
 				script{
 					dir('update-dois'){
 						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-							withCredentials([file(credentialsId: 'doisToUpdate', variable: 'DOIsFile')]) {
-								sh 'java -jar target/update-dois-0.0.1-jar-with-dependencies.jar $ConfigFile $DOIsFile'
-							}
+								sh "java -jar target/update-dois-0.0.1-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${env.RELEASE_NUMBER}"
 						}
 					}
 				}
