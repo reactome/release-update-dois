@@ -1,18 +1,21 @@
 package org.reactome.release.updateDOIs;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
+import static org.gk.model.ReactomeJavaConstants.releaseNumber;
+
 public class Main {
 
 //  final static Logger logger = Logger.getLogger(UpdateDOIs.class);
 	private static final Logger logger = LogManager.getLogger();
 
-  public static void main( String[] args ) {
+  public static void main( String[] args ) throws IOException {
 
 	 // Default locations of properties and pre-set report files
 	 // Will override if arguments are provided
@@ -53,6 +56,7 @@ public class Main {
       authorIdGK = Integer.valueOf(props.getProperty("personId"));
       int portTR = Integer.valueOf(props.getProperty("release.database.port"));
       int portGK = Integer.valueOf(props.getProperty("curator.database.port"));
+      String releaseNumber = props.getProperty("releaseNumber");
       //if (props.getProperty("testMode") != null) {
       //  testMode = Boolean.valueOf(props.getProperty("testMode"));
       //}
@@ -65,7 +69,7 @@ public class Main {
     }
       UpdateDOIs.setAdaptors(dbaTestReactome, dbaGkCentral);
       logger.info("Starting UpdateDOIs");
-      UpdateDOIs.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport, testMode);
+      UpdateDOIs.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport, releaseNumber, testMode);
       if (!testMode) {
         logger.info("UpdateDOIs Complete");
       } else {

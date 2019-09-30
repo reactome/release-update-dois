@@ -1,6 +1,9 @@
 package org.reactome.release.updateDOIs;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,10 +34,13 @@ public class UpdateDOIs {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport, boolean testMode) {
+	public static void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport, String releaseNumber, boolean testMode) throws IOException {
 
+		String doisListFilename = "doisToBeUpdated-v" + releaseNumber + ".txt";
+		File doisListFile = new File(doisListFilename);
 		if (testMode) {
 			logger.info("Test mode is active. Outputting DOIs that can be updated");
+			doisListFile.createNewFile();
 		}
 
 		Collection<GKInstance> doisTR;
@@ -118,6 +124,8 @@ public class UpdateDOIs {
 									logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
 								} else {
 									logger.info("TEST DOI: " + updatedDoi + "," + nameFromDb);
+									String doiWithName = updatedDoi + "," + nameFromDb + "\n";
+									Files.write(Paths.get(doisListFilename), doiWithName.getBytes(), StandardOpenOption.APPEND);
 								}
 							}
 						} else {
