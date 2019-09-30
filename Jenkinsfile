@@ -53,7 +53,7 @@ pipeline {
 			steps{
 				script{
           			def userInput = input(
-          				id: 'userInput', message: 'Has the list of updateable DOIs output by the UpdateDOIs Test Run been confirmed by a curator and the dois file updated in credentials? (yes/no)',
+          				id: 'userInput', message: "Has a curator confirmed that the list of DOIs to be updated in doisToBeUpdated-v${env.RELEASE_NUMBER}.txt is correct? (yes/no)",
           				parameters: [
                       				[$class: 'TextParameterDefinition', defaultValue: '', description: 'Confirmation of updateable DOIs', name: 'response']
                       			])
