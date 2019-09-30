@@ -25,6 +25,17 @@ pipeline {
           		}
             }
         }
+		stage('Send email notificatio'){
+			steps{
+				script{
+					emailext(
+						subject: "Greetings from UpdateDOIs",
+						body: "Hello, New York!",
+						recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+					)
+				}
+			}
+		}
 		stage('Main: UpdateDOIs Test Run'){
 			steps{
 				script{
