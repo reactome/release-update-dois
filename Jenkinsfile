@@ -2,6 +2,17 @@ pipeline {
     agent any
 
     stages {
+		stage('Send email notificatio'){
+			steps{
+				script{
+					emailext(
+						subject: "Greetings from UpdateDOIs",
+						body: "Hello, New York!",
+						recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+					)
+				}
+			}
+		}
 		stage('Setup: Back up DBs'){
 			steps{
 				script{
@@ -25,17 +36,6 @@ pipeline {
           		}
             }
         }
-		stage('Send email notificatio'){
-			steps{
-				script{
-					emailext(
-						subject: "Greetings from UpdateDOIs",
-						body: "Hello, New York!",
-						recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-					)
-				}
-			}
-		}
 		stage('Main: UpdateDOIs Test Run'){
 			steps{
 				script{
