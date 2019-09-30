@@ -5,7 +5,11 @@ pipeline {
 		stage('Send email notificatio'){
 			steps{
 				script{
-					emailext body: "This is an automated message. Please review the attached file of Pathway DOIs and confirm they are correct in a reply. Thanks!", to: '$DEFAULT_RECIPIENTS', subject: "UpdateDOIs for Release ${env.RELEASE_NUMBER}" 
+					emailext (
+						body: "This is an automated message. Please review the attached file of Pathway DOIs and confirm they are correct in a reply. Thanks!", 
+						to: '$DEFAULT_RECIPIENTS', 
+						subject: "UpdateDOIs for Release ${env.RELEASE_NUMBER}" 
+					)
 				}
 			}
 		}
