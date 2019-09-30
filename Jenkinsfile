@@ -71,7 +71,7 @@ pipeline {
 				script{
 					dir('update-dois'){
 						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-								sh "java -jar target/update-dois-0.0.1-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${env.RELEASE_NUMBER}"
+								sh "java -jar target/update-dois-0.0.1-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${env.RELEASE_NUMBER}.txt"
 						}
 					}
 				}
