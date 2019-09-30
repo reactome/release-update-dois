@@ -8,8 +8,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gk.persistence.MySQLAdaptor;
 
-import static org.gk.model.ReactomeJavaConstants.releaseNumber;
-
 public class Main {
 
 //  final static Logger logger = Logger.getLogger(UpdateDOIs.class);
@@ -39,6 +37,7 @@ public class Main {
     long authorIdGK = 0;
 
     // Properties file should contain information needed to access current Test Reactome and GKCentral databases
+    String releaseNumber = "";
     try 
     {
       Properties props = new Properties();
@@ -56,7 +55,7 @@ public class Main {
       authorIdGK = Integer.valueOf(props.getProperty("personId"));
       int portTR = Integer.valueOf(props.getProperty("release.database.port"));
       int portGK = Integer.valueOf(props.getProperty("curator.database.port"));
-      String releaseNumber = props.getProperty("releaseNumber");
+      releaseNumber = props.getProperty("releaseNumber");
       //if (props.getProperty("testMode") != null) {
       //  testMode = Boolean.valueOf(props.getProperty("testMode"));
       //}
