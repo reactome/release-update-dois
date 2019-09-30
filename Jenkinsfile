@@ -5,7 +5,7 @@ pipeline {
 		stage('Send email notificatio'){
 			steps{
 				script{
-					emailext body: 'A Test EMail', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'Test', to: 'justincook003@gmail.com'
+					emailext body: 'A Test EMail', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'Test'
 				}
 			}
 		}
