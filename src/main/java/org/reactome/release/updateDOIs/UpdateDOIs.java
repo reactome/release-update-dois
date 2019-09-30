@@ -40,6 +40,9 @@ public class UpdateDOIs {
 		File doisListFile = new File(doisListFilename);
 		if (testMode) {
 			logger.info("Test mode is active. Outputting DOIs that can be updated");
+			if (doisListFile.exists()) {
+				doisListFile.delete();
+			}
 			doisListFile.createNewFile();
 		}
 
