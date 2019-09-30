@@ -8,7 +8,7 @@ pipeline {
 					emailext (
 						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!", 
 						to: '$DEFAULT_RECIPIENTS', 
-						subject: "UpdateDOIs List for v${env.RELEASE_NUMBER}"
+						subject: "UpdateDOIs List for v${env.RELEASE_NUMBER}",
 						attachmentsPattern: 'pom.xml'
 					)
 				}
