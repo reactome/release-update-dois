@@ -6,7 +6,7 @@ pipeline {
 
 	stages {
 		// This stage checks that an upstream project, UpdateStableIdentifiers, was run successfully for its last build.
-		stage('Check if upstream builds succeeded'){
+		stage('Check if UpdateStableIdentifiers build succeeded'){
 			steps{
 				script{
 					// This queries the Jenkins API to confirm that the most recent build of UpdateStableIdentifiers was successful.
