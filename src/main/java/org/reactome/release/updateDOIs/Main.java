@@ -2,6 +2,7 @@ package org.reactome.release.updateDOIs;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -17,18 +18,13 @@ public class Main {
 
 	 // Default locations of properties and pre-set report files
 	 // Will override if arguments are provided
-	 // TODO: Lots of room for error here if only 1 argument provided, or if the report file isn't updated
-    String pathToConfig = "src/main/resources/config.properties";
-    String pathToReport = "src/main/resources/UpdateDOIs.report";
-	  
+    String pathToConfig = args.length > 0 && !args[0].isEmpty() ? args[0] : Paths.get("src/main/resources/config.properties").toString();
+
+    String pathToReport = Paths.get("src/main/resources/UpdateDOIs.report").toString();
     boolean testMode = true;
-    if (args.length > 0 && !args[0].equals(""))
-    {
-      pathToConfig = args[0];
-      if (args.length > 1 && !args[1].equals("")) {
-        pathToReport = args[1];
-        testMode = false;
-      }
+    if (args.length > 1 && !args[1].isEmpty()) {
+      pathToReport = args[1];
+      testMode = false;
     }
 
     MySQLAdaptor dbaTestReactome = null;
