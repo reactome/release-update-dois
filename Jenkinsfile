@@ -1,5 +1,5 @@
 import groovy.json.JsonSlurper
-// This Jenkinsfile is used by Jenkins to run the UpdateDOIs step of Reactome's release. 
+// This Jenkinsfile is used by Jenkins to run the UpdateDOIs step of Reactome's release.
 // It requires that the UpdateStableIdentifiers step has been run successfully before it can be run.
 pipeline {
 	agent any
@@ -15,9 +15,9 @@ pipeline {
 					if(updateStIdsStatusJson['result'] != "SUCCESS"){
 						error("Most recent UpdateStableIdentifiers build status: " + updateStIdsStatusJson['result'])
 					}
-				}	
-		    	}
-	    	}
+				}
+			}
+		}
 		// This stage backs up the gk_central and release_current databases before they are modified.
 		stage('Setup: Back up DBs'){
 			steps{
@@ -41,11 +41,11 @@ pipeline {
 				script{
 					dir('update-dois'){
 						sh "mvn clean compile assembly:single"
-                    			}
-          			}
-            		}
-        	}
-		// This stage executes UpdateDOIs without specifying a 'report' file, which should contain a list of updateable DOIS, as one of the arguments. 
+					}
+				}
+			}
+		}
+		// This stage executes UpdateDOIs without specifying a 'report' file, which should contain a list of updateable DOIS, as one of the arguments.
 		// This results in test mode behaviour, which includes generating the report file that contains updateable DOIS for release.
 		stage('Main: UpdateDOIs Test Run'){
 			steps{
@@ -59,14 +59,14 @@ pipeline {
 				}
 			}
 		}
-		// This stage takes the generated report file and sends it to the curator overseeing release. 
+		// This stage takes the generated report file and sends it to the curator overseeing release.
 		// Before moving onto the next stage of UpdateDOIs, their confirmation that the contents of the report file are correct is needed.
 		stage('Send email of updateable DOIs to curator'){
 			steps{
 				script{
 					emailext (
-						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!", 
-						to: '$DEFAULT_RECIPIENTS', 
+						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!",
+						to: '$DEFAULT_RECIPIENTS',
 						subject: "UpdateDOIs List for v${env.RELEASE_NUMBER}",
 						attachmentsPattern: "**/doisToBeUpdated-v${env.RELEASE_NUMBER}.txt"
 					)
@@ -135,5 +135,5 @@ pipeline {
 				}
 			}
 		}
-    	}
+	}
 }
