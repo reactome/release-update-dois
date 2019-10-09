@@ -50,7 +50,7 @@ public class Main {
       String hostTR = props.getProperty("release.database.host");
       String hostGK = props.getProperty("curator.database.host");
       String databaseTR = props.getProperty("release_current.name");
-      String databaseGK = props.getProperty("gk_central.name");
+      String databaseGK = props.getProperty("curator.database.name");
       authorIdTR = Integer.valueOf(props.getProperty("personId"));
       authorIdGK = Integer.valueOf(props.getProperty("personId"));
       int portTR = Integer.valueOf(props.getProperty("release.database.port"));
