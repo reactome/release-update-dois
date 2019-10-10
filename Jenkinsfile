@@ -11,7 +11,7 @@ pipeline {
 				script{
 					def currentRelease = (pwd() =~ /Releases\/(\d+)\//)[0][1];
 					// This queries the Jenkins API to confirm that the most recent build of UpdateStableIdentifiers was successful.
-					def updateStIdsStatusUrl = httpRequest authentication: 'jenkinsKey', url: "${env.JENKINS_JOB_URL}/job/$currentRelease/job/UpdateStableIdentifiers/lastBuild/api/json"
+					def updateStIdsStatusUrl = httpRequest authentication: 'jenkinsKey', validResponseCodes: '200:404', url: "${env.JENKINS_JOB_URL}/job/$currentRelease/job/UpdateStableIdentifiers/lastBuild/api/json"
 					if (updateStIdsStatusUrl.getStatus() == 404) {
 						error("UpdateStableIdentifiers has not yet been run. Please complete a successful build.")
 					} else {
