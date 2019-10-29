@@ -11,16 +11,16 @@ import org.gk.persistence.MySQLAdaptor;
 
 public class Main {
 
-//  final static Logger logger = Logger.getLogger(UpdateDOIs.class);
 	private static final Logger logger = LogManager.getLogger();
+	private static final String RESOURCES_DIR = Paths.get("src", "main", "resources").toString();
 
   public static void main( String[] args ) throws IOException {
 
 	 // Default locations of properties and pre-set report files
 	 // Will override if arguments are provided
-    String pathToConfig = args.length > 0 && !args[0].isEmpty() ? args[0] : Paths.get("src/main/resources/config.properties").toString();
+    String pathToConfig = args.length > 0 && !args[0].isEmpty() ? args[0] : Paths.get(RESOURCES_DIR,"config.properties").toString();
 
-    String pathToReport = Paths.get("src/main/resources/UpdateDOIs.report").toString();
+    String pathToReport = Paths.get(RESOURCES_DIR,"UpdateDOIs.report").toString();
     boolean testMode = true;
     if (args.length > 1 && !args[1].isEmpty()) {
       pathToReport = args[1];
@@ -61,6 +61,7 @@ public class Main {
       dbaGkCentral = new MySQLAdaptor(hostGK, databaseGK, userGK, passwordGK, portGK);
     } catch (Exception e) {
       e.printStackTrace();
+      System.exit(0);
     }
       UpdateDOIs.setAdaptors(dbaTestReactome, dbaGkCentral);
       logger.info("Starting UpdateDOIs");

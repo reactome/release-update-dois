@@ -57,8 +57,7 @@ public class UpdateDOIs {
 		}
 		// Gets the updated report file if it was provided for this release
 		Map<String, Map<String,String>> expectedUpdatedDOIs = new HashMap<>();
-		File reportFile = new File(pathToReport);
-		if (reportFile.exists()) {
+		if (Files.exists(Paths.get(pathToReport))) {
 			expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport);
 		}
 		if (expectedUpdatedDOIs.size() == 0) {
