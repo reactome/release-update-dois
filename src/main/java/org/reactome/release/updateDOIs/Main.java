@@ -61,7 +61,7 @@ public class Main {
       dbaGkCentral = new MySQLAdaptor(hostGK, databaseGK, userGK, passwordGK, portGK);
     } catch (Exception e) {
       e.printStackTrace();
-      System.exit(0);
+      System.exit(1);
     }
       UpdateDOIs.setAdaptors(dbaTestReactome, dbaGkCentral);
       logger.info("Starting UpdateDOIs");
