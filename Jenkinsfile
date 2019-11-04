@@ -1,6 +1,8 @@
 import groovy.json.JsonSlurper
 // This Jenkinsfile is used by Jenkins to run the UpdateDOIs step of Reactome's release.
 // It requires that the UpdateStableIdentifiers step has been run successfully before it can be run.
+def currentRelease
+def previousRelease
 pipeline {
 	agent any
 
@@ -9,7 +11,8 @@ pipeline {
 		stage('Check if UpdateStableIdentifiers build succeeded'){
 			steps{
 				script{
-					def currentRelease = (pwd() =~ /Releases\/(\d+)\//)[0][1];
+					currentRelease = (pwd() =~ /Releases\/(\d+)\//)[0][1];
+					previousRelease = (pwd() =~ /Releases\/(\d+)\//)[0][1].toInteger() - 1;
 					// This queries the Jenkins API to confirm that the most recent build of UpdateStableIdentifiers was successful.
 					def updateStIdsStatusUrl = httpRequest authentication: 'jenkinsKey', validResponseCodes: "${env.VALID_RESPONSE_CODES}", url: "${env.JENKINS_JOB_URL}/job/$currentRelease/job/UpdateStableIdentifiers/lastBuild/api/json"
 					if (updateStIdsStatusUrl.getStatus() == 404) {
@@ -29,8 +32,8 @@ pipeline {
 				script{
 					dir('update-dois'){
 						withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-							def release_current_before_update_dois_dump = "${env.RELEASE_CURRENT}_${env.RELEASE_NUMBER}_before_update_dois.dump"
-							def central_before_update_dois_dump = "${env.GK_CENTRAL}_${env.RELEASE_NUMBER}_before_update_dois.dump"
+							def release_current_before_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_before_update_dois.dump"
+							def central_before_update_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_before_update_dois.dump"
 							sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_before_update_dois_dump"
 							sh "gzip -f $release_current_before_update_dois_dump"
 							sh "mysqldump -u$user -p$pass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_update_dois_dump"
@@ -72,8 +75,8 @@ pipeline {
 					emailext (
 						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!",
 						to: '$DEFAULT_RECIPIENTS',
-						subject: "UpdateDOIs List for v${env.RELEASE_NUMBER}",
-						attachmentsPattern: "**/doisToBeUpdated-v${env.RELEASE_NUMBER}.txt"
+						subject: "UpdateDOIs List for v${currentRelease}",
+						attachmentsPattern: "**/doisToBeUpdated-v${currentRelease}.txt"
 					)
 				}
 			}
@@ -84,7 +87,7 @@ pipeline {
 				script{
 					// This brings up a user input form, asking for confirmation that the curator overseeing release approves of the report file they received.
 					def userInput = input(
-						id: 'userInput', message: "Has a curator confirmed that the list of DOIs to be updated in doisToBeUpdated-v${env.RELEASE_NUMBER}.txt is correct? (yes/no)",
+						id: 'userInput', message: "Has a curator confirmed that the list of DOIs to be updated in doisToBeUpdated-v${currentRelease}.txt is correct? (yes/no)",
 						parameters: [
 							[$class: 'TextParameterDefinition', defaultValue: '', description: 'Confirmation of updateable DOIs', name: 'response']
 						])
@@ -104,7 +107,7 @@ pipeline {
 				script{
 					dir('update-dois'){
 						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-							sh "java -jar target/update-dois-${env.UPDATE_DOIS_VERSION}-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${env.RELEASE_NUMBER}.txt"
+							sh "java -jar target/update-dois-${env.UPDATE_DOIS_VERSION}-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${currentRelease}.txt"
 						}
 					}
 				}
@@ -116,8 +119,8 @@ pipeline {
 				script{
 					dir('update-dois'){
 						withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-							def release_current_after_update_dois_dump = "${env.RELEASE_CURRENT}_${env.RELEASE_NUMBER}_after_update_dois.dump"
-							def central_before_after_dois_dump = "${env.GK_CENTRAL}_${env.RELEASE_NUMBER}_after_update_dois.dump"
+							def release_current_after_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_after_update_dois.dump"
+							def central_before_after_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_after_update_dois.dump"
 							sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_after_update_dois_dump"
 							sh "gzip -f $release_current_after_update_dois_dump"
 							sh "mysqldump -u$user -p$pass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_after_dois_dump"
@@ -132,10 +135,10 @@ pipeline {
 			steps{
 				script{
 					dir('update-dois'){
-						sh "mkdir -p archive/${env.RELEASE_NUMBER}/logs"
-						sh "mv --backup=numbered *_${env.RELEASE_NUMBER}_*.dump.gz archive/${env.RELEASE_NUMBER}/"
+						sh "mkdir -p archive/${currentRelease}/logs"
+						sh "mv --backup=numbered *_${currentRelease}_*.dump.gz archive/${currentRelease}/"
 						sh "gzip logs/*"
-						sh "mv logs/* archive/${env.RELEASE_NUMBER}/logs/"
+						sh "mv logs/* archive/${currentRelease}/logs/"
 					}
 				}
 			}
