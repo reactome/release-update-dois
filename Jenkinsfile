@@ -77,7 +77,7 @@ pipeline {
 						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!",
 						to: '$DEFAULT_RECIPIENTS',
 						subject: "UpdateDOIs List for v${currentRelease}",
-						attachmentsPattern: "**/doisToBeUpdated-v${currentRelease}.txt"
+						attachmentsPattern: "**///doisToBeUpdated-v${currentRelease}.txt" <- This pattern (**/) messses up multi-line comments. When uncommenting, remove 2/3 backslashes before 'doisToBeUpdated'
 					)
 				}
 			}
