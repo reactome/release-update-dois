@@ -69,6 +69,7 @@ pipeline {
 		}
 		// This stage takes the generated report file and sends it to the curator overseeing release.
 		// Before moving onto the next stage of UpdateDOIs, their confirmation that the contents of the report file are correct is needed.
+		/*
 		stage('Send email of updateable DOIs to curator'){
 			steps{
 				script{
@@ -81,6 +82,7 @@ pipeline {
 				}
 			}
 		}
+		*/
 		// UpdateDOIs should pause at this stage until the curator confirms the report file is correct. Once they do, respond with 'yes' to the user input form that Jenkins brings up.
 		stage('User Input Required: Confirm DOIs'){
 			steps{
