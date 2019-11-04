@@ -78,7 +78,7 @@ pipeline {
 						to: '$DEFAULT_RECIPIENTS',
 						subject: "UpdateDOIs List for v${currentRelease}",
 						attachmentsPattern: "**///doisToBeUpdated-v${currentRelease}.txt" <- This pattern (**/) messses up multi-line comments. When uncommenting, remove 2/3 backslashes before 'doisToBeUpdated'
-					)
+		/*			)
 				}
 			}
 		}
