@@ -3,6 +3,7 @@ package org.reactome.release.updateDOIs;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -14,7 +15,7 @@ public class Main {
 	private static final Logger logger = LogManager.getLogger();
 	private static final String RESOURCES_DIR = Paths.get("src", "main", "resources").toString();
 
-  public static void main( String[] args ) throws IOException {
+  public static void main( String[] args ) throws IOException, SQLException {
 
 	 // Default locations of properties and pre-set report files
 	 // Will override if arguments are provided
@@ -59,9 +60,8 @@ public class Main {
       // Set up db connections.
       dbaTestReactome = new MySQLAdaptor(hostTR, databaseTR, userTR, passwordTR, portTR);
       dbaGkCentral = new MySQLAdaptor(hostGK, databaseGK, userGK, passwordGK, portGK);
-    } catch (Exception e) {
-      e.printStackTrace();
-      System.exit(1);
+    } catch (SQLException e) {
+      throw new SQLException("Unable to create MySQL adaptor. Check properties file.");
     }
       UpdateDOIs.setAdaptors(dbaTestReactome, dbaGkCentral);
       logger.info("Starting UpdateDOIs");
