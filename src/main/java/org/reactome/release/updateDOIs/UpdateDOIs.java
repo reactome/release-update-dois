@@ -35,7 +35,7 @@ public class UpdateDOIs {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void findAndUpdateDOIs(long personId, String pathToReport, String releaseNumber, boolean testMode) throws IOException {
+	public static void findAndUpdateDOIs(long personId, Path pathToReport, int releaseNumber, boolean testMode) throws IOException {
 
 		Path doisListFilepath = Paths.get("doisToBeUpdated-v" + releaseNumber + ".txt");
 		if (testMode) {
@@ -57,8 +57,8 @@ public class UpdateDOIs {
 		}
 		// Gets the updated report file if it was provided for this release
 		Map<String, Map<String,String>> expectedUpdatedDOIs = new HashMap<>();
-		if (Files.exists(Paths.get(pathToReport))) {
-			expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport);
+		if (Files.exists(pathToReport)) {
+			expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport.toString());
 		}
 		if (expectedUpdatedDOIs.size() == 0) {
 			logger.warn("No DOIs listed in UpdateDOIs.report. Please add expected DOI and displayName to UpdateDOIs.report.");
