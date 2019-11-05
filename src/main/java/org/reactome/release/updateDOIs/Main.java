@@ -30,8 +30,7 @@ public class Main {
 
     MySQLAdaptor dbaTestReactome = null;
     MySQLAdaptor dbaGkCentral = null;
-    long authorIdTR = 0;
-    long authorIdGK = 0;
+    long personId = 0;
 
     // Properties file should contain information needed to access current Test Reactome and GKCentral databases
     String releaseNumber = "";
@@ -48,8 +47,7 @@ public class Main {
       String hostGK = props.getProperty("curator.database.host");
       String databaseTR = props.getProperty("release_current.name");
       String databaseGK = props.getProperty("curator.database.name");
-      authorIdTR = Integer.valueOf(props.getProperty("personId"));
-      authorIdGK = Integer.valueOf(props.getProperty("personId"));
+      personId = Integer.valueOf(props.getProperty("personId"));
       int portTR = Integer.valueOf(props.getProperty("release.database.port"));
       int portGK = Integer.valueOf(props.getProperty("curator.database.port"));
       releaseNumber = props.getProperty("releaseNumber");
@@ -65,7 +63,7 @@ public class Main {
     }
       UpdateDOIs.setAdaptors(dbaTestReactome, dbaGkCentral);
       logger.info("Starting UpdateDOIs");
-      UpdateDOIs.findAndUpdateDOIs(authorIdTR, authorIdGK, pathToReport, releaseNumber, testMode);
+      UpdateDOIs.findAndUpdateDOIs(personId, pathToReport, releaseNumber, testMode);
       if (!testMode) {
         logger.info("UpdateDOIs Complete");
       } else {

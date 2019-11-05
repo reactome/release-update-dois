@@ -35,7 +35,7 @@ public class UpdateDOIs {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport, String releaseNumber, boolean testMode) throws IOException {
+	public static void findAndUpdateDOIs(long personId, String pathToReport, String releaseNumber, boolean testMode) throws IOException {
 
 		Path doisListFilepath = Paths.get("doisToBeUpdated-v" + releaseNumber + ".txt");
 		if (testMode) {
@@ -52,8 +52,8 @@ public class UpdateDOIs {
 		GKInstance instanceEditTR = null;
 		GKInstance instanceEditGK = null;
 		if (!testMode) {
-			instanceEditTR = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaTestReactome, authorIdTR, creatorFile);
-			instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, authorIdGK, creatorFile);
+			instanceEditTR = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaTestReactome, personId, creatorFile);
+			instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, personId, creatorFile);
 		}
 		// Gets the updated report file if it was provided for this release
 		Map<String, Map<String,String>> expectedUpdatedDOIs = new HashMap<>();
