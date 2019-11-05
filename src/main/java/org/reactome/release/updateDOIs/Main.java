@@ -45,9 +45,9 @@ public class Main {
     String databaseTR = props.getProperty("release_current.name");
     String databaseGK = props.getProperty("curator.database.name");
     long personId = Long.parseLong(props.getProperty("personId"));
-    int portTR = Integer.valueOf(props.getProperty("release.database.port"));
-    int portGK = Integer.valueOf(props.getProperty("curator.database.port"));
-    int releaseNumber = Integer.valueOf(props.getProperty("releaseNumber"));
+    int portTR = Integer.parseInt(props.getProperty("release.database.port"));
+    int portGK = Integer.parseInt(props.getProperty("curator.database.port"));
+    int releaseNumber = Integer.parseInt(props.getProperty("releaseNumber"));
     //if (props.getProperty("testMode") != null) {
     //  testMode = Boolean.valueOf(props.getProperty("testMode"));
     //}
