@@ -1,6 +1,10 @@
 package org.reactome.release.updateDOIs;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,10 +35,13 @@ public class UpdateDOIs {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void findAndUpdateDOIs(long authorIdTR, long authorIdGK, String pathToReport, boolean testMode) {
+	public static void findAndUpdateDOIs(long personId, Path pathToReport, int releaseNumber, boolean testMode) throws IOException {
 
+		Path doisListFilepath = Paths.get("doisToBeUpdated-v" + releaseNumber + ".txt");
 		if (testMode) {
 			logger.info("Test mode is active. Outputting DOIs that can be updated");
+			Files.deleteIfExists(doisListFilepath);
+			Files.createFile(doisListFilepath);
 		}
 
 		Collection<GKInstance> doisTR;
@@ -45,11 +52,14 @@ public class UpdateDOIs {
 		GKInstance instanceEditTR = null;
 		GKInstance instanceEditGK = null;
 		if (!testMode) {
-			instanceEditTR = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaTestReactome, authorIdTR, creatorFile);
-			instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, authorIdGK, creatorFile);
+			instanceEditTR = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaTestReactome, personId, creatorFile);
+			instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, personId, creatorFile);
 		}
 		// Gets the updated report file if it was provided for this release
-		Map<String, Map<String,String>> expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport);
+		Map<String, Map<String,String>> expectedUpdatedDOIs = new HashMap<>();
+		if (Files.exists(pathToReport)) {
+			expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport.toString());
+		}
 		if (expectedUpdatedDOIs.size() == 0) {
 			logger.warn("No DOIs listed in UpdateDOIs.report. Please add expected DOI and displayName to UpdateDOIs.report.");
 		}
@@ -114,6 +124,8 @@ public class UpdateDOIs {
 									logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
 								} else {
 									logger.info("TEST DOI: " + updatedDoi + "," + nameFromDb);
+									String doiWithName = updatedDoi + "," + nameFromDb + "\n";
+									Files.write(doisListFilepath, doiWithName.getBytes(), StandardOpenOption.APPEND);
 								}
 							}
 						} else {
