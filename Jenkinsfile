@@ -32,12 +32,14 @@ pipeline {
 				script{
 					dir('update-dois'){
 						withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-							def release_current_before_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_before_update_dois.dump"
-							def central_before_update_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_before_update_dois.dump"
-							sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_before_update_dois_dump"
-							sh "gzip -f $release_current_before_update_dois_dump"
-							sh "mysqldump -u$user -p$pass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_update_dois_dump"
-							sh "gzip -f $central_before_update_dois_dump"
+							withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curPass', usernameVariable: 'curUser')]){
+								def release_current_before_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_before_update_dois.dump"
+								def central_before_update_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_before_update_dois.dump"
+								sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_before_update_dois_dump"
+								sh "gzip -f $release_current_before_update_dois_dump"
+								sh "mysqldump -u$curUser -p$curPass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_update_dois_dump"
+								sh "gzip -f $central_before_update_dois_dump"
+							}
 						}
 					}
 				}
@@ -121,12 +123,14 @@ pipeline {
 				script{
 					dir('update-dois'){
 						withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-							def release_current_after_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_after_update_dois.dump"
-							def central_before_after_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_after_update_dois.dump"
-							sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_after_update_dois_dump"
-							sh "gzip -f $release_current_after_update_dois_dump"
-							sh "mysqldump -u$user -p$pass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_after_dois_dump"
-							sh "gzip -f $central_before_after_dois_dump"
+							withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curPass', usernameVariable: 'curUser')]){
+								def release_current_after_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_after_update_dois.dump"
+								def central_before_after_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_after_update_dois.dump"
+								sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_after_update_dois_dump"
+								sh "gzip -f $release_current_after_update_dois_dump"
+								sh "mysqldump -u$curUser -p$curPass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_after_dois_dump"
+								sh "gzip -f $central_before_after_dois_dump"
+							}
 						}
 					}
 				}
