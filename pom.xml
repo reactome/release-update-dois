@@ -8,7 +8,10 @@
 	<packaging>jar</packaging>
 
 	<name>update-dois</name>
-	<description>Updates DOIs of pathways tagged as needing them</description>
+	<description>
+		Updates DOIs of pathways that were updated significantly between releases (these pathways will be tagged as
+		needing a value in their doi attribute)
+	</description>
 	<url>https://reactome.org</url>
 	<licenses>
 		<license>
