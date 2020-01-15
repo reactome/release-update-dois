@@ -1,1 +1,8 @@
-/target/
+doisToBeUpdated-*.txt
+
+logs/
+target/
+
+# Ignore IntelliJ files
+.idea/
+update-dois.iml
