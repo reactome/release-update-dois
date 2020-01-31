@@ -63,7 +63,7 @@ pipeline {
 					dir('update-dois'){
 						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
 							sh "touch src/main/resources/UpdateDOIs.report"
-							sh "java -jar target/update-dois-${env.UPDATE_DOIS_VERSION}-jar-with-dependencies.jar $ConfigFile"
+							sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile"
 						}
 					}
 				}
@@ -111,7 +111,7 @@ pipeline {
 				script{
 					dir('update-dois'){
 						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-							sh "java -jar target/update-dois-${env.UPDATE_DOIS_VERSION}-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${currentRelease}.txt"
+							sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${currentRelease}.txt"
 						}
 					}
 				}
