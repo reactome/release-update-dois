@@ -30,16 +30,14 @@ pipeline {
 		stage('Setup: Back up DBs'){
 			steps{
 				script{
-					dir('update-dois'){
-						withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-							withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curPass', usernameVariable: 'curUser')]){
-								def release_current_before_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_before_update_dois.dump"
-								def central_before_update_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_before_update_dois.dump"
-								sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_before_update_dois_dump"
-								sh "gzip -f $release_current_before_update_dois_dump"
-								sh "mysqldump -u$curUser -p$curPass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_update_dois_dump"
-								sh "gzip -f $central_before_update_dois_dump"
-							}
+					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
+						withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curPass', usernameVariable: 'curUser')]){
+							def release_current_before_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_before_update_dois.dump"
+							def central_before_update_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_before_update_dois.dump"
+							sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_before_update_dois_dump"
+							sh "gzip -f $release_current_before_update_dois_dump"
+							sh "mysqldump -u$curUser -p$curPass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_update_dois_dump"
+							sh "gzip -f $central_before_update_dois_dump"
 						}
 					}
 				}
@@ -49,9 +47,7 @@ pipeline {
 		stage('Setup: Build jar file'){
 			steps{
 				script{
-					dir('update-dois'){
-						sh "mvn clean compile assembly:single"
-					}
+					sh "mvn clean compile assembly:single"
 				}
 			}
 		}
@@ -60,11 +56,9 @@ pipeline {
 		stage('Main: UpdateDOIs Test Run'){
 			steps{
 				script{
-					dir('update-dois'){
-						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-							sh "touch src/main/resources/UpdateDOIs.report"
-							sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile"
-						}
+					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
+						sh "touch src/main/resources/UpdateDOIs.report"
+						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile"
 					}
 				}
 			}
@@ -109,10 +103,8 @@ pipeline {
 		stage('Main: UpdateDOIs'){
 			steps{
 				script{
-					dir('update-dois'){
-						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-							sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${currentRelease}.txt"
-						}
+					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
+						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${currentRelease}.txt"
 					}
 				}
 			}
@@ -121,16 +113,14 @@ pipeline {
 		stage('Post: Backup DBs'){
 			steps{
 				script{
-					dir('update-dois'){
-						withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-							withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curPass', usernameVariable: 'curUser')]){
-								def release_current_after_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_after_update_dois.dump"
-								def central_before_after_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_after_update_dois.dump"
-								sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_after_update_dois_dump"
-								sh "gzip -f $release_current_after_update_dois_dump"
-								sh "mysqldump -u$curUser -p$curPass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_after_dois_dump"
-								sh "gzip -f $central_before_after_dois_dump"
-							}
+					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
+						withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curPass', usernameVariable: 'curUser')]){
+							def release_current_after_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_after_update_dois.dump"
+							def central_before_after_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_after_update_dois.dump"
+							sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_after_update_dois_dump"
+							sh "gzip -f $release_current_after_update_dois_dump"
+							sh "mysqldump -u$curUser -p$curPass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_after_dois_dump"
+							sh "gzip -f $central_before_after_dois_dump"
 						}
 					}
 				}
@@ -140,12 +130,10 @@ pipeline {
 		stage('Archive logs and backups'){
 			steps{
 				script{
-					dir('update-dois'){
-						sh "mkdir -p archive/${currentRelease}/logs"
-						sh "mv --backup=numbered *_${currentRelease}_*.dump.gz archive/${currentRelease}/"
-						sh "gzip logs/*"
-						sh "mv logs/* archive/${currentRelease}/logs/"
-					}
+					sh "mkdir -p archive/${currentRelease}/logs"
+					sh "mv --backup=numbered *_${currentRelease}_*.dump.gz archive/${currentRelease}/"
+					sh "gzip logs/*"
+					sh "mv logs/* archive/${currentRelease}/logs/"
 				}
 			}
 		}
