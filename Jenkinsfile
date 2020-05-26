@@ -69,7 +69,7 @@ pipeline {
 			steps{
 				script{
 					emailext (
-						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!",
+						body: "This is an automated message. UpdateStableIdentifiers has finished successfully, and UpdateDOIs is currently being run. Please review the attached file of Pathway DOIs to be updated by UpdateDOIs. If they are correct, please confirm so with the developer running release. \nThanks!",
 						to: '$DEFAULT_RECIPIENTS',
 						from: "${env.JENKINS_RELEASE_EMAIL}",
 						subject: "UpdateDOIs List for v${currentRelease}",
