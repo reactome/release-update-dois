@@ -72,7 +72,7 @@ pipeline {
 						body: "This is an automated message. UpdateStableIdentifiers has finished successfully, and UpdateDOIs is currently being run. Please review the attached file of Pathway DOIs to be updated by UpdateDOIs. If they are correct, please confirm so with the developer running release. \nThanks!",
 						to: '$DEFAULT_RECIPIENTS',
 						from: "${env.JENKINS_RELEASE_EMAIL}",
-						subject: "UpdateDOIs List for v${currentRelease}",
+						subject: "UpdateStableIdentifiers complete & UpdateDOIs List for v${currentRelease}",
 						attachmentsPattern: "**/doisToBeUpdated-v${currentRelease}.txt"
 					)
 				}
