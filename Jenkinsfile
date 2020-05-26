@@ -63,21 +63,6 @@ pipeline {
 				}
 			}
 		}
-		// This stage takes the generated report file and sends it to the curator overseeing release.
-		// Before moving onto the next stage of UpdateDOIs, their confirmation that the contents of the report file are correct is needed.
-		stage('Send email of updateable DOIs to curator'){
-			steps{
-				script{
-					emailext (
-						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!",
-						to: '$DEFAULT_RECIPIENTS',
-						subject: "UpdateDOIs List for v${currentRelease}",
-						attachmentsPattern: "**/doisToBeUpdated-v${currentRelease}.txt"
-				)
-				}
-			}
-		}
-	
 		// UpdateDOIs should pause at this stage until the curator confirms the report file is correct. Once they do, respond with 'yes' to the user input form that Jenkins brings up.
 		stage('User Input Required: Confirm DOIs'){
 			steps{
