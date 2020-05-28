@@ -11,7 +11,7 @@ pipeline {
 		stage('Check if UpdateStableIdentifiers build succeeded'){
 			steps{
 				script{
-					currentRelease = (pwd() = ~/Releases\/(\d+)\//)[0][1];
+					currentRelease = (pwd() =~ /Releases\/(\d+)\//)[0][1];
 					previousRelease = (pwd() =~ /Releases\/(\d+)\//)[0][1].toInteger() - 1;
 					// This queries the Jenkins API to confirm that the most recent build of UpdateStableIdentifiers was successful.
 					def updateStIdsStatusUrl = httpRequest authentication: 'jenkinsKey', validResponseCodes: "${env.VALID_RESPONSE_CODES}", url: "${env.JENKINS_JOB_URL}/job/$currentRelease/job/UpdateStableIdentifiers/lastBuild/api/json"
