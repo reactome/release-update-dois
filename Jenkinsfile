@@ -1,4 +1,3 @@
-import groovy.json.JsonSlurper
 // This Jenkinsfile is used by Jenkins to run the UpdateDOIs step of Reactome's release.
 // It requires that the UpdateStableIdentifiers step has been run successfully before it can be run.
 import org.reactome.release.jenkins.utilities.Utilities
@@ -25,7 +24,7 @@ pipeline {
 					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
 						utils.takeDatabaseDumpAndGzip("${env.RELEASE_CURRENT_DB}", "update_dois", "before", "${env.RELEASE_SERVER}")
 					}
-					withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
+				 	withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
 						utils.takeDatabaseDumpAndGzip("${env.GK_CENTRAL_DB}", "update_dois", "before", "${env.CURATOR_SERVER}")
 					}
 				}
@@ -57,9 +56,10 @@ pipeline {
 			steps{
 				script{
 					def releaseVersion = utils.getReleaseVersion()
+					def doisToBeUpdatedFile = "doisToBeUpdated-v${releaseVersion}.txt"
 					def emailSubject = "UpdateStableIdentifiers complete & UpdateDOIs List for v${releaseVersion}"
-					def emailBody = "This is an automated message. UpdateStableIdentifiers has finished successfully, and UpdateDOIs is currently being run. Please review the attached file of Pathway DOIs to be updated by UpdateDOIs. If they are correct, please confirm so with the developer running release. \nThanks!"
-					def emailAttachments = "doisToBeUpdated-v${releaseVersion}.txt"
+					def emailBody = "This is an automated message: UpdateDOIs has completed a test run to determine which Pathway DOIs will be updated in the \'${env.RELEASE_CURRENT_DB}\' and \'${env.GK_CENTRAL_DB}\' databases. Please review the attached ${doisToBeUpdatedFile} file and let the developer running Release know if they look correct. \n\nThanks!"
+					def emailAttachments = "${doisToBeUpdatedFile}"
 					
 					utils.sendEmailWithAttachment("$emailSubject", "$emailBody", "$emailAttachments")
 				}
@@ -85,7 +85,8 @@ pipeline {
 			steps{
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${currentRelease}.txt"
+					    def releaseVersion = utils.getReleaseVersion()
+						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${releaseVersion}.txt"
 					}
 				}
 			}
@@ -108,17 +109,26 @@ pipeline {
 		stage('Post: Archive Outputs'){
 			steps{
 				script{
-					def s3Path = "${env.S3_RELEASE_DIRECTORY_URL}/${currentRelease}/update_dois"
-					sh "mkdir -p databases/ data/"
-					sh "mv --backup=numbered *_${currentRelease}_*.dump.gz databases/"
-					sh "mv doisToBeUpdated-v${currentRelease}.txt data/"
-					sh "gzip data/* logs/*"
-					sh "aws s3 --no-progress --recursive cp databases/ $s3Path/databases/"
-					sh "aws s3 --no-progress --recursive cp logs/ $s3Path/logs/"
-					sh "aws s3 --no-progress --recursive cp data/ $s3Path/data/"
-					sh "rm -r databases logs data"
+					def releaseVersion = utils.getReleaseVersion()
+					def dataFiles = ["doisToBeUpdated-v${releaseVersion}.txt"]
+					// Additional log files from post-step QA need to be pulled in
+					def logFiles = []
+					// This folder is utilized for post-step QA. Jenkins creates multiple temporary directories
+					// cloning and checking out repositories, which is why the wildcard is added.
+					def foldersToDelete = []
+					utils.cleanUpAndArchiveBuildFiles("update_dois", dataFiles, logFiles, foldersToDelete)
 				}
 			}
-		}	
+		}
+		stage('Post: Send completion email') {
+			steps{
+		        	script{
+		            		def releaseVersion = utils.getReleaseVersion()
+					def emailSubject = "UpdateStableIdentifier and UpdateDOIs complete for v${releaseVersion}"
+					def emailBody = "Hello,\n\nThis is an automated message from Jenkins regarding an update for v${releaseVersion}: Both UpdateStableIdentifiers and UpdateDOIs steps have completed. ${env.GK_CENTRAL_DB} can likely be reopened, but Curation should get \'Human\' confirmation before doing so. \n\nThanks!"
+					utils.sendEmail("${emailSubject}", "${emailBody}")
+		        	}
+		    	}
+		}
 	}
 }
