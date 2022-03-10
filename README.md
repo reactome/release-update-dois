@@ -8,8 +8,8 @@ More technically, it will find all 'Pathway' instances with a 'doi' attribute th
 from the instance's 'stableIdentifier' attribute. 
 
 New features and tests have been implemented for this iteration of UpdateDOIs: 
-  - Runtime tests ensure conchordance of the instance's being updated in the Test Reactome and GK Central databases
-  - Users can provide a report file (UpdateDOIs.report) of DOIs that are expected to be updated. It can be created from the data found <a href="https://docs.google.com/spreadsheets/d/1KtZ_Z3rvBELroubmeO1ai5otbsS26QpXZn6au-oSCWw/edit#gid=1011530219">here</a>. This is explained further in <a href="https://github.com/reactome/data-release-pipeline/new/develop/update-dois#updatedoisreport">UpdateDOIs.report</a> section.
+  - Runtime tests ensure concordance of the instance's being updated in the Test Reactome and GK Central databases
+  - Users can provide a report file (UpdateDOIs.report) of DOIs that are expected to be updated. It can be created from the data found <a href="https://docs.google.com/spreadsheets/d/1KtZ_Z3rvBELroubmeO1ai5otbsS26QpXZn6au-oSCWw/edit#gid=1011530219">here</a>. This is explained further in <a href="#updatedoisreport">UpdateDOIs.report</a> section.
     - If the report has been provided, the script will report any unexpected behaviour and attempt to suggest to the user why it happened
     
 <h2>Configuration</h2>
@@ -66,7 +66,7 @@ To use this feature, follow these steps:
   2) Create a new 'UpdateDOIs.report' file or remove the contents of the old one found at `src/main/resources`
   3) For each row of the spreadsheet that contains a new curation:
     - Prepend each 'stableID' with "10.3180/" to create the new DOI (eg: 10.3180/R-HSA-123456789.1)
-    - Copy into UpdateDOIs.report the new DOI and 'name', seperated by a comma (eg: 10.3180/R-HSA-123456789.1,Reactome Annotation Example)
+    - Copy into UpdateDOIs.report the new DOI and 'name', separated by a comma (eg: 10.3180/R-HSA-123456789.1,Reactome Annotation Example)
   4) If you created a new new UpdateDOIs.report file, move it to the `src/main/resources` folder. 
   
   <b>Example</b>:
