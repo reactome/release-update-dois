@@ -1,8 +1,10 @@
-import groovy.json.JsonSlurper
 // This Jenkinsfile is used by Jenkins to run the UpdateDOIs step of Reactome's release.
 // It requires that the UpdateStableIdentifiers step has been run successfully before it can be run.
-def currentRelease
-def previousRelease
+import org.reactome.release.jenkins.utilities.Utilities
+
+// Shared library maintained at 'release-jenkins-utils' repository.
+def utils = new Utilities()
+
 pipeline {
 	agent any
 
@@ -11,36 +13,19 @@ pipeline {
 		stage('Check if UpdateStableIdentifiers build succeeded'){
 			steps{
 				script{
-					currentRelease = (pwd() =~ /Releases\/(\d+)\//)[0][1];
-					previousRelease = (pwd() =~ /Releases\/(\d+)\//)[0][1].toInteger() - 1;
-					// This queries the Jenkins API to confirm that the most recent build of UpdateStableIdentifiers was successful.
-					def updateStIdsStatusUrl = httpRequest authentication: 'jenkinsKey', validResponseCodes: "${env.VALID_RESPONSE_CODES}", url: "${env.JENKINS_JOB_URL}/job/$currentRelease/job/UpdateStableIdentifiers/lastBuild/api/json"
-					if (updateStIdsStatusUrl.getStatus() == 404) {
-						error("UpdateStableIdentifiers has not yet been run. Please complete a successful build.")
-					} else {
-						def updateStIdsStatusJson = new JsonSlurper().parseText(updateStIdsStatusUrl.getContent())
-						if(updateStIdsStatusJson['result'] != "SUCCESS"){
-							error("Most recent UpdateStableIdentifiers build status: " + updateStIdsStatusJson['result'])
-						}
-					}
+					utils.checkUpstreamBuildsSucceeded("Relational-Database-Updates/job/UpdateStableIdentifiers")
 				}
 			}
 		}
-		// This stage backs up the gk_central and release_current databases before they are modified.
+		// This stage backs up the gk_central (on curator server) and release_current databases before they are modified.
 		stage('Setup: Back up DBs'){
 			steps{
 				script{
-					dir('update-dois'){
-						withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-							withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curPass', usernameVariable: 'curUser')]){
-								def release_current_before_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_before_update_dois.dump"
-								def central_before_update_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_before_update_dois.dump"
-								sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_before_update_dois_dump"
-								sh "gzip -f $release_current_before_update_dois_dump"
-								sh "mysqldump -u$curUser -p$curPass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_update_dois_dump"
-								sh "gzip -f $central_before_update_dois_dump"
-							}
-						}
+					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
+						utils.takeDatabaseDumpAndGzip("${env.RELEASE_CURRENT_DB}", "update_dois", "before", "${env.RELEASE_SERVER}")
+					}
+				 	withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
+						utils.takeDatabaseDumpAndGzip("${env.GK_CENTRAL_DB}", "update_dois", "before", "${env.CURATOR_SERVER}")
 					}
 				}
 			}
@@ -49,9 +34,7 @@ pipeline {
 		stage('Setup: Build jar file'){
 			steps{
 				script{
-					dir('update-dois'){
-						sh "mvn clean compile assembly:single"
-					}
+					utils.buildJarFile()
 				}
 			}
 		}
@@ -60,47 +43,39 @@ pipeline {
 		stage('Main: UpdateDOIs Test Run'){
 			steps{
 				script{
-					dir('update-dois'){
-						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-							sh "touch src/main/resources/UpdateDOIs.report"
-							sh "java -jar target/update-dois-${env.UPDATE_DOIS_VERSION}-jar-with-dependencies.jar $ConfigFile"
-						}
+					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
+						sh "touch src/main/resources/UpdateDOIs.report"
+						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile"
 					}
 				}
 			}
 		}
 		// This stage takes the generated report file and sends it to the curator overseeing release.
 		// Before moving onto the next stage of UpdateDOIs, their confirmation that the contents of the report file are correct is needed.
-		/*
-		stage('Send email of updateable DOIs to curator'){
+		stage('Main: Send email of updateable DOIs to curator'){
 			steps{
 				script{
-					emailext (
-						body: "This is an automated message. Please review the attached file of Pathway DOIs to be updated and confirm they are correct with the developer running release. Thanks!",
-						to: '$DEFAULT_RECIPIENTS',
-						subject: "UpdateDOIs List for v${currentRelease}",
-						attachmentsPattern: "**///doisToBeUpdated-v${currentRelease}.txt" <- This pattern (**/) messses up multi-line comments. When uncommenting, remove 2/3 backslashes before 'doisToBeUpdated'
-		/*			)
+					def releaseVersion = utils.getReleaseVersion()
+					def doisToBeUpdatedFile = "doisToBeUpdated-v${releaseVersion}.txt"
+					def emailSubject = "UpdateStableIdentifiers complete & UpdateDOIs List for v${releaseVersion}"
+					def emailBody = "This is an automated message: UpdateDOIs has completed a test run to determine which Pathway DOIs will be updated in the \'${env.RELEASE_CURRENT_DB}\' and \'${env.GK_CENTRAL_DB}\' databases. Please review the attached ${doisToBeUpdatedFile} file and let the developer running Release know if they look correct. \n\nThanks!"
+					def emailAttachments = "${doisToBeUpdatedFile}"
+					
+					utils.sendEmailWithAttachment("$emailSubject", "$emailBody", "$emailAttachments")
 				}
 			}
 		}
-		*/
 		// UpdateDOIs should pause at this stage until the curator confirms the report file is correct. Once they do, respond with 'yes' to the user input form that Jenkins brings up.
 		stage('User Input Required: Confirm DOIs'){
 			steps{
 				script{
-					// This brings up a user input form, asking for confirmation that the curator overseeing release approves of the report file they received.
+					def releaseVersion = utils.getReleaseVersion()
+					// This asks user to confirm that the UpdateDOIs.report file has been approved by Curation.
 					def userInput = input(
-						id: 'userInput', message: "Has a curator confirmed that the list of DOIs to be updated in doisToBeUpdated-v${currentRelease}.txt is correct? (yes/no)",
+						id: 'userInput', message: "Proceed once \'doisToBeUpdated-v${releaseVersion}.txt\' has been approved by curation. It should have been sent in an email after the test run step.",
 						parameters: [
-							[$class: 'TextParameterDefinition', defaultValue: '', description: 'Confirmation of updateable DOIs', name: 'response']
+							[$class: 'BooleanParameterDefinition', defaultValue: true, name: 'response']
 						])
-
-					if (userInput.toLowerCase().startsWith("y")) {
-						echo("Proceeding to UpdateDOIs step.")
-					} else {
-						error("Please confirm output of UpdateDOIs Test Run matches DOIs that should be updated")
-					}
 				}
 			}
 		}
@@ -109,10 +84,9 @@ pipeline {
 		stage('Main: UpdateDOIs'){
 			steps{
 				script{
-					dir('update-dois'){
-						withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-							sh "java -jar target/update-dois-${env.UPDATE_DOIS_VERSION}-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${currentRelease}.txt"
-						}
+					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
+					    def releaseVersion = utils.getReleaseVersion()
+						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${releaseVersion}.txt"
 					}
 				}
 			}
@@ -121,33 +95,38 @@ pipeline {
 		stage('Post: Backup DBs'){
 			steps{
 				script{
-					dir('update-dois'){
-						withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-							withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curPass', usernameVariable: 'curUser')]){
-								def release_current_after_update_dois_dump = "${env.RELEASE_CURRENT}_${currentRelease}_after_update_dois.dump"
-								def central_before_after_dois_dump = "${env.GK_CENTRAL}_${currentRelease}_after_update_dois.dump"
-								sh "mysqldump -u$user -p$pass ${env.RELEASE_CURRENT} > $release_current_after_update_dois_dump"
-								sh "gzip -f $release_current_after_update_dois_dump"
-								sh "mysqldump -u$curUser -p$curPass -h${env.CURATOR_SERVER} ${env.GK_CENTRAL} > $central_before_after_dois_dump"
-								sh "gzip -f $central_before_after_dois_dump"
-							}
-						}
+					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
+						utils.takeDatabaseDumpAndGzip("${env.RELEASE_CURRENT_DB}", "update_dois", "after", "${env.RELEASE_SERVER}")
+					}
+					withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
+						utils.takeDatabaseDumpAndGzip("${env.GK_CENTRAL_DB}", "update_dois", "after", "${env.CURATOR_SERVER}")
 					}
 				}
 			}
 		}
-		// This stage archives all logs and database backups produced by UpdateDOIs.
-		stage('Archive logs and backups'){
+		// All databases, logs, and data files generated by this step are compressed before moving them to the Reactome S3 bucket. All files are then deleted.
+		stage('Post: Archive Outputs'){
 			steps{
 				script{
-					dir('update-dois'){
-						sh "mkdir -p archive/${currentRelease}/logs"
-						sh "mv --backup=numbered *_${currentRelease}_*.dump.gz archive/${currentRelease}/"
-						sh "gzip logs/*"
-						sh "mv logs/* archive/${currentRelease}/logs/"
-					}
+					def releaseVersion = utils.getReleaseVersion()
+					def dataFiles = ["doisToBeUpdated-v${releaseVersion}.txt"]
+					// Log files appear in the 'logs' folder by default, and so don't need to be specified here.
+					def logFiles = []
+					def foldersToDelete = []
+					utils.cleanUpAndArchiveBuildFiles("update_dois", dataFiles, logFiles, foldersToDelete)
 				}
 			}
+		}
+		// This sends an email notifying the mailing list that both the UpdateStableIdentifiers and UpdateDOIs steps have completed. This indicates that gk_central can be reopened.
+		stage('Post: Send completion email') {
+			steps{
+		        	script{
+		            		def releaseVersion = utils.getReleaseVersion()
+					def emailSubject = "UpdateStableIdentifier and UpdateDOIs complete for v${releaseVersion}"
+					def emailBody = "Hello,\n\nThis is an automated message from Jenkins regarding an update for v${releaseVersion}: Both UpdateStableIdentifiers and UpdateDOIs steps have completed. ${env.GK_CENTRAL_DB} can likely be reopened, but Curation should get \'Human\' confirmation before doing so. \n\nThanks!"
+					utils.sendEmail("${emailSubject}", "${emailBody}")
+		        	}
+		    	}
 		}
 	}
 }
