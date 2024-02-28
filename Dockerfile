@@ -24,7 +24,7 @@ CMD mvn -B -q checkstyle:check | \
 # ===== stage 2 =====
 FROM setup-env AS build-jar
 
-RUN mvn clean package
+RUN mvn clean compile assembly:single
 
 
 # ===== stage 3 =====
