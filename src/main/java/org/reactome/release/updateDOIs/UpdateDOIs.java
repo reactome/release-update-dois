@@ -50,10 +50,10 @@ public class UpdateDOIs {
 		// Initialize instance edits for each DB
 		String creatorFile = "org.reactome.release.updateDOIs.Main";
 		GKInstance instanceEditTR = null;
-		GKInstance instanceEditGK = null;
+		//GKInstance instanceEditGK = null;
 		if (!testMode) {
 			instanceEditTR = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaTestReactome, personId, creatorFile);
-			instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, personId, creatorFile);
+			//instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, personId, creatorFile);
 		}
 		// Gets the updated report file if it was provided for this release
 		Map<String, Map<String,String>> expectedUpdatedDOIs = new HashMap<>();
@@ -71,8 +71,8 @@ public class UpdateDOIs {
 			 doisTR = dbaTestReactome.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^" + REACTOME_DOI_PREFIX);
 			 logger.info("Found " + doisTR.size() + " Pathway instances that need a DOI");
 			 // GKCentral should require transactional support
-			if (dbaGkCentral.supportsTransactions())
-			{
+			//if (dbaGkCentral.supportsTransactions())
+			//{
 				if (!doisTR.isEmpty())
 				{
 					outerloop:
@@ -101,22 +101,22 @@ public class UpdateDOIs {
 						trDOI.setAttributeValue("doi", updatedDoi);
 
 						// Grabs instance from GKCentral based on DB_ID taken from Test Reactome and updates it's DOI
-						dbaGkCentral.startTransaction();
+						//dbaGkCentral.startTransaction();
 						doisGK = dbaGkCentral.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, ReactomeJavaConstants.DB_ID, "=", dbId);
 						if (!doisGK.isEmpty())
 						{
 							for (GKInstance gkDOI : doisGK)
 							{
 								boolean verified = ReportTests.verifyDOIMatches(trDOI, gkDOI, updatedDoi);
-								if (verified) 
+								if (verified)
 								{
-									gkDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
-									gkDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditGK);
-									gkDOI.setAttributeValue("doi", updatedDoi);
-									if (!testMode) {
-										dbaGkCentral.updateInstanceAttribute(gkDOI, ReactomeJavaConstants.modified);
-										dbaGkCentral.updateInstanceAttribute(gkDOI, "doi");
-									}
+					//				gkDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
+					//				gkDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditGK);
+					//				gkDOI.setAttributeValue("doi", updatedDoi);
+					//				if (!testMode) {
+					//					dbaGkCentral.updateInstanceAttribute(gkDOI, ReactomeJavaConstants.modified);
+					//					dbaGkCentral.updateInstanceAttribute(gkDOI, "doi");
+					//				}
 								} else {
 									continue outerloop;
 								}
@@ -140,22 +140,22 @@ public class UpdateDOIs {
 				} else {
 					logger.info("No DOIs to update");
 				}
-				if (!testMode) {
-					dbaGkCentral.commit();
-				} else {
-					dbaGkCentral.rollback();
-				}
-			} else {
-				logger.fatal("Unable to open transaction with GK Central, rolling back");
-				dbaGkCentral.rollback();
-			}
+//				if (!testMode) {
+//					dbaGkCentral.commit();
+//				} else {
+//					dbaGkCentral.rollback();
+//				}
+			//} else {
+			//	logger.fatal("Unable to open transaction with GK Central, rolling back");
+				//dbaGkCentral.rollback();
+			//}
 		} catch (Exception e) {
-			try
-			{
-				dbaGkCentral.rollback();
-			} catch (Exception err) {
-				e.printStackTrace();
-			}
+//			try
+//			{
+//				dbaGkCentral.rollback();
+//			} catch (Exception err) {
+//				e.printStackTrace();
+//			}
 			e.printStackTrace();
 		}
 	}
