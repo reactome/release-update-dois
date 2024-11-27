@@ -45,7 +45,7 @@ pipeline {
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
 						sh "touch src/main/resources/UpdateDOIs.report"
-						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile"
+						sh "java -jar target/update-dois.jar $ConfigFile"
 					}
 				}
 			}
