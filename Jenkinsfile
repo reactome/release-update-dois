@@ -8,6 +8,13 @@ def utils = new Utilities()
 pipeline {
 	agent any
 
+        environment {
+		ECR_URL = 'public.ecr.aws/reactome/release-update-dois'
+		CONT_NAME = 'release_update_dois'
+		CONT_ROOT = '/opt/release-update-dois'
+		MYSQL_SOCKET = '/var/run/mysqld/mysqld.sock'
+	}
+
 	stages {
 		// This stage checks that an upstream project, UpdateStableIdentifiers, was run successfully for its last build.
 		stage('Check if UpdateStableIdentifiers build succeeded'){
@@ -30,22 +37,24 @@ pipeline {
 				}
 			}
 		}
-		// This stage builds the jar file using maven.
-		stage('Setup: Build jar file'){
-			steps{
-				script{
-					utils.buildJarFile()
-				}
-			}
-		}
+		stage('Setup: Pull and clean docker environment'){
+                     steps{
+                         sh "docker pull ${ECR_URL}:latest"
+                         sh """
+                            if docker ps -a --format '{{.Names}}' | grep -Eq '${CONT_NAME}'; then
+                                docker rm -f ${CONT_NAME}
+                            fi
+                         """
+                     }
+                }
+
 		// This stage executes UpdateDOIs without specifying a 'report' file, which should contain a list of updateable DOIS, as one of the arguments.
 		// This results in test mode behaviour, which includes generating the report file that contains updateable DOIS for release.
 		stage('Main: UpdateDOIs Test Run'){
 			steps{
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-						sh "touch src/main/resources/UpdateDOIs.report"
-						sh "java -jar target/update-dois.jar $ConfigFile"
+						sh "docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} --net=host --name ${CONT_NAME} ${ECR_URL}:latest /bin/bash -c \'touch src/main/resources/UpdateDOIs.report && java -jar target/update-dois.jar $ConfigFile\'"
 					}
 				}
 			}
@@ -86,7 +95,15 @@ pipeline {
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
 					    def releaseVersion = utils.getReleaseVersion()
-						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${releaseVersion}.txt"
+						sh "mkdir -p output"
+						sh "sudo rm -f output/*"
+						sh "docker cp ${CONT_NAME}:${CONT_ROOT}/doisToBeUpdated-v${releaseVersion}.txt output/"
+						sh """
+                                                    if docker ps -a --format '{{.Names}}' | grep -Eq '${CONT_NAME}'; then
+                                                      docker rm -f ${CONT_NAME}
+                                                    fi
+                                                """
+						sh "docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} -v \$(pwd)/output:/output --net=host --name ${CONT_NAME} ${ECR_URL}:latest /bin/bash -c \'java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile output/doisToBeUpdated-v${releaseVersion}.txt\'"
 					}
 				}
 			}
@@ -109,7 +126,7 @@ pipeline {
 			steps{
 				script{
 					def releaseVersion = utils.getReleaseVersion()
-					def dataFiles = ["doisToBeUpdated-v${releaseVersion}.txt"]
+					def dataFiles = ["output/doisToBeUpdated-v${releaseVersion}.txt"]
 					// Log files appear in the 'logs' folder by default, and so don't need to be specified here.
 					def logFiles = []
 					def foldersToDelete = []
