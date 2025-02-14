@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
  * Created 11/26/2024
  */
 public class Verifier {
-    @Parameter(names ={"--releaseNumber", "-r"})
+    @Parameter(names ={"--releaseNumber", "--r"}, required = true)
     private int releaseNumber;
 
-    @Parameter(names ={"--curatorUser", "--cu"})
+    @Parameter(names ={"--curatorUser", "--cu"}, required = true)
     private String curatorUserName;
 
-    @Parameter(names ={"--curatorPassword", "--cp"})
+    @Parameter(names ={"--curatorPassword", "--cp"}, required = true)
     private String curatorPassword;
 
     @Parameter(names ={"--curatorHost", "--ch"})
@@ -37,10 +37,10 @@ public class Verifier {
     @Parameter(names ={"--curatorPort", "--cP"})
     private int curatorPort = 3306;
 
-    @Parameter(names ={"--releaseUser", "--ru"})
+    @Parameter(names ={"--releaseUser", "--ru"}, required = true)
     private String releaseUserName;
 
-    @Parameter(names ={"--releasePassword", "--rp"})
+    @Parameter(names ={"--releasePassword", "--rp"}, required = true)
     private String releasePassword;
 
     @Parameter(names ={"--releaseHost", "--rh"})
