@@ -86,11 +86,25 @@ pipeline {
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
 					    def releaseVersion = utils.getReleaseVersion()
-						sh "java -jar target/update-dois-*-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${releaseVersion}.txt"
+						sh "java -jar target/update-dois-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${releaseVersion}.txt"
 					}
 				}
 			}
 		}
+
+		stage('Post: Verify UpdateDOIs') {
+			steps {
+				script {
+					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'releasePass', usernameVariable: 'releaseUser')]){
+						withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curatorPass', usernameVariable: 'curatorUser')]){
+							def releaseVersion = utils.getReleaseVersion()
+							sh "java -jar target/update-dois-verifier-jar-with-dependencies.jar --r $releaseVersion --cu $curatorUser --cp $curatorPass --ru $releaseUser --rp $releasePass"
+						}
+					}
+				}
+			}
+		}
+
 		// This stage backs up the gk_central and release_current databases after they are modified.
 		stage('Post: Backup DBs'){
 			steps{
