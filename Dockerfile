@@ -24,7 +24,7 @@ CMD mvn -B -q checkstyle:check | \
 # ===== stage 2 =====
 FROM setup-env AS build-jar
 
-RUN mvn clean compile assembly:single
+RUN mvn clean package
 
 
 # ===== stage 3 =====
@@ -32,7 +32,7 @@ FROM eclipse-temurin:11-jre-focal
 
 ARG REPO_DIR
 
-ARG JAR_FILE=target/update-dois-*-jar-with-dependencies.jar
+ARG JAR_FILE=target/update-dois-jar-with-dependencies.jar
 
 WORKDIR ${REPO_DIR}
 
