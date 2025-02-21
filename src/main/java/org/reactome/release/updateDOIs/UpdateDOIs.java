@@ -67,8 +67,10 @@ public class UpdateDOIs {
 		List<String> notUpdated = new ArrayList<>();
 		try 
 		{
-			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
-			 doisTR = dbaTestReactome.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^" + REACTOME_DOI_PREFIX);
+			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with
+			// 10.3180, the Reactome DOI standard
+			 doisTR = dbaTestReactome.fetchInstanceByAttribute(
+					 ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^" + REACTOME_DOI_PREFIX);
 			 logger.info("Found " + doisTR.size() + " Pathway instances that need a DOI");
 			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
@@ -85,7 +87,8 @@ public class UpdateDOIs {
 						String dbId = trDOI.getAttributeValue(ReactomeJavaConstants.DB_ID).toString();
 
 						// Used to verify that report contents are as expected, based on provided list from curators
-						if (expectedUpdatedDOIs.get(updatedDoi) != null && expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
+						if (expectedUpdatedDOIs.get(updatedDoi) != null &&
+							expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
 						{
 							updated.add(updatedDoi);
 						} else {

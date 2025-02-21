@@ -19,21 +19,32 @@ public class ReportTests {
 		if (trDOI.getDBID().equals(gkDOI.getDBID()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
 			return true;
 		} else if (trDOI.getDBID().equals(gkDOI.getDBID()) && !trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
-			warningsLog.warn("[" + newDOI + "] Display names do not match: [Test Reactome]: " + trDOI.getDisplayName() + " ~ [GK Central]: " + gkDOI.getDisplayName());
+			warningsLog.warn("[" + newDOI + "] Display names do not match: [Test Reactome]: " + trDOI.getDisplayName() +
+				" ~ [GK Central]: " + gkDOI.getDisplayName());
 			return false;
 		} else if (!trDOI.getDBID().equals(gkDOI.getDBID()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
-			warningsLog.warn("[" + newDOI + "] DB IDs do not match: [Test Reactome]: " + trDOI.getDBID() + " ~ [GK Central]: " + gkDOI.getDBID());
+			warningsLog.warn("[" + newDOI + "] DB IDs do not match: [Test Reactome]: " + trDOI.getDBID() +
+				" ~ [GK Central]: " + gkDOI.getDBID());
 			return false;
 		} else {
-			warningsLog.warn("DB ID and display name do not match: [Test Reactome]: " + trDOI + " ~ [GK Central]: " + gkDOI);
+			warningsLog.warn("DB ID and display name do not match: [Test Reactome]: " + trDOI + " ~ [GK Central]: " +
+				gkDOI);
 			return false;
 		}
 		
 	}
 	
-	public static void expectedUpdatesTests(Map<String,Map<String,String>> expectedUpdatedDOIs, List<String> updated, List<String> notUpdated, int expectedNumberOfUpdatedDOIs, String REACTOME_DOI_PREFIX) {
-		// Checking if provided list matched updated instances. Any that don't, it attempts to determine why they might not of been updated.
-		// This entails comparing the DB ID, display name and the stable ID version of the provided list (UpdateDOIs.report) with the actual updated instances
+	public static void expectedUpdatesTests(
+			Map<String,Map<String,String>> expectedUpdatedDOIs,
+			List<String> updated,
+			List<String> notUpdated,
+			int expectedNumberOfUpdatedDOIs,
+			String REACTOME_DOI_PREFIX
+	) {
+		// Checking if provided list matched updated instances. Any that don't, it attempts to determine why they
+		// might not of been updated.
+		// This entails comparing the DB ID, display name and the stable ID version of the provided list
+		// (UpdateDOIs.report) with the actual updated instances
 		if (notUpdated.size() > 0)
 		{
 			warningsLog.warn("Some DOIs from UpdateDOIs.report were not updated");
@@ -46,8 +57,10 @@ public class ReportTests {
 				String missedStableId = missedClean.split("\\.")[0];
 				String missedStableIdVersion = missedClean.split("\\.")[1];
 				int resolved = 0;
-				// Iterate through each of the DOI's provided in UpdateDOIs.report, trying to find a match for the DOI that wasn't updated. 
-				// If it finds a match of either DB ID, stable ID version, or the display name, it will try to determine which of those 3 fields don't match.
+				// Iterate through each of the DOI's provided in UpdateDOIs.report, trying to find a match for the DOI
+				// that wasn't updated.
+				// If it finds a match of either DB ID, stable ID version, or the display name, it will try to
+				// determine which of those 3 fields don't match.
 				// Once it finds the field that doesn't match, it logs it and then ends the current iteration.
 				for (String key : expectedUpdatedDOIs.keySet()) 
 				{
@@ -55,16 +68,19 @@ public class ReportTests {
 					{
 						if (!expectedUpdatedDOIs.get(key).get("stableIdVersion").equals(missedStableIdVersion)) 
 						{
-							warningsLog.warn("[" + key + "] StableID 'version' in DB different from expected: [DB] " + missedDoi + "* ~ [Expected] " + key + "*");
+							warningsLog.warn("[" + key + "] StableID 'version' in DB different from expected: [DB] " +
+								missedDoi + "* ~ [Expected] " + key + "*");
 							resolved++;
 							continue;
 						} else if (!expectedUpdatedDOIs.get(key).get("displayName").equals(missedName)) {
-							warningsLog.warn("[" + key + "] 'Display name' in DB different from expected: [DB] " + missedName + " ~ [Expected] " + expectedUpdatedDOIs.get(key).get("displayName"));
+							warningsLog.warn("[" + key + "] 'Display name' in DB different from expected: [DB] " +
+								missedName + " ~ [Expected] " + expectedUpdatedDOIs.get(key).get("displayName"));
 							resolved++;
 							continue;
 						}
 					} else if (expectedUpdatedDOIs.get(key).get("displayName").equals(missedName)) {
-						warningsLog.warn("[" + key + "] 'DB ID' from DB different from expected, but found matching display name: ~ [DB] " + missed + " [Expected] " + key + ":" + missedName);
+						warningsLog.warn("[" + key + "] 'DB ID' from DB different from expected, but found matching " +
+								"display name: ~ [DB] " + missed + " [Expected] " + key + ":" + missedName);
 						resolved++;
 						continue;
 					}
@@ -78,7 +94,8 @@ public class ReportTests {
 			{
 				for (String unresolvedDOI : unresolvedDOIs) 
 				{
-					warningsLog.warn("[" + unresolvedDOI + "]" + "DOI does not match any DOIs expected to be updated -- Could not match display name or DB ID");
+					warningsLog.warn("[" + unresolvedDOI + "]" + "DOI does not match any DOIs expected to be updated " +
+							"-- Could not match display name or DB ID");
 				}
 			}
 		} else if (expectedUpdatedDOIs.size() != 0 && expectedNumberOfUpdatedDOIs > expectedUpdatedDOIs.size()) {
