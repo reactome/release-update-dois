@@ -35,7 +35,8 @@ public class UpdateDOIs {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void findAndUpdateDOIs(long personId, Path pathToReport, int releaseNumber, boolean testMode) throws IOException {
+	public static void findAndUpdateDOIs(long personId, Path pathToReport, int releaseNumber, boolean testMode)
+		throws IOException {
 
 		Path doisListFilepath = Paths.get("doisToBeUpdated-v" + releaseNumber + ".txt");
 		if (testMode) {
@@ -61,14 +62,17 @@ public class UpdateDOIs {
 			expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport.toString());
 		}
 		if (expectedUpdatedDOIs.size() == 0) {
-			logger.warn("No DOIs listed in UpdateDOIs.report. Please add expected DOI and displayName to UpdateDOIs.report.");
+			logger.warn("No DOIs listed in UpdateDOIs.report. " +
+				"Please add expected DOI and displayName to UpdateDOIs.report.");
 		}
 		List<String> updated = new ArrayList<>();
 		List<String> notUpdated = new ArrayList<>();
 		try 
 		{
-			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting with 10.3180, the Reactome DOI standard
-			 doisTR = dbaTestReactome.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^" + REACTOME_DOI_PREFIX);
+			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting
+			// with 10.3180, the Reactome DOI standard
+			 doisTR = dbaTestReactome.fetchInstanceByAttribute(
+				 ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^" + REACTOME_DOI_PREFIX);
 			 logger.info("Found " + doisTR.size() + " Pathway instances that need a DOI");
 			 // GKCentral should require transactional support
 			if (dbaGkCentral.supportsTransactions())
@@ -78,14 +82,17 @@ public class UpdateDOIs {
 					outerloop:
 					for (GKInstance trDOI : doisTR)
 					{
-						// The dois are constructed from the instances 'stableIdentifier', which should be in the db already
-						String stableIdFromDb = ((GKInstance) trDOI.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
+						// The dois are constructed from the instances 'stableIdentifier',
+						// which should be in the db already
+						String stableIdFromDb = ((GKInstance)
+							trDOI.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
 						String nameFromDb = trDOI.getAttributeValue(ReactomeJavaConstants.name).toString();
 						String updatedDoi = REACTOME_DOI_PREFIX + "/" + stableIdFromDb;
 						String dbId = trDOI.getAttributeValue(ReactomeJavaConstants.DB_ID).toString();
 
 						// Used to verify that report contents are as expected, based on provided list from curators
-						if (expectedUpdatedDOIs.get(updatedDoi) != null && expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
+						if (expectedUpdatedDOIs.get(updatedDoi) != null &&
+							expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
 						{
 							updated.add(updatedDoi);
 						} else {
@@ -95,14 +102,16 @@ public class UpdateDOIs {
 								continue;
 							}
 						}
-						// This updates the 'modified' field for Pathways instances, keeping track of when changes happened for each instance
+						// This updates the 'modified' field for Pathways instances, keeping track of when changes
+						// happened for each instance
 						trDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
 						trDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditTR);
 						trDOI.setAttributeValue("doi", updatedDoi);
 
-						// Grabs instance from GKCentral based on DB_ID taken from Test Reactome and updates it's DOI
+						// Grabs instance from GKCentral based on DB_ID taken from Test Reactome and updates its DOI
 						dbaGkCentral.startTransaction();
-						doisGK = dbaGkCentral.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, ReactomeJavaConstants.DB_ID, "=", dbId);
+						doisGK = dbaGkCentral.fetchInstanceByAttribute(
+								ReactomeJavaConstants.Pathway, ReactomeJavaConstants.DB_ID, "=", dbId);
 						if (!doisGK.isEmpty())
 						{
 							for (GKInstance gkDOI : doisGK)
@@ -136,7 +145,8 @@ public class UpdateDOIs {
 							dbaTestReactome.updateInstanceAttribute(trDOI, "doi");
 						}
 					}
-					ReportTests.expectedUpdatesTests(expectedUpdatedDOIs, updated, notUpdated, doisTR.size(), REACTOME_DOI_PREFIX);
+					ReportTests.expectedUpdatesTests(
+						expectedUpdatedDOIs, updated, notUpdated, doisTR.size(), REACTOME_DOI_PREFIX);
 				} else {
 					logger.info("No DOIs to update");
 				}
@@ -177,7 +187,10 @@ public class UpdateDOIs {
 				String reactomeDoi = commaSplit[0];
 				String displayName = commaSplit[1];
 				int lastPeriodIndex = commaSplit[0].lastIndexOf(".");
-				String[] versionSplit = {reactomeDoi.substring(0, lastPeriodIndex), reactomeDoi.substring(lastPeriodIndex+1)};
+				String[] versionSplit = {
+					reactomeDoi.substring(0, lastPeriodIndex),
+					reactomeDoi.substring(lastPeriodIndex + 1)
+				};
 				String stableId = versionSplit[0].replace(REACTOME_DOI_PREFIX + "/", "");
 				String stableIdVersion = versionSplit[1];
 				doiAttributes.put("displayName", displayName);
@@ -233,8 +246,9 @@ public class UpdateDOIs {
 	 * @return an InstanceEdit object.
 	 * @throws Exception
 	 */
-	public static GKInstance createDefaultIE(MySQLAdaptor dba, Long defaultPersonId, boolean needStore, String note)
-			throws Exception {
+	public static GKInstance createDefaultIE(
+		MySQLAdaptor dba, Long defaultPersonId, boolean needStore, String note) throws Exception {
+
 		GKInstance defaultPerson = dba.fetchInstance(defaultPersonId);
 		if (defaultPerson != null) {
 			GKInstance newIE = UpdateDOIs.createDefaultInstanceEdit(defaultPerson);
