@@ -1,13 +1,12 @@
 package org.reactome.release.updateDOIs;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.gk.model.GKInstance;
+import org.reactome.server.service.model.GKInstance;
 
 public class ReportTests {
 	
@@ -15,7 +14,7 @@ public class ReportTests {
 	private static final Logger warningsLog = LogManager.getLogger("warningsLog");
 	
 	// Compares the DB IDs and display names of the instances to be updated from Test Reactome and GK Central
-	public static boolean verifyDOIMatches( GKInstance trDOI, GKInstance gkDOI, String newDOI ) {
+	public static boolean verifyDOIMatches(GKInstance trDOI, GKInstance gkDOI, String newDOI ) {
 		if (trDOI.getDBID().equals(gkDOI.getDBID()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
 			return true;
 		} else if (trDOI.getDBID().equals(gkDOI.getDBID()) && !trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {

@@ -2,15 +2,14 @@ package org.reactome.release.updateDOIs;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import org.gk.model.GKInstance;
-import org.gk.model.ReactomeJavaConstants;
-import org.gk.persistence.MySQLAdaptor;
+import org.reactome.server.service.model.GKInstance;
+import org.reactome.server.service.model.ReactomeJavaConstants;
+import org.reactome.server.service.persistence.Neo4JAdaptor;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,8 +30,8 @@ public class Verifier {
     @Parameter(names ={"--curatorHost", "--ch"})
     private String curatorHost = "localhost";
 
-    @Parameter(names ={"--curatorDbName", "--cd"})
-    private String curatorDatabaseName = "gk_central";
+//    @Parameter(names ={"--curatorDbName", "--cd"})
+//    private String curatorDatabaseName = "gk_central";
 
     @Parameter(names ={"--curatorPort", "--cP"})
     private int curatorPort = 3306;
@@ -46,8 +45,8 @@ public class Verifier {
     @Parameter(names ={"--releaseHost", "--rh"})
     private String releaseHost = "localhost";
 
-    @Parameter(names ={"--releaseDbName", "--rd"})
-    private String releaseDatabaseName = "release_current";
+//    @Parameter(names ={"--releaseDbName", "--rd"})
+//    private String releaseDatabaseName = "release_current";
 
     @Parameter(names ={"--releasePort", "--rP"})
     private int releasePort = 3306;
@@ -76,20 +75,20 @@ public class Verifier {
     private List<String> getErrorMessages() throws Exception {
         List<String> errorMessages = new ArrayList<>();
 
-        MySQLAdaptor curatorDBA = getCuratorDBA();
-        MySQLAdaptor releaseDBA = getReleaseDBA();
+        Neo4JAdaptor curatorDBA = getCuratorDBA();
+        Neo4JAdaptor releaseDBA = getReleaseDBA();
 
         errorMessages.addAll(checkReleaseDBAForPathwaysWithUnassignedDOIs(releaseDBA));
         errorMessages.addAll(checkCuratorDBAForPathwaysRequiringDOIs(curatorDBA));
 
-        for (MySQLAdaptor dba : Arrays.asList(curatorDBA, releaseDBA)) {
+        for (Neo4JAdaptor dba : Arrays.asList(curatorDBA, releaseDBA)) {
             errorMessages.addAll(checkDBAForPathwaysWithUnexpectedDOIs(dba));
         }
 
         return errorMessages;
     }
 
-    private List<String> checkReleaseDBAForPathwaysWithUnassignedDOIs(MySQLAdaptor releaseDBA) throws Exception {
+    private List<String> checkReleaseDBAForPathwaysWithUnassignedDOIs(Neo4JAdaptor releaseDBA) throws Exception {
         List<String> errorMessages = new ArrayList<>();
 
         List<GKInstance> releasedPathwaysNeedingDOIs = getPathwaysNeedingDOI(releaseDBA);
@@ -103,7 +102,7 @@ public class Verifier {
         return errorMessages;
     }
 
-    private List<String> checkCuratorDBAForPathwaysRequiringDOIs(MySQLAdaptor curatorDBA) throws Exception {
+    private List<String> checkCuratorDBAForPathwaysRequiringDOIs(Neo4JAdaptor curatorDBA) throws Exception {
         List<String> errorMessages = new ArrayList<>();
 
         List<GKInstance> curatedPathwaysNeedingDOIs = getPathwaysNeedingDOI(curatorDBA);
@@ -120,7 +119,7 @@ public class Verifier {
         return errorMessages;
     }
 
-    private List<String> checkDBAForPathwaysWithUnexpectedDOIs(MySQLAdaptor dba) throws Exception {
+    private List<String> checkDBAForPathwaysWithUnexpectedDOIs(Neo4JAdaptor dba) throws Exception {
         List<String> errorMessages = new ArrayList<>();
 
         for (String expectedDOI : getExpectedDOIs()) {
@@ -134,7 +133,7 @@ public class Verifier {
         return errorMessages;
     }
 
-    private List<GKInstance> getPathwaysNeedingDOI(MySQLAdaptor dba) throws Exception {
+    private List<GKInstance> getPathwaysNeedingDOI(Neo4JAdaptor dba) throws Exception {
         return ((Collection<GKInstance>) dba.fetchInstancesByClass(ReactomeJavaConstants.Pathway))
             .stream()
             .filter(this::needsDOI)
@@ -153,7 +152,7 @@ public class Verifier {
         return pathwaysExpectedToHaveDOIs;
     }
 
-    private GKInstance getPathwayByDOI(String doi, MySQLAdaptor dba) throws Exception {
+    private GKInstance getPathwayByDOI(String doi, Neo4JAdaptor dba) throws Exception {
         Collection<GKInstance> pathwaysWithDOI =
             dba.fetchInstanceByAttribute(ReactomeJavaConstants.Pathway, ReactomeJavaConstants.doi, "=", doi);
         if (pathwaysWithDOI.isEmpty()) {
@@ -211,35 +210,27 @@ public class Verifier {
         return line.split(",")[0];
     }
 
-    private MySQLAdaptor getCuratorDBA() throws SQLException {
+    private Neo4JAdaptor getCuratorDBA() {
         return getDbAdaptor(
             this.curatorHost,
-            this.curatorDatabaseName,
             this.curatorUserName,
             this.curatorPassword,
             this.curatorPort
         );
     }
 
-    private MySQLAdaptor getReleaseDBA() throws SQLException {
+    private Neo4JAdaptor getReleaseDBA() {
         return getDbAdaptor(
             this.releaseHost,
-            this.releaseDatabaseName,
             this.releaseUserName,
             this.releasePassword,
             this.releasePort
         );
     }
 
-    private MySQLAdaptor getDbAdaptor(String host, String dbName, String userName, String password, int port)
-        throws SQLException {
+    private Neo4JAdaptor getDbAdaptor(String host, String userName, String password, int port) {
+        String uri = String.format("bolt://%s:%d", host, port);
 
-        return new MySQLAdaptor(
-            host,
-            dbName,
-            userName,
-            password,
-            port
-        );
+        return new Neo4JAdaptor(uri, userName, password);
     }
 }

@@ -9,15 +9,17 @@ import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.gk.model.GKInstance;
-import org.gk.model.InstanceDisplayNameGenerator;
-import org.gk.model.PersistenceAdaptor;
-import org.gk.model.ReactomeJavaConstants;
-import org.gk.persistence.MySQLAdaptor;
-import org.gk.schema.SchemaClass;
-import org.gk.schema.InvalidAttributeException;
-import org.gk.schema.InvalidAttributeValueException;
+
 import org.gk.util.GKApplicationUtilities;
+import org.neo4j.driver.Transaction;
+import org.reactome.server.service.model.GKInstance;
+import org.reactome.server.service.model.InstanceDisplayNameGenerator;
+import org.reactome.server.service.model.PersistenceAdaptor;
+import org.reactome.server.service.model.ReactomeJavaConstants;
+import org.reactome.server.service.persistence.Neo4JAdaptor;
+import org.reactome.server.service.schema.InvalidAttributeException;
+import org.reactome.server.service.schema.InvalidAttributeValueException;
+import org.reactome.server.service.schema.SchemaClass;
 
 public class UpdateDOIs {
 
@@ -25,11 +27,12 @@ public class UpdateDOIs {
 	private static final Logger warningsLog = LogManager.getLogger("warningsLog");
 	private static final String REACTOME_DOI_PREFIX = "10.3180";
 
-	private static MySQLAdaptor dbaTestReactome;
-	private static MySQLAdaptor dbaGkCentral;
+	private static Neo4JAdaptor dbaTestReactome;
+	private static Neo4JAdaptor dbaGkCentral;
+	private static Transaction gkCentralTransaction;
 
 	// Create adaptors for Test Reactome and GKCentral
-	public static void setAdaptors(MySQLAdaptor adaptorTR, MySQLAdaptor adaptorGK) {
+	public static void setAdaptors(Neo4JAdaptor adaptorTR, Neo4JAdaptor adaptorGK) {
 		dbaTestReactome = adaptorTR;
 		dbaGkCentral = adaptorGK;
 	}
@@ -75,97 +78,85 @@ public class UpdateDOIs {
 				 ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^" + REACTOME_DOI_PREFIX);
 			 logger.info("Found " + doisTR.size() + " Pathway instances that need a DOI");
 			 // GKCentral should require transactional support
-			if (dbaGkCentral.supportsTransactions())
+			gkCentralTransaction = dbaGkCentral.getConnection().session().beginTransaction();
+			if (!doisTR.isEmpty())
 			{
-				if (!doisTR.isEmpty())
+				outerloop:
+				for (GKInstance trDOI : doisTR)
 				{
-					outerloop:
-					for (GKInstance trDOI : doisTR)
+					// The dois are constructed from the instances 'stableIdentifier',
+					// which should be in the db already
+					String stableIdFromDb = ((GKInstance)
+						trDOI.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
+					String nameFromDb = trDOI.getAttributeValue(ReactomeJavaConstants.name).toString();
+					String updatedDoi = REACTOME_DOI_PREFIX + "/" + stableIdFromDb;
+					String dbId = trDOI.getAttributeValue(ReactomeJavaConstants.DB_ID).toString();
+
+					// Used to verify that report contents are as expected, based on provided list from curators
+					if (expectedUpdatedDOIs.get(updatedDoi) != null &&
+						expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
 					{
-						// The dois are constructed from the instances 'stableIdentifier',
-						// which should be in the db already
-						String stableIdFromDb = ((GKInstance)
-							trDOI.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
-						String nameFromDb = trDOI.getAttributeValue(ReactomeJavaConstants.name).toString();
-						String updatedDoi = REACTOME_DOI_PREFIX + "/" + stableIdFromDb;
-						String dbId = trDOI.getAttributeValue(ReactomeJavaConstants.DB_ID).toString();
-
-						// Used to verify that report contents are as expected, based on provided list from curators
-						if (expectedUpdatedDOIs.get(updatedDoi) != null &&
-							expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
-						{
-							updated.add(updatedDoi);
-						} else {
-							String doiWithName = updatedDoi + ":" + nameFromDb;
-							notUpdated.add(doiWithName);
-							if (!testMode) {
-								continue;
-							}
-						}
-						// This updates the 'modified' field for Pathways instances, keeping track of when changes
-						// happened for each instance
-						trDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
-						trDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditTR);
-						trDOI.setAttributeValue("doi", updatedDoi);
-
-						// Grabs instance from GKCentral based on DB_ID taken from Test Reactome and updates its DOI
-						dbaGkCentral.startTransaction();
-						doisGK = dbaGkCentral.fetchInstanceByAttribute(
-								ReactomeJavaConstants.Pathway, ReactomeJavaConstants.DB_ID, "=", dbId);
-						if (!doisGK.isEmpty())
-						{
-							for (GKInstance gkDOI : doisGK)
-							{
-								boolean verified = ReportTests.verifyDOIMatches(trDOI, gkDOI, updatedDoi);
-								if (verified) 
-								{
-									gkDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
-									gkDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditGK);
-									gkDOI.setAttributeValue("doi", updatedDoi);
-									if (!testMode) {
-										dbaGkCentral.updateInstanceAttribute(gkDOI, ReactomeJavaConstants.modified);
-										dbaGkCentral.updateInstanceAttribute(gkDOI, "doi");
-									}
-								} else {
-									continue outerloop;
-								}
-								if (!testMode) {
-									logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
-								} else {
-									logger.info("TEST DOI: " + updatedDoi + "," + nameFromDb);
-									String doiWithName = updatedDoi + "," + nameFromDb + "\n";
-									Files.write(doisListFilepath, doiWithName.getBytes(), StandardOpenOption.APPEND);
-								}
-							}
-						} else {
-							logger.error("Could not find attribute in gk_central");
-						}
+						updated.add(updatedDoi);
+					} else {
+						String doiWithName = updatedDoi + ":" + nameFromDb;
+						notUpdated.add(doiWithName);
 						if (!testMode) {
-							dbaTestReactome.updateInstanceAttribute(trDOI, ReactomeJavaConstants.modified);
-							dbaTestReactome.updateInstanceAttribute(trDOI, "doi");
+							continue;
 						}
 					}
-					ReportTests.expectedUpdatesTests(
-						expectedUpdatedDOIs, updated, notUpdated, doisTR.size(), REACTOME_DOI_PREFIX);
-				} else {
-					logger.info("No DOIs to update");
+					// This updates the 'modified' field for Pathways instances, keeping track of when changes
+					// happened for each instance
+					trDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
+					trDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditTR);
+					trDOI.setAttributeValue("doi", updatedDoi);
+
+					// Grabs instance from GKCentral based on DB_ID taken from Test Reactome and updates its DOI
+					doisGK = dbaGkCentral.fetchInstanceByAttribute(
+							ReactomeJavaConstants.Pathway, ReactomeJavaConstants.DB_ID, "=", dbId);
+					if (!doisGK.isEmpty())
+					{
+						for (GKInstance gkDOI : doisGK)
+						{
+							boolean verified = ReportTests.verifyDOIMatches(trDOI, gkDOI, updatedDoi);
+							if (verified)
+							{
+								gkDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
+								gkDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditGK);
+								gkDOI.setAttributeValue("doi", updatedDoi);
+								if (!testMode) {
+									dbaGkCentral.updateInstanceAttribute(gkDOI, ReactomeJavaConstants.modified, gkCentralTransaction);
+									dbaGkCentral.updateInstanceAttribute(gkDOI, "doi", gkCentralTransaction);
+								}
+							} else {
+								continue outerloop;
+							}
+							if (!testMode) {
+								logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
+							} else {
+								logger.info("TEST DOI: " + updatedDoi + "," + nameFromDb);
+								String doiWithName = updatedDoi + "," + nameFromDb + "\n";
+								Files.write(doisListFilepath, doiWithName.getBytes(), StandardOpenOption.APPEND);
+							}
+						}
+					} else {
+						logger.error("Could not find attribute in gk_central");
+					}
+					if (!testMode) {
+						dbaTestReactome.updateInstanceAttribute(trDOI, ReactomeJavaConstants.modified, gkCentralTransaction);
+						dbaTestReactome.updateInstanceAttribute(trDOI, "doi", gkCentralTransaction);
+					}
 				}
-				if (!testMode) {
-					dbaGkCentral.commit();
-				} else {
-					dbaGkCentral.rollback();
-				}
+				ReportTests.expectedUpdatesTests(
+					expectedUpdatedDOIs, updated, notUpdated, doisTR.size(), REACTOME_DOI_PREFIX);
 			} else {
-				logger.fatal("Unable to open transaction with GK Central, rolling back");
-				dbaGkCentral.rollback();
+				logger.info("No DOIs to update");
+			}
+			if (!testMode) {
+				gkCentralTransaction.commit();
+			} else {
+				gkCentralTransaction.rollback();
 			}
 		} catch (Exception e) {
-			try
-			{
-				dbaGkCentral.rollback();
-			} catch (Exception err) {
-				e.printStackTrace();
-			}
 			e.printStackTrace();
 		}
 	}
@@ -220,12 +211,12 @@ public class UpdateDOIs {
 	 *            part of the program.
 	 * @return
 	 */
-	public static GKInstance createInstanceEdit(MySQLAdaptor dbAdaptor, long personID, String creatorName) {
+	public static GKInstance createInstanceEdit(Neo4JAdaptor dbAdaptor, long personID, String creatorName) {
 		GKInstance instanceEdit = null;
 		try {
 			instanceEdit = createDefaultIE(dbAdaptor, personID, true, "Inserted by " + creatorName);
 			instanceEdit.getDBID();
-			dbAdaptor.updateInstance(instanceEdit);
+			dbAdaptor.updateInstance(instanceEdit, gkCentralTransaction);
 		} catch (Exception e) {
 			// logger.error("Exception caught while trying to create an InstanceEdit: {}",
 			// e.getMessage());
@@ -247,7 +238,7 @@ public class UpdateDOIs {
 	 * @throws Exception
 	 */
 	public static GKInstance createDefaultIE(
-		MySQLAdaptor dba, Long defaultPersonId, boolean needStore, String note) throws Exception {
+		Neo4JAdaptor dba, Long defaultPersonId, boolean needStore, String note) throws Exception {
 
 		GKInstance defaultPerson = dba.fetchInstance(defaultPersonId);
 		if (defaultPerson != null) {
@@ -257,7 +248,7 @@ public class UpdateDOIs {
 			InstanceDisplayNameGenerator.setDisplayName(newIE);
 
 			if (needStore) {
-				dba.storeInstance(newIE);
+				dba.storeInstance(newIE, gkCentralTransaction);
 			} else {
 				// This 'else' block wasn't here when first copied from ReferenceCreator. Added
 				// to reduce future potential headaches. (JC)
