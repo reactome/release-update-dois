@@ -6,11 +6,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.gk.util.GKApplicationUtilities;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.Transaction;
 import org.reactome.server.service.model.GKInstance;
 import org.reactome.server.service.model.InstanceDisplayNameGenerator;
@@ -24,244 +27,173 @@ import org.reactome.server.service.schema.SchemaClass;
 public class UpdateDOIs {
 
 	private static final Logger logger = LogManager.getLogger();
-	private static final Logger warningsLog = LogManager.getLogger("warningsLog");
 	private static final String REACTOME_DOI_PREFIX = "10.3180";
 
-	private static Neo4JAdaptor dbaTestReactome;
-	private static Neo4JAdaptor dbaGkCentral;
-	private static Transaction gkCentralTransaction;
+	private Neo4JAdaptor releaseDBA;
+	private Neo4JAdaptor curatorDBA;
 
-	// Create adaptors for Test Reactome and GKCentral
-	public static void setAdaptors(Neo4JAdaptor adaptorTR, Neo4JAdaptor adaptorGK) {
-		dbaTestReactome = adaptorTR;
-		dbaGkCentral = adaptorGK;
+	private int releaseNumber;
+	private long personId;
+	private boolean testMode;
+
+	public UpdateDOIs(PropertyManager propertyManager) {
+		this.releaseDBA = propertyManager.getReleaseDbAdaptor();
+		this.curatorDBA = propertyManager.getGKCentralDbAdaptor();
+
+		this.releaseNumber = propertyManager.getReleaseNumber();
+		this.personId = propertyManager.getPersonId();
+		this.testMode = propertyManager.getTestMode();
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void findAndUpdateDOIs(long personId, Path pathToReport, int releaseNumber, boolean testMode)
-		throws IOException {
+	public void findAndUpdateDOIs(String pathToReport) throws Exception {
+		logger.info("Starting UpdateDOIs");
+		List<ExpectedDOI> expectedDOIsToUpdate = getExpectedDOIs(pathToReport);
+		List<GKInstance> pathwaysNeedingDOIs = getPathwaysRequiringDOIUpdate(getReleaseDBA());
 
-		Path doisListFilepath = Paths.get("doisToBeUpdated-v" + releaseNumber + ".txt");
-		if (testMode) {
+		if (isTestMode()) {
 			logger.info("Test mode is active. Outputting DOIs that can be updated");
-			Files.deleteIfExists(doisListFilepath);
-			Files.createFile(doisListFilepath);
+			Files.deleteIfExists(getDOIsToBeUpdatedFilePath());
+			Files.createFile(getDOIsToBeUpdatedFilePath());
 		}
 
-		Collection<GKInstance> doisTR;
-		Collection<GKInstance> doisGK;
+		try (
+			Session releaseSession = getReleaseDBA().getConnection().session(
+				SessionConfig.forDatabase(getReleaseDBA().getDBName()));
+			Session gkCentralSession = getCuratorDBA().getConnection().session(
+				SessionConfig.forDatabase(getCuratorDBA().getDBName()));
+			Transaction releaseTransaction = releaseSession.beginTransaction();
+			Transaction gkCentralTransaction = gkCentralSession.beginTransaction()
+		) {
 
-		// Initialize instance edits for each DB
-		String creatorFile = "org.reactome.release.updateDOIs.Main";
-		GKInstance instanceEditTR = null;
-		GKInstance instanceEditGK = null;
-		if (!testMode) {
-			instanceEditTR = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaTestReactome, personId, creatorFile);
-			instanceEditGK = UpdateDOIs.createInstanceEdit(UpdateDOIs.dbaGkCentral, personId, creatorFile);
-		}
-		// Gets the updated report file if it was provided for this release
-		Map<String, Map<String,String>> expectedUpdatedDOIs = new HashMap<>();
-		if (Files.exists(pathToReport)) {
-			expectedUpdatedDOIs = UpdateDOIs.getExpectedUpdatedDOIs(pathToReport.toString());
-		}
-		if (expectedUpdatedDOIs.size() == 0) {
-			logger.warn("No DOIs listed in UpdateDOIs.report. " +
-				"Please add expected DOI and displayName to UpdateDOIs.report.");
-		}
-		List<String> updated = new ArrayList<>();
-		List<String> notUpdated = new ArrayList<>();
-		try 
-		{
-			// Get all instances in Test Reactome in the Pathway table that don't have a 'doi' attribute starting
-			// with 10.3180, the Reactome DOI standard
-			 doisTR = dbaTestReactome.fetchInstanceByAttribute(
-				 ReactomeJavaConstants.Pathway, "doi", "NOT REGEXP", "^" + REACTOME_DOI_PREFIX);
-			 logger.info("Found " + doisTR.size() + " Pathway instances that need a DOI");
-			 // GKCentral should require transactional support
-			gkCentralTransaction = dbaGkCentral.getConnection().session().beginTransaction();
-			if (!doisTR.isEmpty())
-			{
-				outerloop:
-				for (GKInstance trDOI : doisTR)
-				{
-					// The dois are constructed from the instances 'stableIdentifier',
-					// which should be in the db already
-					String stableIdFromDb = ((GKInstance)
-						trDOI.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
-					String nameFromDb = trDOI.getAttributeValue(ReactomeJavaConstants.name).toString();
-					String updatedDoi = REACTOME_DOI_PREFIX + "/" + stableIdFromDb;
-					String dbId = trDOI.getAttributeValue(ReactomeJavaConstants.DB_ID).toString();
-
-					// Used to verify that report contents are as expected, based on provided list from curators
-					if (expectedUpdatedDOIs.get(updatedDoi) != null &&
-						expectedUpdatedDOIs.get(updatedDoi).get("displayName").equals(nameFromDb))
-					{
-						updated.add(updatedDoi);
-					} else {
-						String doiWithName = updatedDoi + ":" + nameFromDb;
-						notUpdated.add(doiWithName);
-						if (!testMode) {
-							continue;
-						}
-					}
-					// This updates the 'modified' field for Pathways instances, keeping track of when changes
-					// happened for each instance
-					trDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
-					trDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditTR);
-					trDOI.setAttributeValue("doi", updatedDoi);
-
-					// Grabs instance from GKCentral based on DB_ID taken from Test Reactome and updates its DOI
-					doisGK = dbaGkCentral.fetchInstanceByAttribute(
-							ReactomeJavaConstants.Pathway, ReactomeJavaConstants.DB_ID, "=", dbId);
-					if (!doisGK.isEmpty())
-					{
-						for (GKInstance gkDOI : doisGK)
-						{
-							boolean verified = ReportTests.verifyDOIMatches(trDOI, gkDOI, updatedDoi);
-							if (verified)
-							{
-								gkDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
-								gkDOI.addAttributeValue(ReactomeJavaConstants.modified, instanceEditGK);
-								gkDOI.setAttributeValue("doi", updatedDoi);
-								if (!testMode) {
-									dbaGkCentral.updateInstanceAttribute(gkDOI, ReactomeJavaConstants.modified, gkCentralTransaction);
-									dbaGkCentral.updateInstanceAttribute(gkDOI, "doi", gkCentralTransaction);
-								}
-							} else {
-								continue outerloop;
-							}
-							if (!testMode) {
-								logger.info("Updated DOI: " + updatedDoi + " for " + nameFromDb);
-							} else {
-								logger.info("TEST DOI: " + updatedDoi + "," + nameFromDb);
-								String doiWithName = updatedDoi + "," + nameFromDb + "\n";
-								Files.write(doisListFilepath, doiWithName.getBytes(), StandardOpenOption.APPEND);
-							}
-						}
-					} else {
-						logger.error("Could not find attribute in gk_central");
-					}
-					if (!testMode) {
-						dbaTestReactome.updateInstanceAttribute(trDOI, ReactomeJavaConstants.modified, gkCentralTransaction);
-						dbaTestReactome.updateInstanceAttribute(trDOI, "doi", gkCentralTransaction);
-					}
+			GKInstance releaseInstanceEdit = getReleaseDBInstanceEdit(releaseTransaction);
+			GKInstance curatorInstanceEdit = getGKCentralDBInstanceEdit(gkCentralTransaction);
+			for (GKInstance pathwayNeedingDOI : pathwaysNeedingDOIs) {
+				if (!isPathwayWithExpectedDOI(pathwayNeedingDOI, expectedDOIsToUpdate)) {
+					continue;
 				}
-				ReportTests.expectedUpdatesTests(
-					expectedUpdatedDOIs, updated, notUpdated, doisTR.size(), REACTOME_DOI_PREFIX);
-			} else {
-				logger.info("No DOIs to update");
+
+				pathwayNeedingDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
+				pathwayNeedingDOI.addAttributeValue(ReactomeJavaConstants.modified, releaseInstanceEdit);
+				pathwayNeedingDOI.setAttributeValue(ReactomeJavaConstants.doi, getUpdatedDOI(pathwayNeedingDOI));
+				getReleaseDBA().updateInstanceAttribute(pathwayNeedingDOI, ReactomeJavaConstants.modified, releaseTransaction);
+				getReleaseDBA().updateInstanceAttribute(pathwayNeedingDOI, ReactomeJavaConstants.doi, releaseTransaction);
+
+				GKInstance gkCentralPathwayNeedingDOI = fetchAndVerifyGKCentralPathway(pathwayNeedingDOI);
+				if (gkCentralPathwayNeedingDOI != null) {
+					gkCentralPathwayNeedingDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
+					gkCentralPathwayNeedingDOI.addAttributeValue(ReactomeJavaConstants.modified, curatorInstanceEdit);
+					gkCentralPathwayNeedingDOI.setAttributeValue(
+						ReactomeJavaConstants.doi, getUpdatedDOI(gkCentralPathwayNeedingDOI)
+					);
+					getCuratorDBA().updateInstanceAttribute(
+						gkCentralPathwayNeedingDOI, ReactomeJavaConstants.modified, gkCentralTransaction
+					);
+					getCuratorDBA().updateInstanceAttribute(
+						gkCentralPathwayNeedingDOI, ReactomeJavaConstants.doi, gkCentralTransaction
+					);
+				}
+				logger.info("Updated DOI: " + getUpdatedDOI(pathwayNeedingDOI) + " for " +
+					pathwayNeedingDOI.getDisplayName());
+
+				if (isTestMode()) {
+					Files.write(
+						getDOIsToBeUpdatedFilePath(),
+						getDOIWithDisplayName(pathwayNeedingDOI).concat(System.lineSeparator()).getBytes(),
+						StandardOpenOption.APPEND
+					);
+				}
 			}
-			if (!testMode) {
-				gkCentralTransaction.commit();
-			} else {
+
+			if (isTestMode()) {
+				releaseTransaction.rollback();
 				gkCentralTransaction.rollback();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	// Parses input report and places each line's contents in HashMap
-	public static Map<String, Map<String,String>> getExpectedUpdatedDOIs(String pathToReport) {
-
-		Map<String, Map<String, String>> expectedUpdatedDOIs = new HashMap<>();
-		try 
-		{
-			FileReader fr = new FileReader(pathToReport);
-			BufferedReader br = new BufferedReader(fr);
-
-			String sCurrentLine;
-			while ((sCurrentLine = br.readLine()) != null) 
-			{
-				Map<String, String> doiAttributes = new HashMap<>();
-				String[] commaSplit = sCurrentLine.split(",", 2);
-				String reactomeDoi = commaSplit[0];
-				String displayName = commaSplit[1];
-				int lastPeriodIndex = commaSplit[0].lastIndexOf(".");
-				String[] versionSplit = {
-					reactomeDoi.substring(0, lastPeriodIndex),
-					reactomeDoi.substring(lastPeriodIndex + 1)
-				};
-				String stableId = versionSplit[0].replace(REACTOME_DOI_PREFIX + "/", "");
-				String stableIdVersion = versionSplit[1];
-				doiAttributes.put("displayName", displayName);
-				doiAttributes.put("stableId", stableId);
-				doiAttributes.put("stableIdVersion", stableIdVersion);
-				expectedUpdatedDOIs.put(reactomeDoi, doiAttributes);
-			}
-			br.close();
-			fr.close();
-
-		} catch (Exception e) {
-			warningsLog.warn("No input file found -- Continuing without checking DOIs");
-			e.printStackTrace();
-		}
-		return expectedUpdatedDOIs;
-	}
-
-	/**
-	 * Create an InstanceEdit.
-	 * 
-	 * @param personID
-	 *            - ID of the associated Person entity.
-	 * @param creatorName
-	 *            - The name of the thing that is creating this InstanceEdit.
-	 *            Typically, you would want to use the package and classname that
-	 *            uses <i>this</i> object, so it can be traced to the appropriate
-	 *            part of the program.
-	 * @return
-	 */
-	public static GKInstance createInstanceEdit(Neo4JAdaptor dbAdaptor, long personID, String creatorName) {
-		GKInstance instanceEdit = null;
-		try {
-			instanceEdit = createDefaultIE(dbAdaptor, personID, true, "Inserted by " + creatorName);
-			instanceEdit.getDBID();
-			dbAdaptor.updateInstance(instanceEdit, gkCentralTransaction);
-		} catch (Exception e) {
-			// logger.error("Exception caught while trying to create an InstanceEdit: {}",
-			// e.getMessage());
-			e.printStackTrace();
-		}
-		return instanceEdit;
-	}
-
-	// This code below was taken from 'add-links' repo:
-	// org.reactomeaddlinks.db.ReferenceCreator
-	/**
-	 * Create and save in the database a default InstanceEdit associated with the
-	 * Person entity whose DB_ID is <i>defaultPersonId</i>.
-	 * 
-	 * @param dba
-	 * @param defaultPersonId
-	 * @param needStore
-	 * @return an InstanceEdit object.
-	 * @throws Exception
-	 */
-	public static GKInstance createDefaultIE(
-		Neo4JAdaptor dba, Long defaultPersonId, boolean needStore, String note) throws Exception {
-
-		GKInstance defaultPerson = dba.fetchInstance(defaultPersonId);
-		if (defaultPerson != null) {
-			GKInstance newIE = UpdateDOIs.createDefaultInstanceEdit(defaultPerson);
-			newIE.addAttributeValue(ReactomeJavaConstants.dateTime, GKApplicationUtilities.getDateTime());
-			newIE.addAttributeValue(ReactomeJavaConstants.note, note);
-			InstanceDisplayNameGenerator.setDisplayName(newIE);
-
-			if (needStore) {
-				dba.storeInstance(newIE, gkCentralTransaction);
 			} else {
-				// This 'else' block wasn't here when first copied from ReferenceCreator. Added
-				// to reduce future potential headaches. (JC)
-				logger.info("needStore set to false");
+				releaseTransaction.commit();
+				gkCentralTransaction.commit();
 			}
-			return newIE;
-		} else {
-			throw new Exception("Could not fetch Person entity with ID " + defaultPersonId
-					+ ". Please check that a Person entity exists in the database with this ID.");
+		} catch (Exception e) {
+			logger.error("Problem with session transaction(s)", e);
 		}
+		logger.info("Finished run of UpdateDOIs");
 	}
 
-	public static GKInstance createDefaultInstanceEdit(GKInstance person) {
+	private List<ExpectedDOI> getExpectedDOIs(String pathToReport) throws IOException {
+		return Files.lines(Paths.get(pathToReport))
+			.map(ExpectedDOI::new)
+			.collect(Collectors.toList());
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<GKInstance> getPathwaysRequiringDOIUpdate(Neo4JAdaptor dba) throws Exception {
+		List<GKInstance> pathwaysNeedingDOI =
+			(List<GKInstance>) dba.fetchInstancesByClass(ReactomeJavaConstants.Pathway)
+				.stream()
+				.filter(pathway -> needsDOI((GKInstance) pathway))
+				.collect(Collectors.toList());
+
+		logger.info("Found " + pathwaysNeedingDOI.size() + " pathway instances that need a DOI");
+
+		return pathwaysNeedingDOI;
+	}
+
+	private String getUpdatedDOI(GKInstance pathway) {
+		String stableIdFromDb;
+		try {
+			stableIdFromDb = ((GKInstance) pathway.getAttributeValue(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to obtain stable id from pathway", e);
+		}
+		return REACTOME_DOI_PREFIX + "/" + stableIdFromDb;
+	}
+
+	private boolean isPathwayWithExpectedDOI(GKInstance pathwayNeedingDOI, List<ExpectedDOI> expectedDOIsToUpdate) {
+		return expectedDOIsToUpdate.stream().anyMatch(
+			expectedDOI -> expectedDOI.getDOI().equals(getUpdatedDOI(pathwayNeedingDOI)) &&
+				expectedDOI.getPathwayDisplayName().equals(pathwayNeedingDOI.getDisplayName())
+		);
+	}
+
+	private GKInstance fetchAndVerifyGKCentralPathway(GKInstance releasePathway) throws Exception {
+		GKInstance gkCentralPathway = getCuratorDBA().fetchInstance(releasePathway.getDBID());
+
+		boolean verified = ReportTests.verifyDOIMatches(releasePathway, gkCentralPathway, getUpdatedDOI(releasePathway));
+		if (!verified) {
+			return null;
+		}
+
+		return gkCentralPathway;
+	}
+
+	private String getDOIWithDisplayName(GKInstance releasePathway) {
+		return getUpdatedDOI(releasePathway) + "," + releasePathway.getDisplayName();
+	}
+
+	private GKInstance getReleaseDBInstanceEdit(Transaction tx) throws Exception {
+		return getInstanceEdit(getReleaseDBA(), tx);
+	}
+
+	private GKInstance getGKCentralDBInstanceEdit(Transaction tx) throws Exception {
+		return getInstanceEdit(getCuratorDBA(), tx);
+	}
+
+	private GKInstance getInstanceEdit(Neo4JAdaptor dba, Transaction tx) throws Exception {
+		GKInstance defaultPerson = dba.fetchInstance(getPersonId());
+		if (defaultPerson == null) {
+			throw new Exception("Could not fetch Person entity with ID " + getPersonId()
+				+ ". Please check that a Person entity exists in the database with this ID.");
+		}
+		GKInstance newIE = createDefaultInstanceEdit(defaultPerson);
+		newIE.addAttributeValue(ReactomeJavaConstants.dateTime, GKApplicationUtilities.getDateTime());
+		newIE.addAttributeValue(ReactomeJavaConstants.note, "org.reactome.release.updateDOIs.Main");
+		InstanceDisplayNameGenerator.setDisplayName(newIE);
+
+		dba.storeInstance(newIE, tx);
+
+		return newIE;
+	}
+
+	private GKInstance createDefaultInstanceEdit(GKInstance person) {
 		GKInstance instanceEdit = new GKInstance();
 		PersistenceAdaptor adaptor = person.getDbAdaptor();
 		instanceEdit.setDbAdaptor(adaptor);
@@ -273,9 +205,81 @@ public class UpdateDOIs {
 		} catch (InvalidAttributeException | InvalidAttributeValueException e) {
 			e.printStackTrace();
 			// throw this back up the stack - no way to recover from in here.
-			throw new Error(e);
+			throw new RuntimeException(e);
 		}
 
 		return instanceEdit;
+	}
+
+	private boolean needsDOI(GKInstance pathway) {
+		try {
+			String doi = (String) pathway.getAttributeValue(ReactomeJavaConstants.doi);
+			return doi != null && !doi.startsWith(REACTOME_DOI_PREFIX);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private Path getDOIsToBeUpdatedFilePath() {
+		return Paths.get("doisToBeUpdated-v" + getReleaseNumber() + ".txt");
+	}
+
+	private Neo4JAdaptor getReleaseDBA() {
+		return this.releaseDBA;
+	}
+
+	private Neo4JAdaptor getCuratorDBA() {
+		return this.curatorDBA;
+	}
+
+	private int getReleaseNumber() {
+		return this.releaseNumber;
+	}
+
+	private long getPersonId() {
+		return this.personId;
+	}
+
+	private boolean isTestMode() {
+		return this.testMode;
+	}
+
+	private class ExpectedDOI {
+		private String doi;
+		private String pathwayDisplayName;
+
+		public ExpectedDOI(String reportLine) {
+			String[] reportLineColumns = reportLine.split(",");
+			this.doi = reportLineColumns[0];
+			this.pathwayDisplayName = reportLineColumns[1];
+		}
+
+		public String getDOI() {
+			return this.doi;
+		}
+
+		public String getPathwayDisplayName() {
+			return this.pathwayDisplayName;
+		}
+
+		public String getStableIdentifier() {
+			return getStableIdentifierWithVersion().substring(
+				0, getIndexOfStableIdentifierDotSeparator()
+			);
+		}
+
+		public int getStableIdentifierVersion() {
+			return Integer.parseInt(
+				getStableIdentifierWithVersion().substring(getIndexOfStableIdentifierDotSeparator() + 1)
+			);
+		}
+
+		private int getIndexOfStableIdentifierDotSeparator() {
+			return getStableIdentifierWithVersion().lastIndexOf(".");
+		}
+
+		private String getStableIdentifierWithVersion() {
+			return getDOI().replace(REACTOME_DOI_PREFIX + "/", "");
+		}
 	}
 }
