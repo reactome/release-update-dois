@@ -7,7 +7,14 @@ def utils = new Utilities()
 
 pipeline {
 	agent any
-
+	
+        environment {
+            ECR_URL = 'public.ecr.aws/reactome/release-update-dois'
+            MYSQL_SOCKET = '/var/run/mysqld/mysqld.sock'
+	    CONT_NAME = 'release_update_dois'
+	    CONT_ROOT = '/opt/release-update-dois'
+        }
+	
 	stages {
 		// This stage checks that an upstream project, UpdateStableIdentifiers, was run successfully for its last build.
 		stage('Check if UpdateStableIdentifiers build succeeded'){
@@ -32,23 +39,40 @@ pipeline {
 			}
 		}
 		
-		// This stage builds the jar file using maven.
-		stage('Setup: Build jar file'){
+		stage('Setup: Pull and clean docker environment'){
 			steps{
-				script{
-					sh "mvn clean package -DskipTests"
-				}
+				sh "docker pull ${ECR_URL}:latest"
+				sh """
+					if docker ps -a --format '{{.Names}}' | grep -Eq '${CONT_NAME}_TEST'; then
+						docker rm -f ${CONT_NAME}_TEST
+					fi
+                                        if docker ps -a --format '{{.Names}}' | grep -Eq '${CONT_NAME}_MAIN'; then
+						docker rm -f ${CONT_NAME}_MAIN
+					fi
+                                        if docker ps -a --format '{{.Names}}' | grep -Eq '${CONT_NAME}_VERIFY'; then
+						docker rm -f ${CONT_NAME}_VERIFY
+					fi
+				"""
 			}
 		}
-		
 		// This stage executes UpdateDOIs without specifying a 'report' file, which should contain a list of updateable DOIS, as one of the arguments.
 		// This results in test mode behaviour, which includes generating the report file that contains updateable DOIS for release.
 		stage('Main: UpdateDOIs Test Run'){
 			steps{
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-						sh "touch src/main/resources/UpdateDOIs.report"
-						sh "java -jar target/update-dois-jar-with-dependencies.jar $ConfigFile"
+						def releaseVersion = utils.getReleaseVersion()
+						sh "mkdir -p config"
+						sh "sudo cp $ConfigFile config/auth.properties"
+						sh "sudo chown jenkins:jenkins config/ -R"
+						sh "mkdir -p update_doi_output"
+						sh "rm -f update_doi_output/*"
+						sh "touch update_doi_output/UpdateDOIs.report"
+						sh """\
+					             docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} -v \$(pwd)/update_doi_output/:/output -v \$(pwd)/config:${CONT_ROOT}/config --net=host --name ${CONT_NAME}_TEST \\
+						     ${ECR_URL}:latest \\
+						     /bin/bash -c 'java -jar target/update-dois-jar-with-dependencies.jar config/auth.properties && mv src/main/resources/UpdateDOIs.report /output/ && mv doisToBeUpdated-v${releaseVersion}.txt /output'
+				                """
 					}
 				}
 			}
@@ -60,7 +84,7 @@ pipeline {
 			steps{
 				script{
 					def releaseVersion = utils.getReleaseVersion()
-					def doisToBeUpdatedFile = "doisToBeUpdated-v${releaseVersion}.txt"
+					def doisToBeUpdatedFile = "update_doi_output/doisToBeUpdated-v${releaseVersion}.txt"
 					def emailSubject = "UpdateStableIdentifiers complete & UpdateDOIs List for v${releaseVersion}"
 					def emailBody = "This is an automated message: UpdateDOIs has completed a test run to determine which Pathway DOIs will be updated in the \'${env.RELEASE_CURRENT_DB}\' and \'${env.GK_CENTRAL_DB}\' databases. Please review the attached ${doisToBeUpdatedFile} file and let the developer running Release know if they look correct. \n\nThanks!"
 					def emailAttachments = "${doisToBeUpdatedFile}"
@@ -92,7 +116,10 @@ pipeline {
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
 					    def releaseVersion = utils.getReleaseVersion()
-						sh "java -jar target/update-dois-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${releaseVersion}.txt"
+					    sh """\
+					         docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} -v \$(pwd)/update_doi_output/:/output -v \$(pwd)/config:${CONT_ROOT}/config --net=host --name ${CONT_NAME}_MAIN \\
+						 ${ECR_URL}:latest \\
+						 /bin/bash -c 'java -jar target/update-dois-jar-with-dependencies.jar config/auth.properties /output/doisToBeUpdated-v${releaseVersion}.txt"
 					}
 				}
 			}
@@ -103,8 +130,12 @@ pipeline {
 				script {
 					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'releasePass', usernameVariable: 'releaseUser')]){
 						withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curatorPass', usernameVariable: 'curatorUser')]){
-							def releaseVersion = utils.getReleaseVersion()
-					   	    sh "java -jar target/update-dois-verifier-jar-with-dependencies.jar --r $releaseVersion --cu $curatorUser --cp $curatorPass --ru $releaseUser --rp $releasePass --ch curator.reactome.org"
+						    def releaseVersion = utils.getReleaseVersion()
+					   	    sh """\
+					                docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} --net=host --name ${CONT_NAME}_VERIFY \\
+						        ${ECR_URL}:latest \\
+						        /bin/bash -c 'java -jar target/update-dois-verifier-jar-with-dependencies.jar --r $releaseVersion --cu $curatorUser --cp $curatorPass --ru $releaseUser --rp $releasePass --ch curator.reactome.org'
+						     """
 						}
 					}
 				}
@@ -130,7 +161,7 @@ pipeline {
 			steps{
 				script{
 					def releaseVersion = utils.getReleaseVersion()
-					def dataFiles = ["doisToBeUpdated-v${releaseVersion}.txt"]
+					def dataFiles = ["update_doi_output/doisToBeUpdated-v${releaseVersion}.txt"]
 					// Log files appear in the 'logs' folder by default, and so don't need to be specified here.
 					def logFiles = []
 					def foldersToDelete = []
@@ -144,9 +175,9 @@ pipeline {
 			steps{
 		        script{
 		            def releaseVersion = utils.getReleaseVersion()
-					def emailSubject = "UpdateStableIdentifier and UpdateDOIs complete for v${releaseVersion}"
-					def emailBody = "Hello,\n\nThis is an automated message from Jenkins regarding an update for v${releaseVersion}: Both UpdateStableIdentifiers and UpdateDOIs steps have completed. ${env.GK_CENTRAL_DB} can likely be reopened, but Curation should get \'Human\' confirmation before doing so. \n\nThanks!"
-					utils.sendEmail("${emailSubject}", "${emailBody}")
+			    def emailSubject = "UpdateStableIdentifier and UpdateDOIs complete for v${releaseVersion}"
+			    def emailBody = "Hello,\n\nThis is an automated message from Jenkins regarding an update for v${releaseVersion}: Both UpdateStableIdentifiers and UpdateDOIs steps have completed. ${env.GK_CENTRAL_DB} can likely be reopened, but Curation should get \'Human\' confirmation before doing so. \n\nThanks!"
+			    utils.sendEmail("${emailSubject}", "${emailBody}")
 		       	}
 		   	}
 		}
