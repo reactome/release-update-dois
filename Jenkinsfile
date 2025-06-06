@@ -71,7 +71,7 @@ pipeline {
 						sh """\
 					             docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} -v \$(pwd)/update_doi_output/:/output -v \$(pwd)/config:${CONT_ROOT}/config --net=host --name ${CONT_NAME}_TEST \\
 						     ${ECR_URL}:latest \\
-						     /bin/bash -c 'java -jar target/update-dois-jar-with-dependencies.jar config/auth.properties && mv src/main/resources/UpdateDOIs.report /output/ && mv doisToBeUpdated-v${releaseVersion}.txt /output'
+						     /bin/bash -c 'java -jar target/update-dois-jar-with-dependencies.jar config/auth.properties && mv doisToBeUpdated-v${releaseVersion}.txt /output'
 				                """
 					}
 				}
