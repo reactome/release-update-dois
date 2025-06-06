@@ -78,6 +78,8 @@ pipeline {
 			}
 		}
 
+		
+
 		// This stage takes the generated report file and sends it to the curator overseeing release.
 		// Before moving onto the next stage of UpdateDOIs, their confirmation that the contents of the report file are correct is needed.
 		stage('Main: Send email of updateable DOIs to curator'){
@@ -111,18 +113,24 @@ pipeline {
 
 		// Now that you have curator approval regarding the report file, this step executes the same jar file again -- this time providing the report file as an argument.
 		// With the report file as the second argument, UpdateDOIs executes database modifications.
-		stage('Main: UpdateDOIs'){
-			steps{
-				script{
-					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
-					    def releaseVersion = utils.getReleaseVersion()
-					    sh """\
-					         docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} -v \$(pwd)/update_doi_output/:/output -v \$(pwd)/config:${CONT_ROOT}/config --net=host --name ${CONT_NAME}_MAIN \\
-						 ${ECR_URL}:latest \\
-						 /bin/bash -c 'java -jar target/update-dois-jar-with-dependencies.jar config/auth.properties /output/doisToBeUpdated-v${releaseVersion}.txt"
-					}
-				}
-			}
+		stage('Main: UpdateDOIs') {
+		    steps {
+		        script {
+		            withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
+		                def releaseVersion = utils.getReleaseVersion()
+		                sh """#!/bin/bash
+		                    docker run \\
+		                        -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} \\
+		                        -v \$(pwd)/update_doi_output/:/output \\
+		                        -v \$(pwd)/config:${CONT_ROOT}/config \\
+		                        --net=host \\
+		                        --name ${CONT_NAME}_MAIN \\
+		                        ${ECR_URL}:latest \\
+		                        /bin/bash -c "java -jar target/update-dois-jar-with-dependencies.jar config/auth.properties /output/doisToBeUpdated-v${releaseVersion}.txt"
+		                """
+		            }
+		        }
+		    }
 		}
 
 		stage('Post: Verify UpdateDOIs') {
