@@ -52,6 +52,8 @@ public class Verifier {
     @Parameter(names ={"--releasePort", "--rP"})
     private int releasePort = 3306;
 
+    @Parameter(names ={"--output", "--o"})
+    private String outputFolder = ".";
 
     public static void main(String[] args) throws Exception {
         Verifier verifier = new Verifier();
@@ -204,7 +206,7 @@ public class Verifier {
     }
 
     private Path getExpectedDOIFile() {
-        return Paths.get(String.format("doisToBeUpdated-v%d.txt", this.releaseNumber));
+        return Paths.get(getOutputFolder(), String.format("doisToBeUpdated-v%d.txt", this.releaseNumber));
     }
 
     private String getDOIFromFileLine(String line) {
@@ -241,5 +243,9 @@ public class Verifier {
             password,
             port
         );
+    }
+
+    private String getOutputFolder() {
+        return this.outputFolder;
     }
 }
