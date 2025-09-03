@@ -33,7 +33,9 @@ FROM eclipse-temurin:11-jre-focal
 ARG REPO_DIR
 
 ARG JAR_FILE=target/update-dois-jar-with-dependencies.jar
+ARG JAR_VERIFIER_FILE=target/update-dois-verifier-jar-with-dependencies.jar
 
 WORKDIR ${REPO_DIR}
 
 COPY --from=build-jar ${REPO_DIR}/${JAR_FILE} ./target/
+COPY --from=build-jar ${REPO_DIR}/${JAR_VERIFIER_FILE} ./target/
