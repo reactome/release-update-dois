@@ -140,9 +140,9 @@ pipeline {
 						withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curatorPass', usernameVariable: 'curatorUser')]){
 						    def releaseVersion = utils.getReleaseVersion()
 					   	    sh """\
-					                docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} --net=host --name ${CONT_NAME}_VERIFY \\
+					                docker run -v ${MYSQL_SOCKET}:${MYSQL_SOCKET} -v \$(pwd)/update_doi_output/:/output --rm --net=host --name ${CONT_NAME}_VERIFY \\
 						        ${ECR_URL}:latest \\
-						        /bin/bash -c 'java -jar target/update-dois-verifier-jar-with-dependencies.jar --r $releaseVersion --cu $curatorUser --cp $curatorPass --ru $releaseUser --rp $releasePass --ch curator.reactome.org'
+						        /bin/bash -c 'java -jar target/update-dois-verifier-jar-with-dependencies.jar --r $releaseVersion --cu $curatorUser --cp $curatorPass --ru $releaseUser --rp $releasePass --ch curator.reactome.org --o /output'
 						     """
 						}
 					}
