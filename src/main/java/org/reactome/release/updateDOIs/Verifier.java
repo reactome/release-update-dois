@@ -55,6 +55,8 @@ public class Verifier {
     @Parameter(names ={"--output", "--o"})
     private String outputFolder = ".";
 
+    private final String REACTOME_DOI_PREFIX = "10.3180";
+
     public static void main(String[] args) throws Exception {
         Verifier verifier = new Verifier();
         JCommander.newBuilder()
@@ -176,14 +178,12 @@ public class Verifier {
     }
 
     private String getCorrectDOI(GKInstance pathway) {
-        final String reactomeDOIPrefix = "10.3180/";
-
         try {
             GKInstance pathwayStableIdInstance = (GKInstance)
                 pathway.getAttributeValue(ReactomeJavaConstants.stableIdentifier);
             String pathwayStableId = pathwayStableIdInstance.getDisplayName();
 
-            return reactomeDOIPrefix + pathwayStableId;
+            return REACTOME_DOI_PREFIX + "/" + pathwayStableId;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -196,7 +196,7 @@ public class Verifier {
         } catch (Exception e) {
             throw new RuntimeException("Unable to get doi value from pathway " + pathway, e);
         }
-        return doiValue != null && doiValue.equals("needs DOI");
+        return doiValue != null && !doiValue.startsWith(REACTOME_DOI_PREFIX);
     }
 
     private List<String> getExpectedDOIs() throws IOException {
