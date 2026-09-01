@@ -11,26 +11,24 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.gk.model.GKInstance;
+import org.gk.model.InstanceDisplayNameGenerator;
+import org.gk.model.PersistenceAdaptor;
+import org.gk.model.ReactomeJavaConstants;
+import org.gk.persistence.MySQLAdaptor;
+import org.gk.schema.InvalidAttributeException;
+import org.gk.schema.InvalidAttributeValueException;
+import org.gk.schema.SchemaClass;
 import org.gk.util.GKApplicationUtilities;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.SessionConfig;
-import org.neo4j.driver.Transaction;
-import org.reactome.server.service.model.GKInstance;
-import org.reactome.server.service.model.InstanceDisplayNameGenerator;
-import org.reactome.server.service.model.PersistenceAdaptor;
-import org.reactome.server.service.model.ReactomeJavaConstants;
-import org.reactome.server.service.persistence.Neo4JAdaptor;
-import org.reactome.server.service.schema.InvalidAttributeException;
-import org.reactome.server.service.schema.InvalidAttributeValueException;
-import org.reactome.server.service.schema.SchemaClass;
+import org.reactome.curation.model.SimpleInstance;
 
 public class UpdateDOIs {
 
 	private static final Logger logger = LogManager.getLogger();
 	private static final String REACTOME_DOI_PREFIX = "10.3180";
 
-	private Neo4JAdaptor releaseDBA;
-	private Neo4JAdaptor curatorDBA;
+	private MySQLAdaptor releaseDBA;
+	private CuratorToolWSAPI curatorToolWSAPI;
 
 	private int releaseNumber;
 	private long personId;
@@ -38,7 +36,7 @@ public class UpdateDOIs {
 
 	public UpdateDOIs(PropertyManager propertyManager) {
 		this.releaseDBA = propertyManager.getReleaseDbAdaptor();
-		this.curatorDBA = propertyManager.getGKCentralDbAdaptor();
+		this.curatorToolWSAPI = new CuratorToolWSAPI();
 
 		this.releaseNumber = propertyManager.getReleaseNumber();
 		this.personId = propertyManager.getPersonId();
@@ -48,8 +46,8 @@ public class UpdateDOIs {
 	@SuppressWarnings("unchecked")
 	public void findAndUpdateDOIs(String pathToReport) throws Exception {
 		logger.info("Starting UpdateDOIs");
-		List<ExpectedDOI> expectedDOIsToUpdate = getExpectedDOIs(pathToReport);
-		List<GKInstance> pathwaysNeedingDOIs = getPathwaysRequiringDOIUpdate(getReleaseDBA());
+		List<ExpectedDOI> expectedDOIsToUpdate = !isTestMode() ? getExpectedDOIs(pathToReport) : new ArrayList<>();
+		List<GKInstance> actualPathwaysNeedingDOIs = getPathwaysRequiringDOIUpdate(getReleaseDBA());
 
 		if (isTestMode()) {
 			logger.info("Test mode is active. Outputting DOIs that can be updated");
@@ -57,18 +55,9 @@ public class UpdateDOIs {
 			Files.createFile(getDOIsToBeUpdatedFilePath());
 		}
 
-		try (
-			Session releaseSession = getReleaseDBA().getConnection().session(
-				SessionConfig.forDatabase(getReleaseDBA().getDBName()));
-			Session gkCentralSession = getCuratorDBA().getConnection().session(
-				SessionConfig.forDatabase(getCuratorDBA().getDBName()));
-			Transaction releaseTransaction = releaseSession.beginTransaction();
-			Transaction gkCentralTransaction = gkCentralSession.beginTransaction()
-		) {
-
-			GKInstance releaseInstanceEdit = getReleaseDBInstanceEdit(releaseTransaction);
-			GKInstance curatorInstanceEdit = getGKCentralDBInstanceEdit(gkCentralTransaction);
-			for (GKInstance pathwayNeedingDOI : pathwaysNeedingDOIs) {
+		GKInstance releaseInstanceEdit = getReleaseDBInstanceEdit();
+		for (GKInstance pathwayNeedingDOI : actualPathwaysNeedingDOIs) {
+			if (!isTestMode()) {
 				if (!isPathwayWithExpectedDOI(pathwayNeedingDOI, expectedDOIsToUpdate)) {
 					continue;
 				}
@@ -76,45 +65,30 @@ public class UpdateDOIs {
 				pathwayNeedingDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
 				pathwayNeedingDOI.addAttributeValue(ReactomeJavaConstants.modified, releaseInstanceEdit);
 				pathwayNeedingDOI.setAttributeValue(ReactomeJavaConstants.doi, getUpdatedDOI(pathwayNeedingDOI));
-				getReleaseDBA().updateInstanceAttribute(pathwayNeedingDOI, ReactomeJavaConstants.modified, releaseTransaction);
-				getReleaseDBA().updateInstanceAttribute(pathwayNeedingDOI, ReactomeJavaConstants.doi, releaseTransaction);
+				getReleaseDBA().updateInstanceAttribute(pathwayNeedingDOI, ReactomeJavaConstants.modified);
+				getReleaseDBA().updateInstanceAttribute(pathwayNeedingDOI, ReactomeJavaConstants.doi);
 
-				GKInstance gkCentralPathwayNeedingDOI = fetchAndVerifyGKCentralPathway(pathwayNeedingDOI);
+				SimpleInstance gkCentralPathwayNeedingDOI = fetchAndVerifyGKCentralPathway(pathwayNeedingDOI);
 				if (gkCentralPathwayNeedingDOI != null) {
-					gkCentralPathwayNeedingDOI.getAttributeValuesList(ReactomeJavaConstants.modified);
-					gkCentralPathwayNeedingDOI.addAttributeValue(ReactomeJavaConstants.modified, curatorInstanceEdit);
-					gkCentralPathwayNeedingDOI.setAttributeValue(
+					gkCentralPathwayNeedingDOI.setAttribute(
 						ReactomeJavaConstants.doi, getUpdatedDOI(gkCentralPathwayNeedingDOI)
 					);
-					getCuratorDBA().updateInstanceAttribute(
-						gkCentralPathwayNeedingDOI, ReactomeJavaConstants.modified, gkCentralTransaction
-					);
-					getCuratorDBA().updateInstanceAttribute(
-						gkCentralPathwayNeedingDOI, ReactomeJavaConstants.doi, gkCentralTransaction
-					);
+
+					getCuratorToolWSAPI().commit(gkCentralPathwayNeedingDOI);
 				}
 				logger.info("Updated DOI: " + getUpdatedDOI(pathwayNeedingDOI) + " for " +
 					pathwayNeedingDOI.getDisplayName());
-
-				if (isTestMode()) {
-					Files.write(
-						getDOIsToBeUpdatedFilePath(),
-						getDOIWithDisplayName(pathwayNeedingDOI).concat(System.lineSeparator()).getBytes(),
-						StandardOpenOption.APPEND
-					);
-				}
 			}
 
 			if (isTestMode()) {
-				releaseTransaction.rollback();
-				gkCentralTransaction.rollback();
-			} else {
-				releaseTransaction.commit();
-				gkCentralTransaction.commit();
+				Files.write(
+					getDOIsToBeUpdatedFilePath(),
+					getDOIWithDisplayName(pathwayNeedingDOI).concat(System.lineSeparator()).getBytes(),
+					StandardOpenOption.APPEND
+				);
 			}
-		} catch (Exception e) {
-			logger.error("Problem with session transaction(s)", e);
 		}
+
 		logger.info("Finished run of UpdateDOIs");
 	}
 
@@ -125,7 +99,7 @@ public class UpdateDOIs {
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<GKInstance> getPathwaysRequiringDOIUpdate(Neo4JAdaptor dba) throws Exception {
+	private List<GKInstance> getPathwaysRequiringDOIUpdate(MySQLAdaptor dba) throws Exception {
 		List<GKInstance> pathwaysNeedingDOI =
 			(List<GKInstance>) dba.fetchInstancesByClass(ReactomeJavaConstants.Pathway)
 				.stream()
@@ -147,6 +121,12 @@ public class UpdateDOIs {
 		return REACTOME_DOI_PREFIX + "/" + stableIdFromDb;
 	}
 
+	private String getUpdatedDOI(SimpleInstance pathway) {
+		String stableIdFromDb = ((SimpleInstance) pathway.getAttribute(ReactomeJavaConstants.stableIdentifier)).getDisplayName();
+
+		return REACTOME_DOI_PREFIX + "/" + stableIdFromDb;
+	}
+
 	private boolean isPathwayWithExpectedDOI(GKInstance pathwayNeedingDOI, List<ExpectedDOI> expectedDOIsToUpdate) {
 		return expectedDOIsToUpdate.stream().anyMatch(
 			expectedDOI -> expectedDOI.getDOI().equals(getUpdatedDOI(pathwayNeedingDOI)) &&
@@ -154,13 +134,15 @@ public class UpdateDOIs {
 		);
 	}
 
-	private GKInstance fetchAndVerifyGKCentralPathway(GKInstance releasePathway) throws Exception {
-		GKInstance gkCentralPathway = getCuratorDBA().fetchInstance(releasePathway.getDBID());
+	private SimpleInstance fetchAndVerifyGKCentralPathway(GKInstance releasePathway) {
+		SimpleInstance gkCentralPathway = getCuratorToolWSAPI().findByDbId(releasePathway.getDBID());
 
 		boolean verified = ReportTests.verifyDOIMatches(releasePathway, gkCentralPathway, getUpdatedDOI(releasePathway));
 		if (!verified) {
 			return null;
 		}
+
+		gkCentralPathway.setDefaultPersonId(getPersonId());
 
 		return gkCentralPathway;
 	}
@@ -169,15 +151,11 @@ public class UpdateDOIs {
 		return getUpdatedDOI(releasePathway) + "," + releasePathway.getDisplayName();
 	}
 
-	private GKInstance getReleaseDBInstanceEdit(Transaction tx) throws Exception {
-		return getInstanceEdit(getReleaseDBA(), tx);
+	private GKInstance getReleaseDBInstanceEdit() throws Exception {
+		return getInstanceEdit(getReleaseDBA());
 	}
 
-	private GKInstance getGKCentralDBInstanceEdit(Transaction tx) throws Exception {
-		return getInstanceEdit(getCuratorDBA(), tx);
-	}
-
-	private GKInstance getInstanceEdit(Neo4JAdaptor dba, Transaction tx) throws Exception {
+	private GKInstance getInstanceEdit(MySQLAdaptor dba) throws Exception {
 		GKInstance defaultPerson = dba.fetchInstance(getPersonId());
 		if (defaultPerson == null) {
 			throw new Exception("Could not fetch Person entity with ID " + getPersonId()
@@ -188,7 +166,7 @@ public class UpdateDOIs {
 		newIE.addAttributeValue(ReactomeJavaConstants.note, "org.reactome.release.updateDOIs.Main");
 		InstanceDisplayNameGenerator.setDisplayName(newIE);
 
-		dba.storeInstance(newIE, tx);
+		dba.storeInstance(newIE);
 
 		return newIE;
 	}
@@ -203,8 +181,6 @@ public class UpdateDOIs {
 		try {
 			instanceEdit.addAttributeValue(ReactomeJavaConstants.author, person);
 		} catch (InvalidAttributeException | InvalidAttributeValueException e) {
-			e.printStackTrace();
-			// throw this back up the stack - no way to recover from in here.
 			throw new RuntimeException(e);
 		}
 
@@ -224,12 +200,12 @@ public class UpdateDOIs {
 		return Paths.get("doisToBeUpdated-v" + getReleaseNumber() + ".txt");
 	}
 
-	private Neo4JAdaptor getReleaseDBA() {
+	private MySQLAdaptor getReleaseDBA() {
 		return this.releaseDBA;
 	}
 
-	private Neo4JAdaptor getCuratorDBA() {
-		return this.curatorDBA;
+	private CuratorToolWSAPI getCuratorToolWSAPI() {
+		return this.curatorToolWSAPI;
 	}
 
 	private int getReleaseNumber() {

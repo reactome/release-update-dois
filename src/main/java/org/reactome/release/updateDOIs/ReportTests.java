@@ -6,7 +6,8 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.reactome.server.service.model.GKInstance;
+import org.gk.model.GKInstance;
+import org.reactome.curation.model.SimpleInstance;
 
 public class ReportTests {
 	
@@ -14,16 +15,16 @@ public class ReportTests {
 	private static final Logger warningsLog = LogManager.getLogger("warningsLog");
 	
 	// Compares the DB IDs and display names of the instances to be updated from Test Reactome and GK Central
-	public static boolean verifyDOIMatches(GKInstance trDOI, GKInstance gkDOI, String newDOI ) {
-		if (trDOI.getDBID().equals(gkDOI.getDBID()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
+	public static boolean verifyDOIMatches(GKInstance trDOI, SimpleInstance gkDOI, String newDOI ) {
+		if (trDOI.getDBID().equals(gkDOI.getDbId()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
 			return true;
-		} else if (trDOI.getDBID().equals(gkDOI.getDBID()) && !trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
+		} else if (trDOI.getDBID().equals(gkDOI.getDbId()) && !trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
 			warningsLog.warn("[" + newDOI + "] Display names do not match: [Test Reactome]: " + trDOI.getDisplayName() +
 				" ~ [GK Central]: " + gkDOI.getDisplayName());
 			return false;
-		} else if (!trDOI.getDBID().equals(gkDOI.getDBID()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
+		} else if (!trDOI.getDBID().equals(gkDOI.getDbId()) && trDOI.getDisplayName().equals(gkDOI.getDisplayName())) {
 			warningsLog.warn("[" + newDOI + "] DB IDs do not match: [Test Reactome]: " + trDOI.getDBID() +
-				" ~ [GK Central]: " + gkDOI.getDBID());
+				" ~ [GK Central]: " + gkDOI.getDbId());
 			return false;
 		} else {
 			warningsLog.warn("DB ID and display name do not match: [Test Reactome]: " + trDOI + " ~ [GK Central]: " +
