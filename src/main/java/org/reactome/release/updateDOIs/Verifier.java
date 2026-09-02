@@ -38,6 +38,14 @@ public class Verifier {
     @Parameter(names ={"--releasePort", "--rP"})
     private int releasePort = 3306;
 
+    @Parameter(names ={"--curatorHostURL", "--cHU"})
+    private String curatorHostURL = "http://localhost:9090/api/";;
+
+    @Parameter(names ={"--curatorUser", "--cu"}, required = true)
+    private String curatorUser;
+
+    @Parameter(names ={"--curatorPassword", "--cp"}, required = true)
+    private String curatorPassword;
 
     public static void main(String[] args) throws Exception {
         Verifier verifier = new Verifier();
@@ -62,7 +70,8 @@ public class Verifier {
     private List<String> getErrorMessages() throws Exception {
         List<String> errorMessages = new ArrayList<>();
 
-        CuratorToolWSAPI curatorToolWSAPI = new CuratorToolWSAPI();
+        CuratorToolWSAPI curatorToolWSAPI = new CuratorToolWSAPI(
+            this.curatorHostURL, this.curatorUser, this.curatorPassword);
         MySQLAdaptor releaseDBA = getReleaseDBA();
 
         errorMessages.addAll(checkReleaseDBAForPathwaysWithUnassignedDOIs(releaseDBA));
@@ -241,15 +250,6 @@ public class Verifier {
     private String getDOIFromFileLine(String line) {
         return line.split(",")[0];
     }
-
-//    private Neo4JAdaptor getCuratorDBA() {
-//        return getDbAdaptor(
-//            this.curatorHost,
-//            this.curatorUserName,
-//            this.curatorPassword,
-//            this.curatorPort
-//        );
-//    }
 
     private MySQLAdaptor getReleaseDBA() {
         try {

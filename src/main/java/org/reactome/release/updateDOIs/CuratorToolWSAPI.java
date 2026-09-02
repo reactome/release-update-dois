@@ -33,18 +33,13 @@ import java.util.stream.Collectors;
  * Created 9/18/2025
  */
 public class CuratorToolWSAPI {
-    private static final String HOST_URL = "http://localhost:9090/api/";
-    private static final String AUTH_URL = HOST_URL + "auth/login";
-    private static final String FIND_BY_DB_ID = HOST_URL + "curation/findByDbId/";
-    private static final String FIND_DB_OBJ_BY_DB_ID = HOST_URL + "curation/findDatabaseObjectByDbId/";
-    private static final String FIND_DB_OBJS_BY_DB_IDS = HOST_URL + "curation/findByDbIds/";
-    private static final String SEARCH_INSTANCES = HOST_URL + "curation/searchInstances/";
-    private static final String COMMIT_URL = HOST_URL + "curation/commit";
+    private String hostURL;
 
     private String jwtToken;
 
-    public CuratorToolWSAPI() {
-        this.jwtToken = this.fetchJwtToken("test", "password");
+    public CuratorToolWSAPI(String hostURL, String userName, String password) {
+        this.hostURL = hostURL;
+        this.jwtToken = this.fetchJwtToken(userName, password);
     }
 
     public List<SimpleInstance> getPathwaysWithoutDOIs() {
@@ -56,7 +51,7 @@ public class CuratorToolWSAPI {
         List<SimpleInstance> pathwaysWithoutDOIs = new ArrayList<>();
         do {
             try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-                URI uri = new URIBuilder(SEARCH_INSTANCES + "Pathway/" + skip + "/" + limit)
+                URI uri = new URIBuilder(getSearchInstancesURL() + "Pathway/" + skip + "/" + limit)
                     .setCharset(StandardCharsets.UTF_8)
                     .addParameter("attributes", "doi")
                     .addParameter("operands", "regex")
@@ -97,7 +92,7 @@ public class CuratorToolWSAPI {
             int skip = 0;
             int limit = 1;
 
-            URI uri = new URIBuilder(SEARCH_INSTANCES + "Pathway/" + skip + "/" + limit)
+            URI uri = new URIBuilder(getSearchInstancesURL() + "Pathway/" + skip + "/" + limit)
                 .setCharset(StandardCharsets.UTF_8)
                 .addParameter("attributes", "doi")
                 .addParameter("operands", "equal")
@@ -138,7 +133,7 @@ public class CuratorToolWSAPI {
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpPost post = new HttpPost(COMMIT_URL);
+            HttpPost post = new HttpPost(getCommitURL());
             post.setHeader("Content-Type", "application/json");
             post.setHeader("Authorization", "Bearer " + getJwtToken());
 
@@ -159,7 +154,7 @@ public class CuratorToolWSAPI {
 
     public List<SimpleInstance> findDatabaseObjectsByDbIds(List<Long> dbIds) {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpPost post = new HttpPost(FIND_DB_OBJS_BY_DB_IDS);
+            HttpPost post = new HttpPost(getFindDbObjsByDBIDSURL());
             post.setHeader("Content-Type", "application/json");
             post.setHeader("Accept", "application/json");
             post.setHeader("Authorization", "Bearer " + getJwtToken());
@@ -187,7 +182,7 @@ public class CuratorToolWSAPI {
 
     public SimpleInstance findByDbId(long dbId) {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpGet request = new HttpGet(FIND_BY_DB_ID + dbId);
+            HttpGet request = new HttpGet(getFindByDbIdURL() + dbId);
             request.setHeader("Accept", "application/json");
             request.setHeader("Authorization", "Bearer " + getJwtToken());
             HttpResponse response = httpClient.execute(request);
@@ -209,7 +204,7 @@ public class CuratorToolWSAPI {
 
     public Person fetchPersonInstance(long personDbId) {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpGet request = new HttpGet(FIND_DB_OBJ_BY_DB_ID + personDbId);
+            HttpGet request = new HttpGet(getFindDbObjByDBIDURL() + personDbId);
             request.setHeader("Accept", "application/json");
             request.setHeader("Authorization", "Bearer " + getJwtToken());
             HttpResponse response = httpClient.execute(request);
@@ -228,7 +223,7 @@ public class CuratorToolWSAPI {
 
     private String fetchJwtToken(String username, String password) {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpPost post = new HttpPost(AUTH_URL);
+            HttpPost post = new HttpPost(getAuthURL());
             post.setHeader("Content-Type", "application/json");
             ObjectMapper mapper = new ObjectMapper();
             String jsonObj = mapper.writeValueAsString(new User(username, password));
@@ -251,5 +246,33 @@ public class CuratorToolWSAPI {
 
     private String getJwtToken() {
         return this.jwtToken;
+    }
+
+    private String getAuthURL() {
+        return getHostURL() + "auth/login";
+    }
+
+    private String getFindByDbIdURL() {
+        return getHostURL() + "curation/findByDbId/";
+    }
+
+    private String getFindDbObjByDBIDURL() {
+        return getHostURL() + "curation/findDatabaseObjectByDbId/";
+    }
+
+    private String getFindDbObjsByDBIDSURL() {
+        return getHostURL() + "curation/findByDbIds/";
+    }
+
+    private String getSearchInstancesURL() {
+        return getHostURL() + "curation/searchInstances/";
+    }
+
+    private String getCommitURL() {
+        return getHostURL() + "curation/commit";
+    }
+
+    private String getHostURL() {
+        return this.hostURL;
     }
 }

@@ -36,7 +36,11 @@ public class UpdateDOIs {
 
 	public UpdateDOIs(PropertyManager propertyManager) {
 		this.releaseDBA = propertyManager.getReleaseDbAdaptor();
-		this.curatorToolWSAPI = new CuratorToolWSAPI();
+		this.curatorToolWSAPI = new CuratorToolWSAPI(
+			propertyManager.getCuratorHostURL(),
+			propertyManager.getCuratorUserName(),
+			propertyManager.getCuratorPassword()
+		);
 
 		this.releaseNumber = propertyManager.getReleaseNumber();
 		this.personId = propertyManager.getPersonId();

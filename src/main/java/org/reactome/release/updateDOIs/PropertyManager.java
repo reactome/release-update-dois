@@ -34,6 +34,18 @@ public class PropertyManager {
         }
     }
 
+    public String getCuratorHostURL() {
+        return getConfigProperties().getProperty("curator.hostURL");
+    }
+
+    public String getCuratorUserName() {
+        return getConfigProperties().getProperty("curator.username");
+    }
+
+    public String getCuratorPassword() {
+        return getConfigProperties().getProperty("curator.password");
+    }
+
     public int getReleaseNumber() {
         return Integer.parseInt(getConfigProperties().getProperty("releaseNumber"));
     }
