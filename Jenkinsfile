@@ -18,16 +18,14 @@ pipeline {
 			}
 		}
 		
-		// This stage backs up the gk_central (on curator server) and release_current databases before they are modified.
+		// This stage backs up the release_current database and the curator graph database before they are modified.
 		stage('Setup: Back up DBs'){
 			steps{
 				script{
 					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
 						utils.takeDatabaseDumpAndGzip("${env.RELEASE_CURRENT_DB}", "update_dois", "before", "${env.RELEASE_SERVER}")
 					}
-				 	withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-						utils.takeDatabaseDumpAndGzip("${env.GK_CENTRAL_DB}", "update_dois", "before", "${env.CURATOR_SERVER}")
-					}
+					utils.backUpCuratorGraphDatabase(utils.getCuratorGraphConfig(), "update_dois", "before")
 				}
 			}
 		}
@@ -111,16 +109,14 @@ pipeline {
 			}
 		}
 
-		// This stage backs up the gk_central and release_current databases after they are modified.
+		// This stage backs up the release_current database and the curator graph database after they are modified.
 		stage('Post: Backup DBs'){
 			steps{
 				script{
 					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
 						utils.takeDatabaseDumpAndGzip("${env.RELEASE_CURRENT_DB}", "update_dois", "after", "${env.RELEASE_SERVER}")
 					}
-					withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'pass', usernameVariable: 'user')]){
-						utils.takeDatabaseDumpAndGzip("${env.GK_CENTRAL_DB}", "update_dois", "after", "${env.CURATOR_SERVER}")
-					}
+					utils.backUpCuratorGraphDatabase(utils.getCuratorGraphConfig(), "update_dois", "after")
 				}
 			}
 		}
@@ -130,7 +126,10 @@ pipeline {
 			steps{
 				script{
 					def releaseVersion = utils.getReleaseVersion()
-					def dataFiles = ["doisToBeUpdated-v${releaseVersion}.txt"]
+					def curatorGraphConfig = utils.getCuratorGraphConfig()
+					def dataFiles = ["doisToBeUpdated-v${releaseVersion}.txt",
+									 utils.getGzippedCuratorGraphDumpFileName(curatorGraphConfig, "update_dois", "before"),
+									 utils.getGzippedCuratorGraphDumpFileName(curatorGraphConfig, "update_dois", "after")]
 					// Log files appear in the 'logs' folder by default, and so don't need to be specified here.
 					def logFiles = []
 					def foldersToDelete = []
