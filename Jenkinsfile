@@ -46,7 +46,9 @@ pipeline {
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
 						sh "touch src/main/resources/UpdateDOIs.report"
-						sh "java -jar target/update-dois-jar-with-dependencies.jar $ConfigFile"
+						// Single-quoted so the shell expands $ConfigFile; interpolating a credentials
+						// binding in Groovy would bake it into the generated shell script.
+						sh 'java -jar target/update-dois-jar-with-dependencies.jar -config $ConfigFile'
 					}
 				}
 			}
@@ -90,7 +92,11 @@ pipeline {
 				script{
 					withCredentials([file(credentialsId: 'Config', variable: 'ConfigFile')]) {
 					    def releaseVersion = utils.getReleaseVersion()
-						sh "java -jar target/update-dois-jar-with-dependencies.jar $ConfigFile doisToBeUpdated-v${releaseVersion}.txt"
+						// The release version is passed through the environment so that the command
+						// itself can stay single-quoted, keeping $ConfigFile out of the Groovy string.
+						withEnv(["RELEASE_VERSION=${releaseVersion}"]) {
+							sh 'java -jar target/update-dois-jar-with-dependencies.jar -config $ConfigFile -report doisToBeUpdated-v${RELEASE_VERSION}.txt'
+						}
 					}
 				}
 			}
@@ -102,7 +108,11 @@ pipeline {
 					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'releasePass', usernameVariable: 'releaseUser')]){
 						withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curatorPass', usernameVariable: 'curatorUser')]){
 							def releaseVersion = utils.getReleaseVersion()
-					   	    sh "java -jar target/update-dois-verifier-jar-with-dependencies.jar --r $releaseVersion --cu $curatorUser --cp $curatorPass --ru $releaseUser --rp $releasePass --ch curator.reactome.org"
+							// The credential bindings must not be interpolated by Groovy, so the
+							// command is single-quoted and everything else is passed via the environment.
+							withEnv(["RELEASE_VERSION=${releaseVersion}", "CURATOR_HOST_URL=${utils.getCuratorGraphConfig().curatorToolApiURL}"]) {
+					   	   		sh 'java -jar target/update-dois-verifier-jar-with-dependencies.jar --r ${RELEASE_VERSION} --cu $curatorUser --cp $curatorPass --cHU ${CURATOR_HOST_URL} --ru $releaseUser --rp $releasePass'
+							}
 						}
 					}
 				}
