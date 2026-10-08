@@ -77,7 +77,7 @@ public class CuratorToolWSAPI {
                 pathwaysWithoutDOIs.addAll(instanceList.getInstances());
 
                 if (total == null) {
-                    total = instanceList.getTotalCount();
+                    total = instanceList.getTotalCount() != null ? instanceList.getTotalCount() : 0;
                 }
                 skip += limit;
             } catch (Exception e) {
