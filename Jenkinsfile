@@ -48,7 +48,7 @@ pipeline {
 						sh "touch src/main/resources/UpdateDOIs.report"
 						// Single-quoted so the shell expands $ConfigFile; interpolating a credentials
 						// binding in Groovy would bake it into the generated shell script.
-						sh 'java -jar target/update-dois-jar-with-dependencies.jar -config $ConfigFile'
+						sh 'java -jar target/update-dois-jar-with-dependencies.jar -config $ConfigFile -test'
 					}
 				}
 			}

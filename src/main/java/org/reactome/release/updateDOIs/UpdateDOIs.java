@@ -34,7 +34,7 @@ public class UpdateDOIs {
 	private long personId;
 	private boolean testMode;
 
-	public UpdateDOIs(PropertyManager propertyManager) {
+	public UpdateDOIs(PropertyManager propertyManager, boolean testMode) {
 		this.releaseDBA = propertyManager.getReleaseDbAdaptor();
 		this.curatorToolWSAPI = new CuratorToolWSAPI(
 			propertyManager.getCuratorHostURL(),
@@ -44,7 +44,7 @@ public class UpdateDOIs {
 
 		this.releaseNumber = propertyManager.getReleaseNumber();
 		this.personId = propertyManager.getPersonId();
-		this.testMode = propertyManager.getTestMode();
+		this.testMode = testMode;
 	}
 
 	@SuppressWarnings("unchecked")

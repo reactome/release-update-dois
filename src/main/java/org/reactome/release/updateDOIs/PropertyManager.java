@@ -54,10 +54,6 @@ public class PropertyManager {
         return Long.parseLong(getConfigProperties().getProperty("personId"));
     }
 
-    public boolean getTestMode() {
-        return Boolean.parseBoolean(getConfigProperties().getProperty("testMode", "true"));
-    }
-
     private Properties getConfigProperties() {
         return this.configProperties;
     }

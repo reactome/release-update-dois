@@ -18,6 +18,9 @@ public class Main {
 	@Parameter(names = "-report", description = "Path to report from Reactome curators of expected DOIs to update")
 	private String reportFilePath;
 
+	@Parameter(names = "-test", description = "Flag to set test mode for Update DOIs")
+	private boolean testMode = false;
+
 	public static void main(String[] args) throws Exception {
 		Main main = new Main();
 		JCommander.newBuilder()
@@ -31,7 +34,7 @@ public class Main {
 	public void run() throws Exception {
 		PropertyManager propertyManager = new PropertyManager(getConfigProperties());
 
-		UpdateDOIs updateDOIs = new UpdateDOIs(propertyManager);
+		UpdateDOIs updateDOIs = new UpdateDOIs(propertyManager, getTestMode());
 		updateDOIs.findAndUpdateDOIs(getReportFilePath());
 	}
 
@@ -47,5 +50,9 @@ public class Main {
 
 	private String getReportFilePath() {
 		return this.reportFilePath;
+	}
+
+	private boolean getTestMode() {
+		return this.testMode;
 	}
 }
