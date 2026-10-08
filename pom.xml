@@ -55,7 +55,6 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
 	<dependencies>
 		<!-- Main dependencies -->
 		<dependency>
