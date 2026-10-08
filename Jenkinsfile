@@ -106,7 +106,7 @@ pipeline {
 			steps {
 				script {
 					withCredentials([usernamePassword(credentialsId: 'mySQLUsernamePassword', passwordVariable: 'releasePass', usernameVariable: 'releaseUser')]){
-						withCredentials([usernamePassword(credentialsId: 'mySQLCuratorUsernamePassword', passwordVariable: 'curatorPass', usernameVariable: 'curatorUser')]){
+						withCredentials([usernamePassword(credentialsId: 'neo4jCuratorUsernamePassword', passwordVariable: 'curatorPass', usernameVariable: 'curatorUser')]){
 							def releaseVersion = utils.getReleaseVersion()
 							// The credential bindings must not be interpolated by Groovy, so the
 							// command is single-quoted and everything else is passed via the environment.
